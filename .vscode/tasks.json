@@ -1,0 +1,149 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "FastAPI起動（開発）",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "uvicorn",
+        "app.main:app",
+        "--reload",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "テスト実行",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest",
+        "-v"
+      ],
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "テスト実行（カバレッジ）",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "pytest",
+        "--cov=app",
+        "--cov-report=html",
+        "--cov-report=term"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Ruff チェック",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "check",
+        "src",
+        "tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Ruff フォーマット",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "format",
+        "src",
+        "tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Ruff 修正",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "ruff",
+        "check",
+        "--fix",
+        "src",
+        "tests"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "依存関係インストール",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "sync"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Alembic マイグレーション作成",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "alembic",
+        "revision",
+        "--autogenerate",
+        "-m",
+        "${input:migrationMessage}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Alembic マイグレーション適用",
+      "type": "shell",
+      "command": "uv",
+      "args": [
+        "run",
+        "alembic",
+        "upgrade",
+        "head"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/src"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "migrationMessage",
+      "type": "promptString",
+      "description": "マイグレーションメッセージを入力してください",
+      "default": "migration"
+    }
+  ]
+}

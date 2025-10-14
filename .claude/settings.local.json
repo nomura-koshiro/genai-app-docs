@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv:*)",
+      "Bash(tree:*)",
+      "Read(//c/developments/docs/docs/04-development/01-coding-standards/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

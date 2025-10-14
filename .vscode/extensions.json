@@ -1,0 +1,45 @@
+{
+  "recommendations": [
+    // Python開発必須
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.debugpy",
+
+    // Ruff（リンター＆フォーマッター）
+    "charliermarsh.ruff",
+
+    // REST API開発
+    "humao.rest-client",
+    "42crunch.vscode-openapi",
+
+    // データベース
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+
+    // Git
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // YAML/TOML（設定ファイル）
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+
+    // Dockerサポート（必要に応じて）
+    "ms-azuretools.vscode-docker",
+
+    // 環境変数
+    "mikestead.dotenv",
+
+    // テスト
+    "littlefoxteam.vscode-python-test-adapter",
+
+    // AIアシスタント（お好みで）
+    "github.copilot",
+    "github.copilot-chat",
+
+    // その他便利ツール
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "editorconfig.editorconfig"
+  ]
+}

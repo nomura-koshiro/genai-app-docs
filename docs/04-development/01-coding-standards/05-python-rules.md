@@ -1,0 +1,693 @@
+# Python規約
+
+PEP 8準拠のPythonコーディング規約と、本プロジェクト固有のルールについて説明します。
+
+## 概要
+
+本プロジェクトでは以下のPython規約を遵守します：
+
+- **PEP 8準拠**
+- **型ヒントの徹底使用**
+- **Docstringの記述**
+- **Import文の整理**
+- **エラーハンドリング**
+
+---
+
+## 1. PEP 8準拠
+
+### インデント
+
+- スペース4つを使用
+- タブは使用しない
+
+```python
+# ✅ 良い例
+def calculate_total(
+    base_price: float,
+    tax_rate: float = 0.1,
+    discount: float = 0.0
+) -> float:
+    subtotal = base_price - discount
+    tax = subtotal * tax_rate
+    return subtotal + tax
+
+
+# ❌ 悪い例（タブ使用）
+def calculate_total(base_price, tax_rate=0.1):
+→   subtotal = base_price  # タブは使用しない
+→   return subtotal * (1 + tax_rate)
+```
+
+### 行の長さ
+
+- 1行は79〜100文字以内
+- 長い行は適切に改行
+
+```python
+# ✅ 良い例：長い引数リストを改行
+def create_user(
+    email: str,
+    username: str,
+    password: str,
+    is_active: bool = True,
+    is_superuser: bool = False,
+) -> User:
+    pass
+
+
+# ✅ 良い例：長いクエリを改行
+query = (
+    select(User)
+    .where(User.is_active == True)
+    .where(User.created_at > start_date)
+    .order_by(User.created_at.desc())
+    .limit(10)
+)
+
+
+# ✅ 良い例：長い文字列を改行
+error_message = (
+    "ユーザーの作成に失敗しました。"
+    "メールアドレスが既に使用されているか、"
+    "入力値が不正です。"
+)
+
+
+# ❌ 悪い例：1行が長すぎる
+query = select(User).where(User.is_active == True).where(User.created_at > start_date).order_by(User.created_at.desc()).limit(10)
+```
+
+### 空白行
+
+- トップレベルの関数/クラス定義の間：2行
+- クラス内のメソッド定義の間：1行
+- 関数内の論理的なセクション：1行
+
+```python
+# ✅ 良い例
+from datetime import datetime
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class UserService:
+    """ユーザーサービス。"""
+
+    def __init__(self, db: AsyncSession):
+        self.repository = UserRepository(db)
+
+    async def create_user(self, user_data: UserCreate) -> User:
+        """ユーザーを作成。"""
+        # バリデーション
+        existing_user = await self.repository.get_by_email(user_data.email)
+        if existing_user:
+            raise ValidationError("User already exists")
+
+        # パスワードハッシュ化
+        hashed_password = hash_password(user_data.password)
+
+        # ユーザー作成
+        user = await self.repository.create(
+            email=user_data.email,
+            username=user_data.username,
+            hashed_password=hashed_password,
+        )
+        return user
+
+    async def authenticate(self, email: str, password: str) -> User:
+        """ユーザーを認証。"""
+        user = await self.repository.get_by_email(email)
+        if not user:
+            raise AuthenticationError("Invalid credentials")
+
+        if not verify_password(password, user.hashed_password):
+            raise AuthenticationError("Invalid credentials")
+
+        return user
+
+
+class SessionService:
+    """セッションサービス。"""
+    pass
+```
+
+---
+
+## 2. 型ヒントの徹底使用
+
+### 基本的な型ヒント
+
+すべての関数・メソッドに型ヒントを追加します。
+
+```python
+from typing import Optional, Any
+from datetime import datetime
+
+# ✅ 良い例：すべてに型ヒント
+def get_user(user_id: int) -> User | None:
+    """ユーザーを取得。"""
+    pass
+
+
+def create_user(
+    email: str,
+    username: str,
+    password: str,
+    is_active: bool = True,
+) -> User:
+    """ユーザーを作成。"""
+    pass
+
+
+def calculate_total(
+    items: list[dict[str, Any]],
+    tax_rate: float = 0.1,
+) -> float:
+    """合計金額を計算。"""
+    pass
+
+
+# ❌ 悪い例：型ヒントなし
+def get_user(user_id):
+    pass
+
+
+def create_user(email, username, password, is_active=True):
+    pass
+```
+
+### Python 3.10+ の型ヒント
+
+Python 3.10以降の新しい型ヒント構文を使用します。
+
+```python
+# ✅ Python 3.10+ の構文
+def get_user(user_id: int) -> User | None:
+    """Union型は | を使用。"""
+    pass
+
+
+def get_value(key: str) -> str | int | float:
+    """複数の型を返す可能性がある場合。"""
+    pass
+
+
+# ❌ 古い構文（使用しない）
+from typing import Optional, Union
+
+def get_user(user_id: int) -> Optional[User]:
+    pass
+
+
+def get_value(key: str) -> Union[str, int, float]:
+    pass
+```
+
+### ジェネリック型
+
+```python
+from typing import Generic, TypeVar, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+
+ModelType = TypeVar("ModelType", bound=Base)
+
+
+class BaseRepository(Generic[ModelType]):
+    """ジェネリック型を使用した基底リポジトリ。"""
+
+    def __init__(self, model: type[ModelType], db: AsyncSession):
+        self.model = model
+        self.db = db
+
+    async def get(self, id: int) -> ModelType | None:
+        return await self.db.get(self.model, id)
+
+    async def get_multi(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[ModelType]:
+        query = select(self.model).offset(skip).limit(limit)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+
+# 具体的な型を指定
+class UserRepository(BaseRepository[User]):
+    pass
+```
+
+### TypeAlias
+
+```python
+from typing import TypeAlias
+
+# 型エイリアスを定義
+UserId: TypeAlias = int
+Email: TypeAlias = str
+JsonDict: TypeAlias = dict[str, Any]
+
+
+def get_user(user_id: UserId) -> User | None:
+    pass
+
+
+def send_email(email: Email, subject: str, body: str) -> bool:
+    pass
+
+
+def process_data(data: JsonDict) -> JsonDict:
+    pass
+```
+
+---
+
+## 3. Docstringの記述
+
+### Google Style Docstring
+
+本プロジェクトではGoogle Styleのdocstringを使用します。
+
+```python
+def create_user(
+    email: str,
+    username: str,
+    password: str,
+    is_active: bool = True,
+) -> User:
+    """新しいユーザーを作成します。
+
+    Args:
+        email: ユーザーのメールアドレス
+        username: ユーザー名
+        password: 平文パスワード（ハッシュ化されます）
+        is_active: ユーザーがアクティブかどうか（デフォルト: True）
+
+    Returns:
+        作成されたユーザーインスタンス
+
+    Raises:
+        ValidationError: メールアドレスまたはユーザー名が既に使用されている場合
+        DatabaseError: データベース操作に失敗した場合
+
+    Example:
+        >>> user = await create_user(
+        ...     email="user@example.com",
+        ...     username="testuser",
+        ...     password="password123"
+        ... )
+        >>> print(user.email)
+        user@example.com
+    """
+    pass
+```
+
+### クラスのDocstring
+
+```python
+class UserService:
+    """ユーザー関連のビジネスロジックを提供するサービス。
+
+    このクラスはユーザーの作成、更新、削除、認証などの
+    ビジネスロジックを実装します。
+
+    Attributes:
+        repository: ユーザーリポジトリインスタンス
+    """
+
+    def __init__(self, db: AsyncSession):
+        """UserServiceを初期化します。
+
+        Args:
+            db: データベースセッション
+        """
+        self.repository = UserRepository(db)
+```
+
+### モジュールのDocstring
+
+```python
+"""ユーザー関連のビジネスロジック用のサービスモジュール。
+
+このモジュールはユーザーの作成、認証、プロファイル管理などの
+ビジネスロジックを提供します。
+
+Example:
+    >>> from app.services.user import UserService
+    >>> service = UserService(db)
+    >>> user = await service.create_user(user_data)
+"""
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.exceptions import AuthenticationError, ValidationError
+# ... 以下実装
+```
+
+---
+
+## 4. Import文の整理
+
+### Import順序
+
+1. 標準ライブラリ
+2. サードパーティライブラリ
+3. ローカルアプリケーション
+
+各グループの間は1行空ける。
+
+```python
+# ✅ 良い例
+# 標準ライブラリ
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+# サードパーティライブラリ
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, EmailStr, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# ローカルアプリケーション
+from app.api.dependencies import CurrentUserDep, DatabaseDep
+from app.core.exceptions import NotFoundError, ValidationError
+from app.models.user import User
+from app.repositories.user import UserRepository
+from app.schemas.user import UserCreate, UserResponse
+
+
+# ❌ 悪い例：順序が混在
+from app.models.user import User
+from datetime import datetime
+from fastapi import APIRouter
+from app.schemas.user import UserCreate
+from typing import Any
+```
+
+### 絶対インポートを使用
+
+相対インポートではなく、絶対インポートを使用します。
+
+```python
+# ✅ 良い例：絶対インポート
+from app.models.user import User
+from app.repositories.user import UserRepository
+from app.services.user import UserService
+
+
+# ❌ 悪い例：相対インポート
+from ..models.user import User
+from ..repositories.user import UserRepository
+from .user import UserService
+```
+
+### ワイルドカードインポートを避ける
+
+```python
+# ✅ 良い例：必要なものだけインポート
+from app.core.exceptions import NotFoundError, ValidationError
+
+
+# ❌ 悪い例：ワイルドカードインポート
+from app.core.exceptions import *
+```
+
+---
+
+## 5. エラーハンドリング
+
+### 具体的な例外をキャッチ
+
+```python
+# ✅ 良い例：具体的な例外をキャッチ
+async def get_user(user_id: int) -> User:
+    """ユーザーを取得。"""
+    try:
+        user = await self.repository.get(user_id)
+        if not user:
+            raise NotFoundError(f"User {user_id} not found")
+        return user
+    except SQLAlchemyError as e:
+        raise DatabaseError(f"Database error: {str(e)}") from e
+
+
+# ❌ 悪い例：すべての例外をキャッチ
+async def get_user(user_id: int) -> User:
+    try:
+        user = await self.repository.get(user_id)
+        return user
+    except Exception:  # 広すぎる
+        return None
+```
+
+### カスタム例外を使用
+
+```python
+# src/app/core/exceptions.py
+class AppException(Exception):
+    """アプリケーション基底例外。"""
+
+    def __init__(
+        self,
+        message: str,
+        status_code: int = 500,
+        details: dict[str, Any] | None = None,
+    ):
+        self.message = message
+        self.status_code = status_code
+        self.details = details or {}
+        super().__init__(self.message)
+
+
+class NotFoundError(AppException):
+    """リソース未検出例外。"""
+
+    def __init__(
+        self,
+        message: str = "Resource not found",
+        details: dict[str, Any] | None = None
+    ):
+        super().__init__(message, status_code=404, details=details)
+
+
+class ValidationError(AppException):
+    """バリデーションエラー例外。"""
+
+    def __init__(
+        self,
+        message: str = "Validation error",
+        details: dict[str, Any] | None = None
+    ):
+        super().__init__(message, status_code=422, details=details)
+
+
+# 使用例
+async def create_user(self, user_data: UserCreate) -> User:
+    """ユーザーを作成。"""
+    existing_user = await self.repository.get_by_email(user_data.email)
+    if existing_user:
+        raise ValidationError(
+            "User already exists",
+            details={"email": user_data.email}
+        )
+
+    return await self.repository.create(**user_data.model_dump())
+```
+
+### 例外チェーン
+
+```python
+# ✅ 良い例：例外チェーンを使用
+async def process_file(file_path: str) -> dict:
+    """ファイルを処理。"""
+    try:
+        content = await read_file(file_path)
+        return parse_content(content)
+    except FileNotFoundError as e:
+        raise NotFoundError(
+            f"File not found: {file_path}",
+            details={"file_path": file_path}
+        ) from e  # 元の例外を保持
+    except ValueError as e:
+        raise ValidationError(
+            f"Invalid file content: {file_path}",
+            details={"error": str(e)}
+        ) from e
+```
+
+---
+
+## 6. 非同期処理
+
+### async/await の使用
+
+```python
+# ✅ 良い例
+async def get_user(self, user_id: int) -> User:
+    """非同期でユーザーを取得。"""
+    user = await self.repository.get(user_id)
+    if not user:
+        raise NotFoundError(f"User {user_id} not found")
+    return user
+
+
+async def create_user(self, user_data: UserCreate) -> User:
+    """非同期でユーザーを作成。"""
+    # バリデーション
+    existing = await self.repository.get_by_email(user_data.email)
+    if existing:
+        raise ValidationError("Email already exists")
+
+    # 作成
+    return await self.repository.create(**user_data.model_dump())
+
+
+# ❌ 悪い例：awaitを忘れる
+async def get_user(self, user_id: int) -> User:
+    user = self.repository.get(user_id)  # awaitがない
+    return user
+```
+
+### 複数の非同期操作
+
+```python
+import asyncio
+
+# ✅ 並列実行
+async def get_user_data(user_id: int) -> dict:
+    """ユーザーデータを並列取得。"""
+    # 並列実行
+    user, sessions, files = await asyncio.gather(
+        self.user_repo.get(user_id),
+        self.session_repo.get_by_user(user_id),
+        self.file_repo.get_by_user(user_id),
+    )
+
+    return {
+        "user": user,
+        "sessions": sessions,
+        "files": files,
+    }
+
+
+# ❌ 悪い例：逐次実行（遅い）
+async def get_user_data(user_id: int) -> dict:
+    user = await self.user_repo.get(user_id)
+    sessions = await self.session_repo.get_by_user(user_id)
+    files = await self.file_repo.get_by_user(user_id)
+    return {"user": user, "sessions": sessions, "files": files}
+```
+
+---
+
+## 7. コンテキストマネージャー
+
+### with文の使用
+
+```python
+# ✅ 良い例：コンテキストマネージャー使用
+async def read_file(file_path: str) -> bytes:
+    """ファイルを読み込み。"""
+    async with aiofiles.open(file_path, "rb") as f:
+        return await f.read()
+
+
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """データベースセッション取得。"""
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+# ❌ 悪い例：手動でクローズ
+async def read_file(file_path: str) -> bytes:
+    f = await aiofiles.open(file_path, "rb")
+    content = await f.read()
+    await f.close()  # 例外時にクローズされない可能性
+    return content
+```
+
+---
+
+## よくある間違いとその対処法
+
+### 間違い1: 型ヒントの省略
+
+```python
+# ❌ 悪い例
+def create_user(data):
+    return User(**data)
+
+# ✅ 良い例
+def create_user(data: UserCreate) -> User:
+    return User(**data.model_dump())
+```
+
+### 間違い2: Docstringの欠如
+
+```python
+# ❌ 悪い例
+async def authenticate(email, password):
+    user = await get_by_email(email)
+    if not verify_password(password, user.hashed_password):
+        raise AuthenticationError()
+    return user
+
+# ✅ 良い例
+async def authenticate(self, email: str, password: str) -> User:
+    """ユーザーを認証します。
+
+    Args:
+        email: ユーザーのメールアドレス
+        password: 平文パスワード
+
+    Returns:
+        認証されたユーザーインスタンス
+
+    Raises:
+        AuthenticationError: 認証に失敗した場合
+    """
+    user = await self.repository.get_by_email(email)
+    if not user or not verify_password(password, user.hashed_password):
+        raise AuthenticationError("Invalid credentials")
+    return user
+```
+
+### 間違い3: 広すぎる例外キャッチ
+
+```python
+# ❌ 悪い例
+try:
+    user = await create_user(data)
+except Exception:  # 広すぎる
+    pass
+
+# ✅ 良い例
+try:
+    user = await create_user(data)
+except ValidationError as e:
+    logger.warning(f"Validation error: {e}")
+    raise
+except DatabaseError as e:
+    logger.error(f"Database error: {e}")
+    raise
+```
+
+---
+
+## 参考リンク
+
+- [PEP 8 -- Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/)
+- [PEP 257 -- Docstring Conventions](https://www.python.org/dev/peps/pep-0257/)
+- [PEP 484 -- Type Hints](https://www.python.org/dev/peps/pep-0484/)
+- [Python Type Hints](https://docs.python.org/3/library/typing.html)
+- [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
+
+---
+
+次のセクション: [06-fastapi-rules.md](./06-fastapi-rules.md)
