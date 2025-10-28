@@ -265,11 +265,13 @@ api/
 APIレイヤーの基盤となる依存性注入と例外ハンドリング機能を提供します。
 
 **`dependencies.py`** - 依存性注入の定義:
+
 - データベースセッション (`DatabaseDep`)
 - サービス層の注入 (`UserServiceDep`, `AgentServiceDep`, `FileServiceDep`, `SessionServiceDep`)
 - 認証ユーザー (`CurrentUserDep`, `CurrentSuperuserDep`, `CurrentUserOptionalDep`)
 
 **`exception_handlers.py`** - グローバル例外ハンドラー:
+
 - カスタム例外を適切なHTTPレスポンスに変換
 - 統一的なエラーレスポンス形式を提供
 
@@ -278,19 +280,23 @@ APIレイヤーの基盤となる依存性注入と例外ハンドリング機�
 関数やメソッドに追加機能を付与するデコレータを提供します。機能別に4つのモジュールに分割されています。
 
 **`basic.py`** - 基本機能デコレータ:
+
 - `@log_execution`: 関数の実行をログに記録
 - `@measure_performance`: 実行時間を測定
 - `@async_timeout`: タイムアウト制御
 
 **`security.py`** - セキュリティデコレータ:
+
 - `@validate_permissions`: リソースベースの権限検証
 - `@handle_service_errors`: サービス層のエラーをHTTP例外に変換
 
 **`data_access.py`** - データアクセスデコレータ:
+
 - `@transactional`: データベーストランザクション管理
 - `@cache_result`: 関数の結果をRedisにキャッシュ
 
 **`reliability.py`** - 信頼性向上デコレータ:
+
 - `@retry_on_error`: エラー時の自動リトライ（Exponential Backoff）
 
 #### `api/routes/v1/sample_agents.py` - AI Agentエンドポイント（API v1）

@@ -165,6 +165,7 @@ bash /mnt/c/developments/genai-app-docs/scripts/setup-wsl2.sh --clean
 ```
 
 このコマンドは：
+
 - 既存のプロジェクトディレクトリを削除
 - Dockerコンテナとボリュームを削除
 - PATH設定をクリーンアップ
