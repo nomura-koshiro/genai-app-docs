@@ -173,15 +173,15 @@ sqlalchemy.exc.OperationalError: could not connect to server
 
 **解決策:**
 
-```bash
-# PostgreSQL起動確認（Linux/Mac）
-pg_isready -h localhost -p 5432
+```powershell
+# PostgreSQL起動確認
+Get-Process postgres -ErrorAction SilentlyContinue
 
-# PostgreSQL起動（Docker）
-docker-compose up postgres
+# PostgreSQL起動（Scoop版）
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data start
 
-# PostgreSQL起動（システムサービス）
-sudo systemctl start postgresql
+# PostgreSQL起動（公式インストーラー版）
+Start-Service postgresql-x64-16
 ```
 
 #### 原因 2: 接続文字列が間違っている
@@ -206,17 +206,14 @@ sqlite+aiosqlite:///./app.db
 
 **解決策:**
 
-```bash
+```powershell
 # PostgreSQLでデータベース作成
-createdb appdb
+psql -U postgres -c "CREATE DATABASE camp_backend_db;"
 
 # または psql で
 psql -U postgres
-CREATE DATABASE appdb;
+CREATE DATABASE camp_backend_db;
 \q
-
-# Docker Compose使用時
-docker-compose exec postgres createdb -U postgres appdb
 ```
 
 ### 問題 5: マイグレーションエラー
@@ -517,8 +514,8 @@ docker exec -it <container-id> /bin/bash
 # ビルドログを確認
 docker build -t app:latest . --progress=plain
 
-# docker-composeログ
-docker-compose logs -f app
+# Dockerコンテナのログ確認（本番環境）
+docker logs -f app
 ```
 
 **一般的な原因:**

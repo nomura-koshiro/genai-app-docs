@@ -16,11 +16,11 @@
 まず、プロジェクトの全体像を理解しましょう。
 
 1. **README.md** - プロジェクト概要と主要機能
-   - 位置: `C:\developments\genai-app-docs\README.md`
+   - 位置: `README.md`
    - 内容: プロジェクトの目的、技術スタック、クイックスタート
 
 2. **pyproject.toml** - 依存関係とプロジェクト設定
-   - 位置: `C:\developments\genai-app-docs\pyproject.toml`
+   - 位置: `pyproject.toml`
    - 内容: Python依存関係、ツール設定、メタデータ
 
 3. **ドキュメント目次**

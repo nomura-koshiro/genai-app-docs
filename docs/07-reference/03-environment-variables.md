@@ -77,7 +77,7 @@ class Settings(BaseSettings):
 ### .envファイルの場所
 
 ```text
-backend/
+genai-app-docs/
 ├── .env.local              # ローカル開発環境（gitignore対象）
 ├── .env.staging            # ステージング環境（gitignore対象）
 ├── .env.production         # 本番環境（gitignore対象）
@@ -325,9 +325,11 @@ engine = create_async_engine(settings.DATABASE_URL)
 
 ---
 
-### Docker Compose設定
+### Docker Compose設定（本番環境）
 
-Docker Compose（`docker-compose.yml`）で使用される環境変数。
+本番環境でDocker Compose（`docker-compose.yml`）を使用する場合の環境変数。
+
+**注**: ローカル開発環境ではDocker Composeを使用せず、PostgreSQLを直接インストールします。
 
 | 変数名 | 型 | デフォルト値 | 必須 | 説明 |
 |-------|---|------------|------|------|
@@ -357,13 +359,13 @@ PGADMIN_PASSWORD=admin
 PGADMIN_PORT=5050
 ```
 
-#### 使用方法
+#### 使用方法（本番環境のみ）
 
-これらの変数は`docker-compose.yml`でコンテナの設定に使用されます。
+これらの変数は本番環境の`docker-compose.yml`でコンテナの設定に使用されます。
 アプリケーションコード（`src/app/`）では直接使用されません。
 
 ```yaml
-# docker-compose.yml の例
+# docker-compose.yml の例（本番環境）
 services:
   postgres:
     environment:

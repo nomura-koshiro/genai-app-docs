@@ -29,7 +29,7 @@ Windows上でVisual Studio Codeを起動します。
 
 - `Ctrl+K Ctrl+O` でフォルダを開く
 - または、「File」→「Open Folder」
-- プロジェクトディレクトリ（例：`C:\developments\project\genai-app-docs`）を選択
+- プロジェクトディレクトリを選択
 
 ## 推奨VSCode拡張機能
 

@@ -152,53 +152,46 @@ app.add_middleware(CustomMiddleware)
 
 **バージョン**: PostgreSQL 16-alpine
 
-このプロジェクトでは、PostgreSQLをDocker経由で使用します。
+このプロジェクトでは、PostgreSQLをローカルにインストールして使用します。
 
 ### 主な特徴
 
-- **Docker管理**: docker-compose.ymlで簡単にセットアップ
+- **ローカルインストール**: Windows上に直接インストール
 - **テスト専用DB**: 自動作成・削除される独立したテストデータベース
-- **本番環境と同じDB**: 開発・テスト・本番で同じPostgreSQLを使用
-- **PgAdmin**: オプションで管理UIを使用可能
+- **開発・テスト・本番同一**: すべての環境で同じPostgreSQLバージョンを使用
 
 ### セットアップ
 
-```bash
-# PostgreSQLコンテナを起動
-docker-compose up -d postgres
+詳細は [Windows環境セットアップ](../../01-getting-started/02-windows-setup.md) を参照してください。
+
+```powershell
+# PostgreSQL起動確認（Scoop版）
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
 
 # 接続確認
-docker-compose exec postgres psql -U postgres -d app_db
+psql -U postgres -d camp_backend_db
 ```
 
 ### 環境変数
 
 ```bash
 # 開発用データベース
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/app_db
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db
 
 # テスト用データベース
-TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
+TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db_test
 TEST_DATABASE_ADMIN_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
-TEST_DATABASE_NAME=test_db
+TEST_DATABASE_NAME=camp_backend_db_test
 ```
 
 ### テストデータベースの自動管理
 
 テスト実行時に以下の処理が自動的に行われます：
 
-1. **テストセッション開始時**: `test_db`データベースを作成
+1. **テストセッション開始時**: `camp_backend_db_test`データベースを作成
 2. **各テスト関数の前**: 全テーブルを作成
 3. **各テスト関数の後**: 全テーブルを削除
-4. **テストセッション終了時**: `test_db`データベースを削除
-
-### Docker代替ツール
-
-**注意**: Docker Desktopは企業利用で有料です。以下の無料代替ツールを使用できます：
-
-- **Rancher Desktop** (推奨) - <https://rancherdesktop.io/>
-- **Podman Desktop** - <https://podman-desktop.io/>
-- **WSL2 + Docker CE** (Windows)
+4. **テストセッション終了時**: `camp_backend_db_test`データベースを削除
 
 ### 公式ドキュメント
 

@@ -256,8 +256,7 @@ async def test_file(db_session, test_user):
 ## テストの実行
 
 ```bash
-# PostgreSQLコンテナを起動
-docker-compose up -d postgres
+# PostgreSQLが起動していることを確認
 
 # すべてのテストを実行
 uv run pytest
