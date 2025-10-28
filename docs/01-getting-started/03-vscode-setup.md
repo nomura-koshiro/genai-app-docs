@@ -4,7 +4,8 @@ Windows上でVisual Studio Codeを使用して開発します。
 
 ## 前提条件
 
-- [WSL2 + Docker CEがインストール済み](./02-wsl2-docker-setup.md)
+- [Windows環境のセットアップ完了](./02-windows-setup.md)
+- Python 3.13がインストール済み
 
 ## Visual Studio Codeのインストール
 
@@ -28,7 +29,7 @@ Windows上でVisual Studio Codeを起動します。
 
 - `Ctrl+K Ctrl+O` でフォルダを開く
 - または、「File」→「Open Folder」
-- プロジェクトディレクトリ（例：`C:\developments\backend`）を選択
+- プロジェクトディレクトリ（例：`C:\developments\project\genai-app-docs`）を選択
 
 ## 推奨VSCode拡張機能
 

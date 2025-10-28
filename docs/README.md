@@ -12,8 +12,8 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 
 | ドキュメント | 内容 |
 |------------|------|
-| [前提条件](./01-getting-started/01-prerequisites.md) | Python 3.13+、uv、Git、VSCode、WSL2（Windows） |
-| [WSL2 + Docker セットアップ](./01-getting-started/02-wsl2-docker-setup.md) | Windows用Linux環境とDocker構築（自動セットアップスクリプト） |
+| [前提条件](./01-getting-started/01-prerequisites.md) | Python 3.13、uv、PostgreSQL、Visual Studio Code |
+| [Windows環境セットアップ](./01-getting-started/02-windows-setup.md) | PostgreSQL、Python、uvのインストール手順 |
 | [VSCode セットアップ](./01-getting-started/03-vscode-setup.md) | 開発環境の設定と推奨拡張機能 |
 | [環境設定](./01-getting-started/04-environment-config.md) | 環境別設定ファイルの管理 |
 | [クイックスタート](./01-getting-started/05-quick-start.md) | 最速でAPIを起動する方法 |
@@ -184,7 +184,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 ### 初心者向け
 
 1. [前提条件](./01-getting-started/01-prerequisites.md) → 環境準備
-2. [WSL2 + Docker セットアップ](./01-getting-started/02-wsl2-docker-setup.md) → WSL2環境構築
+2. [Windows環境セットアップ](./01-getting-started/02-windows-setup.md) → PostgreSQL、Python、uvのインストール
 3. [環境設定](./01-getting-started/04-environment-config.md) → 設定ファイル
 4. [クイックスタート](./01-getting-started/05-quick-start.md) → APIを起動
 5. [プロジェクト概要](./01-getting-started/06-project-overview.md) → 全体像を理解

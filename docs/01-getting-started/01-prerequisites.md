@@ -1,67 +1,76 @@
 # 前提条件
 
-camp-backendの開発を始める前に、必要な環境を確認します。
+genai-app-docsの開発を始める前に、必要な環境を確認します。
 
 ## 開発環境構成
 
-このプロジェクトは**WSL2完結型環境**で開発します：
+このプロジェクトは**Windows環境**で直接開発します：
 
-- **Windows側**: WSL2、Visual Studio Code（Remote-WSL拡張）のみ
-- **WSL2側**: すべての開発ツール（Python、uv、Git、Docker CE、ソースコード）
+- Python 3.13
+- PostgreSQL（ローカルインストール）
+- Visual Studio Code
+- uv（高速パッケージマネージャー）
 
 この構成により：
 
-- ✅ **高速**: ファイルI/Oが高速（Windowsとの往復なし）
-- ✅ **シンプル**: 環境が統一され、パスの問題なし
-- ✅ **軽量**: Docker Desktopが不要
-- ✅ **本番と同じ**: 本番環境（Linux）と完全一致
+- ✅ **シンプル**: 追加の仮想化レイヤーなし
+- ✅ **直接実行**: Windows上でネイティブに動作
+- ✅ **高速**: オーバーヘッドなし
 
 ## 必須要件
 
 ### Windows 10/11
 
-- **Windows 10**: バージョン 2004以降
+- **Windows 10**: バージョン 2004以降推奨
 - **Windows 11**: すべてのバージョン
-- **管理者権限**: WSL2のインストールに必要
+- **管理者権限**: PostgreSQLのインストールに必要な場合あり
 
-### Visual Studio Code（Windows側）
+### Python 3.13
 
-コードエディタ。Remote-WSL拡張を使用してWSL2内のコードを編集します。
+プログラミング言語。公式サイトからダウンロードしてインストールします。
+
+**公式サイト**: <https://www.python.org/downloads/>
+
+### PostgreSQL
+
+データベースサーバー。ScoopまたはWindows公式インストーラーでインストールします。
+
+**公式サイト**: <https://www.postgresql.org/download/windows/>
+
+### Visual Studio Code
+
+コードエディタ。
 
 **公式サイト**: <https://code.visualstudio.com/>
 
-**必須拡張機能**:
+**推奨拡張機能**:
 
-- **Remote - WSL** - WSL2内のコードを編集
 - **Python** - Python開発サポート
+- **Pylance** - 型チェック、コード解析
 - **Ruff** - Linter/Formatter
+- **SQLTools** - データベース管理
 
-## WSL2側のツール（自動インストール）
+### uv
 
-以下はすべて**セットアップスクリプトで自動インストール**されます：
+高速パッケージマネージャー。セットアップ時にインストールします。
 
-- **Python 3.13** - プログラミング言語
-- **uv** - 高速パッケージマネージャー
-- **Git** - バージョン管理（通常プリインストール済み）
-- **Docker CE** - コンテナ実行環境
-- **PostgreSQL** - データベース（Dockerコンテナ）
-
-手動でインストールする必要はありません。
+**公式サイト**: <https://docs.astral.sh/uv/>
 
 ## 確認事項
 
 開発を始める前に、以下を確認してください：
 
 - [ ] Windows 10（2004以降）またはWindows 11を使用している
-- [ ] 管理者権限でコマンドを実行できる
-- [ ] Visual Studio Codeをインストール済み（またはこれからインストール）
+- [ ] 管理者権限でコマンドを実行できる（PostgreSQLインストール時）
+- [ ] インターネット接続がある（パッケージダウンロード用）
 
 ## 次のステップ
 
 以下の順序でセットアップを進めてください：
 
-1. **[WSL2 + Docker CEセットアップ](./02-wsl2-docker-setup.md)** - WSL2とDockerの自動セットアップ
+1. **[Windows環境セットアップ](./02-windows-setup.md)** - PostgreSQL、Python、uvのインストール
 2. **[VSCodeセットアップ](./03-vscode-setup.md)** - エディタの設定
-3. **[クイックスタート](./05-quick-start.md)** - アプリケーションの起動確認
+3. **[環境設定](./04-environment-config.md)** - 環境変数の設定
+4. **[クイックスタート](./05-quick-start.md)** - アプリケーションの起動確認
 
-**所要時間**: 合計約10-15分
+**所要時間**: 合計約15-20分

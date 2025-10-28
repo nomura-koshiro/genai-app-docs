@@ -139,9 +139,10 @@ src/app/
 
 ## 開発環境
 
-- **Python**: 3.13+
+- **Python**: 3.13
 - **パッケージマネージャ**: uv（高速な依存関係管理）
-- **データベース**: Docker Compose でPostgreSQL + Redis
+- **データベース**: PostgreSQL（ローカルインストール）
+- **キャッシュ**: Redis（オプション）
 - **VSCode**: 推奨エディタ（拡張機能設定済み）
 - **Linter/Formatter**: Ruff（高速なPythonツール）
 
@@ -160,5 +161,5 @@ src/app/
 ## 関連ドキュメント
 
 - [前提条件](./01-prerequisites.md) - 開発環境の準備
-- [WSL2 + Docker セットアップ](./02-wsl2-docker-setup.md) - 自動セットアップスクリプト
+- [Windows環境セットアップ](./02-windows-setup.md) - PostgreSQL、Python、uvのインストール
 - [クイックスタート](./05-quick-start.md) - 最速でAPIを起動

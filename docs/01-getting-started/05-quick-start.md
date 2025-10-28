@@ -1,23 +1,20 @@
 # クイックスタートガイド
 
-最速でcamp-backendを起動し、動作を確認する方法を説明します。
+最速でアプリケーションを起動し、動作を確認する方法を説明します。
 
 ## 前提条件
 
-[WSL2 + Docker CEセットアップ](./02-wsl2-docker-setup.md)が完了していることを確認してください。
+[Windows環境セットアップ](./02-windows-setup.md)と[環境設定](./04-environment-config.md)が完了していることを確認してください。
 
 ## 起動方法
 
 ### VS Codeで起動
 
 1. VS Codeでプロジェクトを開く
-2. **F5キー**を押す
+2. PostgreSQLが起動していることを確認
+3. **F5キー**を押す
 
-これだけです！以下が自動実行されます：
-
-- ✅ Docker起動
-- ✅ PostgreSQL & Redis起動
-- ✅ FastAPI起動
+これだけです！FastAPIサーバーが起動します。
 
 ### 起動確認
 
@@ -91,17 +88,13 @@ VS Codeで **Shift+F5** を押すか、ターミナルで **Ctrl+C** を押し�
 
 ## 詳細情報
 
-### 手動起動（WSL2内）
+### 手動起動（コマンドライン）
 
 ```bash
-# Dockerサービス起動
-sudo service docker start
-
-# PostgreSQL起動
-docker compose up -d postgres
+# PostgreSQLが起動していることを確認後、以下を実行
 
 # アプリケーション起動
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### ログレベルの変更
@@ -134,15 +127,18 @@ PORT=8001
 
 PostgreSQLが起動していない可能性があります。
 
-```bash
-# Dockerサービス起動
-sudo service docker start
-
+Scoop版の場合：
+```powershell
 # PostgreSQL起動
-docker compose up -d postgres
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data start
+```
 
-# 確認
-docker compose ps
+公式インストーラー版の場合：
+```powershell
+# サービス確認
+Get-Service postgresql*
+# サービス起動
+Start-Service postgresql-x64-16
 ```
 
 ### Swagger UIが表示されない
@@ -157,18 +153,22 @@ curl http://localhost:8000/health
 
 ### 環境が壊れた・依存関係を更新したい
 
-環境を完全に作り直します：
+依存関係を再インストールします：
 
 ```bash
-# WSL2内で実行
-bash /mnt/c/developments/genai-app-docs/scripts/setup-wsl2.sh --clean
+# プロジェクトディレクトリで実行
+uv sync --reinstall
 ```
 
-このコマンドは：
+データベースをリセットする場合：
 
-- 既存のプロジェクトディレクトリを削除
-- Dockerコンテナとボリュームを削除
-- PATH設定をクリーンアップ
-- クリーンな状態から再構築
+```powershell
+# データベースを削除して再作成
+psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db;"
+psql -U postgres -c "CREATE DATABASE camp_backend_db;"
 
-所要時間: 約2-3分
+# マイグレーション実行
+cd src
+uv run alembic upgrade head
+cd ..
+```

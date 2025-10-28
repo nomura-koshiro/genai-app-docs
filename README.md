@@ -18,28 +18,27 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 
 ### 前提条件
 
-- Python 3.11+
+- Python 3.13
 - uv（Pythonパッケージマネージャー）
-- PostgreSQL（Docker Desktopまたはローカルインストール）
+- PostgreSQL（ローカルインストール）
 
-### セットアップ（Windows）
+### セットアップ
 
-```powershell
+```bash
 # 1. uvのインストール（未インストールの場合）
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 2. プロジェクトディレクトリに移動
-cd C:\developments\project\genai-app-docs
+cd /path/to/genai-app-docs
 
 # 3. 依存関係のインストール
 uv sync
 
 # 4. 環境変数ファイルの作成
-copy .env.example .env
+cp .env.local.example .env
 # .envファイルを編集して、必要な環境変数を設定してください
 
-# 5. PostgreSQLの起動（Docker使用の場合）
-docker-compose up -d postgres
+# 5. PostgreSQLの起動（事前に起動しておいてください）
 
 # 6. データベースマイグレーション
 cd src
@@ -55,41 +54,49 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ## 📁 ディレクトリ構成
 
 ```text
-backend/
+genai-app-docs/
 ├── src/
-│   ├── app/
-│   │   ├── main.py              # アプリケーションエントリーポイント
-│   │   ├── config.py            # 設定管理（環境変数）
-│   │   ├── database.py          # データベース接続・セッション管理
-│   │   │
-│   │   ├── api/                 # APIレイヤー
-│   │   │   ├── routes/          # エンドポイント定義
-│   │   │   │   ├── v1/          # API v1（ビジネスロジック）
-│   │   │   │   └── system/      # システムエンドポイント
-│   │   │   ├── exception_handlers.py
-│   │   │   ├── dependencies.py
-│   │   │   └── middlewares/
-│   │   │
-│   │   ├── agents/              # AIエージェント
-│   │   ├── models/              # SQLAlchemyモデル
-│   │   ├── schemas/             # Pydanticスキーマ
-│   │   ├── repositories/        # データアクセス層
-│   │   ├── services/            # ビジネスロジック層
-│   │   ├── storage/             # ファイルストレージ
-│   │   └── core/                # コア機能
-│   │
-│   └── alembic/                 # データベースマイグレーション
+│   ├── alembic/                 # データベースマイグレーション
+│   ├── alembic.ini              # Alembic設定ファイル
+│   └── app/
+│       ├── main.py              # アプリケーションエントリーポイント
+│       │
+│       ├── api/                 # APIレイヤー
+│       │   ├── core/            # APIコア機能
+│       │   ├── decorators/      # デコレータ
+│       │   ├── middlewares/     # ミドルウェア
+│       │   └── routes/          # エンドポイント定義
+│       │       ├── v1/          # API v1（ビジネスロジック）
+│       │       └── system/      # システムエンドポイント
+│       │
+│       ├── core/                # コア機能
+│       │   ├── app_factory.py   # アプリケーションファクトリ
+│       │   ├── cache.py         # キャッシュ管理
+│       │   ├── config.py        # 設定管理（環境変数）
+│       │   ├── database.py      # データベース接続・セッション管理
+│       │   ├── exceptions.py    # 例外定義
+│       │   ├── lifespan.py      # ライフサイクル管理
+│       │   ├── logging.py       # ログ設定
+│       │   └── security/        # セキュリティ機能
+│       │
+│       ├── models/              # SQLAlchemyモデル
+│       ├── schemas/             # Pydanticスキーマ
+│       ├── repositories/        # データアクセス層
+│       └── services/            # ビジネスロジック層
 │
 ├── tests/                       # テストコード
 ├── docs/                        # ドキュメント
-└── pyproject.toml               # プロジェクト設定・依存関係
+├── scripts/                     # ユーティリティスクリプト
+├── uploads/                     # アップロードファイル
+├── pyproject.toml               # プロジェクト設定・依存関係
+└── uv.lock                      # 依存関係ロックファイル
 ```
 
 詳細は [プロジェクト構造](./docs/02-architecture/01-project-structure.md) を参照してください。
 
 ## 📜 よく使うコマンド
 
-```powershell
+```bash
 # 開発サーバー起動
 uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 # または VSCode で F5 キーを押してデバッグ起動
@@ -102,12 +109,6 @@ uv run pytest tests/test_services.py -v # 特定のテスト
 uv run ruff check src tests             # リント実行
 uv run ruff format src tests            # フォーマット実行
 uv run ruff check --fix src tests       # リント自動修正
-
-# Docker (PostgreSQL)
-docker-compose up -d postgres           # PostgreSQL起動
-docker-compose ps                       # 状態確認
-docker-compose logs postgres            # ログ確認
-docker-compose down                     # コンテナ停止
 
 # データベース (Alembic)
 cd src

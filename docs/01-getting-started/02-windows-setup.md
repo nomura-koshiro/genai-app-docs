@@ -83,7 +83,7 @@ psql -U postgres -l
 
 ## ステップ3: Pythonのインストール
 
-1. [Python公式サイト](https://www.python.org/downloads/)から最新版（3.11以上）をダウンロード
+1. [Python公式サイト](https://www.python.org/downloads/)からPython 3.13をダウンロード
 
 2. インストール時に **"Add Python to PATH"** にチェックを入れる
 
@@ -285,5 +285,6 @@ notepad .env.local
 
 ## 次のステップ
 
-- [開発ガイド](../02-development/01-project-structure.md)
-- [API仕様](../03-api/01-overview.md)
+- [VSCodeセットアップ](./03-vscode-setup.md)
+- [環境設定](./04-environment-config.md)
+- [クイックスタート](./05-quick-start.md)
