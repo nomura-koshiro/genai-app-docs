@@ -109,7 +109,7 @@ if self.ENVIRONMENT == "production":
 
 #### 本番環境での必須設定
 
-```bash
+```ini
 # .env.production
 ENVIRONMENT=production
 SECRET_KEY=<openssl rand -hex 32で生成>

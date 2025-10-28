@@ -114,12 +114,12 @@ async def test_file_upload_download_flow(client, auth_token):
 
 ### カバレッジの測定
 
-```bash
+```powershell
 # カバレッジレポートの生成
 pytest --cov=app --cov-report=html --cov-report=term
 
 # 特定のディレクトリのみ
-pytest tests/unit/ --cov=app/core --cov-report=term
+pytest tests\unit\ --cov=app\core --cov-report=term
 
 # カバレッジ不足の詳細表示
 pytest --cov=app --cov-report=term-missing
@@ -127,10 +127,9 @@ pytest --cov=app --cov-report=term-missing
 
 ### カバレッジレポートの確認
 
-```bash
+```powershell
 # HTMLレポートを開く
-open htmlcov/index.html  # macOS
-start htmlcov/index.html  # Windows
+start htmlcov\index.html
 ```
 
 ## テストレベルの詳細
@@ -292,15 +291,15 @@ tests/
 
 ### 開発時
 
-```bash
+```powershell
 # 変更したファイルに関連するテストのみ
-pytest tests/services/test_sample_user.py
+pytest tests\services\test_sample_user.py
 
 # 特定のテストケースのみ
-pytest tests/services/test_sample_user.py::test_create_user_success
+pytest tests\services\test_sample_user.py::test_create_user_success
 
 # 特定のディレクトリのテストのみ
-pytest tests/api/routes/v1/
+pytest tests\api\routes\v1\
 
 # 失敗したテストのみ再実行
 pytest --lf  # last-failed
@@ -311,9 +310,9 @@ pytest --ff  # failed-first
 
 ### コミット前
 
-```bash
+```powershell
 # 全テストを実行
-pytest tests/
+pytest tests\
 
 # 高速テストのみ（将来的にマーカーを追加した場合）
 pytest -m "not slow"
@@ -321,9 +320,9 @@ pytest -m "not slow"
 
 ### CI/CD
 
-```bash
+```powershell
 # 全テスト実行
-pytest tests/
+pytest tests\
 
 # カバレッジレポート付き
 pytest --cov=app --cov-report=xml --cov-report=term
@@ -380,7 +379,7 @@ async def test_external_api_call():
 
 ### マーカーでのテスト選択
 
-```bash
+```powershell
 # ユニットテストのみ実行
 pytest -m unit
 
@@ -612,7 +611,7 @@ pytest --maxfail=3
 
 ### メトリクスの追跡
 
-```bash
+```powershell
 # カバレッジの推移を記録
 pytest --cov=app --cov-report=json
 # coverage.json を保存してトレンドを確認
@@ -620,7 +619,7 @@ pytest --cov=app --cov-report=json
 
 ### テストの健全性チェック
 
-```bash
+```powershell
 # Mutation testing（変異テスト）
 pip install mutmut
 mutmut run

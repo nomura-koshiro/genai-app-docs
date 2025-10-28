@@ -73,15 +73,15 @@ def test_password_valid():
 
 ### 2. テストの実行
 
-```bash
+```powershell
 # 特定のテストファイルを実行
-uv run pytest tests/unit/test_security_password.py
+uv run pytest tests\unit\test_security_password.py
 
 # すべてのテストを実行
 uv run pytest
 
 # カバレッジ付きで実行
-uv run pytest --cov=src/app
+uv run pytest --cov=src\app
 ```
 
 ---
@@ -271,8 +271,8 @@ def test_function_raises_error_when_...(): ...
 
 ### ステップ4: テストを実行
 
-```bash
-uv run pytest tests/unit/test_[ファイル名].py -v
+```powershell
+uv run pytest tests\unit\test_[ファイル名].py -v
 ```
 
 ---
@@ -290,7 +290,7 @@ uv run pytest tests/unit/test_[ファイル名].py -v
 
 ## 参考: テスト実行の便利なオプション
 
-```bash
+```powershell
 # 失敗したテストだけ再実行
 uv run pytest --lf
 
@@ -298,9 +298,9 @@ uv run pytest --lf
 uv run pytest -v
 
 # 特定のテストだけ実行
-uv run pytest tests/api/test_sample_users.py::test_register_user
+uv run pytest tests\api\test_sample_users.py::test_register_user
 
 # カバレッジレポート生成
-uv run pytest --cov=src/app --cov-report=html
-# htmlcov/index.html を開く
+uv run pytest --cov=src\app --cov-report=html
+# htmlcov\index.html を開く
 ```

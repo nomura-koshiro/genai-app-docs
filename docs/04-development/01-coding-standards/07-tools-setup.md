@@ -20,7 +20,7 @@ Ruffは、RustベースファイルのPythonリンター/フォーマッター�
 
 ### インストール
 
-```bash
+```powershell
 # uvを使用している場合
 uv add --dev ruff
 
@@ -58,12 +58,12 @@ indent-style = "space"
 
 #### リント実行
 
-```bash
+```powershell
 # すべてのファイルをチェック
 ruff check .
 
 # 特定のディレクトリをチェック
-ruff check src/
+ruff check src\
 
 # 自動修正
 ruff check --fix .
@@ -71,12 +71,12 @@ ruff check --fix .
 
 #### フォーマット実行
 
-```bash
+```powershell
 # すべてのファイルをフォーマット
 ruff format .
 
 # 特定のディレクトリをフォーマット
-ruff format src/
+ruff format src\
 
 # チェックのみ（変更しない）
 ruff format --check .
@@ -84,7 +84,7 @@ ruff format --check .
 
 #### CIでの使用
 
-```bash
+```powershell
 # リントとフォーマットの両方をチェック
 ruff check . && ruff format --check .
 ```
@@ -111,7 +111,7 @@ pytestは、Pythonの強力なテストフレームワークです。
 
 ### インストール
 
-```bash
+```powershell
 # uvを使用している場合
 uv add --dev pytest pytest-asyncio
 
@@ -143,15 +143,15 @@ tests/
 
 ### 基本的な使用方法
 
-```bash
+```powershell
 # すべてのテストを実行
 pytest
 
 # 特定のファイルを実行
-pytest tests/test_services.py
+pytest tests\test_services.py
 
 # 特定のテストを実行
-pytest tests/test_services.py::test_create_user
+pytest tests\test_services.py::test_create_user
 
 # カバレッジレポート付きで実行
 pytest --cov=src --cov-report=html
@@ -426,7 +426,7 @@ pre-commit install
 
 ### 日常的な開発フロー
 
-```bash
+```powershell
 # 1. コード編集（VSCodeで保存時に自動フォーマット）
 
 # 2. リントチェック
@@ -442,7 +442,7 @@ git commit -m "feat: add user authentication"
 
 ### CIでのチェック
 
-```bash
+```powershell
 # リント
 ruff check .
 
@@ -453,7 +453,7 @@ ruff format --check .
 pytest --cov=src --cov-report=xml
 
 # 型チェック（mypy使用時）
-mypy src/
+mypy src\
 ```
 
 ---
@@ -481,15 +481,15 @@ known-first-party = ["app"]
 
 **解決法**: PYTHONPATHを設定
 
-```bash
-export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+```powershell
+$env:PYTHONPATH="$env:PYTHONPATH;$PWD\src"
 pytest
 ```
 
 または`.env`ファイルに追加：
 
-```text
-PYTHONPATH=./src
+```ini
+PYTHONPATH=.\src
 ```
 
 ---

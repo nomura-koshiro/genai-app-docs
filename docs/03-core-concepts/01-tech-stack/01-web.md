@@ -231,7 +231,7 @@ Alembicは、SQLAlchemyのためのデータベースマイグレーションツ
 
 ### 基本的な使い方
 
-```bash
+```powershell
 # 初期化
 alembic init alembic
 

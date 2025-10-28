@@ -307,7 +307,7 @@ volumes:
 
 開発環境用テンプレート `.env.local.example` の例：
 
-```bash
+```ini
 # Application
 APP_NAME=camp-backend
 VERSION=0.1.0
@@ -351,7 +351,7 @@ MAX_UPLOAD_SIZE=10485760  # 10MB
 
 `.env.production`を作成（本番環境用）：
 
-```bash
+```ini
 # Application
 APP_NAME=camp-backend
 VERSION=0.1.0
@@ -405,7 +405,7 @@ if __name__ == "__main__":
 
 実行：
 
-```bash
+```powershell
 python generate_secret_key.py
 ```
 
@@ -498,7 +498,7 @@ http {
 
 #### 4.1 Azure CLIの設定
 
-```bash
+```powershell
 # Azure CLIのインストール
 # https://docs.microsoft.com/cli/azure/install-azure-cli
 
@@ -506,46 +506,46 @@ http {
 az login
 
 # リソースグループの作成
-az group create \
-  --name ai-agent-rg \
+az group create `
+  --name ai-agent-rg `
   --location japaneast
 
 # Azure Container Registryの作成
-az acr create \
-  --name aiagentacr \
-  --resource-group ai-agent-rg \
-  --sku Basic \
+az acr create `
+  --name aiagentacr `
+  --resource-group ai-agent-rg `
+  --sku Basic `
   --admin-enabled true
 
 # Azure Database for PostgreSQLの作成
-az postgres flexible-server create \
-  --name ai-agent-db \
-  --resource-group ai-agent-rg \
-  --location japaneast \
-  --admin-user dbadmin \
-  --admin-password <strong-password> \
-  --sku-name Standard_B1ms \
-  --storage-size 32 \
+az postgres flexible-server create `
+  --name ai-agent-db `
+  --resource-group ai-agent-rg `
+  --location japaneast `
+  --admin-user dbadmin `
+  --admin-password <strong-password> `
+  --sku-name Standard_B1ms `
+  --storage-size 32 `
   --version 15
 
 # データベースの作成
-az postgres flexible-server db create \
-  --resource-group ai-agent-rg \
-  --server-name ai-agent-db \
+az postgres flexible-server db create `
+  --resource-group ai-agent-rg `
+  --server-name ai-agent-db `
   --database-name appdb
 
 # ファイアウォールルール（Azureサービスからのアクセスを許可）
-az postgres flexible-server firewall-rule create \
-  --resource-group ai-agent-rg \
-  --name ai-agent-db \
-  --rule-name AllowAzureServices \
-  --start-ip-address 0.0.0.0 \
+az postgres flexible-server firewall-rule create `
+  --resource-group ai-agent-rg `
+  --name ai-agent-db `
+  --rule-name AllowAzureServices `
+  --start-ip-address 0.0.0.0 `
   --end-ip-address 0.0.0.0
 ```
 
 #### 4.2 Dockerイメージのビルドとプッシュ
 
-```bash
+```powershell
 # ACRにログイン
 az acr login --name aiagentacr
 
@@ -561,49 +561,49 @@ docker push aiagentacr.azurecr.io/ai-agent-app:latest
 
 #### 4.3 App Serviceの作成とデプロイ
 
-```bash
+```powershell
 # App Service Planの作成
-az appservice plan create \
-  --name ai-agent-plan \
-  --resource-group ai-agent-rg \
-  --is-linux \
+az appservice plan create `
+  --name ai-agent-plan `
+  --resource-group ai-agent-rg `
+  --is-linux `
   --sku B1
 
 # Web Appの作成
-az webapp create \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
-  --plan ai-agent-plan \
+az webapp create `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
+  --plan ai-agent-plan `
   --deployment-container-image-name aiagentacr.azurecr.io/ai-agent-app:latest
 
 # ACRの認証情報を設定
-az webapp config container set \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
-  --docker-registry-server-url https://aiagentacr.azurecr.io \
-  --docker-registry-server-user <acr-username> \
+az webapp config container set `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
+  --docker-registry-server-url https://aiagentacr.azurecr.io `
+  --docker-registry-server-user <acr-username> `
   --docker-registry-server-password <acr-password>
 
 # 環境変数の設定
-az webapp config appsettings set \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
-  --settings \
-    ENVIRONMENT=production \
-    DATABASE_URL="postgresql+asyncpg://..." \
-    SECRET_KEY="..." \
+az webapp config appsettings set `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
+  --settings `
+    ENVIRONMENT=production `
+    DATABASE_URL="postgresql+asyncpg://..." `
+    SECRET_KEY="..." `
     ANTHROPIC_API_KEY="..."
 
 # ヘルスチェックの設定
-az webapp config set \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp config set `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --health-check-path /health
 
 # 継続的デプロイの有効化
-az webapp deployment container config \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp deployment container config `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --enable-cd true
 ```
 
@@ -693,11 +693,11 @@ GitHub リポジトリ → Settings → Secrets and variables → Actions で以
 
 Azure認証情報の取得：
 
-```bash
-az ad sp create-for-rbac \
-  --name "ai-agent-github-actions" \
-  --role contributor \
-  --scopes /subscriptions/<subscription-id>/resourceGroups/ai-agent-rg \
+```powershell
+az ad sp create-for-rbac `
+  --name "ai-agent-github-actions" `
+  --role contributor `
+  --scopes /subscriptions/<subscription-id>/resourceGroups/ai-agent-rg `
   --sdk-auth
 ```
 
@@ -733,23 +733,23 @@ echo "Migrations completed successfully"
 
 #### 7.1 Application Insightsの設定
 
-```bash
+```powershell
 # Application Insightsの作成
-az monitor app-insights component create \
-  --app ai-agent-insights \
-  --location japaneast \
+az monitor app-insights component create `
+  --app ai-agent-insights `
+  --location japaneast `
   --resource-group ai-agent-rg
 
 # Instrumentation Keyの取得
-INSTRUMENTATION_KEY=$(az monitor app-insights component show \
-  --app ai-agent-insights \
-  --resource-group ai-agent-rg \
-  --query instrumentationKey -o tsv)
+$INSTRUMENTATION_KEY = az monitor app-insights component show `
+  --app ai-agent-insights `
+  --resource-group ai-agent-rg `
+  --query instrumentationKey -o tsv
 
 # Web Appに設定
-az webapp config appsettings set \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp config appsettings set `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --settings APPINSIGHTS_INSTRUMENTATIONKEY=$INSTRUMENTATION_KEY
 ```
 
@@ -838,14 +838,14 @@ if settings.ENVIRONMENT == "production":
 
 ### 1. 環境変数の設定漏れ
 
-```bash
+```powershell
 # 悪い例
 # 環境変数が設定されていない
 
 # 良い例
-az webapp config appsettings set \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp config appsettings set `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --settings @appsettings.json
 ```
 
@@ -891,40 +891,40 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 ### 2. ブルーグリーンデプロイメント
 
-```bash
+```powershell
 # スロットを使用したゼロダウンタイムデプロイ
-az webapp deployment slot create \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp deployment slot create `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --slot staging
 
 # スワップ
-az webapp deployment slot swap \
-  --name ai-agent-app \
-  --resource-group ai-agent-rg \
+az webapp deployment slot swap `
+  --name ai-agent-app `
+  --resource-group ai-agent-rg `
   --slot staging
 ```
 
 ### 3. 自動スケーリング
 
-```bash
-az monitor autoscale create \
-  --resource-group ai-agent-rg \
-  --resource ai-agent-plan \
-  --resource-type Microsoft.Web/serverFarms \
-  --name autoscale-rule \
-  --min-count 2 \
-  --max-count 5 \
+```powershell
+az monitor autoscale create `
+  --resource-group ai-agent-rg `
+  --resource ai-agent-plan `
+  --resource-type Microsoft.Web/serverFarms `
+  --name autoscale-rule `
+  --min-count 2 `
+  --max-count 5 `
   --count 2
 ```
 
 ### 4. バックアップの自動化
 
-```bash
+```powershell
 # データベースバックアップ
-az postgres flexible-server backup create \
-  --name ai-agent-db \
-  --resource-group ai-agent-rg \
+az postgres flexible-server backup create `
+  --name ai-agent-db `
+  --resource-group ai-agent-rg `
   --backup-name daily-backup
 ```
 

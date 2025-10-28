@@ -53,7 +53,7 @@ engine = create_async_engine(
 
 **設定方法**（環境変数または.envファイル）:
 
-```bash
+```ini
 DB_POOL_SIZE=10
 DB_MAX_OVERFLOW=20
 DB_POOL_RECYCLE=3600

@@ -116,7 +116,7 @@ class SampleUserCreate(BaseModel):
 
 ## HTTPSの使用
 
-```bash
+```powershell
 # 本番環境ではHTTPSを使用
 uvicorn app.main:app --host 0.0.0.0 --port 443 --ssl-keyfile key.pem --ssl-certfile cert.pem
 ```

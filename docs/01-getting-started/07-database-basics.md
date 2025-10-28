@@ -62,7 +62,7 @@ Restart-Service postgresql-x64-16
 
 `.env.local`ファイル：
 
-```bash
+```ini
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db
 ```
 
@@ -95,7 +95,7 @@ SELECT * FROM sample_users;
 
 プロジェクトをクローンした後、最初にマイグレーションを実行：
 
-```bash
+```powershell
 cd src
 uv run alembic upgrade head
 cd ..
@@ -105,7 +105,7 @@ cd ..
 
 モデルを変更した後、マイグレーションファイルを生成：
 
-```bash
+```powershell
 cd src
 uv run alembic revision --autogenerate -m "説明メッセージ"
 cd ..
@@ -113,7 +113,7 @@ cd ..
 
 ### マイグレーションの適用
 
-```bash
+```powershell
 cd src
 uv run alembic upgrade head
 cd ..
@@ -252,7 +252,7 @@ Start-Service postgresql-x64-16
 
 ### テーブルが存在しない
 
-```bash
+```powershell
 # マイグレーション実行
 cd src
 uv run alembic upgrade head

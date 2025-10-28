@@ -93,22 +93,22 @@ camp_backend/
 
 ローカル開発環境用の設定ファイルを作成：
 
-```bash
+```powershell
 # テンプレートからコピー
-cp .env.local.example .env.local
+Copy-Item .env.local.example .env.local
 
 # 必要な値を編集
-nano .env.local
+notepad .env.local
 ```
 
 ステージング環境・本番環境用の設定ファイルも同様に作成：
 
-```bash
+```powershell
 # ステージング環境
-cp .env.staging.example .env.staging
+Copy-Item .env.staging.example .env.staging
 
 # 本番環境
-cp .env.production.example .env.production
+Copy-Item .env.production.example .env.production
 ```
 
 ---
@@ -130,7 +130,7 @@ FastAPIアプリケーションの基本設定。
 
 #### 設定例
 
-```bash
+```ini
 APP_NAME="camp-backend"
 VERSION="0.1.0"
 DEBUG=true
@@ -165,7 +165,7 @@ print(f"Debug mode: {settings.DEBUG}")
 
 #### 設定例
 
-```bash
+```ini
 # 開発環境
 ENVIRONMENT=development
 
@@ -216,7 +216,7 @@ if settings.ENVIRONMENT == "production":
 
 #### 設定例
 
-```bash
+```ini
 # JWT設定
 SECRET_KEY=your-random-secret-key-here-at-least-32-characters-long
 ALGORITHM=HS256
@@ -233,7 +233,7 @@ ACCOUNT_LOCK_DURATION_HOURS=1
 
 #### 秘密鍵の生成
 
-```bash
+```powershell
 # Pythonで生成
 python -c "import secrets; print(secrets.token_urlsafe(32))"
 
@@ -284,7 +284,7 @@ token = create_access_token(
 
 #### 設定例
 
-```bash
+```ini
 # メインデータベース
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/app_db
 
@@ -343,7 +343,7 @@ engine = create_async_engine(settings.DATABASE_URL)
 
 #### 設定例
 
-```bash
+```ini
 # PostgreSQL設定
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
@@ -396,7 +396,7 @@ Redisキャッシュの設定（オプション）。
 
 #### 設定例
 
-```bash
+```ini
 # Redis接続（ローカル）
 REDIS_URL=redis://localhost:6379/0
 
@@ -461,14 +461,14 @@ if settings.REDIS_URL:
 
 ローカルストレージ（開発環境）:
 
-```bash
+```ini
 STORAGE_BACKEND=local
 LOCAL_STORAGE_PATH=./uploads
 ```
 
 Azure Blob Storage（本番環境）:
 
-```bash
+```ini
 STORAGE_BACKEND=azure
 AZURE_STORAGE_ACCOUNT_NAME=myaccount
 AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=xxx;EndpointSuffix=core.windows.net"
@@ -500,7 +500,7 @@ await storage.upload(file_path, content)
 | LLM_TEMPERATURE | float | 0.0 | × | モデルのtemperature（0.0-1.0） |
 | LLM_MAX_TOKENS | integer | 4096 | × | 最大トークン数 |
 
-```bash
+```ini
 LLM_PROVIDER=anthropic
 LLM_MODEL=claude-3-5-sonnet-20241022
 LLM_TEMPERATURE=0.0
@@ -513,7 +513,7 @@ LLM_MAX_TOKENS=4096
 |-------|---|------------|------|------|
 | ANTHROPIC_API_KEY | string | null | △ | Anthropic APIキー |
 
-```bash
+```ini
 ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 ```
 
@@ -523,7 +523,7 @@ ANTHROPIC_API_KEY=sk-ant-xxxxxxxxxxxxx
 |-------|---|------------|------|------|
 | OPENAI_API_KEY | string | null | △ | OpenAI APIキー |
 
-```bash
+```ini
 OPENAI_API_KEY=sk-xxxxxxxxxxxxx
 ```
 
@@ -536,7 +536,7 @@ OPENAI_API_KEY=sk-xxxxxxxxxxxxx
 | AZURE_OPENAI_API_VERSION | string | "2024-02-15-preview" | × | Azure OpenAI APIバージョン |
 | AZURE_OPENAI_DEPLOYMENT_NAME | string | null | △ | デプロイメント名 |
 
-```bash
+```ini
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=xxxxxxxxxxxxx
 AZURE_OPENAI_API_VERSION=2024-02-15-preview
@@ -551,7 +551,7 @@ AZURE_OPENAI_DEPLOYMENT_NAME=gpt-4
 | LANGCHAIN_API_KEY | string | null | × | LangSmith APIキー |
 | LANGCHAIN_PROJECT | string | "ai-agent-app" | × | LangSmithプロジェクト名 |
 
-```bash
+```ini
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_API_KEY=ls__xxxxxxxxxxxxx
 LANGCHAIN_PROJECT=ai-agent-app
@@ -581,7 +581,7 @@ llm = ChatAnthropic(
 
 #### 設定例
 
-```bash
+```ini
 # 10MB
 MAX_UPLOAD_SIZE=10485760
 
@@ -616,7 +616,7 @@ if file.size > settings.MAX_UPLOAD_SIZE:
 
 ### 開発環境（.env.local）
 
-```bash
+```ini
 # Application
 APP_NAME="camp-backend"
 VERSION="0.1.0"
@@ -676,7 +676,7 @@ LANGCHAIN_PROJECT=ai-agent-app-dev
 
 ### ステージング環境（.env.staging）
 
-```bash
+```ini
 # Application
 APP_NAME="camp-backend (Staging)"
 VERSION="0.1.0"
@@ -740,7 +740,7 @@ LANGCHAIN_PROJECT=ai-agent-app-staging
 
 ### 本番環境（.env.production）
 
-```bash
+```ini
 # Application
 APP_NAME="camp-backend"
 VERSION="0.1.0"
@@ -814,43 +814,43 @@ LANGCHAIN_PROJECT=ai-agent-app-production
 
 `ENVIRONMENT`環境変数に基づいて読み込まれるファイルが決定されます：
 
-```bash
+```powershell
 # ENVIRONMENT=development（デフォルト）
-.env.local が読み込まれる
+# .env.local が読み込まれる
 
 # ENVIRONMENT=staging
-.env.staging が読み込まれる
+# .env.staging が読み込まれる
 
 # ENVIRONMENT=production
-.env.production が読み込まれる
+# .env.production が読み込まれる
 ```
 
 ### 優先順位の例
 
-```bash
+```powershell
 # 1. デフォルト値（config.py）
-DEBUG = False
+# DEBUG = False
 
 # 2. .env.local ファイル
-DEBUG=true
+# DEBUG=true
 
 # 3. 環境変数（最優先）
-export DEBUG=false
+$env:DEBUG="false"
 ```
 
 結果: `DEBUG=false`（環境変数が優先）
 
 ### 環境切り替えの例
 
-```bash
+```powershell
 # ローカル開発環境で起動（.env.localを使用）
 uv run uvicorn app.main:app --reload
 
 # ステージング環境で起動（.env.stagingを使用）
-ENVIRONMENT=staging uv run uvicorn app.main:app
+$env:ENVIRONMENT="staging"; uv run uvicorn app.main:app
 
 # 本番環境で起動（.env.productionを使用）
-ENVIRONMENT=production uv run uvicorn app.main:app
+$env:ENVIRONMENT="production"; uv run uvicorn app.main:app
 ```
 
 ---
@@ -861,7 +861,7 @@ ENVIRONMENT=production uv run uvicorn app.main:app
 
 本番環境で必須の環境変数:
 
-```bash
+```powershell
 # 必須項目チェックスクリプト
 python -c "
 from app.core.config import settings
@@ -887,9 +887,9 @@ print('All required environment variables are set')
 
 ### 環境変数が読み込まれない
 
-```bash
+```powershell
 # .envファイルの場所を確認
-ls -la .env.local
+Get-ChildItem -Force .env.local
 
 # どのファイルが読み込まれているか確認
 python -c "from app.core.config import get_env_file; print(get_env_file())"
@@ -898,12 +898,12 @@ python -c "from app.core.config import get_env_file; print(get_env_file())"
 python -c "from app.core.config import settings; print(settings.DEBUG)"
 
 # .envファイルの文字エンコーディング確認（UTF-8であること）
-file -i .env.local
+Get-Content .env.local -Encoding UTF8
 ```
 
 ### DATABASE_URLが無効
 
-```bash
+```powershell
 # 接続テスト
 python -c "
 from app.core.database import engine
@@ -920,7 +920,7 @@ asyncio.run(test())
 
 ### APIキーが無効
 
-```bash
+```powershell
 # APIキーの確認（先頭と末尾のみ表示）
 python -c "
 from app.core.config import settings

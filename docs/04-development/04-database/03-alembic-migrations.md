@@ -4,7 +4,7 @@ Alembicを使用したデータベースマイグレーション管理につい�
 
 ## 初期化
 
-```bash
+```powershell
 # Alembicの初期化
 alembic init alembic
 ```
@@ -21,7 +21,7 @@ target_metadata = Base.metadata
 
 ## マイグレーション作成
 
-```bash
+```powershell
 # 自動生成
 alembic revision --autogenerate -m "create users table"
 
@@ -31,7 +31,7 @@ alembic revision -m "add column"
 
 ## マイグレーション実行
 
-```bash
+```powershell
 # 最新バージョンに移行
 alembic upgrade head
 

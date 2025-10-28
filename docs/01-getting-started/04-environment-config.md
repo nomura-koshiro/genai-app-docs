@@ -38,12 +38,12 @@ notepad .env.local
 
 ### ステージング環境
 
-```bash
+```powershell
 # テンプレートをコピー
-cp .env.staging.example .env.staging
+Copy-Item .env.staging.example .env.staging
 
 # 設定を編集（本番に近い設定）
-vim .env.staging
+notepad .env.staging
 ```
 
 主な設定：
@@ -56,12 +56,12 @@ vim .env.staging
 
 ### 本番環境
 
-```bash
+```powershell
 # テンプレートをコピー
-cp .env.production.example .env.production
+Copy-Item .env.production.example .env.production
 
 # 設定を編集（セキュアな値を使用）
-vim .env.production
+notepad .env.production
 ```
 
 重要な設定：
@@ -141,7 +141,7 @@ Redis cache connected: redis://localhost:6379/0
 
 ### シークレットキーの管理
 
-```bash
+```powershell
 # 安全なシークレットキーを生成
 openssl rand -hex 32
 ```
@@ -150,19 +150,19 @@ openssl rand -hex 32
 
 1. **SECRET_KEYを必ず変更**
 
-   ```bash
-   SECRET_KEY=$(openssl rand -hex 32)
+   ```powershell
+   $SECRET_KEY = openssl rand -hex 32
    ```
 
 2. **ALLOWED_ORIGINSを制限**
 
-   ```bash
+   ```ini
    ALLOWED_ORIGINS=["https://example.com","https://www.example.com"]
    ```
 
 3. **DEBUGを無効化**
 
-   ```bash
+   ```ini
    DEBUG=false
    ```
 
@@ -203,12 +203,12 @@ ls .env.local
 
 環境ごとの`DATABASE_URL`を確認：
 
-```bash
+```powershell
 # ローカル
-grep DATABASE_URL .env.local
+Select-String -Path .env.local -Pattern "DATABASE_URL"
 
 # ステージング
-grep DATABASE_URL .env.staging
+Select-String -Path .env.staging -Pattern "DATABASE_URL"
 ```
 
 ## 次のステップ

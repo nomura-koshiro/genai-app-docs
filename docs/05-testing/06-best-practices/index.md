@@ -237,10 +237,10 @@ class TestUserOperations:
 
 ### テストの実行順序に依存しない
 
-```python
+```powershell
 # pytest は任意の順序でテストを実行できる
-pytest tests/  # ランダムな順序でも成功する
-pytest tests/ --randomly  # ランダム実行でも成功する
+pytest tests\  # ランダムな順序でも成功する
+pytest tests\ --randomly  # ランダム実行でも成功する
 ```
 
 ## テストのデータ管理
@@ -458,7 +458,7 @@ def test_file_processing():
 
 ### 並列実行の活用
 
-```bash
+```powershell
 # pytest-xdist を使用して並列実行
 pytest -n auto  # CPU数に応じて自動調整
 pytest -n 4     # 4プロセスで実行
@@ -474,7 +474,9 @@ markers = [
     "integration: 統合テスト",
     "unit: ユニットテスト",
 ]
+```
 
+```powershell
 # 高速なテストのみ実行
 pytest -m "not slow"
 

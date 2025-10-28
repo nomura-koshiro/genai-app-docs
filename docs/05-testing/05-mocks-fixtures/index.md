@@ -46,7 +46,7 @@ def test_magic_mock():
 
 pytest-mockは、pytestとunittest.mockを統合したプラグインです。
 
-```bash
+```powershell
 # インストール
 pip install pytest-mock
 ```

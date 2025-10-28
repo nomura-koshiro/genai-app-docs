@@ -64,7 +64,7 @@ graph TB
 
 `.env`ファイルに以下の設定が必要です：
 
-```bash
+```ini
 # Test Database (PostgreSQL via Docker)
 TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/test_db
 TEST_DATABASE_ADMIN_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/postgres
@@ -255,7 +255,7 @@ async def test_file(db_session, test_user):
 
 ## テストの実行
 
-```bash
+```powershell
 # PostgreSQLが起動していることを確認
 
 # すべてのテストを実行
@@ -265,10 +265,10 @@ uv run pytest
 uv run pytest -v
 
 # 特定のテストファイルを実行
-uv run pytest tests/test_models.py
+uv run pytest tests\test_models.py
 
 # 特定のテスト関数を実行
-uv run pytest tests/test_models.py::test_create_user
+uv run pytest tests\test_models.py::test_create_user
 
 # カバレッジレポート付き
 uv run pytest --cov=app --cov-report=html

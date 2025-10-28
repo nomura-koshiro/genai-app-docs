@@ -178,12 +178,12 @@ __all__ = [
 
 ## ステップ3: マイグレーションの作成と適用
 
-```bash
+```powershell
 # マイグレーション生成
 alembic revision --autogenerate -m "add_task_table"
 
 # マイグレーション確認（生成されたファイルを確認）
-# alembic/versions/xxxx_add_task_table.py
+# alembic\versions\xxxx_add_task_table.py
 
 # マイグレーション適用
 alembic upgrade head

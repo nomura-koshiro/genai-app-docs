@@ -45,12 +45,12 @@ KeyError: 'DATABASE_URL'
 
 **解決策:**
 
-```bash
+```powershell
 # .env.localファイルを確認
-cat .env.local
+Get-Content .env.local
 
 # 必要な環境変数を設定
-cp .env.local.example .env.local
+Copy-Item .env.local.example .env.local
 # .env.localファイルを編集して値を設定
 ```
 
@@ -63,12 +63,12 @@ OSError: [Errno 48] Address already in use
 
 **解決策:**
 
-```bash
-# 使用中のポートを確認（Linux/Mac）
-lsof -i :8000
+```powershell
+# 使用中のポートを確認（Windows）
+Get-NetTCPConnection -LocalPort 8000 -State Listen
 
 # プロセスを終了
-kill -9 <PID>
+Stop-Process -Id <PID> -Force
 
 # または別のポートを使用
 uvicorn app.main:app --port 8001
@@ -83,7 +83,7 @@ ModuleNotFoundError: No module named 'fastapi'
 
 **解決策:**
 
-```bash
+```powershell
 # Poetry使用時
 poetry install
 
@@ -91,7 +91,7 @@ poetry install
 pip install -r requirements.txt
 
 # 仮想環境の確認
-which python
+Get-Command python | Select-Object -ExpandProperty Source
 poetry env info
 ```
 
@@ -109,9 +109,9 @@ ImportError: cannot import name 'app' from 'app.main'
 
 **解決策:**
 
-```bash
+```powershell
 # PYTHONPATHを設定
-export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+$env:PYTHONPATH="$env:PYTHONPATH;$PWD\src"
 
 # または、起動コマンドを修正
 cd src
@@ -188,16 +188,16 @@ Start-Service postgresql-x64-16
 
 **解決策:**
 
-```bash
+```powershell
 # 接続文字列の確認
-echo $DATABASE_URL
+Write-Output $env:DATABASE_URL
 
 # 正しい形式
 # PostgreSQL
-postgresql+asyncpg://user:password@localhost:5432/dbname
+# postgresql+asyncpg://user:password@localhost:5432/dbname
 
 # SQLite
-sqlite+aiosqlite:///./app.db
+# sqlite+aiosqlite:///./app.db
 
 # .env.localファイルを確認して修正
 ```
@@ -228,7 +228,7 @@ alembic.util.exc.CommandError: Target database is not up to date
 
 #### 解決策 1: マイグレーション履歴の確認
 
-```bash
+```powershell
 # 現在のマイグレーションバージョン確認
 alembic current
 
@@ -244,7 +244,7 @@ alembic downgrade -1
 
 #### 解決策 2: マイグレーションのリセット
 
-```bash
+```powershell
 # 注意: 開発環境のみ実行
 
 # データベースを削除
@@ -401,16 +401,16 @@ POST /api/auth/login
 
 **診断方法:**
 
-```bash
+```powershell
 # ログを確認
-tail -f logs/app.log
+Get-Content logs\app.log -Tail 10 -Wait
 
 # または標準出力
 uvicorn app.main:app --reload --log-level debug
 
 # エラー詳細を表示（開発環境のみ）
 # config.py
-DEBUG = True
+# DEBUG = True
 ```
 
 **一般的な原因:**
@@ -504,7 +504,7 @@ Error: Container exited with code 1
 
 **診断方法:**
 
-```bash
+```powershell
 # ログを確認
 docker logs <container-id>
 
@@ -541,29 +541,29 @@ ENV PYTHONPATH=/app/src
 
 **診断方法:**
 
-```bash
+```powershell
 # ログストリームを確認
-az webapp log tail \
-  --name ai-agent-app \
+az webapp log tail `
+  --name ai-agent-app `
   --resource-group ai-agent-rg
 
 # コンテナログをダウンロード
-az webapp log download \
-  --name ai-agent-app \
+az webapp log download `
+  --name ai-agent-app `
   --resource-group ai-agent-rg
 
 # SSH接続
-az webapp ssh \
-  --name ai-agent-app \
+az webapp ssh `
+  --name ai-agent-app `
   --resource-group ai-agent-rg
 ```
 
 **一般的な原因:**
 
-```bash
+```powershell
 # 原因 1: 環境変数の不足
-az webapp config appsettings list \
-  --name ai-agent-app \
+az webapp config appsettings list `
+  --name ai-agent-app `
   --resource-group ai-agent-rg
 
 # 原因 2: ヘルスチェックの失敗
@@ -571,7 +571,7 @@ az webapp config appsettings list \
 
 # 原因 3: ポート設定
 # App Serviceは8000ポートを期待
-EXPOSE 8000
+# EXPOSE 8000
 ```
 
 ## パフォーマンス問題

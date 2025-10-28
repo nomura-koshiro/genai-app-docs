@@ -272,9 +272,9 @@ AIエージェントとチャットします。
 
 #### cURLサンプル
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/sample-agents/sample-chat" \
-  -H "Content-Type: application/json" \
+```powershell
+curl -X POST "http://localhost:8000/api/v1/sample-agents/sample-chat" `
+  -H "Content-Type: application/json" `
   -d '{
     "message": "こんにちは",
     "session_id": null,
@@ -323,7 +323,7 @@ curl -X POST "http://localhost:8000/api/v1/sample-agents/sample-chat" \
 
 #### cURLサンプル
 
-```bash
+```powershell
 curl -X GET "http://localhost:8000/api/v1/sample-agents/sample-sessions/session_abc123"
 ```
 
@@ -351,7 +351,7 @@ curl -X GET "http://localhost:8000/api/v1/sample-agents/sample-sessions/session_
 
 #### cURLサンプル
 
-```bash
+```powershell
 curl -X DELETE "http://localhost:8000/api/v1/sample-agents/sample-sessions/session_abc123"
 ```
 
@@ -406,9 +406,9 @@ file: (binary)
 
 #### cURLサンプル
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/sample-files/sample-upload" \
-  -F "file=@/path/to/document.pdf"
+```powershell
+curl -X POST "http://localhost:8000/api/v1/sample-files/sample-upload" `
+  -F "file=@C:\path\to\document.pdf"
 ```
 
 ---
@@ -438,8 +438,8 @@ Content-Disposition: attachment; filename="document.pdf"
 
 #### cURLサンプル
 
-```bash
-curl -X GET "http://localhost:8000/api/v1/sample-files/sample-download/file_xyz789" \
+```powershell
+curl -X GET "http://localhost:8000/api/v1/sample-files/sample-download/file_xyz789" `
   -o downloaded_file.pdf
 ```
 
@@ -468,7 +468,7 @@ curl -X GET "http://localhost:8000/api/v1/sample-files/sample-download/file_xyz7
 
 #### cURLサンプル
 
-```bash
+```powershell
 curl -X DELETE "http://localhost:8000/api/v1/sample-files/sample-file_xyz789"
 ```
 
@@ -513,7 +513,7 @@ curl -X DELETE "http://localhost:8000/api/v1/sample-files/sample-file_xyz789"
 
 #### cURLサンプル
 
-```bash
+```powershell
 curl -X GET "http://localhost:8000/api/v1/sample-files/sample-list?skip=0&limit=10"
 ```
 
@@ -651,7 +651,7 @@ FastAPIは自動的にOpenAPI仕様を生成します。
 
 ### OpenAPIスキーマのダウンロード
 
-```bash
+```powershell
 curl -X GET "http://localhost:8000/openapi.json" -o openapi.json
 ```
 

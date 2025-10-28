@@ -97,7 +97,7 @@ uvは、Rustで実装された超高速Pythonパッケージマネージャー�
 
 ### 基本コマンド
 
-```bash
+```powershell
 # 依存関係のインストール
 uv sync
 
@@ -162,7 +162,7 @@ indent-style = "space"
 
 ### 使用方法
 
-```bash
+```powershell
 # コードのフォーマット
 uv run ruff format .
 
@@ -173,7 +173,7 @@ uv run ruff check .
 uv run ruff check --fix .
 
 # 特定のファイルのみ
-uv run ruff check src/app/main.py
+uv run ruff check src\app\main.py
 ```
 
 ---
@@ -280,12 +280,12 @@ async def db_session(db_engine):
 
 ### 実行
 
-```bash
+```powershell
 # すべてのテストを実行
 uv run pytest
 
 # 特定のファイルを実行
-uv run pytest tests/test_services.py
+uv run pytest tests\test_services.py
 
 # 詳細出力
 uv run pytest -v

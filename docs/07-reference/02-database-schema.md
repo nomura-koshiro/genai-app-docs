@@ -34,7 +34,7 @@
 
 環境変数`DATABASE_URL`で設定
 
-```bash
+```ini
 # 開発（SQLite）
 DATABASE_URL=sqlite+aiosqlite:///./app.db
 
@@ -407,7 +407,7 @@ CREATE INDEX idx_messages_session_created ON messages(session_id, created_at);
 
 #### マイグレーションコマンド
 
-```bash
+```powershell
 # マイグレーション作成
 alembic revision --autogenerate -m "マイグレーション名"
 
@@ -426,7 +426,7 @@ alembic history
 
 #### 初期マイグレーション
 
-```bash
+```powershell
 # 初回セットアップ
 alembic init alembic
 
@@ -451,7 +451,7 @@ src/alembic/
 
 ### 開発環境
 
-```bash
+```powershell
 # データベース作成
 python -c "from app.core.database import init_db; import asyncio; asyncio.run(init_db())"
 
@@ -461,9 +461,9 @@ python -m app.main
 
 ### 本番環境
 
-```bash
+```powershell
 # PostgreSQL接続文字列設定
-export DATABASE_URL="postgresql+asyncpg://user:password@localhost/dbname"
+$env:DATABASE_URL="postgresql+asyncpg://user:password@localhost/dbname"
 
 # マイグレーション適用
 alembic upgrade head

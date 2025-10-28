@@ -36,7 +36,7 @@ psql -U postgres -d camp_backend_db
 
 ### 環境変数
 
-```bash
+```ini
 # 開発用データベース
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db
 

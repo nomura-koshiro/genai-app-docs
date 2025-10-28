@@ -33,15 +33,15 @@ def test_list_operations():
 
 ### テストの実行
 
-```bash
+```powershell
 # 全てのテストを実行
 pytest
 
 # 特定のファイルを実行
-pytest tests/unit/test_basic.py
+pytest tests\unit\test_basic.py
 
 # 特定のテスト関数を実行
-pytest tests/unit/test_basic.py::test_addition
+pytest tests\unit\test_basic.py::test_addition
 
 # 詳細な出力
 pytest -v

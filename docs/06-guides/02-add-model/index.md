@@ -166,7 +166,7 @@ __all__ = [
 
 #### 3.1 マイグレーションファイルを自動生成
 
-```bash
+```powershell
 # 開発環境でマイグレーションを生成
 alembic revision --autogenerate -m "add_product_table"
 ```
@@ -257,7 +257,7 @@ def downgrade() -> None:
 
 #### 3.3 マイグレーションを適用
 
-```bash
+```powershell
 # マイグレーションを適用
 alembic upgrade head
 
@@ -267,7 +267,7 @@ alembic current
 
 #### 3.4 ロールバックのテスト
 
-```bash
+```powershell
 # 1つ前に戻す
 alembic downgrade -1
 
@@ -492,7 +492,7 @@ class Category(Base):
 
 #### 6.3 マイグレーションの追加
 
-```bash
+```powershell
 # 外部キー制約を追加するマイグレーション
 alembic revision --autogenerate -m "add_product_category_fk"
 alembic upgrade head
@@ -633,7 +633,7 @@ class Product(Base):
 
 ### 2. マイグレーション命名規則
 
-```bash
+```powershell
 # 良い命名例
 alembic revision --autogenerate -m "add_product_table"
 alembic revision --autogenerate -m "add_product_category_fk"
@@ -705,7 +705,7 @@ class ProductRepository(BaseRepository[Product]):
 
 ### 6. マイグレーションのテスト
 
-```bash
+```powershell
 # 開発環境でテスト
 alembic upgrade head    # 最新に更新
 alembic downgrade -1    # 1つ戻す

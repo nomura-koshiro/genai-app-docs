@@ -118,7 +118,7 @@ Body: {"refresh_token": "..."}
 
 **使用方法**:
 
-```bash
+```powershell
 # APIキー生成（認証必須）
 POST /api/v1/sample-users/api-key
 Authorization: Bearer <access_token>
