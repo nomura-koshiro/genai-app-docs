@@ -117,7 +117,7 @@ PowerShellで実行：
 
 ```powershell
 # プロジェクトディレクトリに移動
-cd path\to\genai-app-docs
+cd path\to\camp_backend
 
 # セットアップスクリプトを実行
 .\scripts\setup-windows.ps1
@@ -140,7 +140,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ```powershell
 # プロジェクトディレクトリに移動
-cd path\to\genai-app-docs
+cd path\to\camp_backend
 
 # Python依存関係をインストール
 uv sync
@@ -178,7 +178,7 @@ DEBUG=true
 
 ```powershell
 # プロジェクトディレクトリにいることを確認
-cd path\to\genai-app-docs
+cd path\to\camp_backend
 
 # テストを実行
 uv run pytest tests/ -v

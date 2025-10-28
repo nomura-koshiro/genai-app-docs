@@ -29,7 +29,7 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # 2. プロジェクトディレクトリに移動
-cd /path/to/genai-app-docs
+cd /path/to/camp_backend
 
 # 3. 依存関係のインストール
 uv sync
@@ -54,7 +54,7 @@ uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ## 📁 ディレクトリ構成
 
 ```text
-genai-app-docs/
+camp_backend/
 ├── src/
 │   ├── alembic/                 # データベースマイグレーション
 │   ├── alembic.ini              # Alembic設定ファイル

@@ -17,7 +17,7 @@
       "Bash(tree:*)",
       "Bash(xargs:*)",
       "Bash(git rm:*)",
-      "Bash(dir /B \"C:\\developments\\genai-app-docs\\docs\")",
+      "Bash(dir /B \"C:\\developments\\camp_backend\\docs\")",
       "Bash(python -m pytest:*)",
       "Bash(wsl --list:*)",
       "Bash(wsl:*)",
@@ -28,7 +28,7 @@
       "Bash(git push)",
       "Bash(git push:*)",
       "Bash(powershell.exe:*)",
-      "Bash(dir /B \"C:\\developments\\project\\genai-app-docs\")"
+      "Bash(dir /B \"C:\\developments\\project\\camp_backend\")"
     ],
     "deny": [],
     "ask": []

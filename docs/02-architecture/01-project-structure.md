@@ -62,7 +62,7 @@ graph TB
 ## 全体構造
 
 ```text
-genai-app-docs/
+camp_backend/
 ├── .venv/                   # 仮想環境（uvが自動生成）
 ├── docs/                    # ドキュメント
 │   ├── 01-getting-started/ # 入門ガイド

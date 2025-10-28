@@ -77,7 +77,7 @@ class Settings(BaseSettings):
 ### .envファイルの場所
 
 ```text
-genai-app-docs/
+camp_backend/
 ├── .env.local              # ローカル開発環境（gitignore対象）
 ├── .env.staging            # ステージング環境（gitignore対象）
 ├── .env.production         # 本番環境（gitignore対象）
