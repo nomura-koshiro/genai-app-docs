@@ -21,6 +21,7 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 **Windows開発者には、すべてをWSL2（Linux）で完結させる構成を推奨します。**
 
 メリット：
+
 - ✅ **高速**: ファイルI/Oが高速
 - ✅ **シンプル**: 環境が統一、パスの混乱なし
 - ✅ **軽量**: Docker Desktopが不要
@@ -40,6 +41,7 @@ bash scripts/setup-wsl2.sh
 ```
 
 このスクリプトが以下を自動実行します：
+
 - Dockerのインストールと起動
 - プロジェクトのコピー（`~/projects/genai-app-docs`）
 - uvと依存関係のインストール
