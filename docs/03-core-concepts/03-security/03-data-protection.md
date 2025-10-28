@@ -13,7 +13,7 @@
 
 ### 1. SQLインジェクション対策
 
-**実装場所**: `src/app/database.py`
+**実装場所**: `src/app/core/database.py`
 
 #### SQLAlchemy ORM使用
 
@@ -23,12 +23,12 @@
 
 #### 接続プール設定
 
-**実装場所**: `src/app/database.py:27-37`, `src/app/config.py:286-301`
+**実装場所**: `src/app/core/database.py:27-37`, `src/app/core/config.py:286-301`
 
 接続プール設定は環境変数で設定可能です：
 
 ```python
-# src/app/config.py
+# src/app/core/config.py
 class Settings(BaseSettings):
     # データベース接続プール設定
     DB_POOL_SIZE: int = Field(default=5, description="通常時の接続プールサイズ")
@@ -38,7 +38,7 @@ class Settings(BaseSettings):
 ```
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
@@ -137,7 +137,7 @@ for user in users:
 
 ### 3. トランザクション管理
 
-**実装場所**: `src/app/database.py:169-177`
+**実装場所**: `src/app/core/database.py:169-177`
 
 #### 自動ロールバック
 

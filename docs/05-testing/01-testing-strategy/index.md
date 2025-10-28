@@ -419,7 +419,7 @@ def setup_test_env():
 ### テスト用設定ファイル
 
 ```python
-# app/config.py に追加
+# app/core/config.py に追加
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 

@@ -22,7 +22,7 @@ from pathlib import Path
 
 from fastapi import UploadFile
 
-from app.config import settings
+from app.core.config import settings
 from app.core.exceptions import ValidationError
 
 

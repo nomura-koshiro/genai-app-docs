@@ -13,7 +13,7 @@ alembic init alembic
 
 ```python
 # alembic/env.py
-from app.database import Base
+from app.core.database import Base
 from app.models import user, session, file  # すべてのモデルをインポート
 
 target_metadata = Base.metadata

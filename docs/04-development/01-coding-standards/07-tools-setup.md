@@ -201,7 +201,7 @@ async def test_create_user(db_session):
 # tests/conftest.py
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from app.database import Base
+from app.core.database import Base
 
 
 @pytest.fixture

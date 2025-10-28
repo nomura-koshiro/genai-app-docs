@@ -40,7 +40,7 @@ async def read_items(query: str = Depends(get_query_param)):
 ### データベース依存関係の定義
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -76,7 +76,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
+from app.core.database import get_db
 
 # 型エイリアスを定義（型安全性と可読性の向上）
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]

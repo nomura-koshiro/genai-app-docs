@@ -384,7 +384,7 @@ class SampleUserService:
 from typing import Generic, TypeVar, Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import Base
+from app.core.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 
@@ -506,7 +506,7 @@ class SampleUserRepository(BaseRepository[SampleUser]):
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleUser(Base):
     """ユーザーモデル。"""
@@ -654,7 +654,7 @@ class SampleUserService:
 データベースセッションの管理:
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:

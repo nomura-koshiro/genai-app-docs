@@ -28,7 +28,7 @@ app.add_middleware(
 
 ### 環境別の許可オリジン
 
-**実装場所**: `src/app/config.py:316-324`
+**実装場所**: `src/app/core/config.py:316-324`
 
 #### 本番環境（production）
 
@@ -54,7 +54,7 @@ if self.ENVIRONMENT == "production":
         raise ValueError("ALLOWED_ORIGINS must be explicitly set in production environment")
 ```
 
-**参照**: `src/app/config.py:317-324`
+**参照**: `src/app/core/config.py:317-324`
 
 ---
 

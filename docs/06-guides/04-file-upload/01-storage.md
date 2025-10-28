@@ -283,7 +283,7 @@ class AzureBlobStorageBackend(StorageBackend):
 ```python
 """ストレージバックエンドパッケージ。"""
 
-from app.config import settings
+from app.core.config import settings
 from app.storage.base import StorageBackend
 from app.storage.local import LocalStorageBackend
 

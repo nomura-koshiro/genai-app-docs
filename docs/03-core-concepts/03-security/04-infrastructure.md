@@ -55,7 +55,7 @@ AppException（基底クラス）
 
 ## 環境設定管理
 
-**実装場所**: `src/app/config.py`
+**実装場所**: `src/app/core/config.py`
 
 ### 1. 設定ファイル構造
 
@@ -72,7 +72,7 @@ AppException（基底クラス）
 3. `.env`（共通設定）
 4. Settingsクラスのデフォルト値
 
-**実装場所**: `src/app/config.py:69-129`
+**実装場所**: `src/app/core/config.py:69-129`
 
 ### 2. セキュリティ設定の検証
 

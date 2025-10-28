@@ -756,7 +756,7 @@ files = await storage.list_files()
 
 ## データベースユーティリティ
 
-`app/database.py`
+`app/core/database.py`
 
 データベース接続とセッション管理。
 
@@ -778,7 +778,7 @@ async def init_db() -> None
 ##### 使用例
 
 ```python
-from app.database import init_db
+from app.core.database import init_db
 
 # アプリケーション起動時
 await init_db()
@@ -799,7 +799,7 @@ async def close_db() -> None
 ##### 使用例
 
 ```python
-from app.database import close_db
+from app.core.database import close_db
 
 # アプリケーション終了時
 await close_db()
@@ -821,7 +821,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]
 
 ```python
 from fastapi import Depends
-from app.database import get_db
+from app.core.database import get_db
 
 @router.get("/users")
 async def get_users(db: AsyncSession = Depends(get_db)):
@@ -841,7 +841,7 @@ async def get_users(db: AsyncSession = Depends(get_db)):
 ```python
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import get_db
+from app.core.database import get_db
 from app.core.logging import get_logger
 from app.core.exceptions import NotFoundError, AuthenticationError
 from app.core.security import verify_password, create_access_token

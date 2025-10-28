@@ -32,7 +32,7 @@
 次に、アプリケーションがどのように起動し、設定されるかを理解します。
 
 1. **config.py** - アプリケーション設定
-   - 位置: `src/app/config.py`
+   - 位置: `src/app/core/config.py`
    - 重要ポイント:
      - 環境変数の読み込み（.env.local, .env.staging, .env.production）
      - データベース設定（DATABASE_URL）
@@ -66,7 +66,7 @@
 データモデルを理解することで、アプリケーションが扱うデータ構造が明確になります。
 
 1. **database.py** - データベース接続設定
-   - 位置: `src/app/database.py`
+   - 位置: `src/app/core/database.py`
    - 重要ポイント:
      - 非同期エンジン設定（asyncpg）
      - コネクションプール設定
@@ -439,7 +439,7 @@ class ResourceRepository(BaseRepository[Resource]):
 
 **A**: 以下の順序がおすすめです:
 
-1. `src/app/config.py` - 設定を理解する
+1. `src/app/core/config.py` - 設定を理解する
 2. `src/app/main.py` - エントリーポイント
 3. `src/app/core/app_factory.py` - アプリケーション構造
 4. `src/app/api/routes/v1/agents.py` - 具体的な機能実装

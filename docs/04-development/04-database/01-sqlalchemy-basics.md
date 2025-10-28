@@ -5,7 +5,7 @@ SQLAlchemy 2.0の基本的な使い方について説明します。
 ## データベース設定
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from sqlalchemy.orm import DeclarativeBase
 

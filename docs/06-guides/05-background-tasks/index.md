@@ -163,7 +163,7 @@ from typing import List
 
 import aiosmtplib
 
-from app.config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -634,7 +634,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.core.database import get_db
 from app.models.sample_file import SampleFile
 from app.models.sample_session import SampleSession
 from app.storage import get_storage_backend

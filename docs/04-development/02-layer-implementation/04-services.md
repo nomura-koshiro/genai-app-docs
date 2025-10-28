@@ -130,7 +130,7 @@ class SessionService:
 
 ```python
 # データベースセッションがトランザクションを管理
-# src/app/database.py
+# src/app/core/database.py
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:

@@ -17,14 +17,10 @@ graph TB
         MW[ミドルウェア<br/>CORS, エラーハンドリング<br/>ロギング, メトリクス]
         Service[サービス層<br/>services/]
         Repo[リポジトリ層<br/>repositories/]
-        Agent[AI Agent<br/>LangGraph]
-        Storage[ストレージ層<br/>storage/]
     end
 
-    subgraph "Docker環境"
-        DB[(PostgreSQL 16<br/>app_db, test_db)]
-        Cache[(Redis<br/>キャッシュ/セッション)]
-        PgAdmin[PgAdmin<br/>DB管理UI]
+    subgraph "データベース"
+        DB[(PostgreSQL<br/>camp_backend_db)]
     end
 
     subgraph "外部サービス"
@@ -41,29 +37,14 @@ graph TB
     MW --> API
     API --> Service
     Service --> Repo
-    Service --> Agent
-    Service --> Storage
 
     Repo -->|SQLAlchemy<br/>asyncpg| DB
-    Service -->|Redis Client| Cache
-    Agent -->|API Call| Anthropic
-    Agent -->|API Call| OpenAI
-
-    Storage -->|本番環境| Azure
-    Storage -->|開発環境| Local
-
-    PgAdmin -.->|管理| DB
 
     style Client fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
     style API fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
     style Service fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
     style Repo fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
-    style Agent fill:#f06292,stroke:#880e4f,stroke-width:3px,color:#000
     style DB fill:#64b5f6,stroke:#01579b,stroke-width:3px,color:#000
-    style Cache fill:#fff176,stroke:#f57f17,stroke-width:3px,color:#000
-    style Anthropic fill:#ba68c8,stroke:#4a148c,stroke-width:3px,color:#000
-    style OpenAI fill:#4db6ac,stroke:#004d40,stroke-width:3px,color:#000
-    style Azure fill:#7986cb,stroke:#1a237e,stroke-width:3px,color:#000
 ```
 
 **主要コンポーネント**:
@@ -73,27 +54,15 @@ graph TB
 
    - ミドルウェア: CORS、エラーハンドリング、ロギング、メトリクス収集
    - レイヤードアーキテクチャ: API → Service → Repository → Model
-   - AI Agent: LangGraphによるエージェント処理
-   - ストレージ層: ファイル保存の抽象化
 
-3. **Docker環境**:
+3. **データベース**:
 
-   - PostgreSQL 16: メインデータベース（app_db）とテストDB（test_db）
-   - Redis: キャッシュとセッション管理
-   - PgAdmin: データベース管理UI（オプション）
-
-4. **外部サービス**:
-
-   - Anthropic API: Claude AIモデル
-   - OpenAI API: GPT-4モデル
-   - Azure Blob Storage: 本番環境でのファイルストレージ
-
-5. **ローカルストレージ**: 開発環境でのファイル保存先
+   - PostgreSQL: メインデータベース（camp_backend_db）とテストDB（camp_backend_db_test）
 
 ## 全体構造
 
 ```text
-backend/
+genai-app-docs/
 ├── .venv/                   # 仮想環境（uvが自動生成）
 ├── docs/                    # ドキュメント
 │   ├── 01-getting-started/ # 入門ガイド
@@ -108,18 +77,27 @@ backend/
 │   ├── alembic/            # データベースマイグレーション
 │   │   ├── versions/       # マイグレーションファイル
 │   │   └── env.py          # Alembic環境設定
+│   ├── alembic.ini         # Alembic設定ファイル
 │   └── app/                # メインアプリケーション
-│       ├── agents/         # AI Agent関連
+│       ├── main.py         # アプリケーションエントリーポイント
 │       ├── api/            # API層（ルーター、エンドポイント、ミドルウェア）
-│       ├── core/           # コア機能（アプリ初期化、ライフサイクル、例外、ロギング、セキュリティ、キャッシュ）
+│       │   ├── core/       # APIコア機能
+│       │   ├── decorators/ # デコレータ
+│       │   ├── middlewares/# ミドルウェア
+│       │   └── routes/     # エンドポイント定義
+│       ├── core/           # コア機能（設定、DB、例外、ロギング、セキュリティ、キャッシュ）
+│       │   ├── app_factory.py  # アプリケーションファクトリ
+│       │   ├── cache.py        # キャッシュ管理
+│       │   ├── config.py       # アプリケーション設定
+│       │   ├── database.py     # データベース設定
+│       │   ├── exceptions.py   # 例外定義
+│       │   ├── lifespan.py     # ライフサイクル管理
+│       │   ├── logging.py      # ログ設定
+│       │   └── security/       # セキュリティ機能
 │       ├── models/         # データベースモデル
 │       ├── repositories/   # データアクセス層
 │       ├── schemas/        # Pydanticスキーマ
-│       ├── services/       # ビジネスロジック層
-│       ├── storage/        # ファイルストレージ
-│       ├── config.py       # アプリケーション設定
-│       ├── database.py     # データベース設定
-│       └── main.py         # アプリケーションエントリーポイント（86行）
+│       └── services/       # ビジネスロジック層
 ├── tests/                   # テストコード（src/app/のミラー構造）
 │   ├── __init__.py
 │   ├── conftest.py         # 共通フィクスチャとテスト設定
@@ -131,12 +109,13 @@ backend/
 │   ├── models/             # モデル層テスト
 │   ├── repositories/       # リポジトリ層テスト
 │   └── services/           # サービス層テスト
+├── scripts/                 # ユーティリティスクリプト
 ├── uploads/                 # ローカルファイルストレージ（開発環境）
-├── .env                     # 環境変数（gitignore）
-├── .env.example             # 環境変数テンプレート
+├── .env.local.example       # ローカル環境変数テンプレート
+├── .env.staging.example     # ステージング環境変数テンプレート
+├── .env.production.example  # 本番環境変数テンプレート
 ├── .gitignore               # Git無視ファイル
-├── .python-version          # Pythonバージョン指定
-├── alembic.ini              # Alembic設定ファイル
+├── .python-version          # Pythonバージョン指定（3.13）
 ├── pyproject.toml           # プロジェクト設定と依存関係
 ├── README.md                # プロジェクト概要
 └── uv.lock                  # 依存関係ロックファイル
@@ -153,7 +132,7 @@ FastAPIアプリの初期化は `core/app_factory.py` に委譲。
 
 ```python
 # 主な内容
-from app.config import settings
+from app.core.config import settings
 from app.core.app_factory import create_app
 from app.core.logging import setup_logging
 
@@ -179,11 +158,12 @@ if __name__ == "__main__":
 - CLI起動用のmain関数提供
 - **注**: アプリの詳細な設定は `core/app_factory.py` で行われる
 
-#### `config.py` - アプリケーション設定
-
-Pydantic Settingsを使用した設定管理。
+**注**: `config.py`と`database.py`は`core/`ディレクトリ内にあります。
+- `core/config.py` - アプリケーション設定（Pydantic Settings）
+- `core/database.py` - データベース接続とセッション管理
 
 ```python
+# core/config.py の例
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -416,7 +396,7 @@ models/
 ```python
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleUser(Base):
     __tablename__ = "sample_users"
@@ -776,29 +756,6 @@ class CacheManager:
 - JSON形式でのデータのシリアライズ/デシリアライズ
 - TTLベースのキャッシュ管理
 - パターンマッチングによる一括削除
-
-### agents/ - AI Agent機能
-
-LangGraphベースのAI Agent実装。
-
-```text
-agents/
-├── __init__.py
-├── graph.py                 # LangGraphの定義
-└── tools.py                 # カスタムツール
-```
-
-### storage/ - ファイルストレージ
-
-ファイルストレージの抽象化レイヤー。
-
-```text
-storage/
-├── __init__.py
-├── base.py                  # ストレージインターフェース
-├── local.py                 # ローカルストレージ
-└── azure_blob.py            # Azure Blobストレージ
-```
 
 ## ファイル命名規則
 

@@ -6,52 +6,54 @@
 
 ### PostgreSQL
 
-- **開発環境**: PostgreSQL 16（WSL2のDockerコンテナ）
+- **開発環境**: PostgreSQL（Windowsにローカルインストール）
 - **ORM**: SQLAlchemy 2.0（非同期対応）
-- **接続**: Windows → WSL2 localhost forwarding
+- **接続**: localhost:5432
 - **ポート**: 5432
+- **データベース名**: camp_backend_db
 
-### Redis
+### Redis（オプション）
 
-- **開発環境**: Redis 7（WSL2のDockerコンテナ）
-- **用途**: キャッシュ
-- **接続**: Windows → WSL2 localhost forwarding
+- **用途**: キャッシュ（開発環境では必須ではない）
 - **ポート**: 6379
 
 ## PostgreSQL管理
 
-### 自動起動（推奨）
+### PostgreSQLの起動確認
 
-**F5でデバッグ起動すると、PostgreSQLとRedisは自動的に起動します。**
-
-通常、手動での操作は不要です。
-
-### 手動起動
-
-必要に応じて手動で起動する場合：
+Scoop版の場合：
 
 ```powershell
-# PostgreSQL起動
-wsl -d Ubuntu bash /mnt/c/developments/backend/.vscode/start-postgres.sh
-
-# コンテナ状態確認
-wsl -d Ubuntu bash -c "docker ps | grep postgres"
-```
-
-### コンテナ操作
-
-```powershell
-# 停止
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose stop postgres"
+# プロセス確認
+Get-Process postgres -ErrorAction SilentlyContinue
 
 # 起動
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose start postgres"
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data start
+
+# 停止
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 
 # 再起動
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose restart postgres"
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data restart
 
-# ログ確認
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose logs postgres"
+# 状態確認
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
+```
+
+公式インストーラー版の場合：
+
+```powershell
+# サービス確認
+Get-Service postgresql*
+
+# サービス起動
+Start-Service postgresql-x64-16
+
+# サービス停止
+Stop-Service postgresql-x64-16
+
+# サービス再起動
+Restart-Service postgresql-x64-16
 ```
 
 ## データベース接続
@@ -61,15 +63,14 @@ wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose logs pos
 `.env.local`ファイル：
 
 ```bash
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/app_db
-REDIS_URL=redis://localhost:6379/0
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db
 ```
 
 ### データベースへの直接接続
 
 ```powershell
 # psqlで接続
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec postgres psql -U postgres -d app_db"
+psql -U postgres -d camp_backend_db
 ```
 
 psqlコマンド：
@@ -88,18 +89,34 @@ SELECT * FROM sample_users;
 \q
 ```
 
-## データベース初期化
+## データベースマイグレーション
 
-### 自動初期化
+### 初回セットアップ
 
-アプリケーション起動時（F5）に自動的にテーブルが作成されます。
-
-### 手動初期化
-
-必要に応じて手動で初期化：
+プロジェクトをクローンした後、最初にマイグレーションを実行：
 
 ```bash
-uv run python -c "from app.database import init_db; import asyncio; asyncio.run(init_db())"
+cd src
+uv run alembic upgrade head
+cd ..
+```
+
+### マイグレーションファイルの作成
+
+モデルを変更した後、マイグレーションファイルを生成：
+
+```bash
+cd src
+uv run alembic revision --autogenerate -m "説明メッセージ"
+cd ..
+```
+
+### マイグレーションの適用
+
+```bash
+cd src
+uv run alembic upgrade head
+cd ..
 ```
 
 ## バックアップとリストア
@@ -108,14 +125,14 @@ uv run python -c "from app.database import init_db; import asyncio; asyncio.run(
 
 ```powershell
 # バックアップ作成
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec -T postgres pg_dump -U postgres app_db > backup_$(date +%Y%m%d).sql"
+pg_dump -U postgres -d camp_backend_db > backup_$(Get-Date -Format "yyyyMMdd").sql
 ```
 
 ### リストア
 
 ```powershell
 # データベースをリストア
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec -T postgres psql -U postgres -d app_db < backup_20251016.sql"
+psql -U postgres -d camp_backend_db < backup_20250128.sql
 ```
 
 ## データベースのリセット
@@ -123,11 +140,14 @@ wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec -T 
 開発中にデータベースを初期状態に戻す：
 
 ```powershell
-# コンテナとボリュームを削除
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose down -v"
+# データベースを削除して再作成
+psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db;"
+psql -U postgres -c "CREATE DATABASE camp_backend_db;"
 
-# 再起動
-wsl -d Ubuntu bash /mnt/c/developments/backend/.vscode/start-postgres.sh
+# マイグレーション実行
+cd src
+uv run alembic upgrade head
+cd ..
 ```
 
 ## テーブル構成
@@ -163,52 +183,27 @@ wsl -d Ubuntu bash /mnt/c/developments/backend/.vscode/start-postgres.sh
 
 詳細は`src/app/models/`を参照してください。
 
-## Redis管理
+## Redis管理（オプション）
 
-### 接続確認
+Redis は開発環境では必須ではありませんが、キャッシュ機能を使用する場合に必要です。
+
+### Redisのインストール（オプション）
+
+Scoop経由でインストール：
 
 ```powershell
-# redis-cliで接続
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec redis redis-cli ping"
-# 応答: PONG
+scoop install redis
 ```
 
-### キャッシュ操作
+### 起動・停止
 
 ```powershell
-# redis-cli起動
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose exec redis redis-cli"
-
-# キー一覧表示
-KEYS *
-
-# キャッシュ取得
-GET your_key
-
-# キャッシュ削除
-DEL your_key
-
-# 全キャッシュクリア
-FLUSHALL
-
-# 終了
-EXIT
-```
-
-### コンテナ操作
-
-```powershell
-# 停止
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose stop redis"
-
 # 起動
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose start redis"
+redis-server
 
-# 再起動
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose restart redis"
-
-# ログ確認
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose logs redis"
+# 別のターミナルで接続
+redis-cli ping
+# 応答: PONG
 ```
 
 ### キャッシュ使用例
@@ -231,21 +226,12 @@ await cache_manager.delete("user:123")
 await cache_manager.clear("user:*")
 ```
 
-## マイグレーション（参考）
-
-データベーススキーマの変更は **Alembic** で管理されています。
-
-基本的な操作は起動時に自動実行されるため、通常は手動操作不要です。
-
-詳細は以下を参照してください:
-
-- [Alembicマイグレーション](../04-development/04-database/03-alembic-migrations.md)
-- [新しいモデル追加](../06-guides/02-add-model/index.md)
-
 ## 次のステップ
 
 - [プロジェクト構造](../02-architecture/01-project-structure.md) - モデルの配置
 - [レイヤードアーキテクチャ](../02-architecture/02-layered-architecture.md) - データアクセス層
+- [Alembicマイグレーション](../04-development/04-database/03-alembic-migrations.md) - マイグレーションの詳細
+- [新しいモデル追加](../06-guides/02-add-model/index.md) - モデル追加方法
 
 ---
 
@@ -254,48 +240,45 @@ await cache_manager.clear("user:*")
 ### PostgreSQL接続エラー
 
 ```powershell
-# コンテナ確認
-wsl -d Ubuntu bash -c "docker ps | grep postgres"
+# PostgreSQLが起動しているか確認
+Get-Process postgres -ErrorAction SilentlyContinue
 
-# PostgreSQL再起動
-wsl -d Ubuntu bash /mnt/c/developments/backend/.vscode/start-postgres.sh
+# Scoop版：起動
+pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data start
+
+# 公式インストーラー版：起動
+Start-Service postgresql-x64-16
 ```
 
 ### テーブルが存在しない
 
 ```bash
-# データベース初期化
-uv run python -c "from app.database import init_db; import asyncio; asyncio.run(init_db())"
+# マイグレーション実行
+cd src
+uv run alembic upgrade head
+cd ..
 ```
 
 ### ポート5432が使用中
 
-他のPostgreSQLが起動している可能性があります。
+他のPostgreSQLインスタンスが起動している可能性があります。
 
 ```powershell
-# Windowsでポート確認
+# ポート確認
 netstat -ano | findstr :5432
 
-# WSL2でポート確認
-wsl -d Ubuntu bash -c "sudo lsof -i :5432"
-```
-
-### Docker起動エラー
-
-```powershell
-# Docker起動確認
-wsl -d Ubuntu bash -c "sudo service docker status"
-
-# Docker起動
-wsl -d Ubuntu bash -c "sudo service docker start"
+# プロセスを特定して停止
 ```
 
 ### データベースが破損した場合
 
 ```powershell
 # 完全リセット
-wsl -d Ubuntu bash -c "cd /mnt/c/developments/backend && docker compose down -v"
-wsl -d Ubuntu bash /mnt/c/developments/backend/.vscode/start-postgres.sh
+psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db;"
+psql -U postgres -c "CREATE DATABASE camp_backend_db;"
 
-# F5でアプリケーション起動（自動初期化）
+# マイグレーション実行
+cd src
+uv run alembic upgrade head
+cd ..
 ```

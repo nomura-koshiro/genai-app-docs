@@ -21,7 +21,7 @@
 from typing import Any, Generic, TypeVar
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.database import Base
+from app.core.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 

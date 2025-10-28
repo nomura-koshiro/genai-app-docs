@@ -19,16 +19,14 @@
 
 ## セットアップ手順
 
-### ローカル開発環境（WSL2内）
+### ローカル開発環境
 
-```bash
+```powershell
 # テンプレートをコピー
-cp .env.local.example .env.local
+Copy-Item .env.local.example .env.local
 
 # 設定を編集
-nano .env.local
-# または
-vim .env.local
+notepad .env.local
 ```
 
 主な設定：
@@ -76,19 +74,19 @@ vim .env.production
 
 ## 環境の切り替え
 
-### 環境変数による切り替え（WSL2内）
+### 環境変数による切り替え
 
 `ENVIRONMENT`環境変数を設定して起動します。
 
-```bash
+```powershell
 # ローカル開発（デフォルト）
 uv run uvicorn app.main:app --reload
 
 # ステージング
-ENVIRONMENT=staging uv run uvicorn app.main:app
+$env:ENVIRONMENT="staging"; uv run uvicorn app.main:app
 
 # 本番
-ENVIRONMENT=production uv run uvicorn app.main:app
+$env:ENVIRONMENT="production"; uv run uvicorn app.main:app
 ```
 
 ### 起動確認
@@ -116,7 +114,7 @@ Redis cache connected: redis://localhost:6379/0
 
 ### ローカル開発環境
 
-- **データベース**: WSL2のDockerコンテナ
+- **データベース**: PostgreSQL（ローカルインストール）
 - **ストレージ**: ローカルファイルシステム
 - **LLM**: Anthropic Claude直接接続
 - **デバッグ**: 有効

@@ -240,8 +240,8 @@ async def test_duplicate_email(db_session):
 # tests/conftest.py
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.config import settings
-from app.database import Base
+from app.core.config import settings
+from app.core.database import Base
 
 @pytest.fixture(scope="function")
 async def db_engine():

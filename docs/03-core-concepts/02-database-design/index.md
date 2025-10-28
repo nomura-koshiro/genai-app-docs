@@ -26,7 +26,7 @@
 すべてのモデルの基底クラスです。
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 from sqlalchemy.orm import DeclarativeBase
 
 class Base(DeclarativeBase):
@@ -67,7 +67,7 @@ class Example(Base):
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleUser(Base):
     """ユーザーモデル。
@@ -184,7 +184,7 @@ AI Agentのチャットセッションを管理します。
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleSession(Base):
     """チャットセッションモデル。
@@ -254,7 +254,7 @@ class SampleSession(Base):
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleMessage(Base):
     """チャットメッセージモデル。
@@ -309,7 +309,7 @@ class SampleMessage(Base):
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleFile(Base):
     """ファイルモデル。
@@ -418,7 +418,7 @@ sessions: Mapped[list["SampleSession"]] = relationship(
 ### セッション管理
 
 ```python
-# src/app/database.py
+# src/app/core/database.py
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # エンジンの作成

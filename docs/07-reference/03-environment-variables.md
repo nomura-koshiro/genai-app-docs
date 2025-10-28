@@ -41,7 +41,7 @@
 
 ### 設定クラス
 
-`src/app/config.py`で定義されています。
+`src/app/core/config.py`で定義されています。
 
 ```python
 from pydantic_settings import BaseSettings
@@ -147,7 +147,7 @@ ALLOWED_ORIGINS=["https://example.com", "https://www.example.com"]
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 
 print(f"Starting {settings.APP_NAME} v{settings.VERSION}")
 print(f"Debug mode: {settings.DEBUG}")
@@ -179,7 +179,7 @@ ENVIRONMENT=production
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 
 if settings.ENVIRONMENT == "production":
     # 本番環境用の設定
@@ -244,7 +244,7 @@ openssl rand -hex 32
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 from app.core.security import create_access_token
 
 token = create_access_token(
@@ -317,7 +317,7 @@ postgresql+asyncpg://<user>:<password>@<host>:<port>/<database>?ssl=require
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 from sqlalchemy.ext.asyncio import create_async_engine
 
 engine = create_async_engine(settings.DATABASE_URL)
@@ -427,7 +427,7 @@ rediss://<host>:<port>/<db>
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 from app.core.cache import cache_manager
 
 # Redisが設定されている場合のみ接続
@@ -476,7 +476,7 @@ AZURE_STORAGE_CONTAINER_NAME=uploads
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 from app.storage import get_storage_backend
 
 storage = get_storage_backend()
@@ -558,7 +558,7 @@ LANGCHAIN_PROJECT=ai-agent-app
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 from langchain_anthropic import ChatAnthropic
 
 llm = ChatAnthropic(
@@ -602,7 +602,7 @@ MAX_UPLOAD_SIZE=104857600
 #### 使用例
 
 ```python
-from app.config import settings
+from app.core.config import settings
 
 if file.size > settings.MAX_UPLOAD_SIZE:
     raise ValueError(f"File size exceeds limit of {settings.MAX_UPLOAD_SIZE} bytes")
@@ -862,7 +862,7 @@ ENVIRONMENT=production uv run uvicorn app.main:app
 ```bash
 # 必須項目チェックスクリプト
 python -c "
-from app.config import settings
+from app.core.config import settings
 
 required = [
     'SECRET_KEY',
@@ -890,10 +890,10 @@ print('All required environment variables are set')
 ls -la .env.local
 
 # どのファイルが読み込まれているか確認
-python -c "from app.config import get_env_file; print(get_env_file())"
+python -c "from app.core.config import get_env_file; print(get_env_file())"
 
 # 環境変数の値を確認
-python -c "from app.config import settings; print(settings.DEBUG)"
+python -c "from app.core.config import settings; print(settings.DEBUG)"
 
 # .envファイルの文字エンコーディング確認（UTF-8であること）
 file -i .env.local
@@ -904,7 +904,7 @@ file -i .env.local
 ```bash
 # 接続テスト
 python -c "
-from app.database import engine
+from app.core.database import engine
 import asyncio
 
 async def test():
@@ -921,7 +921,7 @@ asyncio.run(test())
 ```bash
 # APIキーの確認（先頭と末尾のみ表示）
 python -c "
-from app.config import settings
+from app.core.config import settings
 key = settings.ANTHROPIC_API_KEY
 if key:
     print(f'Key: {key[:10]}...{key[-5:]}')

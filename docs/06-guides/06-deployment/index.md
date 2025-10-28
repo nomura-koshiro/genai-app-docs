@@ -58,7 +58,7 @@
 
 ```dockerfile
 # マルチステージビルド
-FROM python:3.11-slim as builder
+FROM python:3.13-slim as builder
 
 # 作業ディレクトリ
 WORKDIR /app
@@ -80,7 +80,7 @@ RUN poetry config virtualenvs.create false \
     && poetry install --no-dev --no-interaction --no-ansi
 
 # 本番イメージ
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # 作業ディレクトリ
 WORKDIR /app
@@ -714,7 +714,7 @@ echo "Running database migrations..."
 # データベース接続テスト
 python -c "
 import asyncio
-from app.database import engine
+from app.core.database import engine
 
 async def test_connection():
     async with engine.begin() as conn:
@@ -763,7 +763,7 @@ az webapp config appsettings set \
 import logging
 import sys
 
-from app.config import settings
+from app.core.config import settings
 
 # Application Insights統合（本番環境）
 if settings.ENVIRONMENT == "production":
@@ -863,11 +863,11 @@ DATABASE_URL=postgresql+asyncpg://user:pass@host/db?sslmode=require
 
 ```dockerfile
 # 悪い例（大きなイメージ）
-FROM python:3.11
+FROM python:3.13
 RUN pip install -r requirements.txt
 
 # 良い例（最適化されたイメージ）
-FROM python:3.11-slim
+FROM python:3.13-slim
 # マルチステージビルドを使用
 ```
 

@@ -226,7 +226,7 @@ SQLAlchemyは、Pythonで最も人気のあるORMライブラリです。
 from datetime import datetime, timezone
 from sqlalchemy import String, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.database import Base
+from app.core.database import Base
 
 class SampleUser(Base):
     """ユーザーモデル。"""
@@ -770,7 +770,7 @@ Redisは、高速なインメモリデータストアで、キャッシュとし
 
 ```python
 from app.core.cache import cache_manager
-from app.config import settings
+from app.core.config import settings
 
 # 接続
 if settings.REDIS_URL:
@@ -947,8 +947,8 @@ async def test_duplicate_email(db_session):
 # tests/conftest.py
 import pytest
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.config import settings
-from app.database import Base
+from app.core.config import settings
+from app.core.database import Base
 
 @pytest.fixture(scope="function")
 async def db_engine():

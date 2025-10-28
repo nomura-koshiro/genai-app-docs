@@ -128,8 +128,8 @@ camp-backendは、基本的なセキュリティ要件を満たす堅牢な実�
 - `src/app/core/security/`: 認証・認可の中核（password.py, jwt.py, api_key.py）
 - `src/app/core/app_factory.py`: ミドルウェア設定
 - `src/app/api/middlewares/rate_limit.py`: レート制限
-- `src/app/config.py`: 環境設定管理
-- `src/app/database.py`: データベース接続とトランザクション管理
+- `src/app/core/config.py`: 環境設定管理
+- `src/app/core/database.py`: データベース接続とトランザクション管理
 
 ### セキュリティ依存関係（pyproject.toml）
 

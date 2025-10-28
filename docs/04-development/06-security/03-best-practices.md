@@ -153,7 +153,7 @@ ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 
-# src/app/config.py
+# src/app/core/config.py
 from pydantic_settings import BaseSettings
 
 

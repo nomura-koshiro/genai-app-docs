@@ -453,7 +453,7 @@ src/alembic/
 
 ```bash
 # データベース作成
-python -c "from app.database import init_db; import asyncio; asyncio.run(init_db())"
+python -c "from app.core.database import init_db; import asyncio; asyncio.run(init_db())"
 
 # または
 python -m app.main

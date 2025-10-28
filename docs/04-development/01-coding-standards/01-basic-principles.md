@@ -318,7 +318,7 @@ class SampleSessionRepository:
 2. **設定値を一元管理**
 
    ```python
-   # src/app/config.py
+   # src/app/core/config.py
    class Settings(BaseSettings):
        """アプリケーション設定。"""
        DATABASE_URL: str
