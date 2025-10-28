@@ -148,15 +148,16 @@ async def get_db() -> AsyncGenerator[AsyncSession]:
 
 
 async def init_db() -> None:
-    """データベーステーブルを初期化します（開発・テスト環境専用）。
+    """データベーステーブルを確認し、存在しない場合は作成します（開発・テスト環境専用）。
 
     Base.metadata.create_all()を実行し、すべてのモデルに対応するテーブルを作成します。
+    既存のテーブルやデータは削除されません。
     本番環境では自動的にスキップされ、Alembicマイグレーションの使用を推奨します。
 
     実行内容:
         1. 環境チェック: ENVIRONMENT == "production" の場合はスキップ
-        2. テーブル作成: Base.metadata.create_all() を非同期実行
-        3. ログ出力: "Initializing database tables (development/test only)"
+        2. テーブル確認・作成: Base.metadata.create_all() を非同期実行（既存テーブルはスキップ）
+        3. ログ出力: テーブル確認完了メッセージ
 
     対象テーブル:
         app/models/ ディレクトリ内のすべてのモデル:
@@ -167,9 +168,9 @@ async def init_db() -> None:
 
     Warning:
         **本番環境では絶対に使用しないでください**
-        - データ損失のリスクあり
         - スキーマ変更の履歴が残らない
         - ロールバックができない
+        - テーブル削除やカラム変更は自動で行われない
 
     使用方法:
         >>> # アプリ起動時（main.pyのlifespan関数内）
@@ -194,7 +195,7 @@ async def init_db() -> None:
         logger.warning("本番環境ではinit_dbをスキップします。代わりにAlembicマイグレーションを使用してください。")
         return
 
-    logger.info("データベーステーブルを初期化中（開発・テスト環境のみ）")
+    logger.info("データベーステーブルを確認中（存在しない場合は作成）")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

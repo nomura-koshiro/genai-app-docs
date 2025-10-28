@@ -26,7 +26,8 @@
       "Bash(head:*)",
       "Bash(done)",
       "Bash(git push)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(powershell.exe:*)"
     ],
     "deny": [],
     "ask": []

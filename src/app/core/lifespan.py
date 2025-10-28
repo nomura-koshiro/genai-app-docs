@@ -67,18 +67,18 @@ async def lifespan(app: FastAPI):
         - 本番環境では init_db() はスキップされ、Alembicマイグレーションを使用します
     """
     # アプリケーション起動処理
-    logger.info("%s v%s を起動しています", settings.APP_NAME, settings.VERSION)
-    logger.info("環境: %s", settings.ENVIRONMENT)
+    logger.info(f"{settings.APP_NAME} v{settings.VERSION} を起動しています")
+    logger.info(f"環境: {settings.ENVIRONMENT}")
     env_files = get_env_file()
     if env_files:
-        logger.info("設定ファイルを読み込みました: %s", ", ".join(env_files))
+        logger.info(f"設定ファイルを読み込みました: {', '.join(env_files)}")
     # データベースURLからパスワードをマスク
     db_url_safe = settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "***"
-    logger.info("データベース: ***@%s", db_url_safe)
+    logger.info(f"データベース: ***@{db_url_safe}")
 
-    # データベースを初期化
+    # データベーステーブルを確認・作成
     await init_db()
-    logger.info("データベースを初期化しました")
+    logger.info("データベーステーブルの確認が完了しました")
 
     # Redisキャッシュを初期化
     if settings.REDIS_URL:
@@ -98,10 +98,10 @@ async def lifespan(app: FastAPI):
             await cache_manager.disconnect()
             logger.info("Redisキャッシュから切断しました")
     except Exception as e:
-        logger.error(f"Redis切断エラー: {e}")
+        logger.error("Redis切断エラー", error=str(e))
 
     try:
         await close_db()
         logger.info("データベース接続をクローズしました")
     except Exception as e:
-        logger.error(f"データベースクローズエラー: {e}")
+        logger.error("データベースクローズエラー", error=str(e))

@@ -2,11 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "PostgreSQL起動",
+      "label": "PostgreSQL起動（Windows）",
       "type": "shell",
-      "command": "bash",
+      "command": "powershell",
       "args": [
-        "${workspaceFolder}/.vscode/start-postgres.sh"
+        "-Command",
+        "pg_ctl -D $env:USERPROFILE\\scoop\\apps\\postgresql\\current\\data -l $env:USERPROFILE\\scoop\\apps\\postgresql\\current\\logfile start"
       ],
       "problemMatcher": [],
       "presentation": {
@@ -14,6 +15,9 @@
         "panel": "shared",
         "showReuseMessage": false,
         "clear": false
+      },
+      "windows": {
+        "command": "powershell"
       }
     },
     {

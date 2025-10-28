@@ -12,11 +12,14 @@
         "--host", "0.0.0.0",
         "--port", "8000"
       ],
-      "cwd": "${workspaceFolder}/src",
+      "cwd": "${workspaceFolder}",
       "envFile": "${workspaceFolder}/.env.local",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
       "justMyCode": false,
       "console": "integratedTerminal",
-      "preLaunchTask": "PostgreSQL起動"
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe"
     },
     {
       "name": "Python: Pytest 現在のテスト",
@@ -28,10 +31,14 @@
         "-v",
         "-s"
       ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": false,
       "envFile": "${workspaceFolder}/.env.local",
-      "preLaunchTask": "PostgreSQL起動"
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe"
     },
     {
       "name": "Python: Pytest すべて",
@@ -42,10 +49,14 @@
         "tests",
         "-v"
       ],
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "justMyCode": false,
       "envFile": "${workspaceFolder}/.env.local",
-      "preLaunchTask": "PostgreSQL起動"
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "python": "${workspaceFolder}/.venv/Scripts/python.exe"
     }
   ]
 }

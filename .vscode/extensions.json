@@ -1,11 +1,9 @@
 {
   "recommendations": [
     // ========================================
-    // 必須 (Core)
+    // 必須 (Core Python Development)
     // ========================================
-    // WSL2でのリモート開発（Windows開発者必須）
-    "ms-vscode-remote.remote-wsl",
-    // Python開発の基盤となる拡張機能
+    // Python開発の基盤となる拡張機能（テスト、デバッグ、IntelliSense機能込み）
     "ms-python.python",
     // 高速な型チェック、自動補完、コード解析
     "ms-python.vscode-pylance",
@@ -13,14 +11,10 @@
     "ms-python.debugpy",
     // 高速なPythonリンター・フォーマッター（Flake8, Black, isortの代替）
     "charliermarsh.ruff",
-    // Dockerfileとdocker-composeのサポート（オプション）
-    "ms-azuretools.vscode-docker",
 
     // ========================================
-    // 強く推奨 (Highly Recommended)
+    // 設定・環境ファイル
     // ========================================
-    // docker-compose.yml等のYAML検証とオートコンプリート
-    "redhat.vscode-yaml",
     // .envファイルのシンタックスハイライト
     "mikestead.dotenv",
     // pyproject.tomlの編集サポート
@@ -37,16 +31,6 @@
     "mtxr.sqltools",
     // PostgreSQLドライバー
     "mtxr.sqltools-driver-pg",
-
-    // ========================================
-    // テスト開発
-    // ========================================
-    // Pytestテストの実行と管理
-    "littlefoxteam.vscode-python-test-adapter",
-    // テストエクスプローラーUI
-    "hbenl.vscode-test-explorer",
-    // テストアダプターの変換
-    "ms-vscode.test-adapter-converter",
 
     // ========================================
     // API開発
