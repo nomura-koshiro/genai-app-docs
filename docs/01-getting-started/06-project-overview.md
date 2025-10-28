@@ -34,13 +34,12 @@
 
 ```text
 src/app/
-├── api/              # APIエンドポイント定義
+├── api/              # APIレイヤー（エンドポイント、ミドルウェア、デコレータ）
 ├── models/           # データベースモデル（テーブル定義）
 ├── schemas/          # Pydanticスキーマ（バリデーション）
 ├── repositories/     # データアクセス層
 ├── services/         # ビジネスロジック層
-├── core/             # 設定・セキュリティ・例外
-└── middlewares/      # HTTPミドルウェア
+└── core/             # コア機能（設定・セキュリティ・例外・ログ）
 ```
 
 ---

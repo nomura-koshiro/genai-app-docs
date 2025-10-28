@@ -46,12 +46,12 @@ KeyError: 'DATABASE_URL'
 **解決策:**
 
 ```bash
-# .envファイルを確認
-cat .env
+# .env.localファイルを確認
+cat .env.local
 
 # 必要な環境変数を設定
-cp .env.example .env
-# .envファイルを編集して値を設定
+cp .env.local.example .env.local
+# .env.localファイルを編集して値を設定
 ```
 
 #### 原因 2: ポートが既に使用されている
@@ -199,7 +199,7 @@ postgresql+asyncpg://user:password@localhost:5432/dbname
 # SQLite
 sqlite+aiosqlite:///./app.db
 
-# .envファイルを確認して修正
+# .env.localファイルを確認して修正
 ```
 
 #### 原因 3: データベースが存在しない

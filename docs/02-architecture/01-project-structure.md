@@ -159,6 +159,7 @@ if __name__ == "__main__":
 - **注**: アプリの詳細な設定は `core/app_factory.py` で行われる
 
 **注**: `config.py`と`database.py`は`core/`ディレクトリ内にあります。
+
 - `core/config.py` - アプリケーション設定（Pydantic Settings）
 - `core/database.py` - データベース接続とセッション管理
 
@@ -385,10 +386,10 @@ SQLAlchemyのORMモデルを定義します。
 ```text
 models/
 ├── __init__.py
-├── sample_user.py                  # ユーザーモデル
-├── sample_session.py               # セッションモデル
-├── sample_file.py                  # ファイルモデル
-└── base.py               # メッセージモデル
+├── base.py                  # ベースモデル
+├── sample_user.py           # ユーザーモデル
+├── sample_session.py        # セッションモデル
+└── sample_file.py           # ファイルモデル
 ```
 
 #### 例: `models/user.py`
@@ -455,9 +456,9 @@ class SampleUserResponse(BaseModel):
 repositories/
 ├── __init__.py
 ├── base.py                  # ベースリポジトリ（共通CRUD）
-├── sample_user.py                  # ユーザーリポジトリ
-├── sample_session.py               # セッションリポジトリ
-└── file.py                  # ファイルリポジトリ
+├── sample_user.py           # ユーザーリポジトリ
+├── sample_session.py        # セッションリポジトリ
+└── sample_file.py           # ファイルリポジトリ
 ```
 
 #### `repositories/base.py` - ベースリポジトリ

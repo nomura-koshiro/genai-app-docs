@@ -1,4 +1,4 @@
-# Windows環境セットアップスクリプト
+﻿# Windows環境セットアップスクリプト
 # PowerShell 5.1以降が必要
 
 param(
@@ -167,13 +167,18 @@ Write-Host "   psql -U postgres -c `"CREATE DATABASE camp_backend_db;`"" -Foregr
 Write-Host ""
 Write-Host "2. .env.localを編集してデータベース接続情報を設定" -ForegroundColor $BLUE
 Write-Host ""
-Write-Host "3. テストを実行:" -ForegroundColor $BLUE
+Write-Host "3. データベースマイグレーションを実行:" -ForegroundColor $BLUE
+Write-Host "   cd src" -ForegroundColor $BLUE
+Write-Host "   uv run alembic upgrade head" -ForegroundColor $BLUE
+Write-Host "   cd .." -ForegroundColor $BLUE
+Write-Host ""
+Write-Host "4. テストを実行:" -ForegroundColor $BLUE
 Write-Host "   uv run pytest tests/ -v" -ForegroundColor $BLUE
 Write-Host ""
-Write-Host "4. アプリケーションを起動:" -ForegroundColor $BLUE
-Write-Host "   uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000" -ForegroundColor $BLUE
+Write-Host "5. アプリケーションを起動:" -ForegroundColor $BLUE
+Write-Host "   uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000" -ForegroundColor $BLUE
 Write-Host ""
-Write-Host "5. ブラウザでアクセス:" -ForegroundColor $BLUE
+Write-Host "6. ブラウザでアクセス:" -ForegroundColor $BLUE
 Write-Host "   http://localhost:8000/docs" -ForegroundColor $BLUE
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor $GREEN

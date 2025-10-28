@@ -35,8 +35,8 @@ cd /path/to/genai-app-docs
 uv sync
 
 # 4. 環境変数ファイルの作成
-cp .env.local.example .env
-# .envファイルを編集して、必要な環境変数を設定してください
+cp .env.local.example .env.local
+# .env.localファイルを編集して、必要な環境変数を設定してください
 
 # 5. PostgreSQLの起動（事前に起動しておいてください）
 

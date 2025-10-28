@@ -22,13 +22,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 ```
 
-3. **PostgreSQLをインストール：**
+1. **PostgreSQLをインストール：**
 
 ```powershell
 scoop install postgresql
 ```
 
-4. **PostgreSQLを起動：**
+1. **PostgreSQLを起動：**
 
 ```powershell
 # データディレクトリのパスを確認
@@ -45,6 +45,7 @@ pg_ctl -D $PGDATA -l "$env:USERPROFILE\scoop\apps\postgresql\current\logfile" st
 ```
 
 **注意**: PostgreSQLを停止するには：
+
 ```powershell
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 ```
@@ -61,7 +62,7 @@ pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 
 3. インストール完了後、環境変数PATHに追加：
 
-   ```
+   ```text
    C:\Program Files\PostgreSQL\16\bin
    ```
 
@@ -123,6 +124,7 @@ cd path\to\genai-app-docs
 ```
 
 スクリプトが自動的に以下を実行します：
+
 - PostgreSQLの起動確認
 - uvのインストール確認
 - Python依存関係のインストール（uv sync）
@@ -209,13 +211,13 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Get-Process postgres -ErrorAction SilentlyContinue
 ```
 
-2. PostgreSQLを起動：
+1. PostgreSQLを起動：
 
 ```powershell
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data -l "$env:USERPROFILE\scoop\apps\postgresql\current\logfile" start
 ```
 
-3. 起動確認：
+1. 起動確認：
 
 ```powershell
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
@@ -229,7 +231,7 @@ pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
 Get-Service postgresql*
 ```
 
-2. サービスを起動：
+1. サービスを起動：
 
 ```powershell
 Start-Service postgresql-x64-16  # バージョンによって名前が異なります
@@ -261,13 +263,13 @@ $env:Path += ";$env:USERPROFILE\.local\bin"
 psql -U postgres -l | findstr camp_backend_db
 ```
 
-2. .env.localのDATABASE_URLが正しいか確認：
+1. .env.localのDATABASE_URLが正しいか確認：
 
 ```powershell
 Get-Content .env.local | Select-String DATABASE_URL
 ```
 
-3. PostgreSQLに接続できるか確認：
+1. PostgreSQLに接続できるか確認：
 
 ```powershell
 psql -U postgres -d camp_backend_db -c "SELECT version();"
