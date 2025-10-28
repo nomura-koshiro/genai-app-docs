@@ -142,13 +142,12 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         except AppException as exc:
             # カスタムアプリケーション例外を処理
             logger.warning(
-                f"アプリケーション例外: {exc.message}",
-                extra={
-                    "path": request.url.path,
-                    "method": request.method,
-                    "status_code": exc.status_code,
-                    "details": exc.details,
-                },
+                "アプリケーション例外",
+                exception_message=exc.message,
+                path=request.url.path,
+                method=request.method,
+                status_code=exc.status_code,
+                details=exc.details,
             )
             return JSONResponse(
                 status_code=exc.status_code,
@@ -157,8 +156,11 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             # 予期しない例外を処理
             logger.exception(
-                f"予期しないエラー: {str(exc)}",
-                extra={"path": request.url.path, "method": request.method},
+                "予期しないエラー",
+                path=request.url.path,
+                method=request.method,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
             )
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

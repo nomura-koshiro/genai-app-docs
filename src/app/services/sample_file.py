@@ -68,11 +68,9 @@ class SampleFileService:
         """
         logger.info(
             "ファイルアップロード開始",
-            extra={
-                "filename": file.filename,
-                "content_type": file.content_type,
-                "user_id": user_id,
-            },
+            filename=file.filename,
+            content_type=file.content_type,
+            user_id=user_id,
         )
 
         # バリデーション
@@ -107,10 +105,11 @@ class SampleFileService:
             with open(filepath, "wb") as f:
                 f.write(content)
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "ファイル保存エラー",
-                extra={"filename": safe_filename, "error": str(e)},
-                exc_info=True,
+                filename=safe_filename,
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
             raise ValidationError(f"ファイルの保存に失敗しました: {str(e)}") from e
 
@@ -128,11 +127,9 @@ class SampleFileService:
 
         logger.info(
             "ファイルアップロード完了",
-            extra={
-                "file_id": file_id,
-                "filename": safe_filename,
-                "size": file_size,
-            },
+            file_id=file_id,
+            filename=safe_filename,
+            size=file_size,
         )
 
         return file_metadata
@@ -157,7 +154,8 @@ class SampleFileService:
         if not os.path.exists(file.filepath):
             logger.error(
                 "ファイルがディスク上に存在しません",
-                extra={"file_id": file_id, "filepath": file.filepath},
+                file_id=file_id,
+                filepath=file.filepath,
             )
             raise NotFoundError(
                 f"ファイルがディスク上に存在しません: {file_id}",
@@ -189,10 +187,12 @@ class SampleFileService:
             if os.path.exists(file.filepath):
                 os.remove(file.filepath)
         except Exception as e:
-            logger.error(
+            logger.exception(
                 "ファイル削除エラー",
-                extra={"file_id": file_id, "filepath": file.filepath, "error": str(e)},
-                exc_info=True,
+                file_id=file_id,
+                filepath=file.filepath,
+                error_type=type(e).__name__,
+                error_message=str(e),
             )
 
         # データベースから削除
@@ -214,11 +214,11 @@ class SampleFileService:
         Returns:
             list[SampleFile]: ファイルのリスト
         """
-        logger.debug("ファイル一覧取得", extra={"user_id": user_id, "skip": skip, "limit": limit})
+        logger.debug("ファイル一覧取得", user_id=user_id, skip=skip, limit=limit)
 
         files = await self.repository.list_files(user_id=user_id, skip=skip, limit=limit)
 
-        logger.debug("ファイル一覧取得完了", extra={"count": len(files)})
+        logger.debug("ファイル一覧取得完了", count=len(files))
 
         return files
 

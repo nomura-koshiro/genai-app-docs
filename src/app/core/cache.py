@@ -313,7 +313,12 @@ class CacheManager:
                 return json.loads(value)
             return None
         except Exception as e:
-            logger.error(f"キー '{full_key}' のキャッシュ取得エラー: {e}")
+            logger.exception(
+                "キャッシュ取得エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return None  # エラー時はキャッシュなしとして動作
 
     async def set(
@@ -381,7 +386,12 @@ class CacheManager:
                 await self._redis.set(full_key, serialized)
             return True
         except Exception as e:
-            logger.error(f"キー '{full_key}' のキャッシュ設定エラー: {e}")
+            logger.exception(
+                "キャッシュ設定エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False
 
     async def delete(self, key: str) -> bool:
@@ -425,7 +435,12 @@ class CacheManager:
             await self._redis.delete(full_key)
             return True
         except Exception as e:
-            logger.error(f"キー '{full_key}' のキャッシュ削除エラー: {e}")
+            logger.exception(
+                "キャッシュ削除エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False
 
     async def exists(self, key: str) -> bool:
@@ -473,7 +488,12 @@ class CacheManager:
         try:
             return await self._redis.exists(full_key) > 0
         except Exception as e:
-            logger.error(f"キー '{full_key}' のキャッシュ存在確認エラー: {e}")
+            logger.exception(
+                "キャッシュ存在確認エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False
 
     async def clear(self, pattern: str = "*") -> bool:
@@ -527,7 +547,12 @@ class CacheManager:
                 await self._redis.delete(key)
             return True
         except Exception as e:
-            logger.error(f"パターン '{full_pattern}' のキャッシュクリアエラー: {e}")
+            logger.exception(
+                "キャッシュクリアエラー",
+                pattern=full_pattern,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             return False
 
 

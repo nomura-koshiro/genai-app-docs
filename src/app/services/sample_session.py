@@ -52,11 +52,9 @@ class SampleSessionService:
         """
         logger.debug(
             "セッション一覧取得",
-            extra={
-                "user_id": user_id,
-                "skip": skip,
-                "limit": limit,
-            },
+            user_id=user_id,
+            skip=skip,
+            limit=limit,
         )
 
         # クエリ構築
@@ -83,10 +81,8 @@ class SampleSessionService:
 
         logger.debug(
             "セッション一覧取得完了",
-            extra={
-                "total": total,
-                "returned": len(sessions),
-            },
+            total=total,
+            returned=len(sessions),
         )
 
         return sessions, total
@@ -103,7 +99,7 @@ class SampleSessionService:
         Raises:
             NotFoundError: セッションが存在しない場合
         """
-        logger.debug("セッション取得", extra={"session_id": session_id, "action": "get_session"})
+        logger.debug("セッション取得", session_id=session_id, action="get_session")
 
         session = await self.repository.get_by_session_id(session_id)
         if not session:
@@ -114,7 +110,8 @@ class SampleSessionService:
 
         logger.debug(
             "セッション取得完了",
-            extra={"session_id": session_id, "message_count": len(session.messages)},
+            session_id=session_id,
+            message_count=len(session.messages),
         )
 
         return session
@@ -137,10 +134,8 @@ class SampleSessionService:
 
         logger.info(
             "セッション作成",
-            extra={
-                "session_id": session_id,
-                "user_id": user_id,
-            },
+            session_id=session_id,
+            user_id=user_id,
         )
 
         session = await self.repository.create_session(
@@ -153,7 +148,7 @@ class SampleSessionService:
 
         logger.info(
             "セッション作成完了",
-            extra={"session_id": session_id},
+            session_id=session_id,
         )
 
         return session
@@ -177,7 +172,7 @@ class SampleSessionService:
         """
         logger.info(
             "セッション更新",
-            extra={"session_id": session_id},
+            session_id=session_id,
         )
 
         session = await self.repository.get_by_session_id(session_id)
@@ -196,7 +191,7 @@ class SampleSessionService:
 
         logger.info(
             "セッション更新完了",
-            extra={"session_id": session_id},
+            session_id=session_id,
         )
 
         return session
@@ -213,7 +208,7 @@ class SampleSessionService:
         Raises:
             NotFoundError: セッションが存在しない場合
         """
-        logger.info("セッション削除", extra={"session_id": session_id})
+        logger.info("セッション削除", session_id=session_id)
 
         deleted = await self.repository.delete_session(session_id)
         if not deleted:
@@ -224,7 +219,7 @@ class SampleSessionService:
 
         await self.db.commit()
 
-        logger.info("セッション削除完了", extra={"session_id": session_id})
+        logger.info("セッション削除完了", session_id=session_id)
 
         return True
 

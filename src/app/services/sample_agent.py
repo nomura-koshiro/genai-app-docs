@@ -68,11 +68,9 @@ class SampleAgentService:
 
         logger.info(
             "チャットリクエスト受信",
-            extra={
-                "session_id": session_id,
-                "user_id": user_id,
-                "message_length": len(message),
-            },
+            session_id=session_id,
+            user_id=user_id,
+            message_length=len(message),
         )
 
         # セッションの取得または作成
@@ -88,7 +86,7 @@ class SampleAgentService:
             session_id = self._generate_session_id()
             session = await self.repository.create_session(session_id=session_id, user_id=user_id, metadata=context)
             await self.db.commit()
-            logger.info("新しいセッションを作成しました", extra={"session_id": session_id})
+            logger.info("新しいセッションを作成しました", session_id=session_id)
 
         # ユーザーメッセージを保存
         await self.repository.add_message(session_id=session.id, role="user", content=message)
@@ -109,7 +107,8 @@ class SampleAgentService:
 
         logger.info(
             "チャットレスポンス生成完了",
-            extra={"session_id": session_id, "response_length": len(ai_response)},
+            session_id=session_id,
+            response_length=len(ai_response),
         )
 
         return {
@@ -131,7 +130,7 @@ class SampleAgentService:
         Raises:
             NotFoundError: セッションが存在しない場合
         """
-        logger.debug("セッション取得", extra={"session_id": session_id, "action": "get_session"})
+        logger.debug("セッション取得", session_id=session_id, action="get_session")
 
         session = await self.repository.get_by_session_id(session_id)
         if not session:
@@ -142,7 +141,8 @@ class SampleAgentService:
 
         logger.debug(
             "セッション取得完了",
-            extra={"session_id": session_id, "message_count": len(session.messages)},
+            session_id=session_id,
+            message_count=len(session.messages),
         )
 
         return session

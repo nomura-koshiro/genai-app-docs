@@ -195,16 +195,20 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
 
         # 追加の検証: sub (subject) フィールドの存在確認
         if "sub" not in payload:
-            logger.warning("JWTトークンに'sub'フィールドがありません")
+            logger.warning("JWTトークン検証失敗", reason="sub_field_missing")
             return None
 
         return payload
 
     except ExpiredSignatureError:
-        logger.warning("JWTトークンの有効期限が切れています")
+        logger.warning("JWTトークン有効期限切れ")
         return None
     except JWTError as e:
-        logger.warning(f"JWTデコードエラー: {e}")
+        logger.warning(
+            "JWTデコードエラー",
+            error_type=type(e).__name__,
+            error_message=str(e),
+        )
         return None
 
 

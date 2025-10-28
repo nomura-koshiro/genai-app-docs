@@ -455,7 +455,11 @@ async def generate_user_api_key(
     current_user.api_key_created_at = created_at
     await db.commit()
 
-    logger.info(f"APIキーを生成しました（ハッシュ化済み）: user_id={current_user.id}")
+    logger.info(
+        "APIキー生成完了",
+        user_id=current_user.id,
+        api_key_hashed=True,
+    )
 
     return SampleAPIKeyResponse(
         api_key=api_key,

@@ -344,7 +344,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return response
 
         except Exception as e:
-            logger.error(f"レート制限エラー: {e}")
+            logger.exception(
+                "レート制限エラー",
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             # エラー時はインメモリフォールバックを使用
             logger.warning("Redisエラー、インメモリレート制限にフォールバックします")
             is_limited, request_count = self._check_rate_limit_memory(client_identifier, current_time)

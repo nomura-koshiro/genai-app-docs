@@ -189,12 +189,22 @@ class BaseRepository[ModelType: Base]:
                 if hasattr(self.model, relation):
                     query = query.options(selectinload(getattr(self.model, relation)))
                 else:
-                    logger.warning(f"モデル {self.model.__name__} に無効なリレーション '{relation}' が指定されました。スキップします。")
+                    logger.warning(
+                        "無効なリレーション指定",
+                        model=self.model.__name__,
+                        relation=relation,
+                        action="skip",
+                    )
 
         # フィルタを適用（モデル属性のみ）
         for key, value in filters.items():
             if not hasattr(self.model, key):
-                logger.warning(f"モデル {self.model.__name__} に無効なフィルタキー '{key}' が指定されました。スキップします。")
+                logger.warning(
+                    "無効なフィルタキー指定",
+                    model=self.model.__name__,
+                    filter_key=key,
+                    action="skip",
+                )
                 continue
 
             attr = getattr(self.model, key)
@@ -205,7 +215,12 @@ class BaseRepository[ModelType: Base]:
             if hasattr(self.model, order_by):
                 query = query.order_by(getattr(self.model, order_by))
             else:
-                logger.warning(f"モデル {self.model.__name__} に無効なorder_byキー '{order_by}' が指定されました。スキップします。")
+                logger.warning(
+                    "無効なorder_byキー指定",
+                    model=self.model.__name__,
+                    order_by=order_by,
+                    action="skip",
+                )
 
         query = query.offset(skip).limit(limit)
         result = await self.db.execute(query)

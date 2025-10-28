@@ -29,7 +29,7 @@ async def test_account_lock_after_max_failed_attempts(db_session):
     await db_session.commit()
 
     # Act - MAX_LOGIN_ATTEMPTS回失敗させる
-    for i in range(settings.MAX_LOGIN_ATTEMPTS):
+    for _i in range(settings.MAX_LOGIN_ATTEMPTS):
         with pytest.raises(AuthenticationError):
             await service.authenticate("locktest@example.com", "wrong_password")
 
@@ -148,7 +148,7 @@ async def test_password_increments_failed_attempts(db_session):
     await db_session.commit()
 
     # Act - 2回失敗させる
-    for i in range(2):
+    for _i in range(2):
         with pytest.raises(AuthenticationError):
             await service.authenticate("increment@example.com", "wrong_password")
 

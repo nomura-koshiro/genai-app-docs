@@ -101,11 +101,9 @@ class SampleUserService:
         """
         logger.info(
             "ユーザーを作成中",
-            extra={
-                "email": user_data.email,
-                "username": user_data.username,
-                "action": "user_creation",
-            },
+            email=user_data.email,
+            username=user_data.username,
+            action="user_creation",
         )
 
         try:
@@ -114,7 +112,7 @@ class SampleUserService:
             if existing_user:
                 logger.warning(
                     "ユーザー作成失敗: メールアドレスが既に存在します",
-                    extra={"email": user_data.email},
+                    email=user_data.email,
                 )
                 raise ValidationError(
                     "このメールアドレスは既に使用されています",
@@ -125,7 +123,7 @@ class SampleUserService:
             if existing_username:
                 logger.warning(
                     "ユーザー作成失敗: ユーザー名が既に使用されています",
-                    extra={"username": user_data.username},
+                    username=user_data.username,
                 )
                 raise ValidationError("このユーザー名は既に使用されています", details={"username": user_data.username})
 
@@ -143,11 +141,9 @@ class SampleUserService:
 
             logger.info(
                 "ユーザーを正常に作成しました",
-                extra={
-                    "user_id": user.id,
-                    "email": user.email,
-                    "username": user.username,
-                },
+                user_id=user.id,
+                email=user.email,
+                username=user.username,
             )
 
             return user
@@ -157,10 +153,8 @@ class SampleUserService:
         except Exception as e:
             logger.error(
                 "ユーザー作成中に予期しないエラーが発生しました",
-                extra={
-                    "email": user_data.email,
-                    "error": str(e),
-                },
+                email=user_data.email,
+                error=str(e),
                 exc_info=True,
             )
             raise
@@ -216,7 +210,9 @@ class SampleUserService:
 
         logger.info(
             "ユーザー認証を試行中",
-            extra={"email": email, "client_ip": client_ip, "action": "authentication"},
+            email=email,
+            client_ip=client_ip,
+            action="authentication",
         )
 
         try:
@@ -229,11 +225,9 @@ class SampleUserService:
             if user.locked_until and user.locked_until > datetime.now(UTC):
                 logger.warning(
                     "認証失敗: アカウントがロックされています",
-                    extra={
-                        "email": email,
-                        "user_id": user.id,
-                        "locked_until": user.locked_until.isoformat(),
-                    },
+                    email=email,
+                    user_id=user.id,
+                    locked_until=user.locked_until.isoformat(),
                 )
                 lock_time = user.locked_until.strftime("%Y-%m-%d %H:%M:%S")
                 raise AuthenticationError(f"アカウントがロックされています。{lock_time}以降に再試行してください")
@@ -251,11 +245,9 @@ class SampleUserService:
                     await self.db.commit()
                     logger.warning(
                         f"認証失敗: {settings.MAX_LOGIN_ATTEMPTS}回連続失敗によりアカウントをロックしました",
-                        extra={
-                            "email": email,
-                            "user_id": user.id,
-                            "locked_until": locked_until_time.isoformat(),
-                        },
+                        email=email,
+                        user_id=user.id,
+                        locked_until=locked_until_time.isoformat(),
                     )
                     raise AuthenticationError(
                         f"ログイン失敗回数が上限に達しました。アカウントは{settings.ACCOUNT_LOCK_DURATION_HOURS}時間ロックされます"
@@ -264,11 +256,9 @@ class SampleUserService:
                 await self.db.commit()
                 logger.warning(
                     "認証失敗: パスワードが無効です",
-                    extra={
-                        "email": email,
-                        "user_id": user.id,
-                        "failed_attempts": user.failed_login_attempts,
-                    },
+                    email=email,
+                    user_id=user.id,
+                    failed_attempts=user.failed_login_attempts,
                 )
                 raise AuthenticationError("メールアドレスまたはパスワードが正しくありません")
 
@@ -276,7 +266,8 @@ class SampleUserService:
             if not user.is_active:
                 logger.warning(
                     "認証失敗: ユーザーアカウントが無効化されています",
-                    extra={"email": email, "user_id": user.id},
+                    email=email,
+                    user_id=user.id,
                 )
                 raise AuthenticationError("このアカウントは無効化されています")
 
@@ -291,12 +282,10 @@ class SampleUserService:
 
             logger.info(
                 "ユーザー認証に成功しました",
-                extra={
-                    "user_id": user.id,
-                    "email": user.email,
-                    "username": user.username,
-                    "client_ip": client_ip,
-                },
+                user_id=user.id,
+                email=user.email,
+                username=user.username,
+                client_ip=client_ip,
             )
 
             return user
@@ -306,7 +295,8 @@ class SampleUserService:
         except Exception as e:
             logger.error(
                 "認証中に予期しないエラーが発生しました",
-                extra={"email": email, "error": str(e)},
+                email=email,
+                error=str(e),
                 exc_info=True,
             )
             raise
@@ -336,14 +326,14 @@ class SampleUserService:
             - 取得操作はDEBUGレベルでログに記録されます
             - 存在しないユーザーの場合、WARNINGログが記録されNoneを返します
         """
-        logger.debug("ユーザーIDでユーザーを取得中", extra={"user_id": user_id, "action": "get_user"})
+        logger.debug("ユーザーIDでユーザーを取得中", user_id=user_id, action="get_user")
 
         user = await self.repository.get(user_id)
         if not user:
             logger.warning("ユーザーが見つかりません", user_id=user_id)
             return None
 
-        logger.debug("ユーザーを正常に取得しました", extra={"user_id": user.id, "email": user.email})
+        logger.debug("ユーザーを正常に取得しました", user_id=user.id, email=user.email)
         return user
 
     async def get_user_by_email(self, email: str) -> SampleUser:
@@ -372,7 +362,8 @@ class SampleUserService:
         """
         logger.debug(
             "メールアドレスでユーザーを取得中",
-            extra={"email": email, "action": "get_user_by_email"},
+            email=email,
+            action="get_user_by_email",
         )
 
         user = await self.repository.get_by_email(email)
@@ -380,7 +371,7 @@ class SampleUserService:
             logger.warning("ユーザーが見つかりません", email=email)
             raise NotFoundError("ユーザーが見つかりません", details={"email": email})
 
-        logger.debug("ユーザーを正常に取得しました", extra={"user_id": user.id, "email": user.email})
+        logger.debug("ユーザーを正常に取得しました", user_id=user.id, email=user.email)
         return user
 
     async def list_users(self, skip: int = 0, limit: int = 100) -> list[SampleUser]:
@@ -412,13 +403,15 @@ class SampleUserService:
             - 大量のレコードを取得する場合は、適切なlimitを設定してください
             - 総件数が必要な場合は、別途countメソッドを実装する必要があります
         """
-        logger.debug("ユーザー一覧を取得中", extra={"skip": skip, "limit": limit, "action": "list_users"})
+        logger.debug("ユーザー一覧を取得中", skip=skip, limit=limit, action="list_users")
 
         users = await self.repository.get_multi(skip=skip, limit=limit)
 
         logger.debug(
             "ユーザー一覧を正常に取得しました",
-            extra={"count": len(users), "skip": skip, "limit": limit},
+            count=len(users),
+            skip=skip,
+            limit=limit,
         )
 
         return users

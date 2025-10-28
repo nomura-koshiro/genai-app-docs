@@ -89,7 +89,11 @@ async def health():
             await db.execute(text("SELECT 1"))
             break
     except Exception as e:
-        logger.error(f"データベースヘルスチェックに失敗しました: {e}")
+        logger.exception(
+            "データベースヘルスチェック失敗",
+            error_type=type(e).__name__,
+            error_message=str(e),
+        )
         db_status = "unhealthy"
 
     # Redisヘルスチェック
@@ -99,7 +103,11 @@ async def health():
         try:
             await redis_client.ping()
         except Exception as e:
-            logger.error(f"Redisヘルスチェックに失敗しました: {e}")
+            logger.exception(
+                "Redisヘルスチェック失敗",
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
             redis_status = "unhealthy"
 
     # 総合ステータス
