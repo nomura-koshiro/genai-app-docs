@@ -1,6 +1,6 @@
 # テックスタック
 
-このドキュメントでは、AI Agent Appで使用している主要な技術スタックとライブラリの概要を説明します。
+このドキュメントでは、camp-backendで使用している主要な技術スタックとライブラリの概要を説明します。
 
 ## 目次
 
@@ -86,9 +86,9 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 app = FastAPI(
-    title="AI Agent App",
+    title="camp-backend",
     version="0.1.0",
-    description="AI Agent application with file management",
+    description="camp-backend with file management",
 )
 
 class Item(BaseModel):
@@ -398,7 +398,7 @@ def get_env_file() -> tuple[str, ...]:
 class Settings(BaseSettings):
     """アプリケーション設定。"""
 
-    APP_NAME: str = "AI Agent App"
+    APP_NAME: str = "camp-backend"
     DATABASE_URL: str
     SECRET_KEY: str
     DEBUG: bool = False

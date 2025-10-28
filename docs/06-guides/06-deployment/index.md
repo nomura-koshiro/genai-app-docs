@@ -309,7 +309,7 @@ volumes:
 
 ```bash
 # Application
-APP_NAME=AI Agent App
+APP_NAME=camp-backend
 VERSION=0.1.0
 ENVIRONMENT=development
 DEBUG=false
@@ -353,7 +353,7 @@ MAX_UPLOAD_SIZE=10485760  # 10MB
 
 ```bash
 # Application
-APP_NAME=AI Agent App
+APP_NAME=camp-backend
 VERSION=0.1.0
 ENVIRONMENT=production
 DEBUG=false

@@ -184,7 +184,7 @@ class Settings(BaseSettings):
         >>>
         >>> # 基本設定
         >>> print(settings.APP_NAME)
-        "AI Agent App"
+        "camp-backend"
         >>>
         >>> # データベース接続
         >>> print(settings.DATABASE_URL)
@@ -210,7 +210,7 @@ class Settings(BaseSettings):
     )
 
     # アプリケーション設定
-    APP_NAME: str = "AI Agent App"
+    APP_NAME: str = "camp-backend"
     VERSION: str = "0.1.0"
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
@@ -295,7 +295,7 @@ class Settings(BaseSettings):
 
     LANGCHAIN_TRACING_V2: bool = False
     LANGCHAIN_API_KEY: str | None = None
-    LANGCHAIN_PROJECT: str = "ai-agent-app"
+    LANGCHAIN_PROJECT: str = "camp-backend"
 
     # ファイルアップロード設定
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MBデフォルト

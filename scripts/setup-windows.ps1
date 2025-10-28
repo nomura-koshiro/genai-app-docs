@@ -141,7 +141,7 @@ if (-not (Test-Path ".env.local")) {
     Write-Host "✓ .env.localを作成しました" -ForegroundColor $GREEN
     Write-Host ""
     Write-Host "⚠ .env.localを編集してデータベース接続情報を設定してください：" -ForegroundColor $YELLOW
-    Write-Host "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/genai_app" -ForegroundColor $YELLOW
+    Write-Host "  DATABASE_URL=postgresql://postgres:postgres@localhost:5432/camp_backend_db" -ForegroundColor $YELLOW
     Write-Host "  SECRET_KEY=your-secret-key-here-min-32-characters-long" -ForegroundColor $YELLOW
 } else {
     Write-Host "✓ .env.localは既に存在します" -ForegroundColor $GREEN
@@ -150,10 +150,10 @@ Write-Host ""
 
 # ステップ6: データベースの確認
 Write-Host "[6/6] データベースの確認..." -ForegroundColor $BLUE
-Write-Host "データベース 'genai_app' が作成されているか確認してください" -ForegroundColor $YELLOW
+Write-Host "データベース 'camp_backend_db' が作成されているか確認してください" -ForegroundColor $YELLOW
 Write-Host ""
 Write-Host "作成されていない場合、以下のコマンドで作成してください：" -ForegroundColor $YELLOW
-Write-Host "  psql -U postgres -c `"CREATE DATABASE genai_app;`"" -ForegroundColor $YELLOW
+Write-Host "  psql -U postgres -c `"CREATE DATABASE camp_backend_db;`"" -ForegroundColor $YELLOW
 Write-Host ""
 
 # 完了メッセージ
@@ -163,7 +163,7 @@ Write-Host "=========================================" -ForegroundColor $GREEN
 Write-Host ""
 Write-Host "次のステップ:" -ForegroundColor $BLUE
 Write-Host "1. データベースを作成（まだの場合）:" -ForegroundColor $BLUE
-Write-Host "   psql -U postgres -c `"CREATE DATABASE genai_app;`"" -ForegroundColor $BLUE
+Write-Host "   psql -U postgres -c `"CREATE DATABASE camp_backend_db;`"" -ForegroundColor $BLUE
 Write-Host ""
 Write-Host "2. .env.localを編集してデータベース接続情報を設定" -ForegroundColor $BLUE
 Write-Host ""

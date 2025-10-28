@@ -1,10 +1,10 @@
 # プロジェクト構造
 
-このドキュメントでは、AI Agent Appのディレクトリ構造と各ファイルの役割について説明します。
+このドキュメントでは、camp-backendのディレクトリ構造と各ファイルの役割について説明します。
 
 ## システム構成図
 
-以下の図は、AI Agent Appの全体的なシステム構成を示しています。
+以下の図は、camp-backendの全体的なシステム構成を示しています。
 
 ```mermaid
 graph TB
@@ -187,7 +187,7 @@ Pydantic Settingsを使用した設定管理。
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
-    APP_NAME: str = "AI Agent App"
+    APP_NAME: str = "camp-backend"
     DATABASE_URL: str
     SECRET_KEY: str
     # ... その他の設定

@@ -32,7 +32,7 @@ async def root():
         >>> # cURLでアクセス
         >>> $ curl http://localhost:8000/
         >>> {
-        >>>   "message": "Welcome to AI Agent App",
+        >>>   "message": "Welcome to camp-backend",
         >>>   "version": "0.1.0",
         >>>   "docs": "/docs"
         >>> }

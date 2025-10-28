@@ -53,7 +53,7 @@ async def lifespan(app: FastAPI):
         >>> app = FastAPI(lifespan=lifespan)
         >>>
         >>> # 起動時のログ例
-        >>> # INFO - Starting AI Agent App v0.1.0
+        >>> # INFO - Starting camp-backend v0.1.0
         >>> # INFO - Environment: development
         >>> # INFO - Loaded config from: .env.local, .env
         >>> # INFO - Database: ***@localhost:5432/app_db

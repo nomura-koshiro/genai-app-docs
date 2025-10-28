@@ -529,7 +529,7 @@ curl -X GET "http://localhost:8000/api/v1/sample-files/sample-list?skip=0&limit=
 
 ```json
 {
-  "message": "Welcome to AI Agent App",
+  "message": "Welcome to camp-backend",
   "version": "0.1.0",
   "docs": "/docs"
 }

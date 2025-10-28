@@ -73,13 +73,13 @@ PowerShellで実行：
 
 ```powershell
 # データベースを作成（存在しない場合）
-psql -U postgres -c "CREATE DATABASE genai_app;"
+psql -U postgres -c "CREATE DATABASE camp_backend_db;"
 
 # データベース一覧を確認
 psql -U postgres -l
 ```
 
-**注意**: データベースが既に存在する場合は、エラーが表示されますが問題ありません。`psql -U postgres -l`でgenai_appが表示されていればOKです。
+**注意**: データベースが既に存在する場合は、エラーが表示されますが問題ありません。`psql -U postgres -l`でcamp_backend_dbが表示されていればOKです。
 
 ## ステップ3: Pythonのインストール
 
@@ -156,7 +156,7 @@ notepad .env.local
 
 ```ini
 # データベース設定
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/genai_app
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/camp_backend_db
 
 # セキュリティ設定（開発環境用）
 SECRET_KEY=your-secret-key-here-min-32-characters-long
@@ -258,7 +258,7 @@ $env:Path += ";$env:USERPROFILE\.local\bin"
 1. データベースが作成されているか確認：
 
 ```powershell
-psql -U postgres -l | findstr genai_app
+psql -U postgres -l | findstr camp_backend_db
 ```
 
 2. .env.localのDATABASE_URLが正しいか確認：
@@ -270,7 +270,7 @@ Get-Content .env.local | Select-String DATABASE_URL
 3. PostgreSQLに接続できるか確認：
 
 ```powershell
-psql -U postgres -d genai_app -c "SELECT version();"
+psql -U postgres -d camp_backend_db -c "SELECT version();"
 ```
 
 ### SECRET_KEY警告が表示される

@@ -160,7 +160,7 @@
       "port": 5432,
       "driver": "PostgreSQL",
       "name": "GenAI App PostgreSQL",
-      "database": "genai_app",
+      "database": "camp_backend_db",
       "username": "postgres",
       "password": "postgres",
       "pgOptions": {

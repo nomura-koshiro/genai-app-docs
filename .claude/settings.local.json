@@ -27,7 +27,8 @@
       "Bash(done)",
       "Bash(git push)",
       "Bash(git push:*)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "Bash(dir /B \"C:\\developments\\project\\genai-app-docs\")"
     ],
     "deny": [],
     "ask": []

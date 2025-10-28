@@ -1,7 +1,7 @@
 [project]
 name = "camp-backend"
 version = "0.1.0"
-description = "AI Agent application with file upload/download capabilities"
+description = "camp-backend with file upload/download capabilities"
 readme = "README.md"
 authors = [{ name = "koshiro.nomura", email = "koshiro.nomura@accenture.com" }]
 requires-python = ">=3.13"
@@ -91,6 +91,4 @@ indent-style = "space"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = [
-    "skip_db: データベース不要のユニットテスト",
-]
+markers = ["skip_db: データベース不要のユニットテスト"]

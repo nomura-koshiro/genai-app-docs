@@ -121,7 +121,7 @@ FastAPIアプリケーションの基本設定。
 
 | 変数名 | 型 | デフォルト値 | 必須 | 説明 |
 |-------|---|------------|------|------|
-| APP_NAME | string | "AI Agent App" | × | アプリケーション名 |
+| APP_NAME | string | "camp-backend" | × | アプリケーション名 |
 | VERSION | string | "0.1.0" | × | アプリケーションバージョン |
 | DEBUG | boolean | false | × | デバッグモード（開発時はtrue） |
 | HOST | string | "0.0.0.0" | × | サーバーホスト |
@@ -131,7 +131,7 @@ FastAPIアプリケーションの基本設定。
 #### 設定例
 
 ```bash
-APP_NAME="AI Agent App"
+APP_NAME="camp-backend"
 VERSION="0.1.0"
 DEBUG=true
 HOST=0.0.0.0
@@ -616,7 +616,7 @@ if file.size > settings.MAX_UPLOAD_SIZE:
 
 ```bash
 # Application
-APP_NAME="AI Agent App"
+APP_NAME="camp-backend"
 VERSION="0.1.0"
 DEBUG=true
 HOST=0.0.0.0
@@ -676,7 +676,7 @@ LANGCHAIN_PROJECT=ai-agent-app-dev
 
 ```bash
 # Application
-APP_NAME="AI Agent App (Staging)"
+APP_NAME="camp-backend (Staging)"
 VERSION="0.1.0"
 DEBUG=false
 HOST=0.0.0.0
@@ -740,7 +740,7 @@ LANGCHAIN_PROJECT=ai-agent-app-staging
 
 ```bash
 # Application
-APP_NAME="AI Agent App"
+APP_NAME="camp-backend"
 VERSION="0.1.0"
 DEBUG=false
 HOST=0.0.0.0

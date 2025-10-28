@@ -1,4 +1,4 @@
-# AI Agent App (Backend)
+# camp-backend
 
 FastAPI + LangChain + LangGraphをベースにした、AIエージェント機能とファイル管理機能を持つバックエンドAPIです。
 
@@ -16,41 +16,41 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 
 ## 🚀 クイックスタート
 
-### 推奨環境：WSL2完結型（Windows）
+### 前提条件
 
-**Windows開発者には、すべてをWSL2（Linux）で完結させる構成を推奨します。**
+- Python 3.11+
+- uv（Pythonパッケージマネージャー）
+- PostgreSQL（Docker Desktopまたはローカルインストール）
 
-メリット：
+### セットアップ（Windows）
 
-- ✅ **高速**: ファイルI/Oが高速
-- ✅ **シンプル**: 環境が統一、パスの混乱なし
-- ✅ **軽量**: Docker Desktopが不要
-- ✅ **本番と同じ**: 本番環境（Linux）と完全一致
+```powershell
+# 1. uvのインストール（未インストールの場合）
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-**VSCodeについて**: Windows側のVSCodeで編集できます（Remote-WSL拡張を使用）
+# 2. プロジェクトディレクトリに移動
+cd C:\developments\project\genai-app-docs
 
-### セットアップ（WSL2）
+# 3. 依存関係のインストール
+uv sync
 
-```bash
-# WSL2に入る
-wsl
+# 4. 環境変数ファイルの作成
+copy .env.example .env
+# .envファイルを編集して、必要な環境変数を設定してください
 
-# セットアップスクリプトを実行
-cd /mnt/c/developments/genai-app-docs
-bash scripts/setup-wsl2.sh
+# 5. PostgreSQLの起動（Docker使用の場合）
+docker-compose up -d postgres
+
+# 6. データベースマイグレーション
+cd src
+uv run alembic upgrade head
+cd ..
+
+# 7. 開発サーバー起動
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-このスクリプトが以下を自動実行します：
-
-- Dockerのインストールと起動
-- プロジェクトのコピー（`~/projects/genai-app-docs`）
-- uvと依存関係のインストール
-- 環境変数ファイルの作成
-- PostgreSQLの起動
-
 完了後、ブラウザで [http://localhost:8000/docs](http://localhost:8000/docs) を開いてAPIドキュメントを確認してください。
-
-詳細は [WSL2セットアップガイド](./docs/01-getting-started/02-wsl2-docker-setup.md) を参照してください。
 
 ## 📁 ディレクトリ構成
 
@@ -87,17 +87,11 @@ backend/
 
 詳細は [プロジェクト構造](./docs/02-architecture/01-project-structure.md) を参照してください。
 
-## 📜 よく使うコマンド（WSL2内）
+## 📜 よく使うコマンド
 
-```bash
-# 開発
-cd ~/projects/genai-app-docs
-
-# Dockerサービス起動（必要に応じて）
-sudo service docker start
-
+```powershell
 # 開発サーバー起動
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 # または VSCode で F5 キーを押してデバッグ起動
 
 # テスト実行
@@ -116,8 +110,10 @@ docker-compose logs postgres            # ログ確認
 docker-compose down                     # コンテナ停止
 
 # データベース (Alembic)
-cd src && uv run alembic revision --autogenerate -m "message"  # マイグレーション生成
-cd src && uv run alembic upgrade head   # マイグレーション適用
+cd src
+uv run alembic revision --autogenerate -m "message"  # マイグレーション生成
+uv run alembic upgrade head                          # マイグレーション適用
+cd ..
 ```
 
 ## 📖 ドキュメント
@@ -127,7 +123,6 @@ cd src && uv run alembic upgrade head   # マイグレーション適用
 | ドキュメント | 内容 |
 |------------|------|
 | [📚 ドキュメント目次](./docs/README.md) | 全ドキュメントの一覧 |
-| [🐧 WSL2セットアップ](./docs/01-getting-started/02-wsl2-docker-setup.md) | WSL2完結型環境構築 |
 | [⚡ クイックスタート](./docs/01-getting-started/05-quick-start.md) | 最速でAPIを起動 |
 | [🎓 プロジェクト概要](./docs/01-getting-started/06-project-overview.md) | 全体像の理解 |
 | [🏗️ プロジェクト構造](./docs/02-architecture/01-project-structure.md) | ディレクトリ構成 |

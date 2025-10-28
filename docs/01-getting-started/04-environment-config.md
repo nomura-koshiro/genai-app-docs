@@ -96,7 +96,7 @@ ENVIRONMENT=production uv run uvicorn app.main:app
 起動時に読み込まれた設定ファイルが表示されます：
 
 ```text
-Starting AI Agent App v0.1.0
+Starting camp-backend v0.1.0
 Environment: development
 Loaded config from: /path/to/.env.local
 Database: postgresql+asyncpg://postgres:***@localhost:5432/app_db
