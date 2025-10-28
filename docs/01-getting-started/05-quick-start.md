@@ -56,7 +56,7 @@
 
 コマンドラインからもテストできます：
 
-```bash
+```powershell
 # ヘルスチェック
 curl http://localhost:8000/health
 
@@ -90,18 +90,18 @@ VS Codeで **Shift+F5** を押すか、ターミナルで **Ctrl+C** を押し�
 
 ### 手動起動（コマンドライン）
 
-```bash
+```powershell
 # PostgreSQLが起動していることを確認後、以下を実行
 
 # アプリケーション起動
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 ### ログレベルの変更
 
 `.env.local`ファイルで設定：
 
-```bash
+```ini
 DEBUG=true
 ```
 
@@ -119,7 +119,7 @@ F5で起動すると、コード変更時に自動的にサーバーが再起動
 
 `.env.local`ファイルで変更：
 
-```bash
+```ini
 PORT=8001
 ```
 
@@ -145,7 +145,7 @@ Start-Service postgresql-x64-16
 
 アプリケーションが起動していることを確認：
 
-```bash
+```powershell
 curl http://localhost:8000/health
 ```
 
@@ -155,7 +155,7 @@ curl http://localhost:8000/health
 
 依存関係を再インストールします：
 
-```bash
+```powershell
 # プロジェクトディレクトリで実行
 uv sync --reinstall
 ```

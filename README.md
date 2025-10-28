@@ -24,18 +24,18 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 
 ### セットアップ
 
-```bash
+```powershell
 # 1. uvのインストール（未インストールの場合）
-curl -LsSf https://astral.sh/uv/install.sh | sh
+Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
 
 # 2. プロジェクトディレクトリに移動
-cd /path/to/camp_backend
+cd C:\path\to\camp_backend
 
 # 3. 依存関係のインストール
 uv sync
 
 # 4. 環境変数ファイルの作成
-cp .env.local.example .env.local
+Copy-Item .env.local.example .env.local
 # .env.localファイルを編集して、必要な環境変数を設定してください
 
 # 5. PostgreSQLの起動（事前に起動しておいてください）
@@ -46,7 +46,7 @@ uv run alembic upgrade head
 cd ..
 
 # 7. 開発サーバー起動
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 完了後、ブラウザで [http://localhost:8000/docs](http://localhost:8000/docs) を開いてAPIドキュメントを確認してください。
@@ -96,9 +96,9 @@ camp_backend/
 
 ## 📜 よく使うコマンド
 
-```bash
+```powershell
 # 開発サーバー起動
-uv run uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 # または VSCode で F5 キーを押してデバッグ起動
 
 # テスト実行
