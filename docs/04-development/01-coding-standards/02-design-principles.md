@@ -24,11 +24,11 @@
 #### 実装例
 
 ```python
-# src/app/services/user.py
-class UserService:
+# src/app/services/sample_user.py
+class SampleUserService:
     """ユーザーのビジネスロジック専用サービス。"""
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """ユーザー作成のビジネスロジックのみを担当。"""
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
@@ -47,13 +47,13 @@ class UserService:
         return user
 
 
-# src/app/repositories/user.py
-class UserRepository(BaseRepository[User]):
+# src/app/repositories/sample_user.py
+class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザーのデータアクセス専用リポジトリ。"""
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> SampleUser | None:
         """データアクセスロジックのみを担当。"""
-        query = select(User).where(User.email == email)
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 ```
@@ -133,10 +133,10 @@ class BaseRepository(Generic[ModelType]):
 
 
 # 派生クラスは基底クラスと同じ動作を保証
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     pass
 
-class SessionRepository(BaseRepository[Session]):
+class SampleSessionRepository(BaseRepository[Session]):
     pass
 
 
@@ -156,13 +156,13 @@ async def get_entity(repo: BaseRepository[Any], entity_id: int):
 # 悪い例：1つの大きなインターフェース
 class UserManager(ABC):
     @abstractmethod
-    async def create_user(self, data: UserCreate) -> User: pass
+    async def create_user(self, data: SampleUserCreate) -> SampleUser: pass
 
     @abstractmethod
-    async def authenticate_user(self, email: str, password: str) -> User: pass
+    async def authenticate_user(self, email: str, password: str) -> SampleUser: pass
 
     @abstractmethod
-    async def send_welcome_email(self, user: User) -> None: pass
+    async def send_welcome_email(self, user: SampleUser) -> None: pass
 
     @abstractmethod
     async def generate_report(self, user_id: int) -> Report: pass
@@ -171,17 +171,17 @@ class UserManager(ABC):
 # 良い例：小さなインターフェースに分離
 class UserCreator(ABC):
     @abstractmethod
-    async def create_user(self, data: UserCreate) -> User: pass
+    async def create_user(self, data: SampleUserCreate) -> SampleUser: pass
 
 
 class UserAuthenticator(ABC):
     @abstractmethod
-    async def authenticate(self, email: str, password: str) -> User: pass
+    async def authenticate(self, email: str, password: str) -> SampleUser: pass
 
 
 class EmailSender(ABC):
     @abstractmethod
-    async def send_welcome_email(self, user: User) -> None: pass
+    async def send_welcome_email(self, user: SampleUser) -> None: pass
 
 
 class ReportGenerator(ABC):
@@ -201,21 +201,21 @@ class ReportGenerator(ABC):
 
 def get_user_service(db: DatabaseDep) -> UserService:
     """UserServiceを注入。具体的な実装は隠蔽。"""
-    return UserService(db)
+    return SampleUserService(db)
 
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
-# src/app/api/routes/users.py
-@router.post("/users", response_model=UserResponse)
+# src/app/api/routes/sample_users.py
+@router.post("/users", response_model=SampleUserResponse)
 async def create_user(
-    user_data: UserCreate,
-    user_service: UserServiceDep,  # 抽象に依存、具体的な実装は知らない
-) -> UserResponse:
+    user_data: SampleUserCreate,
+    user_service: SampleUserServiceDep,  # 抽象に依存、具体的な実装は知らない
+) -> SampleUserResponse:
     """APIルートは具体的な実装ではなく、抽象（インターフェース）に依存。"""
     user = await user_service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 ```
 
 ---
@@ -226,7 +226,7 @@ async def create_user(
 
 本プロジェクトは Clean Architecture の原則に従った層構造を採用しています：
 
-```
+```text
 ┌─────────────────────────────────────────┐
 │         API Layer (routes/)              │  <- 外側の層（詳細）
 │  - HTTPリクエスト/レスポンス処理         │
@@ -265,25 +265,25 @@ async def create_user(
 # API Layer -> Service Layer
 @router.post("/users")
 async def create_user(
-    user_data: UserCreate,
-    user_service: UserServiceDep,  # サービス層に依存
+    user_data: SampleUserCreate,
+    user_service: SampleUserServiceDep,  # サービス層に依存
 ):
     return await user_service.create_user(user_data)
 
 
 # Service Layer -> Repository Layer
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)  # リポジトリ層に依存
+        self.repository = SampleUserRepository(db)  # リポジトリ層に依存
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         return await self.repository.create(...)
 
 
 # ❌ 悪い例：内側が外側に依存
-class User(Base):
+class SampleUser(Base):
     # モデルがAPIレスポンスを知っている（悪い）
-    def to_api_response(self) -> UserResponse:
+    def to_api_response(self) -> SampleUserResponse:
         pass
 ```
 
@@ -292,13 +292,13 @@ class User(Base):
 #### 1. Model Layer（最も内側）
 
 ```python
-# src/app/models/user.py
+# src/app/models/sample_user.py
 from sqlalchemy.orm import Mapped, mapped_column
 
-class User(Base):
+class SampleUser(Base):
     """純粋なドメインモデル。ビジネスルールのみを持つ。"""
 
-    __tablename__ = "users"
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True)
@@ -307,17 +307,19 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # リレーションシップ
-    sessions: Mapped[list["Session"]] = relationship(
+    sessions: Mapped[list["SampleSession"]] = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"
     )
 ```
 
 **責務**:
+
 - データ構造の定義
 - ビジネスルール（バリデーションロジック等）
 - エンティティ間の関係性
 
 **依存してはいけないもの**:
+
 - HTTPリクエスト/レスポンス
 - データベース接続の詳細
 - 外部サービス
@@ -325,46 +327,48 @@ class User(Base):
 #### 2. Repository Layer
 
 ```python
-# src/app/repositories/user.py
-class UserRepository(BaseRepository[User]):
+# src/app/repositories/sample_user.py
+class SampleUserRepository(BaseRepository[SampleUser]):
     """データアクセスの抽象化。"""
 
     def __init__(self, db: AsyncSession):
         super().__init__(User, db)
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを検索。"""
-        query = select(User).where(User.email == email)
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> User | None:
+    async def get_by_username(self, username: str) -> SampleUser | None:
         """ユーザー名でユーザーを検索。"""
-        query = select(User).where(User.username == username)
+        query = select(SampleUser).where(SampleUser.username == username)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 ```
 
 **責務**:
+
 - データの永続化・取得
 - クエリの構築
 - データアクセスパターンの実装
 
 **依存してはいけないもの**:
+
 - HTTPリクエスト/レスポンス
 - ビジネスロジック（それはサービス層の仕事）
 
 #### 3. Service Layer
 
 ```python
-# src/app/services/user.py
-class UserService:
+# src/app/services/sample_user.py
+class SampleUserService:
     """ビジネスロジックのオーケストレーション。"""
 
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)
+        self.repository = SampleUserRepository(db)
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """ユーザー作成のビジネスロジック。"""
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
@@ -386,7 +390,7 @@ class UserService:
         )
         return user
 
-    async def authenticate(self, email: str, password: str) -> User:
+    async def authenticate(self, email: str, password: str) -> SampleUser:
         """認証ビジネスロジック。"""
         user = await self.repository.get_by_email(email)
         if not user:
@@ -402,6 +406,7 @@ class UserService:
 ```
 
 **責務**:
+
 - ビジネスルールの実装
 - 複数のリポジトリの調整
 - トランザクション境界の定義
@@ -410,21 +415,21 @@ class UserService:
 #### 4. API Layer（最も外側）
 
 ```python
-# src/app/api/routes/users.py
-@router.post("/register", response_model=UserResponse)
+# src/app/api/routes/sample_users.py
+@router.post("/register", response_model=SampleUserResponse)
 async def register(
-    user_data: UserCreate,
-    user_service: UserServiceDep,
-) -> UserResponse:
+    user_data: SampleUserCreate,
+    user_service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザー登録エンドポイント。"""
     user = await user_service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
 
 @router.post("/login", response_model=Token)
 async def login(
-    login_data: UserLogin,
-    user_service: UserServiceDep,
+    login_data: SampleUserLogin,
+    user_service: SampleUserServiceDep,
 ) -> Token:
     """ログインエンドポイント。"""
     user = await user_service.authenticate(
@@ -442,6 +447,7 @@ async def login(
 ```
 
 **責務**:
+
 - HTTPリクエストの受け取り
 - 入力のバリデーション（Pydanticスキーマ）
 - サービス層の呼び出し
@@ -480,17 +486,17 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 # サービスの依存性
 def get_user_service(db: DatabaseDep) -> UserService:
-    return UserService(db)
+    return SampleUserService(db)
 
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
 # 認証の依存性
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,
-) -> User:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser:
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -507,26 +513,26 @@ async def get_current_user(
     return user
 
 
-CurrentUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
 ```
 
 ### 使用例
 
 ```python
 # エンドポイントで依存性を注入
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=SampleUserResponse)
 async def get_current_user_info(
-    current_user: CurrentUserDep,
-) -> UserResponse:
+    current_user: CurrentSampleUserDep,
+) -> SampleUserResponse:
     """現在のユーザー情報を取得。依存性注入により自動的に認証が行われる。"""
-    return UserResponse.model_validate(current_user)
+    return SampleUserResponse.model_validate(current_user)
 
 
 @router.post("/sessions", response_model=SessionResponse)
 async def create_session(
     session_data: SessionCreate,
-    current_user: CurrentUserDep,
-    session_service: SessionServiceDep,
+    current_user: CurrentSampleUserDep,
+    session_service: SampleSessionServiceDep,
 ) -> SessionResponse:
     """複数の依存性を注入。"""
     session = await session_service.create_session(
@@ -539,6 +545,7 @@ async def create_session(
 ### 依存性注入の利点
 
 1. **テスタビリティ**
+
    ```python
    # テスト時にモックを注入可能
    def mock_user_service():
@@ -548,6 +555,7 @@ async def create_session(
    ```
 
 2. **疎結合**
+
    - コンポーネント間の結合度が低い
    - 実装の変更が容易
 
@@ -562,8 +570,8 @@ async def create_session(
 
 ```python
 # ❌ 悪い例：サービス層でHTTPレスポンスを作成
-class UserService:
-    async def create_user(self, user_data: UserCreate) -> dict:
+class SampleUserService:
+    async def create_user(self, user_data: SampleUserCreate) -> dict:
         user = await self.repository.create(...)
         # HTTPレスポンスはAPI層の責務（悪い）
         return {
@@ -572,8 +580,8 @@ class UserService:
         }
 
 # ✅ 良い例：サービス層はドメインオブジェクトを返す
-class UserService:
-    async def create_user(self, user_data: UserCreate) -> User:
+class SampleUserService:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         return await self.repository.create(...)
 ```
 
@@ -581,31 +589,31 @@ class UserService:
 
 ```python
 # ❌ 悪い例：モデルがAPIスキーマを知っている
-class User(Base):
-    def to_response(self) -> UserResponse:
-        return UserResponse(...)
+class SampleUser(Base):
+    def to_response(self) -> SampleUserResponse:
+        return SampleUserResponse(...)
 
 # ✅ 良い例：外側の層（API）が内側を知る
 @router.get("/users/{user_id}")
-async def get_user(user_id: int, user_service: UserServiceDep):
+async def get_user(user_id: int, user_service: SampleUserServiceDep):
     user = await user_service.get_user(user_id)
-    return UserResponse.model_validate(user)  # API層で変換
+    return SampleUserResponse.model_validate(sample_user)  # API層で変換
 ```
 
 ### 間違い3: ビジネスロジックをリポジトリに配置
 
 ```python
 # ❌ 悪い例：リポジトリにビジネスロジック
-class UserRepository:
-    async def create_user_with_validation(self, user_data: UserCreate):
+class SampleUserRepository:
+    async def create_user_with_validation(self, user_data: SampleUserCreate):
         # バリデーションはサービス層の責務（悪い）
         if await self.get_by_email(user_data.email):
             raise ValidationError("User exists")
         return await self.create(...)
 
 # ✅ 良い例：ビジネスロジックはサービス層
-class UserService:
-    async def create_user(self, user_data: UserCreate):
+class SampleUserService:
+    async def create_user(self, user_data: SampleUserCreate):
         if await self.repository.get_by_email(user_data.email):
             raise ValidationError("User exists")
         return await self.repository.create(...)

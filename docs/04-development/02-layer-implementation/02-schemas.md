@@ -7,6 +7,7 @@ Pydanticを使用したデータバリデーションとシリアライゼーシ
 スキーマ層は、APIの入出力データの構造定義とバリデーションを担当します。
 
 **責務**:
+
 - リクエスト/レスポンスデータの構造定義
 - 入力バリデーション
 - データ変換とシリアライゼーション
@@ -17,12 +18,12 @@ Pydanticを使用したデータバリデーションとシリアライゼーシ
 ## 基本的なスキーマ定義
 
 ```python
-# src/app/schemas/user.py
+# src/app/schemas/sample_user.py
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
 
 
-class UserBase(BaseModel):
+class SampleUserBase(BaseModel):
     """ベースユーザースキーマ。"""
 
     email: EmailStr = Field(..., description="ユーザーメールアドレス")
@@ -34,7 +35,7 @@ class UserBase(BaseModel):
     )
 
 
-class UserCreate(UserBase):
+class SampleUserCreate(SampleUserBase):
     """ユーザー作成スキーマ。"""
 
     password: str = Field(
@@ -45,14 +46,14 @@ class UserCreate(UserBase):
     )
 
 
-class UserUpdate(BaseModel):
+class SampleUserUpdate(BaseModel):
     """ユーザー更新スキーマ。"""
 
     username: str | None = Field(None, min_length=3, max_length=50)
     email: EmailStr | None = None
 
 
-class UserResponse(UserBase):
+class SampleUserResponse(SampleUserBase):
     """ユーザーレスポンススキーマ。"""
 
     id: int = Field(..., description="ユーザーID")
@@ -74,7 +75,7 @@ class UserResponse(UserBase):
 from pydantic import BaseModel, Field, field_validator
 
 
-class UserCreate(BaseModel):
+class SampleUserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8)
 
@@ -105,6 +106,7 @@ class DateRange(BaseModel):
         if self.start_date >= self.end_date:
             raise ValueError("開始日は終了日より前でなければなりません")
         return self
+
 ```
 
 ---
@@ -115,21 +117,21 @@ class DateRange(BaseModel):
 
 ```python
 # ベーススキーマ
-class UserBase(BaseModel):
+class SampleUserBase(BaseModel):
     email: EmailStr
     username: str
 
 # 作成用（パスワード追加）
-class UserCreate(UserBase):
+class SampleUserCreate(SampleUserBase):
     password: str
 
 # 更新用（すべてオプショナル）
-class UserUpdate(BaseModel):
+class SampleUserUpdate(BaseModel):
     email: EmailStr | None = None
     username: str | None = None
 
 # レスポンス用（ID追加、パスワード除外）
-class UserResponse(UserBase):
+class SampleUserResponse(SampleUserBase):
     id: int
     created_at: datetime
 
@@ -140,7 +142,7 @@ class UserResponse(UserBase):
 ### 2. Fieldでメタデータを提供
 
 ```python
-class UserCreate(BaseModel):
+class SampleUserCreate(BaseModel):
     email: EmailStr = Field(
         ...,
         description="ユーザーのメールアドレス",

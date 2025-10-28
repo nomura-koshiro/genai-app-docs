@@ -29,7 +29,7 @@ Pythonの型ヒントを徹底的に使用し、静的型チェックによっ�
 from typing import Optional
 from datetime import datetime
 
-def get_user_by_id(user_id: int) -> Optional[User]:
+def get_user_by_id(user_id: int) -> Optional[SampleUser]:
     """IDによってユーザーを取得します。
 
     Args:
@@ -38,7 +38,7 @@ def get_user_by_id(user_id: int) -> Optional[User]:
     Returns:
         ユーザーインスタンス、見つからない場合はNone
     """
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).filter(SampleUser.id == user_id).first()
 
 
 def calculate_total_price(
@@ -65,7 +65,7 @@ def calculate_total_price(
 ```python
 # 型ヒントがない
 def get_user_by_id(user_id):
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).filter(SampleUser.id == user_id).first()
 
 
 # 戻り値の型が不明確
@@ -112,11 +112,12 @@ class BaseRepository(Generic[ModelType]):
    - デフォルト値がある場合もその型を明示
 
 2. **OptionalとUnion型を適切に使用**
+
    ```python
    from typing import Optional, Union
 
    # None を返す可能性がある場合
-   def find_user(email: str) -> Optional[User]:
+   def find_user(email: str) -> Optional[SampleUser]:
        pass
 
    # 複数の型を返す可能性がある場合（Python 3.10+）
@@ -143,11 +144,11 @@ class BaseRepository(Generic[ModelType]):
 #### 良い例：責任が分離されている
 
 ```python
-# src/app/services/user.py
-class UserService:
+# src/app/services/sample_user.py
+class SampleUserService:
     """ユーザー関連のビジネスロジック。"""
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """新しいユーザーを作成します。"""
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
@@ -166,7 +167,7 @@ class UserService:
         return user
 
 
-# src/app/core/security.py
+# src/app/core/security/password.py
 def hash_password(password: str) -> str:
     """パスワードをハッシュ化します。"""
     return pwd_context.hash(password)
@@ -176,8 +177,8 @@ def hash_password(password: str) -> str:
 
 ```python
 # ユーザーサービスが暗号化の詳細まで知っている
-class UserService:
-    async def create_user(self, user_data: UserCreate) -> User:
+class SampleUserService:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
         if existing_user:
@@ -200,7 +201,7 @@ class UserService:
 
 ### 現在のプロジェクトでの層分離
 
-```
+```text
 API層 (routes/)       -> リクエスト/レスポンス処理
   ↓
 サービス層 (services/) -> ビジネスロジック
@@ -218,6 +219,7 @@ API層 (routes/)       -> リクエスト/レスポンス処理
    - User Model: ユーザーのデータ構造
 
 2. **関数は1つのことだけを行う**
+
    ```python
    # 良い例：各関数が1つの責任
    def validate_email(email: str) -> bool:
@@ -276,7 +278,7 @@ class BaseRepository(Generic[ModelType]):
 
 
 # 具体的なリポジトリは継承するだけ
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザーリポジトリ。"""
 
     def __init__(self, db: AsyncSession):
@@ -286,23 +288,23 @@ class UserRepository(BaseRepository[User]):
 #### 悪い例：各リポジトリで同じコードを重複
 
 ```python
-class UserRepository:
-    async def get(self, id: int) -> User | None:
-        return await self.db.get(User, id)
+class SampleUserRepository:
+    async def get(self, id: int) -> SampleUser | None:
+        return await self.db.get(SampleUser, id)
 
-    async def get_multi(self, skip: int = 0, limit: int = 100) -> list[User]:
-        query = select(User).offset(skip).limit(limit)
+    async def get_multi(self, skip: int = 0, limit: int = 100) -> list[SampleUser]:
+        query = select(SampleUser).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
 
-class SessionRepository:
+class SampleSessionRepository:
     # 同じコードを繰り返し（悪い）
     async def get(self, id: int) -> Session | None:
-        return await self.db.get(Session, id)
+        return await self.db.get(SampleSession, id)
 
     async def get_multi(self, skip: int = 0, limit: int = 100) -> list[Session]:
-        query = select(Session).offset(skip).limit(limit)
+        query = select(SampleSession).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 ```
@@ -314,6 +316,7 @@ class SessionRepository:
    - ユーティリティ関数として切り出し
 
 2. **設定値を一元管理**
+
    ```python
    # src/app/config.py
    class Settings(BaseSettings):
@@ -327,6 +330,7 @@ class SessionRepository:
    ```
 
 3. **マジックナンバーを定数化**
+
    ```python
    # 良い例
    MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10MB
@@ -353,7 +357,7 @@ class SessionRepository:
 #### 良い例：シンプルで明確
 
 ```python
-async def authenticate(self, email: str, password: str) -> User:
+async def authenticate(self, email: str, password: str) -> SampleUser:
     """ユーザーを認証します。"""
     # ユーザー取得
     user = await self.repository.get_by_email(email)
@@ -374,7 +378,7 @@ async def authenticate(self, email: str, password: str) -> User:
 #### 悪い例：不必要に複雑
 
 ```python
-async def authenticate(self, email: str, password: str) -> User:
+async def authenticate(self, email: str, password: str) -> SampleUser:
     """ユーザーを認証します。"""
     # 複雑なワンライナー（悪い）
     user = (await self.repository.get_by_email(email)) \
@@ -396,9 +400,10 @@ async def authenticate(self, email: str, password: str) -> User:
    - 長い式は適切に改行
 
 2. **ネストを浅く保つ**
+
    ```python
    # 良い例：早期リターンでネストを浅く
-   async def process_user(self, user_id: int) -> User:
+   async def process_user(self, user_id: int) -> SampleUser:
        user = await self.get_user(user_id)
        if not user:
            raise NotFoundError("User not found")
@@ -409,7 +414,7 @@ async def authenticate(self, email: str, password: str) -> User:
        return user
 
    # 悪い例：ネストが深い
-   async def process_user(self, user_id: int) -> User:
+   async def process_user(self, user_id: int) -> SampleUser:
        user = await self.get_user(user_id)
        if user:
            if user.is_active:
@@ -440,7 +445,7 @@ def create_user(data):
     return User(**data)
 
 # 良い例
-def create_user(data: dict[str, Any]) -> User:
+def create_user(data: dict[str, Any]) -> SampleUser:
     return User(**data)
 ```
 

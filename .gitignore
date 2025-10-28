@@ -14,6 +14,8 @@ env/
 # Environment variables
 .env
 .env.local
+.env.staging
+.env.production
 
 # Database
 *.db
@@ -21,7 +23,8 @@ env/
 *.sqlite3
 
 # Uploads
-uploads/
+uploads/*
+!uploads/.gitkeep
 *.log
 
 # IDE

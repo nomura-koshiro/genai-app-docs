@@ -1,0 +1,241 @@
+# 認証実装
+
+JWT、OAuth2、パスワードハッシュを使用した認証について説明します。
+
+## 認証フロー図
+
+以下の図は、ログインから認証済みリクエストまでの全体的な流れを示しています。
+
+```mermaid
+sequenceDiagram
+    participant C as クライアント
+    participant API as FastAPI<br/>Router
+    participant US as UserService
+    participant UR as UserRepository
+    participant DB as PostgreSQL
+    participant SEC as Security<br/>Module
+
+    Note over C,SEC: ログインフロー
+
+    C->>+API: POST /api/auth/login<br/>{email, password}
+    API->>+US: authenticate(email, password)
+    US->>+UR: get_by_email(email)
+    UR->>+DB: SELECT * FROM users<br/>WHERE email = ?
+    DB-->>-UR: SampleUser record
+    UR-->>-US: SampleUser object
+
+    US->>+SEC: verify_password(plain, hashed)
+    SEC-->>-US: True/False
+
+    alt パスワード一致
+        US-->>-API: SampleUser object
+        API->>+SEC: create_access_token({sub: user_id})
+        SEC-->>-API: JWT token
+        API-->>-C: {access_token, token_type}
+    else パスワード不一致
+        US-->>API: ValidationError
+        API-->>C: 401 Unauthorized
+    end
+
+    Note over C,SEC: 認証済みリクエストフロー
+
+    C->>+API: GET /api/sample-users/sample-me<br/>Header: Authorization: Bearer <token>
+    API->>+SEC: decode_access_token(token)
+    SEC-->>-API: {sub: user_id, exp: ...}
+
+    alt トークン有効
+        API->>+US: get_user(user_id)
+        US->>+UR: get(user_id)
+        UR->>+DB: SELECT * FROM users<br/>WHERE id = ?
+        DB-->>-UR: SampleUser record
+        UR-->>-US: SampleUser object
+        US-->>-API: SampleUser object
+        API-->>-C: 200 OK<br/>{id, email, username}
+    else トークン無効
+        SEC-->>API: None
+        API-->>C: 401 Unauthorized
+    end
+
+    style C fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
+    style API fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+    style US fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
+    style UR fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
+    style DB fill:#64b5f6,stroke:#01579b,stroke-width:3px,color:#000
+    style SEC fill:#f06292,stroke:#880e4f,stroke-width:3px,color:#000
+```
+
+**認証フローの詳細**:
+
+### 1. ログインフロー
+
+1. **クライアント** → **API**: メールアドレスとパスワードを送信
+2. **API** → **UserService**: 認証処理を依頼
+3. **UserService** → **UserRepository**: メールアドレスでユーザー検索
+4. **UserRepository** → **PostgreSQL**: データベースクエリ実行
+5. **UserService** → **Security**: パスワード検証（bcrypt）
+6. **パスワード一致時**:
+   - **API** → **Security**: JWTトークン生成
+   - **API** → **クライアント**: アクセストークンを返却
+7. **パスワード不一致時**:
+   - **API** → **クライアント**: 401 Unauthorized
+
+### 2. 認証済みリクエストフロー
+
+1. **クライアント** → **API**: Authorization ヘッダーにトークンを含めてリクエスト
+2. **API** → **Security**: JWTトークンをデコード・検証
+3. **トークン有効時**:
+   - **API** → **UserService**: ユーザーIDからユーザー情報を取得
+   - **UserService** → **UserRepository** → **PostgreSQL**: ユーザー取得
+   - **API** → **クライアント**: ユーザー情報を返却
+4. **トークン無効時**:
+   - **API** → **クライアント**: 401 Unauthorized
+
+### セキュリティのポイント
+
+- **パスワードハッシュ化**: bcryptを使用して不可逆的にハッシュ化
+- **JWT有効期限**: デフォルト30分（設定可能）
+- **トークン検証**: すべての認証済みエンドポイントで実施
+- **HTTPSのみ**: 本番環境では必須
+- **ヘッダー形式**: `Authorization: Bearer <token>`
+
+## パスワードハッシュ化
+
+```python
+# src/app/core/security/password.py
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str) -> str:
+    """パスワードをハッシュ化。"""
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """パスワードを検証。"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+# 使用例
+hashed = hash_password("mypassword123")
+is_valid = verify_password("mypassword123", hashed)  # True
+```
+
+## JWTトークン生成
+
+```python
+from datetime import datetime, timedelta, timezone
+from jose import jwt
+
+SECRET_KEY = "your-secret-key-here"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """JWTアクセストークンを作成。"""
+    to_encode = data.copy()
+
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def decode_access_token(token: str) -> dict | None:
+    """JWTトークンをデコード。"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload
+    except jwt.JWTError:
+        return None
+```
+
+## 認証エンドポイント
+
+```python
+# src/app/api/routes/auth.py
+from fastapi import APIRouter, Depends
+from app.schemas.sample_user import SampleUserLogin, Token
+from app.api.core import SampleUserServiceDep
+from app.core.security import create_access_token
+
+router = APIRouter()
+
+
+@router.post("/login", response_model=Token)
+async def login(
+    login_data: SampleUserLogin,
+    user_service: SampleUserServiceDep,
+) -> Token:
+    """ログイン。"""
+    # ユーザー認証
+    user = await user_service.authenticate(
+        login_data.email,
+        login_data.password
+    )
+
+    # トークン生成
+    access_token = create_access_token(
+        data={"sub": str(user.id)},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
+
+    return Token(access_token=access_token, token_type="bearer")
+```
+
+## 認証依存性
+
+```python
+# src/app/api/dependencies.py
+from fastapi import Depends, Header, HTTPException
+from app.core.security import decode_access_token
+
+
+async def get_current_user(
+    authorization: str | None = Header(None),
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser:
+    """現在の認証済みユーザーを取得。"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    # "Bearer <token>" から token を抽出
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme")
+
+    # トークンデコード
+    payload = decode_access_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # ユーザー取得
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    user = await user_service.get_user(int(user_id))
+    return user
+
+
+CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
+
+
+# 使用例
+@router.get("/me", response_model=SampleUserResponse)
+async def get_me(current_user: CurrentSampleUserDep) -> SampleUserResponse:
+    """現在のユーザー情報を取得。"""
+    return SampleUserResponse.model_validate(current_user)
+```
+
+## 参考リンク
+
+- [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
+- [JWT.io](https://jwt.io/)
+- [Passlib Documentation](https://passlib.readthedocs.io/)

@@ -25,7 +25,7 @@
 
 ### ディレクトリ構造と命名
 
-```
+```text
 src/app/
 ├── api/
 │   ├── routes/          # 複数のルートを含むので複数形
@@ -108,7 +108,7 @@ ct = datetime.now()        # 意味不明
 
 
 # ✅ Pydanticスキーマでの使用例
-class UserCreate(BaseModel):
+class SampleUserCreate(BaseModel):
     email: EmailStr
     username: str
     password: str
@@ -117,8 +117,8 @@ class UserCreate(BaseModel):
 
 
 # ✅ SQLAlchemyモデルでの使用例
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255))
@@ -134,7 +134,7 @@ class User(Base):
 #### プライベート変数
 
 ```python
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
         self._db = db                    # プライベート変数（1つのアンダースコア）
         self.__internal_cache = {}       # 名前マングリング（2つのアンダースコア）
@@ -207,14 +207,14 @@ for key, value in user_dict.items():
 
 ```python
 # ✅ リポジトリ層
-class UserRepository(BaseRepository[User]):
-    async def get(self, id: int) -> User | None:
+class SampleUserRepository(BaseRepository[SampleUser]):
+    async def get(self, id: int) -> SampleUser | None:
         """IDでユーザーを取得。"""
-        return await self.db.get(User, id)
+        return await self.db.get(SampleUser, id)
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを取得。"""
-        query = select(User).where(User.email == email)
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -222,26 +222,26 @@ class UserRepository(BaseRepository[User]):
         self,
         skip: int = 0,
         limit: int = 100
-    ) -> list[User]:
+    ) -> list[SampleUser]:
         """複数のユーザーを取得。"""
         return await super().get_multi(skip=skip, limit=limit)
 
-    async def create(self, **kwargs) -> User:
+    async def create(self, **kwargs) -> SampleUser:
         """ユーザーを作成。"""
         return await super().create(**kwargs)
 
 
 # ✅ サービス層
-class UserService:
-    async def create_user(self, user_data: UserCreate) -> User:
+class SampleUserService:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """新しいユーザーを作成。"""
         pass
 
-    async def authenticate(self, email: str, password: str) -> User:
+    async def authenticate(self, email: str, password: str) -> SampleUser:
         """ユーザーを認証。"""
         pass
 
-    async def update_profile(self, user_id: int, data: UserUpdate) -> User:
+    async def update_profile(self, user_id: int, data: SampleUserUpdate) -> SampleUser:
         """ユーザープロファイルを更新。"""
         pass
 
@@ -283,7 +283,7 @@ def decode_access_token(token: str) -> dict | None:
 
 ```python
 # ✅ async関数も同じ命名規則
-async def get_user(user_id: int) -> User:
+async def get_user(user_id: int) -> SampleUser:
     """非同期でユーザーを取得。"""
     pass
 
@@ -308,7 +308,7 @@ async def process_file(file: UploadFile) -> FileResponse:
 | パターン | 例 | 用途 |
 |---------|-----|------|
 | エンティティ | `User`, `Session`, `File` | ドメインモデル |
-| スキーマ | `UserCreate`, `UserResponse`, `SessionResponse` | Pydanticスキーマ |
+| スキーマ | `SampleUserCreate`, `SampleUserResponse`, `SessionResponse` | Pydanticスキーマ |
 | サービス | `UserService`, `FileService`, `SessionService` | ビジネスロジック |
 | リポジトリ | `UserRepository`, `SessionRepository` | データアクセス |
 | 例外 | `ValidationError`, `AuthenticationError`, `NotFoundError` | カスタム例外 |
@@ -319,45 +319,45 @@ async def process_file(file: UploadFile) -> FileResponse:
 
 ```python
 # ✅ モデル
-class User(Base):
+class SampleUser(Base):
     """ユーザーモデル。"""
-    __tablename__ = "users"
+    __tablename__ = "sample_users"
 
 
-class Session(Base):
+class SampleSession(Base):
     """セッションモデル。"""
-    __tablename__ = "sessions"
+    __tablename__ = "sample_sessions"
 
 
-class Message(Base):
+class SampleMessage(Base):
     """メッセージモデル。"""
-    __tablename__ = "messages"
+    __tablename__ = "sample_messages"
 
 
 # ✅ スキーマ
-class UserBase(BaseModel):
+class SampleUserBase(BaseModel):
     """ベースユーザースキーマ。"""
     pass
 
 
-class UserCreate(UserBase):
+class SampleUserCreate(SampleUserBase):
     """ユーザー作成スキーマ。"""
     password: str
 
 
-class UserUpdate(UserBase):
+class SampleUserUpdate(SampleUserBase):
     """ユーザー更新スキーマ。"""
     pass
 
 
-class UserResponse(UserBase):
+class SampleUserResponse(SampleUserBase):
     """ユーザーレスポンススキーマ。"""
     id: int
     created_at: datetime
 
 
 # ✅ サービス
-class UserService:
+class SampleUserService:
     """ユーザーサービス。"""
     pass
 
@@ -373,7 +373,7 @@ class BaseRepository(Generic[ModelType]):
     pass
 
 
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザーリポジトリ。"""
     pass
 
@@ -438,20 +438,20 @@ class AzureBlobStorage(StorageBackend):
 - 複数形
 
 ```python
-class User(Base):
-    __tablename__ = "users"       # 複数形
+class SampleUser(Base):
+    __tablename__ = "sample_users"       # 複数形
 
 
-class Session(Base):
-    __tablename__ = "sessions"    # 複数形
+class SampleSession(Base):
+    __tablename__ = "sample_sessions"    # 複数形
 
 
-class Message(Base):
-    __tablename__ = "messages"    # 複数形
+class SampleMessage(Base):
+    __tablename__ = "sample_messages"    # 複数形
 
 
-class File(Base):
-    __tablename__ = "files"       # 複数形
+class SampleFile(Base):
+    __tablename__ = "sample_files"       # 複数形
 ```
 
 ### カラム名
@@ -461,8 +461,8 @@ class File(Base):
 - 外部キーは `{table_name}_id`
 
 ```python
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255))
@@ -474,14 +474,14 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
-class Session(Base):
-    __tablename__ = "sessions"
+class SampleSession(Base):
+    __tablename__ = "sample_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     session_id: Mapped[str] = mapped_column(String(255))
     user_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE")  # 外部キー
+        ForeignKey("sample_users.id", ondelete="CASCADE")  # 外部キー
     )
     metadata: Mapped[dict | None] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
@@ -526,11 +526,11 @@ class Session(Base):
 
 ```python
 # ❌ 悪い例
-def getUserById(userId: int) -> User:
+def getUserById(userId: int) -> SampleUser:
     pass
 
 # ✅ 良い例
-def get_user_by_id(user_id: int) -> User:
+def get_user_by_id(user_id: int) -> SampleUser:
     pass
 ```
 
@@ -552,13 +552,13 @@ response = requests.get(url)
 
 ```python
 # ❌ 悪い例：混在した命名
-class User(Base):
+class SampleUser(Base):
     emailAddress: str  # camelCase
     user_name: str     # snake_case
     IsActive: bool     # PascalCase
 
 # ✅ 良い例：一貫したsnake_case
-class User(Base):
+class SampleUser(Base):
     email_address: str
     user_name: str
     is_active: bool

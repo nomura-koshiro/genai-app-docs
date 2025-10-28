@@ -17,7 +17,6 @@
   "ruff.enable": true,
   "ruff.importStrategy": "fromEnvironment",
   "ruff.lint.enable": true,
-  "ruff.format.args": [],
 
   // ファイル除外設定
   "files.exclude": {
@@ -42,12 +41,10 @@
   // Python Testing
   "python.testing.pytestEnabled": true,
   "python.testing.unittestEnabled": false,
-  "python.testing.pytestArgs": [
-    "tests"
-  ],
+  "python.testing.pytestArgs": ["tests"],
 
   // エディタ設定
-  "editor.rulers": [100],
+  "editor.rulers": [120],
   "editor.formatOnSave": true,
   "editor.formatOnPaste": false,
   "editor.insertSpaces": true,
@@ -64,5 +61,112 @@
   "python.analysis.completeFunctionParens": true,
 
   // 環境変数ファイル
-  "python.envFile": "${workspaceFolder}/.env"
+  "python.envFile": "${workspaceFolder}/.env",
+
+  // ========================================
+  // TODO Tree設定
+  // ========================================
+  "todo-tree.general.tags": [
+    "TODO",
+    "FIXME",
+    "HACK",
+    "NOTE",
+    "BUG",
+    "XXX",
+    "OPTIMIZE"
+  ],
+  "todo-tree.highlights.defaultHighlight": {
+    "icon": "check",
+    "type": "text",
+    "opacity": 50
+  },
+  "todo-tree.highlights.customHighlight": {
+    "TODO": {
+      "icon": "checklist",
+      "foreground": "#ffffff",
+      "background": "#0098ff",
+      "iconColour": "#0098ff"
+    },
+    "FIXME": {
+      "icon": "alert",
+      "foreground": "#ffffff",
+      "background": "#ff0000",
+      "iconColour": "#ff0000"
+    },
+    "HACK": {
+      "icon": "tools",
+      "foreground": "#000000",
+      "background": "#ffa500",
+      "iconColour": "#ffa500"
+    },
+    "NOTE": {
+      "icon": "note",
+      "foreground": "#ffffff",
+      "background": "#00aa00",
+      "iconColour": "#00aa00"
+    },
+    "BUG": {
+      "icon": "bug",
+      "foreground": "#ffffff",
+      "background": "#ff1744",
+      "iconColour": "#ff1744"
+    },
+    "OPTIMIZE": {
+      "icon": "flame",
+      "foreground": "#000000",
+      "background": "#ffeb3b",
+      "iconColour": "#ffeb3b"
+    }
+  },
+
+  // ========================================
+  // Error Lens設定
+  // ========================================
+  "errorLens.enabledDiagnosticLevels": ["error", "warning", "info", "hint"],
+  "errorLens.fontSize": "0.9em",
+  "errorLens.fontWeight": "400",
+  "errorLens.messageTemplate": "$message",
+  "errorLens.delay": 500,
+
+  // ========================================
+  // Docker/YAML設定
+  // ========================================
+  "[yaml]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced",
+    "editor.formatOnSave": true
+  },
+  "[dockercompose]": {
+    "editor.insertSpaces": true,
+    "editor.tabSize": 2,
+    "editor.autoIndent": "advanced"
+  },
+  "[dockerfile]": {
+    "editor.formatOnSave": true
+  },
+  "yaml.schemas": {
+    "https://json.schemastore.org/docker-compose.json": "docker-compose*.yml"
+  },
+  "yaml.format.enable": true,
+  "yaml.validate": true,
+  "yaml.customTags": ["!reference sequence"],
+  "sqltools.connections": [
+    {
+      "ssh": "Disabled",
+      "previewLimit": 50,
+      "server": "127.0.0.1",
+      "port": 5432,
+      "driver": "PostgreSQL",
+      "name": "Backend PostgreSQL",
+      "database": "app_db",
+      "username": "postgres",
+      "password": "postgres",
+      "pgOptions": {
+        "ssl": false
+      },
+      "connectionTimeout": 30
+    }
+  ],
+  "python-envs.pythonProjects": []
 }

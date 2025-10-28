@@ -1,8 +1,16 @@
-"""Database models."""
+"""データベースモデル。"""
 
-from app.models.file import File
-from app.models.message import Message
-from app.models.session import Session
-from app.models.user import User
+from app.models.base import Base, PrimaryKeyMixin, TimestampMixin
+from app.models.sample_file import SampleFile
+from app.models.sample_session import SampleMessage, SampleSession
+from app.models.sample_user import SampleUser
 
-__all__ = ["User", "Session", "Message", "File"]
+__all__ = [
+    "Base",
+    "PrimaryKeyMixin",
+    "TimestampMixin",
+    "SampleUser",
+    "SampleSession",
+    "SampleMessage",
+    "SampleFile",
+]

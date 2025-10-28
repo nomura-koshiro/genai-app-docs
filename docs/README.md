@@ -1,166 +1,215 @@
-# バックエンドAPI 開発者ドキュメント
+# バックエンドAPI ドキュメント
 
 FastAPI + LangChain/LangGraphによるAIエージェントアプリケーションのバックエンドAPI開発者向けドキュメントです。
 
-## 📚 ドキュメント構成
+---
 
-### 01. Getting Started
+## 📖 目次
 
-プロジェクトを始めるための基本情報。
+### [01. はじめに](./01-getting-started/)
 
-- **[セットアップガイド](./01-getting-started/01-setup.md)** - 開発環境の構築手順
-  - 前提条件（Python 3.13+、uv）
-  - インストール手順
-  - 環境変数設定
-  - 初回起動とトラブルシューティング
+> プロジェクトを始めるための必須ガイド
 
-- **[クイックスタート](./01-getting-started/02-quick-start.md)** - 最速でAPIを起動するガイド
-  - 最速起動方法
-  - APIドキュメント確認（/docs）
-  - 基本的なAPI呼び出し例
-  - Swagger UIでのテスト
+| ドキュメント | 内容 |
+|------------|------|
+| [前提条件](./01-getting-started/01-prerequisites.md) | Python 3.13+、uv、Git、VSCode、WSL2（Windows） |
+| [WSL2 + Docker セットアップ](./01-getting-started/02-wsl2-docker-setup.md) | Windows用Linux環境とDocker構築（自動セットアップスクリプト） |
+| [VSCode セットアップ](./01-getting-started/03-vscode-setup.md) | 開発環境の設定と推奨拡張機能 |
+| [環境設定](./01-getting-started/04-environment-config.md) | 環境別設定ファイルの管理 |
+| [クイックスタート](./01-getting-started/05-quick-start.md) | 最速でAPIを起動する方法 |
+| [プロジェクト概要](./01-getting-started/06-project-overview.md) | 全体構成・技術スタック・アーキテクチャ概要 |
+| [データベース基礎](./01-getting-started/07-database-basics.md) | PostgreSQL & Redis の基本操作 |
 
-- **[データベースセットアップ](./01-getting-started/03-database-setup.md)** - データベースとマイグレーション
-  - データベース初期化
-  - Alembicマイグレーション（将来実装）
-  - マイグレーション作成と適用
-  - データベース管理コマンド
+---
 
-### 02. Architecture
+### [02. アーキテクチャ](./02-architecture/)
 
-プロジェクトのアーキテクチャと設計原則。
+> システム設計の理解
 
-- **[プロジェクト構造](./02-architecture/01-project-structure.md)** - ディレクトリ構造の説明
-  - 全体構造
-  - 各レイヤーの役割（models, schemas, repositories, services, api）
-  - ファイル命名規則
-  - 各モジュールの責務
+| ドキュメント | 内容 |
+|------------|------|
+| [プロジェクト構造](./02-architecture/01-project-structure.md) | ディレクトリ構造、各層の役割、命名規則 |
+| [レイヤードアーキテクチャ](./02-architecture/02-layered-architecture.md) | 4層構造、データフロー、トランザクション管理 |
+| [依存性注入](./02-architecture/03-dependency-injection.md) | FastAPI DIシステム、Dependsの使い方 |
+| [コードリーディングガイド](./02-architecture/04-code-reading-guide.md) | コードベースを理解するための詳細ガイド |
 
-- **[レイヤードアーキテクチャ](./02-architecture/02-layered-architecture.md)** - エンタープライズアーキテクチャ
-  - 4層アーキテクチャの説明
-  - データフロー（API → Service → Repository → Database）
-  - 各層の責務と依存関係
-  - トランザクション管理
+---
 
-- **[依存性注入](./02-architecture/03-dependency-injection.md)** - FastAPIのDI実装
-  - FastAPIの依存性注入システム
-  - Dependsの使い方
-  - 依存性のスコープ
-  - テストでのオーバーライド
+### [03. コアコンセプト](./03-core-concepts/)
 
-### 03. Core Concepts
+> 技術スタックと主要機能
 
-技術スタックと主要概念。
+#### [テックスタック](./03-core-concepts/01-tech-stack/)
 
-- **[テックスタック](./03-core-concepts/01-tech-stack.md)** - 使用技術の詳細
-  - FastAPI - Webフレームワーク
-  - SQLAlchemy - ORM
-  - Pydantic - データバリデーション
-  - Alembic - マイグレーション
-  - LangChain/LangGraph - AI Agent
-  - uv - パッケージマネージャー
-  - Ruff - リンター/フォーマッター
-  - pytest - テストフレームワーク
+| ドキュメント | 内容 |
+|------------|------|
+| [Webフレームワーク](./03-core-concepts/01-tech-stack/01-web.md) | FastAPI、Pydantic、Alembic |
+| [データレイヤー](./03-core-concepts/01-tech-stack/02-data.md) | PostgreSQL、SQLAlchemy、Redis |
+| [AI・開発ツール](./03-core-concepts/01-tech-stack/03-ai-tools.md) | LangChain、LangGraph、uv、Ruff、pytest |
 
-- **[データベース設計](./03-core-concepts/02-database-design.md)** - SQLAlchemyモデル設計
-  - SQLAlchemyモデル定義
-  - テーブル設計（users, sessions, messages, files）
-  - リレーションシップの定義
-  - 非同期SQLAlchemy
-  - パフォーマンス最適化
+#### データベース設計
 
-### 04. Development
+- [データベース設計](./03-core-concepts/02-database-design/index.md) - モデル定義、リレーションシップ、パフォーマンス最適化
 
-開発ガイドとベストプラクティス。
+#### [セキュリティ](./03-core-concepts/03-security/)
 
-#### [01. コーディング規約](./04-development/01-coding-standards/)
+| ドキュメント | 内容 |
+|------------|------|
+| [認証・認可](./03-core-concepts/03-security/01-authentication.md) | JWT、bcrypt、パスワード強度検証 |
+| [リクエスト保護](./03-core-concepts/03-security/02-request-protection.md) | CORS、レート制限、バリデーション |
+| [データ保護](./03-core-concepts/03-security/03-data-protection.md) | DBセキュリティ、ファイルアップロード |
+| [インフラストラクチャ](./03-core-concepts/03-security/04-infrastructure.md) | エラーハンドリング、環境設定 |
+| [ベストプラクティス](./03-core-concepts/03-security/05-best-practices.md) | セキュリティ強化の推奨事項 |
 
-Pythonコーディング規約とベストプラクティス
+---
 
-- [基本原則](./04-development/01-coding-standards/01-basic-principles.md) - 型安全性、単一責任の原則、DRY、KISS
-- [設計原則](./04-development/01-coding-standards/02-design-principles.md) - SOLID、Clean Architecture、依存性逆転
-- [リーダブルコード](./04-development/01-coding-standards/03-readable-code.md) - 読みやすいコードの14原則
-- [命名規則](./04-development/01-coding-standards/04-naming-conventions.md) - ファイル、変数、関数、クラス
-- [Python規約](./04-development/01-coding-standards/05-python-rules.md) - PEP 8、型ヒント、docstring
-- [FastAPI規約](./04-development/01-coding-standards/06-fastapi-rules.md) - エンドポイント、依存性注入、async/await
-- [ツール設定](./04-development/01-coding-standards/07-tools-setup.md) - Ruff、pytest、VSCode
+### [04. 開発ガイド](./04-development/)
 
-#### [02. レイヤー別実装ガイド](./04-development/02-layer-implementation/)
+> 実装のためのベストプラクティス
 
-各レイヤーの実装パターン
+#### [コーディング規約](./04-development/01-coding-standards/)
 
-- [モデル層](./04-development/02-layer-implementation/01-models.md) - SQLAlchemyモデル定義
-- [スキーマ層](./04-development/02-layer-implementation/02-schemas.md) - Pydanticスキーマ
-- [リポジトリ層](./04-development/02-layer-implementation/03-repositories.md) - データアクセス層
-- [サービス層](./04-development/02-layer-implementation/04-services.md) - ビジネスロジック層
-- [API層](./04-development/02-layer-implementation/05-api.md) - エンドポイント実装
+| ドキュメント | 内容 |
+|------------|------|
+| [基本原則](./04-development/01-coding-standards/01-basic-principles.md) | 型安全性、単一責任、DRY、KISS |
+| [設計原則](./04-development/01-coding-standards/02-design-principles.md) | SOLID、Clean Architecture |
+| [リーダブルコード](./04-development/01-coding-standards/03-readable-code.md) | 読みやすいコード14原則 |
+| [命名規則](./04-development/01-coding-standards/04-naming-conventions.md) | ファイル、変数、関数、クラス |
+| [Python規約](./04-development/01-coding-standards/05-python-rules.md) | PEP 8、型ヒント、docstring |
+| [FastAPI規約](./04-development/01-coding-standards/06-fastapi-rules.md) | エンドポイント、DI、async/await |
+| [ツール設定](./04-development/01-coding-standards/07-tools-setup.md) | Ruff、pytest、VSCode |
 
-#### [03. データベース](./04-development/03-database/)
+#### [レイヤー別実装](./04-development/02-layer-implementation/)
 
-データベース操作とマイグレーション
+| ドキュメント | 内容 |
+|------------|------|
+| [モデル層](./04-development/02-layer-implementation/01-models.md) | SQLAlchemyモデル定義 |
+| [スキーマ層](./04-development/02-layer-implementation/02-schemas.md) | Pydanticスキーマ |
+| [リポジトリ層](./04-development/02-layer-implementation/03-repositories.md) | データアクセス層 |
+| [サービス層](./04-development/02-layer-implementation/04-services.md) | ビジネスロジック層 |
+| [API層](./04-development/02-layer-implementation/05-api.md) | エンドポイント実装 |
 
-- [SQLAlchemy基本](./04-development/03-database/01-sqlalchemy-basics.md) - ORM基礎
-- [モデル関係](./04-development/03-database/02-model-relationships.md) - リレーションシップ定義
-- [Alembicマイグレーション](./04-development/03-database/03-alembic-migrations.md) - マイグレーション管理
-- [クエリパターン](./04-development/03-database/04-query-patterns.md) - 効率的なクエリ
+#### [デコレータ活用](./04-development/03-decorators/)
 
-#### [04. API設計](./04-development/04-api-design/)
+- [デコレータ使用例](./04-development/03-decorators/index.md) - ログ、トランザクション、キャッシュ、リトライなどの実践的な使用例
 
-RESTful API設計ガイドライン
+#### [データベース](./04-development/04-database/)
 
-- [エンドポイント設計](./04-development/04-api-design/01-endpoint-design.md) - RESTful原則
-- [バリデーション](./04-development/04-api-design/02-validation.md) - リクエスト検証
-- [レスポンス設計](./04-development/04-api-design/03-response-design.md) - 統一的なレスポンス
-- [ページネーション](./04-development/04-api-design/04-pagination.md) - リスト取得パターン
-- [エラーレスポンス](./04-development/04-api-design/05-error-responses.md) - エラー処理
+| ドキュメント | 内容 |
+|------------|------|
+| [SQLAlchemy基本](./04-development/04-database/01-sqlalchemy-basics.md) | ORM基礎 |
+| [モデル関係](./04-development/04-database/02-model-relationships.md) | リレーションシップ定義 |
+| [Alembic マイグレーション](./04-development/04-database/03-alembic-migrations.md) | マイグレーション管理 |
+| [クエリパターン](./04-development/04-database/04-query-patterns.md) | 効率的なクエリ |
 
-#### [05. セキュリティ](./04-development/05-security/)
+#### [API設計](./04-development/05-api-design/)
 
-セキュリティ実装ガイド
+| ドキュメント | 内容 |
+|------------|------|
+| [エンドポイント設計](./04-development/05-api-design/01-endpoint-design.md) | RESTful原則 |
+| [バリデーション](./04-development/05-api-design/02-validation.md) | リクエスト検証 |
+| [レスポンス設計](./04-development/05-api-design/03-response-design.md) | 統一的なレスポンス |
+| [ページネーション](./04-development/05-api-design/04-pagination.md) | リスト取得パターン |
+| [エラーレスポンス](./04-development/05-api-design/05-error-responses.md) | エラー処理 |
 
-- [認証実装](./04-development/05-security/01-authentication.md) - JWT、OAuth2
-- [認可制御](./04-development/05-security/02-authorization.md) - ロールベース制御
-- [セキュリティベストプラクティス](./04-development/05-security/03-best-practices.md) - OWASP対策
+#### [セキュリティ実装](./04-development/06-security/)
 
-### 05. Testing
+| ドキュメント | 内容 |
+|------------|------|
+| [認証実装](./04-development/06-security/01-authentication.md) | JWT、OAuth2 |
+| [認可制御](./04-development/06-security/02-authorization.md) | ロールベース制御 |
+| [セキュリティベストプラクティス](./04-development/06-security/03-best-practices.md) | OWASP対策 |
 
-テスト戦略と実装方法
+#### [テスト](./04-development/07-testing/)
 
-- [01. テスト戦略](./05-testing/01-testing-strategy.md) - テストピラミッドとカバレッジ
-- [02. ユニットテスト](./05-testing/02-unit-testing.md) - pytest基礎
-- [03. APIテスト](./05-testing/03-api-testing.md) - TestClient使用
-- [04. データベーステスト](./05-testing/04-database-testing.md) - テストDB設定
-- [05. モックとフィクスチャ](./05-testing/05-mocks-fixtures.md) - テストデータ管理
-- [06. ベストプラクティス](./05-testing/06-best-practices.md) - 効果的なテスト
+- [基本的なテスト](./04-development/07-testing/index.md) - ユニットテスト・APIテストの基礎
 
-### 06. Guides
+---
 
-実装ガイド
+### [05. テスト](./05-testing/)
 
-- [01. 新しいエンドポイント追加](./06-guides/01-add-endpoint.md) - エンドポイント作成手順
-- [02. 新しいモデル追加](./06-guides/02-add-model.md) - モデル追加とマイグレーション
-- [03. 新しい機能モジュール追加](./06-guides/03-add-feature.md) - 機能モジュール作成
-- [04. ファイルアップロード実装](./06-guides/04-file-upload.md) - ファイル処理実装
-- [05. バックグラウンドタスク](./06-guides/05-background-tasks.md) - 非同期タスク処理
-- [06. デプロイメント](./06-guides/06-deployment.md) - 本番環境デプロイ
-- [07. トラブルシューティング](./06-guides/07-troubleshooting.md) - よくある問題と解決方法
+> 品質保証のためのテスト戦略
 
-### 07. Reference
+| ドキュメント | 内容 |
+|------------|------|
+| [テスト戦略](./05-testing/01-testing-strategy/index.md) | テストピラミッド、カバレッジ |
+| [ユニットテスト](./05-testing/02-unit-testing/index.md) | pytest基礎 |
+| [APIテスト](./05-testing/03-api-testing/index.md) | TestClient使用 |
+| [データベーステスト](./05-testing/04-database-testing/index.md) | テストDB設定とパターン |
+| [モック・フィクスチャ](./05-testing/05-mocks-fixtures/index.md) | テストデータ管理 |
+| [ベストプラクティス](./05-testing/06-best-practices/index.md) | 効果的なテスト |
 
-参考資料とリンク集
+---
 
-- [01. API仕様](./07-reference/01-api-specification.md) - OpenAPI/Swagger仕様
-- [02. データベーススキーマ](./07-reference/02-database-schema.md) - テーブル定義
-- [03. 環境変数](./07-reference/03-environment-variables.md) - 設定変数一覧
-- [04. ユーティリティ関数](./07-reference/04-utils.md) - 共通関数リファレンス
-- [05. リソース](./07-reference/05-resources.md) - 外部リンク・学習リソース
+### [06. 実装ガイド](./06-guides/)
+
+> 具体的な実装手順
+
+| ドキュメント | 内容 |
+|------------|------|
+| [エンドポイント追加](./06-guides/01-add-endpoint/index.md) | 新しいエンドポイントの作成 |
+| [モデル追加](./06-guides/02-add-model/index.md) | モデル追加とマイグレーション |
+| [機能モジュール追加](./06-guides/03-add-feature/index.md) | 機能全体の実装（モデル→API→テスト） |
+| [ファイルアップロード実装](./06-guides/04-file-upload/index.md) | ファイル処理の実装 |
+| [バックグラウンドタスク](./06-guides/05-background-tasks/index.md) | 非同期タスク処理 |
+| [デプロイメント](./06-guides/06-deployment/index.md) | 本番環境デプロイ |
+| [トラブルシューティング](./06-guides/07-troubleshooting/index.md) | よくある問題と解決方法 |
+
+---
+
+### [07. リファレンス](./07-reference/)
+
+> 技術資料とリンク集
+
+| ドキュメント | 内容 |
+|------------|------|
+| [API仕様](./07-reference/01-api-specification.md) | OpenAPI/Swagger仕様 |
+| [データベーススキーマ](./07-reference/02-database-schema.md) | テーブル定義 |
+| [環境変数](./07-reference/03-environment-variables.md) | 設定変数一覧 |
+| [ユーティリティ関数](./07-reference/04-utils.md) | 共通関数リファレンス |
+| [外部リソース](./07-reference/05-resources.md) | 学習リソース・公式ドキュメント |
+
+---
 
 ## 🚀 クイックリンク
 
-- [プロジェクト README](../README.md)
-- [API ドキュメント](http://localhost:8000/docs) (開発サーバー起動時)
-- [OpenAPI スキーマ](http://localhost:8000/openapi.json)
+- **[プロジェクト README](../README.md)** - プロジェクト概要
+- **[API ドキュメント](http://localhost:8000/docs)** - Swagger UI（開発サーバー起動時）
+- **[OpenAPI スキーマ](http://localhost:8000/openapi.json)** - API仕様
 
-## 📝 ドキュメント更新
+---
 
-ドキュメントは継続的に更新されます。不明点や改善提案があれば、Issue または Pull Request でお知らせください。
+## 📚 推奨学習パス
+
+### 初心者向け
+
+1. [前提条件](./01-getting-started/01-prerequisites.md) → 環境準備
+2. [WSL2 + Docker セットアップ](./01-getting-started/02-wsl2-docker-setup.md) → WSL2環境構築
+3. [環境設定](./01-getting-started/04-environment-config.md) → 設定ファイル
+4. [クイックスタート](./01-getting-started/05-quick-start.md) → APIを起動
+5. [プロジェクト概要](./01-getting-started/06-project-overview.md) → 全体像を理解
+6. [プロジェクト構造](./02-architecture/01-project-structure.md) → ディレクトリ構成
+7. [レイヤードアーキテクチャ](./02-architecture/02-layered-architecture.md) → 4層アーキテクチャ
+
+### 中級者向け
+
+1. [コーディング規約](./04-development/01-coding-standards/) → 品質向上の基礎
+2. [レイヤー別実装](./04-development/02-layer-implementation/) → 各層の実装方法
+3. [デコレータ活用](./04-development/03-decorators/index.md) → 横断的関心事の実装
+4. [基本的なテスト](./04-development/07-testing/index.md) → テストの書き方
+5. [API設計](./04-development/05-api-design/) → RESTful設計
+6. [機能モジュール追加](./06-guides/03-add-feature/index.md) → 機能実装の流れ
+7. [コードリーディングガイド](./02-architecture/04-code-reading-guide.md) → コード詳細理解
+
+### 上級者向け
+
+1. [データベース詳細](./04-development/04-database/) → 高度なDB操作
+2. [セキュリティ](./03-core-concepts/03-security/) → セキュリティ強化
+3. [テスト戦略詳細](./05-testing/) → 包括的なテスト
+4. [デプロイメント](./06-guides/06-deployment/index.md) → 本番運用
+
+---
+
+## 💡 貢献
+
+ドキュメントの改善提案や不明点があれば、Issue または Pull Request でお知らせください。

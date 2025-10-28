@@ -1,4 +1,4 @@
-"""Core module for application-wide utilities."""
+"""アプリケーション全体で使用するコアモジュール。"""
 
 from app.core.exceptions import (
     AppException,

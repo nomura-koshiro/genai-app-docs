@@ -52,16 +52,16 @@ def create_user(
     password: str,
     is_active: bool = True,
     is_superuser: bool = False,
-) -> User:
+) -> SampleUser:
     pass
 
 
 # ✅ 良い例：長いクエリを改行
 query = (
-    select(User)
-    .where(User.is_active == True)
-    .where(User.created_at > start_date)
-    .order_by(User.created_at.desc())
+    select(SampleUser)
+    .where(SampleUser.is_active == True)
+    .where(SampleUser.created_at > start_date)
+    .order_by(SampleUser.created_at.desc())
     .limit(10)
 )
 
@@ -75,7 +75,7 @@ error_message = (
 
 
 # ❌ 悪い例：1行が長すぎる
-query = select(User).where(User.is_active == True).where(User.created_at > start_date).order_by(User.created_at.desc()).limit(10)
+query = select(SampleUser).where(SampleUser.is_active == True).where(SampleUser.created_at > start_date).order_by(SampleUser.created_at.desc()).limit(10)
 ```
 
 ### 空白行
@@ -90,13 +90,13 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class UserService:
+class SampleUserService:
     """ユーザーサービス。"""
 
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)
+        self.repository = SampleUserRepository(db)
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """ユーザーを作成。"""
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
@@ -114,7 +114,7 @@ class UserService:
         )
         return user
 
-    async def authenticate(self, email: str, password: str) -> User:
+    async def authenticate(self, email: str, password: str) -> SampleUser:
         """ユーザーを認証。"""
         user = await self.repository.get_by_email(email)
         if not user:
@@ -144,7 +144,7 @@ from typing import Optional, Any
 from datetime import datetime
 
 # ✅ 良い例：すべてに型ヒント
-def get_user(user_id: int) -> User | None:
+def get_user(user_id: int) -> SampleUser | None:
     """ユーザーを取得。"""
     pass
 
@@ -154,7 +154,7 @@ def create_user(
     username: str,
     password: str,
     is_active: bool = True,
-) -> User:
+) -> SampleUser:
     """ユーザーを作成。"""
     pass
 
@@ -182,7 +182,7 @@ Python 3.10以降の新しい型ヒント構文を使用します。
 
 ```python
 # ✅ Python 3.10+ の構文
-def get_user(user_id: int) -> User | None:
+def get_user(user_id: int) -> SampleUser | None:
     """Union型は | を使用。"""
     pass
 
@@ -195,7 +195,7 @@ def get_value(key: str) -> str | int | float:
 # ❌ 古い構文（使用しない）
 from typing import Optional, Union
 
-def get_user(user_id: int) -> Optional[User]:
+def get_user(user_id: int) -> Optional[SampleUser]:
     pass
 
 
@@ -233,7 +233,7 @@ class BaseRepository(Generic[ModelType]):
 
 
 # 具体的な型を指定
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     pass
 ```
 
@@ -248,7 +248,7 @@ Email: TypeAlias = str
 JsonDict: TypeAlias = dict[str, Any]
 
 
-def get_user(user_id: UserId) -> User | None:
+def get_user(user_id: UserId) -> SampleUser | None:
     pass
 
 
@@ -274,7 +274,7 @@ def create_user(
     username: str,
     password: str,
     is_active: bool = True,
-) -> User:
+) -> SampleUser:
     """新しいユーザーを作成します。
 
     Args:
@@ -305,7 +305,7 @@ def create_user(
 ### クラスのDocstring
 
 ```python
-class UserService:
+class SampleUserService:
     """ユーザー関連のビジネスロジックを提供するサービス。
 
     このクラスはユーザーの作成、更新、削除、認証などの
@@ -321,7 +321,7 @@ class UserService:
         Args:
             db: データベースセッション
         """
-        self.repository = UserRepository(db)
+        self.repository = SampleUserRepository(db)
 ```
 
 ### モジュールのDocstring
@@ -333,8 +333,8 @@ class UserService:
 ビジネスロジックを提供します。
 
 Example:
-    >>> from app.services.user import UserService
-    >>> service = UserService(db)
+    >>> from app.services.sample_user import SampleUserService
+    >>> service = SampleUserService(db)
     >>> user = await service.create_user(user_data)
 """
 
@@ -368,18 +368,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # ローカルアプリケーション
-from app.api.dependencies import CurrentUserDep, DatabaseDep
+from app.api.core import CurrentSampleUserDep, DatabaseDep
 from app.core.exceptions import NotFoundError, ValidationError
-from app.models.user import User
-from app.repositories.user import UserRepository
-from app.schemas.user import UserCreate, UserResponse
+from app.models.sample_user import SampleUser
+from app.repositories.sample_user import SampleUserRepository
+from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 
 # ❌ 悪い例：順序が混在
-from app.models.user import User
+from app.models.sample_user import SampleUser
 from datetime import datetime
 from fastapi import APIRouter
-from app.schemas.user import UserCreate
+from app.schemas.sample_user import SampleUserCreate
 from typing import Any
 ```
 
@@ -389,9 +389,9 @@ from typing import Any
 
 ```python
 # ✅ 良い例：絶対インポート
-from app.models.user import User
-from app.repositories.user import UserRepository
-from app.services.user import UserService
+from app.models.sample_user import SampleUser
+from app.repositories.sample_user import SampleUserRepository
+from app.services.sample_user import SampleUserService
 
 
 # ❌ 悪い例：相対インポート
@@ -419,7 +419,7 @@ from app.core.exceptions import *
 
 ```python
 # ✅ 良い例：具体的な例外をキャッチ
-async def get_user(user_id: int) -> User:
+async def get_user(user_id: int) -> SampleUser:
     """ユーザーを取得。"""
     try:
         user = await self.repository.get(user_id)
@@ -431,7 +431,7 @@ async def get_user(user_id: int) -> User:
 
 
 # ❌ 悪い例：すべての例外をキャッチ
-async def get_user(user_id: int) -> User:
+async def get_user(user_id: int) -> SampleUser:
     try:
         user = await self.repository.get(user_id)
         return user
@@ -481,7 +481,7 @@ class ValidationError(AppException):
 
 
 # 使用例
-async def create_user(self, user_data: UserCreate) -> User:
+async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
     """ユーザーを作成。"""
     existing_user = await self.repository.get_by_email(user_data.email)
     if existing_user:
@@ -522,7 +522,7 @@ async def process_file(file_path: str) -> dict:
 
 ```python
 # ✅ 良い例
-async def get_user(self, user_id: int) -> User:
+async def get_user(self, user_id: int) -> SampleUser:
     """非同期でユーザーを取得。"""
     user = await self.repository.get(user_id)
     if not user:
@@ -530,7 +530,7 @@ async def get_user(self, user_id: int) -> User:
     return user
 
 
-async def create_user(self, user_data: UserCreate) -> User:
+async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
     """非同期でユーザーを作成。"""
     # バリデーション
     existing = await self.repository.get_by_email(user_data.email)
@@ -542,7 +542,7 @@ async def create_user(self, user_data: UserCreate) -> User:
 
 
 # ❌ 悪い例：awaitを忘れる
-async def get_user(self, user_id: int) -> User:
+async def get_user(self, user_id: int) -> SampleUser:
     user = self.repository.get(user_id)  # awaitがない
     return user
 ```
@@ -624,7 +624,7 @@ def create_user(data):
     return User(**data)
 
 # ✅ 良い例
-def create_user(data: UserCreate) -> User:
+def create_user(data: SampleUserCreate) -> SampleUser:
     return User(**data.model_dump())
 ```
 
@@ -639,7 +639,7 @@ async def authenticate(email, password):
     return user
 
 # ✅ 良い例
-async def authenticate(self, email: str, password: str) -> User:
+async def authenticate(self, email: str, password: str) -> SampleUser:
     """ユーザーを認証します。
 
     Args:
@@ -677,6 +677,151 @@ except DatabaseError as e:
     logger.error(f"Database error: {e}")
     raise
 ```
+
+---
+
+## 8. ロギング（structlog）
+
+本プロジェクトでは、構造化ロギングライブラリ **structlog** を使用します。
+
+### ロガーの取得
+
+各モジュールで `get_logger(__name__)` を使用してロガーを取得します。
+
+```python
+# ✅ 良い例：structlogのロガー使用
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+class SampleUserService:
+    """ユーザーサービス。"""
+
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
+        """ユーザーを作成します。"""
+        logger.info("user_creation_started", email=user_data.email)
+
+        user = await self.repository.create(user_data)
+
+        logger.info(
+            "user_created_successfully",
+            user_id=user.id,
+            email=user.email
+        )
+        return user
+
+
+# ❌ 悪い例：標準loggingの使用
+import logging
+
+logger = logging.getLogger(__name__)  # structlogを使用すること
+```
+
+### 構造化ログの書き方
+
+ログメッセージは**イベント名**として記述し、詳細情報は**キーワード引数**で渡します。
+
+```python
+# ✅ 良い例：構造化ログ（キー-値ペア）
+logger.info("user_logged_in", user_id=123, ip_address="192.168.1.1")
+logger.error("database_connection_failed", error="timeout", retry_count=3)
+logger.warning("rate_limit_exceeded", user_id=456, limit=100)
+
+# ❌ 悪い例：文字列補間
+logger.info(f"User {user_id} logged in from {ip_address}")
+logger.info("User logged in", extra={"user_id": user_id})  # extraは使わない
+```
+
+### コンテキストバインディング
+
+永続的なフィールド（request_id等）は `bind()` で追加します。
+
+```python
+# ✅ 良い例：コンテキストバインディング
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+async def process_api_request(request_id: str, user_id: int):
+    """APIリクエストを処理します。"""
+    # リクエストIDとユーザーIDをバインド
+    request_logger = logger.bind(request_id=request_id, user_id=user_id)
+
+    request_logger.info("api_request_started", endpoint="/api/v1/users")
+    # 以降のログに自動的に request_id と user_id が付与される
+
+    result = await fetch_data()
+    request_logger.info("data_fetched", record_count=len(result))
+
+    request_logger.info("api_request_completed", status_code=200)
+```
+
+### 例外ログ
+
+例外情報を含める場合は `exception()` メソッドを使用します。
+
+```python
+# ✅ 良い例：例外ログ
+try:
+    result = 1 / 0
+except ZeroDivisionError:
+    logger.exception(
+        "division_error",
+        operation="divide",
+        numerator=1,
+        denominator=0
+    )
+```
+
+### ログレベルの使い分け
+
+```python
+# DEBUG: 詳細なデバッグ情報（開発環境のみ）
+logger.debug("query_execution", sql=query, params=params)
+
+# INFO: 通常の情報ログ
+logger.info("user_created", user_id=123)
+
+# WARNING: 警告（処理は継続）
+logger.warning("cache_miss", key="user:123")
+
+# ERROR: エラー（処理失敗）
+logger.error("api_call_failed", endpoint="/api/v1/users", status_code=500)
+
+# 例外情報付きエラー
+try:
+    await risky_operation()
+except Exception:
+    logger.exception("operation_failed", operation="risky_operation")
+```
+
+### ログ出力形式
+
+**開発環境** (DEBUG=True):
+
+```text
+user_logged_in user_id=123 ip_address='192.168.1.1'
+```
+
+**本番環境** (ENVIRONMENT=production):
+
+```json
+{
+  "event": "user_logged_in",
+  "user_id": 123,
+  "ip_address": "192.168.1.1",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "level": "info",
+  "logger": "app.services.user"
+}
+```
+
+### 注意事項
+
+- **機密情報をログに含めない**: パスワード、トークン、APIキーは絶対にログに出力しない
+- **構造化を徹底**: 文字列補間ではなくキーワード引数を使用
+- **イベント名は明確に**: `user_logged_in`, `payment_processed` など動作を表す名前
+- **コンテキストバインディング活用**: リクエストID、ユーザーIDなど複数ログで共通する情報
 
 ---
 

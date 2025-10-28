@@ -1,45 +1,91 @@
 {
   "recommendations": [
-    // Python開発必須
+    // ========================================
+    // 必須 (Core)
+    // ========================================
+    // WSL2でのリモート開発（Windows開発者必須）
+    "ms-vscode-remote.remote-wsl",
+    // Python開発の基盤となる拡張機能
     "ms-python.python",
+    // 高速な型チェック、自動補完、コード解析
     "ms-python.vscode-pylance",
+    // Pythonデバッガー
     "ms-python.debugpy",
-
-    // Ruff（リンター＆フォーマッター）
+    // 高速なPythonリンター・フォーマッター（Flake8, Black, isortの代替）
     "charliermarsh.ruff",
-
-    // REST API開発
-    "humao.rest-client",
-    "42crunch.vscode-openapi",
-
-    // データベース
-    "mtxr.sqltools",
-    "mtxr.sqltools-driver-pg",
-
-    // Git
-    "eamodio.gitlens",
-    "github.vscode-pull-request-github",
-
-    // YAML/TOML（設定ファイル）
-    "redhat.vscode-yaml",
-    "tamasfe.even-better-toml",
-
-    // Dockerサポート（必要に応じて）
+    // Dockerfileとdocker-composeのサポート（オプション）
     "ms-azuretools.vscode-docker",
 
-    // 環境変数
+    // ========================================
+    // 強く推奨 (Highly Recommended)
+    // ========================================
+    // docker-compose.yml等のYAML検証とオートコンプリート
+    "redhat.vscode-yaml",
+    // .envファイルのシンタックスハイライト
     "mikestead.dotenv",
-
-    // テスト
-    "littlefoxteam.vscode-python-test-adapter",
-
-    // AIアシスタント（お好みで）
-    "github.copilot",
-    "github.copilot-chat",
-
-    // その他便利ツール
+    // pyproject.tomlの編集サポート
+    "tamasfe.even-better-toml",
+    // チーム全体でのコーディング規約統一
+    "editorconfig.editorconfig",
+    // エラーや警告をインラインで表示
     "usernamehw.errorlens",
-    "streetsidesoftware.code-spell-checker",
-    "editorconfig.editorconfig"
+
+    // ========================================
+    // データベース開発
+    // ========================================
+    // データベース管理とクエリ実行
+    "mtxr.sqltools",
+    // PostgreSQLドライバー
+    "mtxr.sqltools-driver-pg",
+
+    // ========================================
+    // テスト開発
+    // ========================================
+    // Pytestテストの実行と管理
+    "littlefoxteam.vscode-python-test-adapter",
+    // テストエクスプローラーUI
+    "hbenl.vscode-test-explorer",
+    // テストアダプターの変換
+    "ms-vscode.test-adapter-converter",
+
+    // ========================================
+    // API開発
+    // ========================================
+    // VSCode内でHTTPリクエストのテスト
+    "humao.rest-client",
+    // OpenAPI/Swagger仕様の編集とバリデーション
+    "42crunch.vscode-openapi",
+
+    // ========================================
+    // Git/GitHub連携
+    // ========================================
+    // 強力なGit履歴とblame機能
+    "eamodio.gitlens",
+    // VS Code内でPRのレビューと管理
+    "github.vscode-pull-request-github",
+
+    // ========================================
+    // Markdown/ドキュメント
+    // ========================================
+    // Markdown総合サポート（キーボードショートカット、目次生成、リンク補完など）
+    "yzhang.markdown-all-in-one",
+    // Markdownリンター（スタイルと構文チェック）
+    "davidanson.vscode-markdownlint",
+    // MarkdownプレビューでMermaidダイアグラムを表示
+    "bierner.markdown-mermaid",
+    // Mermaidのシンタックスハイライト
+    "bpruitt-goddard.mermaid-markdown-syntax-highlighting",
+
+    // ========================================
+    // 開発体験向上
+    // ========================================
+    // インデントレベルを色分けして可読性向上
+    "oderwat.indent-rainbow",
+    // TODO/FIXMEコメントの一覧表示
+    "gruntfuggly.todo-tree",
+    // ファイルタイプ別のアイコン表示
+    "vscode-icons-team.vscode-icons",
+    // VS Codeの日本語化
+    "ms-ceintl.vscode-language-pack-ja"
   ]
 }

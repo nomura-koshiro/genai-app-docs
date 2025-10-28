@@ -100,7 +100,7 @@ def get_active_users(
     user_ids: List[int],
     max_count: int = 100,
     include_deleted: bool = False,
-) -> List[User]:
+) -> List[SampleUser]:
     """アクティブなユーザーを取得する."""
     pass
 ```
@@ -113,15 +113,15 @@ def get_active_users(
 
 ```python
 # ❌ Bad: filterは「除外する」とも「抽出する」とも取れる
-def filter_users(users: List[User]) -> List[User]:
+def filter_users(users: List[SampleUser]) -> List[SampleUser]:
     pass
 
 # ✅ Good: 明確な動詞を使用
-def select_active_users(users: List[User]) -> List[User]:
+def select_active_users(users: List[SampleUser]) -> List[SampleUser]:
     """アクティブなユーザーを抽出する."""
     return [user for user in users if user.is_active]
 
-def exclude_inactive_users(users: List[User]) -> List[User]:
+def exclude_inactive_users(users: List[SampleUser]) -> List[SampleUser]:
     """非アクティブなユーザーを除外する."""
     return [user for user in users if user.is_active]
 ```
@@ -159,8 +159,8 @@ def is_in_range_exclusive(value: float, min_val: float, max_val: float) -> bool:
 
 ```python
 # ❌ Bad: レイアウトが不揃い
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255))
     username: Mapped[str] = mapped_column(String(50))
@@ -170,10 +170,10 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20))
 
 # ✅ Good: 関連する項目をグループ化
-class User(Base):
+class SampleUser(Base):
     """ユーザーモデル."""
 
-    __tablename__ = "users"
+    __tablename__ = "sample_users"
 
     # 識別情報
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -257,7 +257,7 @@ LANGCHAIN_TIMEOUT_SECONDS = 300
 async def get_user_with_retry(
     user_id: int,
     max_retries: int = 3,
-) -> User:
+) -> SampleUser:
     """
     ユーザーを取得する（リトライ機能付き）.
 
@@ -288,11 +288,11 @@ async def get_user_with_retry(
 # ❌ Bad: 冗長なコメント
 # この関数は、ユーザーのリストを受け取り、その中からアクティブなユーザーだけを
 # 抽出して、新しいリストとして返す関数です。
-def get_active_users(users: List[User]) -> List[User]:
+def get_active_users(users: List[SampleUser]) -> List[SampleUser]:
     return [user for user in users if user.is_active]
 
 # ✅ Good: 簡潔で情報密度の高いコメント
-def get_active_users(users: List[User]) -> List[User]:
+def get_active_users(users: List[SampleUser]) -> List[SampleUser]:
     """アクティブなユーザーのみを抽出."""
     return [user for user in users if user.is_active]
 ```
@@ -362,7 +362,7 @@ else:
 
 ```python
 # ❌ Bad: 深いネスト
-async def process_user(user: User | None) -> str:
+async def process_user(user: SampleUser | None) -> str:
     if user:
         if user.is_active:
             if user.email:
@@ -375,7 +375,7 @@ async def process_user(user: User | None) -> str:
         return "ユーザーが存在しない"
 
 # ✅ Good: 早期リターンでネストを減らす（ガード節）
-async def process_user(user: User | None) -> str:
+async def process_user(user: SampleUser | None) -> str:
     """ユーザーを処理し、メールを送信する."""
     if not user:
         return "ユーザーが存在しない"
@@ -396,8 +396,8 @@ async def process_user(user: User | None) -> str:
 @router.get("/users/{user_id}")
 async def get_user(
     user_id: int,
-    service: UserServiceDep,
-) -> UserResponse:
+    service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザーを取得."""
     user = await service.get_user(user_id)
 
@@ -408,7 +408,7 @@ async def get_user(
     if not user.is_active:
         raise HTTPException(status_code=403, detail="無効なユーザーです")
 
-    return UserResponse.from_orm(user)
+    return SampleUserResponse.from_orm(user)
 ```
 
 ---
@@ -441,7 +441,7 @@ if is_admin and is_active and has_write_permission and last_login_within_week:
     allow_edit()
 
 # さらに良い: 意図を表す関数に抽出
-def can_edit_content(user: User) -> bool:
+def can_edit_content(user: SampleUser) -> bool:
     """ユーザーがコンテンツを編集できるかチェック."""
     is_admin = user.role == "admin"
     is_active = user.is_active
@@ -614,7 +614,7 @@ async def update_user_profile(
         raise ValueError("無効なメール")
 
     # データ取得
-    user = await db.get(User, user_id)
+    user = await db.get(SampleUser, user_id)
 
     # データ更新
     user.email = data.email
@@ -639,9 +639,9 @@ async def update_user(
     user_id: int,
     data: UpdateData,
     db: AsyncSession,
-) -> User:
+) -> SampleUser:
     """ユーザー情報を更新."""
-    user = await db.get(User, user_id)
+    user = await db.get(SampleUser, user_id)
     if not user:
         raise NotFoundError("ユーザーが見つかりません")
 
@@ -777,7 +777,7 @@ def unique_ordered(items: List[str]) -> List[str]:
 
 # ❌ Bad: 使われていない機能
 def format_user(
-    user: User,
+    user: SampleUser,
     include_email: bool = False,
     include_phone: bool = False,
     include_address: bool = False,
@@ -786,7 +786,7 @@ def format_user(
     pass
 
 # ✅ Good: 必要な機能のみ実装（YAGNI原則）
-def format_user_with_email(user: User) -> str:
+def format_user_with_email(user: SampleUser) -> str:
     """ユーザー情報をメールアドレス付きでフォーマット."""
     return f"{user.name} ({user.email})"
 ```
@@ -919,7 +919,7 @@ async def test_process_user_by_status(
 import pytest
 
 @pytest.fixture
-def sample_user() -> User:
+def sample_user() -> SampleUser:
     """テスト用のサンプルユーザー."""
     return User(
         id=1,
@@ -928,7 +928,7 @@ def sample_user() -> User:
         is_active=True,
     )
 
-async def test_get_user_success(sample_user: User):
+async def test_get_user_success(sample_user: SampleUser):
     """ユーザーの取得に成功する."""
     # フィクスチャを使用して準備を簡潔に
     result = await get_user(sample_user.id)

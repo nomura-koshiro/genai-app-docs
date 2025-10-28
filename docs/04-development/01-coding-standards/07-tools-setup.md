@@ -131,7 +131,7 @@ testpaths = ["tests"]
 
 ### ディレクトリ構造
 
-```
+```text
 tests/
 ├── __init__.py
 ├── conftest.py           # 共通フィクスチャ
@@ -170,8 +170,8 @@ pytest --lf
 ```python
 # tests/test_services.py
 import pytest
-from app.services.user import UserService
-from app.schemas.user import UserCreate
+from app.services.sample_user import SampleUserService
+from app.schemas.sample_user import SampleUserCreate
 
 
 @pytest.mark.asyncio
@@ -179,7 +179,7 @@ async def test_create_user(db_session):
     """ユーザー作成のテスト。"""
     # Arrange
     service = UserService(db_session)
-    user_data = UserCreate(
+    user_data = SampleUserCreate(
         email="test@example.com",
         username="testuser",
         password="password123"
@@ -488,7 +488,7 @@ pytest
 
 または`.env`ファイルに追加：
 
-```
+```text
 PYTHONPATH=./src
 ```
 

@@ -6,44 +6,128 @@
 
 このプロジェクトは、関心の分離（Separation of Concerns）の原則に基づき、4つの主要なレイヤーで構成されています。
 
+### リクエストフロー（クライアント → データベース）
+
+```mermaid
+graph LR
+    A[HTTPリクエスト] --> B[API Layer]
+    B --> C[Service Layer]
+    C --> D[Repository Layer]
+    D --> E[Model Layer]
+    E --> F[(PostgreSQL<br/>Database)]
+
+    style A fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
+    style B fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+    style C fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
+    style D fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
+    style E fill:#f48fb1,stroke:#880e4f,stroke-width:3px,color:#000
+    style F fill:#757575,stroke:#212121,stroke-width:3px,color:#fff
 ```
-┌─────────────────────────────────────────────┐
-│           API Layer (api/)                  │  ← HTTPリクエスト/レスポンス
-│  - Routes: エンドポイント定義               │
-│  - Dependencies: 依存性注入                  │
-│  - Middlewares: 横断的関心事                │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│        Service Layer (services/)            │  ← ビジネスロジック
-│  - ビジネスルールの実装                      │
-│  - トランザクション管理                      │
-│  - 複数リポジトリの調整                      │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│      Repository Layer (repositories/)       │  ← データアクセス
-│  - データベースクエリ                        │
-│  - CRUD操作                                  │
-│  - データアクセスの抽象化                    │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│         Model Layer (models/)               │  ← データ定義
-│  - SQLAlchemyモデル                          │
-│  - テーブル定義                              │
-│  - リレーションシップ                        │
-└─────────────────────────────────────────────┘
+
+### レスポンスフロー（データベース → クライアント）
+
+```mermaid
+graph LR
+    F[(PostgreSQL<br/>Database)] --> E[Model Layer]
+    E --> D[Repository Layer]
+    D --> C[Service Layer]
+    C --> B[API Layer]
+    B --> A[HTTPレスポンス]
+
+    style F fill:#757575,stroke:#212121,stroke-width:3px,color:#fff
+    style E fill:#f48fb1,stroke:#880e4f,stroke-width:3px,color:#000
+    style D fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
+    style C fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
+    style B fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+    style A fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
 ```
+
+### レイヤーの役割
+
+各レイヤーの責務を詳細に図示します。
+
+```mermaid
+graph TB
+    subgraph "API Layer api/"
+        direction TB
+        API_Main[HTTPリクエスト/レスポンス]
+        API_1[Routes: エンドポイント定義]
+        API_2[Dependencies: 依存性注入]
+        API_3[Middlewares: 横断的関心事]
+        API_4[Validation: Pydanticスキーマ]
+    end
+
+    subgraph "Service Layer services/"
+        direction TB
+        Service_Main[ビジネスロジック]
+        Service_1[ビジネスルールの実装]
+        Service_2[トランザクション管理]
+        Service_3[複数リポジトリの調整]
+        Service_4[データ変換とバリデーション]
+    end
+
+    subgraph "Repository Layer repositories/"
+        direction TB
+        Repo_Main[データアクセス]
+        Repo_1[データベースクエリ]
+        Repo_2[CRUD操作]
+        Repo_3[データアクセスの抽象化]
+        Repo_4[クエリの最適化]
+    end
+
+    subgraph "Model Layer models/"
+        direction TB
+        Model_Main[データ定義]
+        Model_1[SQLAlchemyモデル]
+        Model_2[テーブル定義]
+        Model_3[リレーションシップ]
+        Model_4[制約とインデックス]
+    end
+
+    API_Main --> Service_Main
+    Service_Main --> Repo_Main
+    Repo_Main --> Model_Main
+
+    style API_Main fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
+    style Service_Main fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
+    style Repo_Main fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
+    style Model_Main fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+
+    style API_1 fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style API_2 fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style API_3 fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+    style API_4 fill:#b3e5fc,stroke:#0277bd,stroke-width:2px,color:#000
+
+    style Service_1 fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style Service_2 fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style Service_3 fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px,color:#000
+    style Service_4 fill:#e1bee7,stroke:#6a1b9a,stroke-width:2px,color:#000
+
+    style Repo_1 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style Repo_2 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style Repo_3 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+    style Repo_4 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:#000
+
+    style Model_1 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style Model_2 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style Model_3 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+    style Model_4 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
+```
+
+**各レイヤーの詳細:**
+
+| レイヤー | ディレクトリ | 主な責務 |
+|---------|------------|---------|
+| **API Layer** | `src/app/api/` | HTTPリクエストの受付、バリデーション、サービス層の呼び出し、レスポンス返却 |
+| **Service Layer** | `src/app/services/` | ビジネスロジックの実装、トランザクション管理、複数リポジトリの調整 |
+| **Repository Layer** | `src/app/repositories/` | データベースクエリの実装、CRUD操作、データアクセスの抽象化 |
+| **Model Layer** | `src/app/models/` | データベーステーブルの定義、リレーションシップ、制約の定義 |
 
 ## データフロー
 
 ### リクエストフロー（API → Database）
 
-```
+```text
 1. HTTPリクエスト
    ↓
 2. API Layer (routes/)
@@ -69,7 +153,7 @@
 
 ### レスポンスフロー（Database → API）
 
-```
+```text
 1. Database
    ↓
 2. Model Layer
@@ -89,6 +173,53 @@
 6. HTTPレスポンス（JSON）
 ```
 
+## 実例: ユーザー作成のフロー
+
+以下は、新しいユーザーを作成する際の各レイヤーの連携を示すシーケンス図です。
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as API Layer<br/>(routes/users.py)
+    participant Service as Service Layer<br/>(UserService)
+    participant Repo as Repository Layer<br/>(UserRepository)
+    participant DB as PostgreSQL
+
+    Client->>API: POST /api/sample-users<br/>{email, username, password}
+
+    Note over API: Pydanticバリデーション
+    API->>API: UserCreate検証
+
+    API->>Service: create_user(user_data)
+
+    Note over Service: ビジネスルール適用
+    Service->>Repo: get_by_email(email)
+    Repo->>DB: SELECT * FROM users<br/>WHERE email=?
+    DB-->>Repo: NULL (存在しない)
+    Repo-->>Service: None
+
+    Service->>Repo: get_by_username(username)
+    Repo->>DB: SELECT * FROM users<br/>WHERE username=?
+    DB-->>Repo: NULL (存在しない)
+    Repo-->>Service: None
+
+    Service->>Service: hash_password()
+
+    Service->>Repo: create(user_data)
+    Repo->>DB: INSERT INTO users
+    DB-->>Repo: SampleUser(id=1)
+    Repo-->>Service: SampleUser
+
+    Service-->>API: SampleUser
+
+    Note over API: レスポンス変換
+    API->>API: SampleUserResponse.model_validate()
+
+    API-->>Client: 201 Created<br/>SampleUserResponse
+```
+
+この図から、各レイヤーが明確に分離され、それぞれの責務を果たしていることが分かります。
+
 ## 各レイヤーの詳細
 
 ### 1. API Layer（API層）
@@ -96,6 +227,7 @@
 **場所**: `src/app/api/`
 
 **責務**:
+
 - HTTPリクエストの受け取り
 - リクエストデータのバリデーション
 - 認証・認可の確認
@@ -106,34 +238,35 @@
 **実装例**:
 
 ```python
-# src/app/api/routes/users.py
+# src/app/api/routes/sample_users.py
 from fastapi import APIRouter, status
-from app.api.dependencies import UserServiceDep, CurrentUserDep
-from app.schemas.user import UserCreate, UserResponse
+from app.api.core import SampleUserServiceDep, CurrentSampleUserDep
+from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 router = APIRouter()
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=SampleUserResponse)
 async def create_user(
-    user_data: UserCreate,                    # リクエストバリデーション
-    service: UserServiceDep,                  # 依存性注入
-) -> UserResponse:
+    user_data: SampleUserCreate,                    # リクエストバリデーション
+    service: SampleUserServiceDep,                  # 依存性注入
+) -> SampleUserResponse:
     """新しいユーザーを作成します。"""
     # サービス層を呼び出し
     user = await service.create_user(user_data)
 
     # レスポンスを返却
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
-@router.get("/me", response_model=UserResponse)
+@router.get("/me", response_model=SampleUserResponse)
 async def get_current_user(
-    current_user: CurrentUserDep,             # 認証済みユーザー
-) -> UserResponse:
+    current_user: CurrentSampleUserDep,             # 認証済みユーザー
+) -> SampleUserResponse:
     """現在のユーザー情報を取得します。"""
-    return UserResponse.model_validate(current_user)
+    return SampleUserResponse.model_validate(current_user)
 ```
 
 **禁止事項**:
+
 - データベースへの直接アクセス
 - ビジネスロジックの実装
 - 他のAPI層への直接依存
@@ -143,6 +276,7 @@ async def get_current_user(
 **場所**: `src/app/services/`
 
 **責務**:
+
 - ビジネスロジックの実装
 - ドメインルールの適用
 - トランザクション管理
@@ -152,23 +286,23 @@ async def get_current_user(
 **実装例**:
 
 ```python
-# src/app/services/user.py
+# src/app/services/sample_user.py
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.user import UserRepository
+from app.repositories.sample_user import SampleUserRepository
 from app.repositories.session import SessionRepository
 from app.core.security import hash_password, create_access_token
 from app.core.exceptions import ValidationError, AuthenticationError
-from app.schemas.user import UserCreate
+from app.schemas.sample_user import SampleUserCreate
 
-class UserService:
+class SampleUserService:
     """ユーザー関連のビジネスロジック。"""
 
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.user_repo = UserRepository(db)
+        self.user_repo = SampleUserRepository(db)
         self.session_repo = SessionRepository(db)
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """新しいユーザーを作成します。
 
         ビジネスルール:
@@ -227,6 +361,7 @@ class UserService:
 ```
 
 **禁止事項**:
+
 - HTTPリクエスト/レスポンスの直接処理
 - データベースクエリの直接実行（リポジトリを使用）
 - グローバル状態への依存
@@ -236,6 +371,7 @@ class UserService:
 **場所**: `src/app/repositories/`
 
 **責務**:
+
 - データベースクエリの実装
 - CRUD操作
 - データアクセスの抽象化
@@ -310,35 +446,35 @@ class BaseRepository(Generic[ModelType]):
 ```
 
 ```python
-# src/app/repositories/user.py
+# src/app/repositories/sample_user.py
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.repositories.base import BaseRepository
-from app.models.user import User
+from app.models.sample_user import SampleUser
 
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザー専用のリポジトリ。"""
 
     def __init__(self, db: AsyncSession):
         super().__init__(User, db)
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを取得。"""
-        query = select(User).where(User.email == email)
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> User | None:
+    async def get_by_username(self, username: str) -> SampleUser | None:
         """ユーザー名でユーザーを取得。"""
-        query = select(User).where(User.username == username)
+        query = select(SampleUser).where(SampleUser.username == username)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[SampleUser]:
         """アクティブなユーザーの一覧を取得。"""
         query = (
-            select(User)
-            .where(User.is_active == True)
+            select(SampleUser)
+            .where(SampleUser.is_active == True)
             .offset(skip)
             .limit(limit)
         )
@@ -347,6 +483,7 @@ class UserRepository(BaseRepository[User]):
 ```
 
 **禁止事項**:
+
 - ビジネスロジックの実装
 - 他のリポジトリへの依存
 - HTTPレスポンスの直接作成
@@ -356,6 +493,7 @@ class UserRepository(BaseRepository[User]):
 **場所**: `src/app/models/`
 
 **責務**:
+
 - データベーステーブルの定義
 - カラムとデータ型の定義
 - リレーションシップの定義
@@ -364,16 +502,16 @@ class UserRepository(BaseRepository[User]):
 **実装例**:
 
 ```python
-# src/app/models/user.py
+# src/app/models/sample_user.py
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
-class User(Base):
+class SampleUser(Base):
     """ユーザーモデル。"""
 
-    __tablename__ = "users"
+    __tablename__ = "sample_users"
 
     # プライマリキー
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -411,12 +549,12 @@ class User(Base):
     )
 
     # リレーションシップ
-    sessions: Mapped[list["Session"]] = relationship(
+    sessions: Mapped[list["SampleSession"]] = relationship(
         "Session",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    files: Mapped[list["File"]] = relationship(
+    files: Mapped[list["SampleFile"]] = relationship(
         "File",
         back_populates="user",
         cascade="all, delete-orphan"
@@ -427,6 +565,7 @@ class User(Base):
 ```
 
 **禁止事項**:
+
 - ビジネスロジックの実装
 - 外部サービスへの依存
 - 複雑な計算処理
@@ -435,7 +574,7 @@ class User(Base):
 
 各レイヤーは、自分より下のレイヤーにのみ依存できます。
 
-```
+```text
 API Layer
   ↓ 依存OK
 Service Layer
@@ -450,13 +589,13 @@ Model Layer
 
 ```python
 # Service層はRepository層に依存
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)  # OK
+        self.repository = SampleUserRepository(db)  # OK
 
 # API層はService層に依存
 @router.post("/users")
-async def create_user(service: UserServiceDep):  # OK
+async def create_user(service: SampleUserServiceDep):  # OK
     return await service.create_user(...)
 ```
 
@@ -466,11 +605,11 @@ async def create_user(service: UserServiceDep):  # OK
 # API層がRepository層に直接依存（Service層をスキップ）
 @router.post("/users")
 async def create_user(db: DatabaseDep):
-    repository = UserRepository(db)  # NG: Service層を経由すべき
+    repository = SampleUserRepository(db)  # NG: Service層を経由すべき
     return await repository.create(...)
 
 # Model層がService層に依存
-class User(Base):
+class SampleUser(Base):
     def send_email(self):
         # NG: モデルはビジネスロジックを持つべきでない
         email_service.send(...)
@@ -481,13 +620,13 @@ class User(Base):
 トランザクションはService層で管理します。
 
 ```python
-# src/app/services/user.py
-class UserService:
+# src/app/services/sample_user.py
+class SampleUserService:
     async def register_user_with_profile(
         self,
-        user_data: UserCreate,
+        user_data: SampleUserCreate,
         profile_data: ProfileCreate,
-    ) -> User:
+    ) -> SampleUser:
         """ユーザーとプロフィールを同時に作成（トランザクション）。"""
         # 複数のリポジトリ操作を1つのトランザクションで実行
         try:
@@ -551,8 +690,8 @@ class ValidationError(AppException):
 
 ```python
 # Service層 - ビジネスロジックエラーを発生
-class UserService:
-    async def get_user(self, user_id: int) -> User:
+class SampleUserService:
+    async def get_user(self, user_id: int) -> SampleUser:
         user = await self.repository.get(user_id)
         if not user:
             raise NotFoundError(

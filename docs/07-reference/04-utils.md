@@ -17,7 +17,7 @@
 
 ### ユーティリティモジュールの場所
 
-```
+```text
 src/app/
 ├── core/
 │   ├── security.py       # セキュリティ関連
@@ -33,9 +33,9 @@ src/app/
 
 ## セキュリティユーティリティ
 
-`app/core/security.py`
+`app/core/security/`
 
-認証・認可のためのセキュリティ関連関数。
+認証・認可のためのセキュリティ関連関数（password.py, jwt.py, api_key.py）。
 
 ### パスワードハッシュ化
 
@@ -43,23 +43,23 @@ src/app/
 
 パスワードをbcryptでハッシュ化します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 def hash_password(password: str) -> str
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | password | str | 平文パスワード |
 
-**戻り値**
+##### 戻り値
 
 - `str`: ハッシュ化されたパスワード
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.security import hash_password
@@ -75,24 +75,24 @@ print(hashed)  # $2b$12$...
 
 パスワードをハッシュ化されたパスワードと照合します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 def verify_password(plain_password: str, hashed_password: str) -> bool
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | plain_password | str | 平文パスワード |
 | hashed_password | str | ハッシュ化されたパスワード |
 
-**戻り値**
+##### 戻り値
 
 - `bool`: パスワードが一致する場合True
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.security import verify_password
@@ -113,7 +113,7 @@ else:
 
 JWTアクセストークンを作成します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 def create_access_token(
@@ -122,22 +122,22 @@ def create_access_token(
 ) -> str
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | data | dict[str, Any] | トークンにエンコードするデータ |
 | expires_delta | timedelta \| None | トークンの有効期限（省略時は15分） |
 
-**戻り値**
+##### 戻り値
 
 - `str`: エンコードされたJWTトークン
 
-**例外**
+##### 例外
 
 - `ImportError`: python-joseがインストールされていない場合
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.security import create_access_token
@@ -157,27 +157,27 @@ print(token)  # eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 JWTアクセストークンをデコードします。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 def decode_access_token(token: str) -> dict[str, Any] | None
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | token | str | デコードするJWTトークン |
 
-**戻り値**
+##### 戻り値
 
 - `dict[str, Any] | None`: デコードされたペイロード、無効な場合はNone
 
-**例外**
+##### 例外
 
 - `ImportError`: python-joseがインストールされていない場合
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.security import decode_access_token
@@ -197,17 +197,17 @@ else:
 
 ランダムなAPIキーを生成します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 def generate_api_key() -> str
 ```
 
-**戻り値**
+##### 戻り値
 
 - `str`: ランダムなAPIキー文字列（URL-safe Base64）
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.security import generate_api_key
@@ -229,20 +229,20 @@ print(api_key)  # xrZvO8QN7rTUJc4KwYxPdE9vL2fB5gHh...
 
 アプリケーションのロギング設定をセットアップします。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 def setup_logging() -> None
 ```
 
-**機能**
+##### 機能
 
 - コンソールハンドラーの設定（カラー出力）
 - ファイルハンドラーの設定（本番環境）
 - ログレベルの設定（DEBUG/INFO）
 - サードパーティライブラリのログレベル調整
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.logging import setup_logging
@@ -257,23 +257,23 @@ setup_logging()
 
 指定された名前のロガーインスタンスを取得します。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 def get_logger(name: str) -> logging.Logger
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | name | str | ロガー名（通常は`__name__`） |
 
-**戻り値**
+##### 戻り値
 
 - `logging.Logger`: ロガーインスタンス
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.logging import get_logger
@@ -294,7 +294,7 @@ logger.critical("重大なエラー")
 
 コンソール出力用のカラーログフォーマッター。
 
-**機能**
+#### 機能
 
 - ログレベルに応じた色付き出力
 - DEBUG: シアン
@@ -303,7 +303,7 @@ logger.critical("重大なエラー")
 - ERROR: レッド
 - CRITICAL: マゼンタ
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.logging import ColoredFormatter
@@ -328,7 +328,7 @@ handler.setFormatter(ColoredFormatter(
 
 アプリケーション基底例外。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class AppException(Exception):
@@ -340,7 +340,7 @@ class AppException(Exception):
     )
 ```
 
-**属性**
+##### 属性
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
@@ -348,7 +348,7 @@ class AppException(Exception):
 | status_code | int | HTTPステータスコード |
 | details | dict | 追加情報 |
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import AppException
@@ -366,7 +366,7 @@ raise AppException(
 
 リソース未検出例外（404 Not Found）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class NotFoundError(AppException):
@@ -377,7 +377,7 @@ class NotFoundError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import NotFoundError
@@ -396,7 +396,7 @@ if not user:
 
 バリデーションエラー例外（422 Unprocessable Entity）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class ValidationError(AppException):
@@ -407,7 +407,7 @@ class ValidationError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import ValidationError
@@ -425,7 +425,7 @@ if len(password) < 8:
 
 認証エラー例外（401 Unauthorized）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class AuthenticationError(AppException):
@@ -436,7 +436,7 @@ class AuthenticationError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import AuthenticationError
@@ -454,7 +454,7 @@ if not verify_password(password, user.hashed_password):
 
 認可エラー例外（403 Forbidden）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class AuthorizationError(AppException):
@@ -465,7 +465,7 @@ class AuthorizationError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import AuthorizationError
@@ -483,7 +483,7 @@ if not user.is_superuser:
 
 データベース操作エラー例外（500 Internal Server Error）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class DatabaseError(AppException):
@@ -494,7 +494,7 @@ class DatabaseError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import DatabaseError
@@ -515,7 +515,7 @@ except IntegrityError as e:
 
 外部サービスエラー例外（502 Bad Gateway）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 class ExternalServiceError(AppException):
@@ -526,7 +526,7 @@ class ExternalServiceError(AppException):
     )
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.core.exceptions import ExternalServiceError
@@ -556,7 +556,7 @@ except httpx.HTTPError as e:
 
 すべてのストレージバックエンドの基底クラス。
 
-**メソッド**
+#### メソッド
 
 | メソッド | 説明 |
 |---------|------|
@@ -572,20 +572,20 @@ except httpx.HTTPError as e:
 
 ファイルをアップロードします。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 async def upload(self, file_path: Path, content: bytes) -> str
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | file_path | Path | ファイルパス |
 | content | bytes | ファイル内容 |
 
-**戻り値**
+##### 戻り値
 
 - `str`: ファイル識別子
 
@@ -595,23 +595,23 @@ async def upload(self, file_path: Path, content: bytes) -> str
 
 ファイルをダウンロードします。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 async def download(self, file_id: str) -> bytes
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | file_id | str | ファイル識別子 |
 
-**戻り値**
+##### 戻り値
 
 - `bytes`: ファイル内容
 
-**例外**
+##### 例外
 
 - `FileNotFoundError`: ファイルが存在しない場合
 
@@ -621,19 +621,19 @@ async def download(self, file_id: str) -> bytes
 
 ファイルを削除します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 async def delete(self, file_id: str) -> None
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | file_id | str | ファイル識別子 |
 
-**例外**
+##### 例外
 
 - `FileNotFoundError`: ファイルが存在しない場合
 
@@ -643,19 +643,19 @@ async def delete(self, file_id: str) -> None
 
 ファイルの存在を確認します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 async def exists(self, file_id: str) -> bool
 ```
 
-**パラメータ**
+##### パラメータ
 
 | 名前 | 型 | 説明 |
 |-----|---|------|
 | file_id | str | ファイル識別子 |
 
-**戻り値**
+##### 戻り値
 
 - `bool`: ファイルが存在する場合True
 
@@ -665,13 +665,13 @@ async def exists(self, file_id: str) -> bool
 
 すべてのファイルを一覧表示します。
 
-**シグネチャ**
+##### シグネチャ
 
 ```python
 async def list_files(self) -> list[dict[str, str]]
 ```
 
-**戻り値**
+##### 戻り値
 
 - `list[dict[str, str]]`: ファイル情報のリスト
 
@@ -683,7 +683,7 @@ async def list_files(self) -> list[dict[str, str]]
 
 ローカルファイルシステムストレージの実装。
 
-**使用例**
+#### 使用例
 
 ```python
 from pathlib import Path
@@ -720,7 +720,7 @@ for file_info in files:
 
 Azure Blob Storageの実装。
 
-**使用例**
+#### 使用例
 
 ```python
 from app.storage.azure_blob import AzureBlobStorageBackend
@@ -764,18 +764,18 @@ files = await storage.list_files()
 
 データベースを初期化します。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 async def init_db() -> None
 ```
 
-**機能**
+##### 機能
 
 - データベーステーブルの作成
 - 非同期エンジンの初期化
 
-**使用例**
+##### 使用例
 
 ```python
 from app.database import init_db
@@ -790,13 +790,13 @@ await init_db()
 
 データベース接続を閉じます。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 async def close_db() -> None
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from app.database import close_db
@@ -811,13 +811,13 @@ await close_db()
 
 データベースセッションを取得します（依存性注入用）。
 
-**シグネチャ**
+#### シグネチャ
 
 ```python
 async def get_db() -> AsyncGenerator[AsyncSession, None]
 ```
 
-**使用例**
+##### 使用例
 
 ```python
 from fastapi import Depends
@@ -825,7 +825,7 @@ from app.database import get_db
 
 @router.get("/users")
 async def get_users(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User))
+    result = await db.execute(select(SampleUser))
     users = result.scalars().all()
     return users
 ```
@@ -858,7 +858,7 @@ async def login(
     logger.info(f"Login attempt for {email}")
 
     # ユーザー取得
-    result = await db.execute(select(User).where(User.email == email))
+    result = await db.execute(select(SampleUser).where(SampleUser.email == email))
     user = result.scalar_one_or_none()
 
     if not user:

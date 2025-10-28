@@ -46,7 +46,7 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
 
 ## ER図
 
-```
+```text
 ┌─────────────────┐
 │     users       │
 │─────────────────│
@@ -128,8 +128,8 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
 #### SQLAlchemyモデル
 
 ```python
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
@@ -141,8 +141,8 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
-    sessions: Mapped[list["Session"]] = relationship("Session", back_populates="user", cascade="all, delete-orphan")
-    files: Mapped[list["File"]] = relationship("File", back_populates="user", cascade="all, delete-orphan")
+    sessions: Mapped[list["SampleSession"]] = relationship("SampleSession", back_populates="user", cascade="all, delete-orphan")
+    files: Mapped[list["SampleFile"]] = relationship("SampleFile", back_populates="user", cascade="all, delete-orphan")
 ```
 
 #### サンプルデータ
@@ -185,19 +185,19 @@ AIエージェントとの会話セッションを管理するテーブル。
 #### SQLAlchemyモデル
 
 ```python
-class Session(Base):
-    __tablename__ = "sessions"
+class SampleSession(Base):
+    __tablename__ = "sample_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     session_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="CASCADE"), nullable=True)
     metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="sessions")
-    messages: Mapped[list["Message"]] = relationship("Message", back_populates="session", cascade="all, delete-orphan")
+    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="sessions")
+    messages: Mapped[list["SampleMessage"]] = relationship("SampleMessage", back_populates="session", cascade="all, delete-orphan")
 ```
 
 #### サンプルデータ
@@ -242,11 +242,11 @@ VALUES ('session_abc123', 1, '{"location": "Tokyo"}');
 #### SQLAlchemyモデル
 
 ```python
-class Message(Base):
-    __tablename__ = "messages"
+class SampleMessage(Base):
+    __tablename__ = "sample_messages"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"), nullable=False)
+    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sample_sessions.id", ondelete="CASCADE"), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tokens_used: Mapped[int | None] = mapped_column(Integer, nullable=True)
@@ -254,7 +254,7 @@ class Message(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
-    session: Mapped["Session"] = relationship("Session", back_populates="messages")
+    session: Mapped["Session"] = relationship("SampleSession", back_populates="messages")
 ```
 
 #### サンプルデータ
@@ -304,8 +304,8 @@ VALUES (1, 'user', 'こんにちは', NULL, NULL),
 #### SQLAlchemyモデル
 
 ```python
-class File(Base):
-    __tablename__ = "files"
+class SampleFile(Base):
+    __tablename__ = "sample_files"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     file_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
@@ -314,11 +314,11 @@ class File(Base):
     content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     size: Mapped[int] = mapped_column(Integer, nullable=False)
     storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="CASCADE"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="files")
+    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="files")
 ```
 
 #### サンプルデータ
@@ -388,7 +388,7 @@ VALUES ('file_xyz789', '20251014_document.pdf', 'document.pdf', 'application/pdf
 
 ```sql
 -- メール検索用インデックス
-CREATE UNIQUE INDEX idx_users_email ON users(email);
+CREATE UNIQUE INDEX idx_users_email ON sample_users(email);
 
 -- セッション識別子検索用インデックス
 CREATE UNIQUE INDEX idx_sessions_session_id ON sessions(session_id);
@@ -437,7 +437,7 @@ alembic upgrade head
 
 ### マイグレーションファイルの場所
 
-```
+```text
 src/alembic/
 ├── versions/         # マイグレーションファイル
 │   └── xxxxx_initial_schema.py
@@ -480,7 +480,7 @@ from sqlalchemy import select
 from app.models import User, Session
 
 # SQLAlchemy 2.0スタイル
-stmt = select(Session).where(Session.user_id == user_id)
+stmt = select(SampleSession).where(SampleSession.user_id == user_id)
 sessions = await db.execute(stmt)
 result = sessions.scalars().all()
 ```
@@ -491,7 +491,7 @@ result = sessions.scalars().all()
 from sqlalchemy import select
 from app.models import Message
 
-stmt = select(Message).where(Message.session_id == session_id).order_by(Message.created_at)
+stmt = select(SampleMessage).where(Message.session_id == session_id).order_by(SampleMessage.created_at)
 messages = await db.execute(stmt)
 result = messages.scalars().all()
 ```
@@ -502,7 +502,7 @@ result = messages.scalars().all()
 from sqlalchemy import select
 from app.models import File
 
-stmt = select(File).where(File.user_id == user_id).order_by(File.created_at.desc())
+stmt = select(SampleFile).where(SampleFile.user_id == user_id).order_by(File.created_at.desc())
 files = await db.execute(stmt)
 result = files.scalars().all()
 ```

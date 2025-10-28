@@ -2,9 +2,97 @@
 
 このドキュメントでは、AI Agent Appのディレクトリ構造と各ファイルの役割について説明します。
 
+## システム構成図
+
+以下の図は、AI Agent Appの全体的なシステム構成を示しています。
+
+```mermaid
+graph TB
+    subgraph "クライアント"
+        Client[ブラウザ/アプリ]
+    end
+
+    subgraph "バックエンドAPI FastAPI"
+        API[API層<br/>routes/]
+        MW[ミドルウェア<br/>CORS, エラーハンドリング<br/>ロギング, メトリクス]
+        Service[サービス層<br/>services/]
+        Repo[リポジトリ層<br/>repositories/]
+        Agent[AI Agent<br/>LangGraph]
+        Storage[ストレージ層<br/>storage/]
+    end
+
+    subgraph "Docker環境"
+        DB[(PostgreSQL 16<br/>app_db, test_db)]
+        Cache[(Redis<br/>キャッシュ/セッション)]
+        PgAdmin[PgAdmin<br/>DB管理UI]
+    end
+
+    subgraph "外部サービス"
+        Anthropic[Anthropic API<br/>Claude]
+        OpenAI[OpenAI API<br/>GPT-4]
+        Azure[Azure Blob Storage<br/>ファイル保存]
+    end
+
+    subgraph "ローカルストレージ"
+        Local[uploads/<br/>開発環境]
+    end
+
+    Client -->|HTTP/HTTPS| MW
+    MW --> API
+    API --> Service
+    Service --> Repo
+    Service --> Agent
+    Service --> Storage
+
+    Repo -->|SQLAlchemy<br/>asyncpg| DB
+    Service -->|Redis Client| Cache
+    Agent -->|API Call| Anthropic
+    Agent -->|API Call| OpenAI
+
+    Storage -->|本番環境| Azure
+    Storage -->|開発環境| Local
+
+    PgAdmin -.->|管理| DB
+
+    style Client fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
+    style API fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+    style Service fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
+    style Repo fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
+    style Agent fill:#f06292,stroke:#880e4f,stroke-width:3px,color:#000
+    style DB fill:#64b5f6,stroke:#01579b,stroke-width:3px,color:#000
+    style Cache fill:#fff176,stroke:#f57f17,stroke-width:3px,color:#000
+    style Anthropic fill:#ba68c8,stroke:#4a148c,stroke-width:3px,color:#000
+    style OpenAI fill:#4db6ac,stroke:#004d40,stroke-width:3px,color:#000
+    style Azure fill:#7986cb,stroke:#1a237e,stroke-width:3px,color:#000
+```
+
+**主要コンポーネント**:
+
+1. **クライアント**: ブラウザまたはモバイルアプリからHTTP/HTTPSでアクセス
+2. **バックエンドAPI**: FastAPIによる非同期REST API
+
+   - ミドルウェア: CORS、エラーハンドリング、ロギング、メトリクス収集
+   - レイヤードアーキテクチャ: API → Service → Repository → Model
+   - AI Agent: LangGraphによるエージェント処理
+   - ストレージ層: ファイル保存の抽象化
+
+3. **Docker環境**:
+
+   - PostgreSQL 16: メインデータベース（app_db）とテストDB（test_db）
+   - Redis: キャッシュとセッション管理
+   - PgAdmin: データベース管理UI（オプション）
+
+4. **外部サービス**:
+
+   - Anthropic API: Claude AIモデル
+   - OpenAI API: GPT-4モデル
+   - Azure Blob Storage: 本番環境でのファイルストレージ
+
+5. **ローカルストレージ**: 開発環境でのファイル保存先
+
 ## 全体構造
 
-```
+```text
 backend/
 ├── .venv/                   # 仮想環境（uvが自動生成）
 ├── docs/                    # ドキュメント
@@ -22,8 +110,8 @@ backend/
 │   │   └── env.py          # Alembic環境設定
 │   └── app/                # メインアプリケーション
 │       ├── agents/         # AI Agent関連
-│       ├── api/            # API層（ルーターとミドルウェア）
-│       ├── core/           # コア機能（例外、ロギング、セキュリティ、キャッシュ）
+│       ├── api/            # API層（ルーター、エンドポイント、ミドルウェア）
+│       ├── core/           # コア機能（アプリ初期化、ライフサイクル、例外、ロギング、セキュリティ、キャッシュ）
 │       ├── models/         # データベースモデル
 │       ├── repositories/   # データアクセス層
 │       ├── schemas/        # Pydanticスキーマ
@@ -31,14 +119,18 @@ backend/
 │       ├── storage/        # ファイルストレージ
 │       ├── config.py       # アプリケーション設定
 │       ├── database.py     # データベース設定
-│       └── main.py         # アプリケーションエントリーポイント
-├── tests/                   # テストコード
+│       └── main.py         # アプリケーションエントリーポイント（86行）
+├── tests/                   # テストコード（src/app/のミラー構造）
 │   ├── __init__.py
 │   ├── conftest.py         # 共通フィクスチャとテスト設定
-│   ├── test_models.py      # モデル層テスト
-│   ├── test_repositories.py # リポジトリ層テスト
-│   ├── test_services.py    # サービス層テスト
-│   └── test_api.py         # APIエンドポイントテスト
+│   ├── api/                # APIレイヤーのテスト
+│   │   ├── middlewares/    # ミドルウェアテスト
+│   │   └── routes/         # エンドポイントテスト
+│   ├── core/               # コア機能のテスト
+│   │   └── security/       # セキュリティ関連テスト
+│   ├── models/             # モデル層テスト
+│   ├── repositories/       # リポジトリ層テスト
+│   └── services/           # サービス層テスト
 ├── uploads/                 # ローカルファイルストレージ（開発環境）
 ├── .env                     # 環境変数（gitignore）
 ├── .env.example             # 環境変数テンプレート
@@ -56,35 +148,36 @@ backend/
 
 #### `main.py` - アプリケーションエントリーポイント
 
-FastAPIアプリケーションの起動とミドルウェアの設定を行います。
+アプリケーションの起動とロギング設定を行う軽量なエントリーポイント（86行）。
+FastAPIアプリの初期化は `core/app_factory.py` に委譲。
 
 ```python
 # 主な内容
-from fastapi import FastAPI
-from app.api.routes import agents, files
+from app.config import settings
+from app.core.app_factory import create_app
+from app.core.logging import setup_logging
 
-app = FastAPI(
-    title=settings.APP_NAME,
-    version=settings.VERSION,
-    lifespan=lifespan,
-)
+# Setup logging
+setup_logging()
 
-# ミドルウェアの設定
-app.add_middleware(CORSMiddleware, ...)
-app.add_middleware(ErrorHandlerMiddleware)
-app.add_middleware(LoggingMiddleware)
+# Create FastAPI application instance
+app = create_app()
 
-# ルーターの登録
-app.include_router(agents.router, prefix="/api/agents")
-app.include_router(files.router, prefix="/api/files")
+def main():
+    """CLI起動用エントリーポイント"""
+    import uvicorn
+    uvicorn.run("app.main:app", host=settings.HOST, port=settings.PORT, reload=settings.DEBUG)
+
+if __name__ == "__main__":
+    main()
 ```
 
 **役割**:
-- FastAPIアプリケーションの初期化
-- CORS設定
-- ミドルウェアの登録
-- ルーターの統合
-- ライフサイクルイベント（起動・シャットダウン）
+
+- ロギングシステムの初期化
+- FastAPIアプリケーションインスタンスの生成（create_appファクトリー経由）
+- CLI起動用のmain関数提供
+- **注**: アプリの詳細な設定は `core/app_factory.py` で行われる
 
 #### `config.py` - アプリケーション設定
 
@@ -103,6 +196,7 @@ settings = Settings()
 ```
 
 **役割**:
+
 - 環境変数の読み込み
 - 設定値のバリデーション
 - 型安全な設定アクセス
@@ -123,6 +217,7 @@ async def get_db() -> AsyncSession:
 ```
 
 **役割**:
+
 - データベース接続管理
 - セッションファクトリー
 - 依存性注入用のget_db関数
@@ -131,44 +226,98 @@ async def get_db() -> AsyncSession:
 
 API層は、HTTPリクエストを受け取り、レスポンスを返す責務を持ちます。
 
-```
+```text
 api/
-├── routes/                  # APIエンドポイント
+├── core/                    # 🆕 APIコア機能
 │   ├── __init__.py
-│   ├── agents.py           # AI Agent関連エンドポイント
-│   └── files.py            # ファイル管理エンドポイント
+│   ├── dependencies.py      # 依存性注入の定義
+│   └── exception_handlers.py # グローバル例外ハンドラー
+├── routes/                  # エンドポイント定義
+│   ├── v1/                  # API v1 エンドポイント（ビジネスロジック）
+│   │   ├── __init__.py
+│   │   ├── sample_users.py      # ユーザー管理エンドポイント
+│   │   ├── sample_agents.py     # AI Agent/チャットエンドポイント
+│   │   ├── sample_sessions.py   # セッション管理エンドポイント
+│   │   └── sample_files.py      # ファイル管理エンドポイント
+│   └── system/              # システムエンドポイント（インフラ）
+│       ├── __init__.py
+│       ├── root.py          # / (ルート)
+│       ├── health.py        # /health (ヘルスチェック)
+│       └── metrics.py       # /metrics (Prometheusメトリクス)
+├── decorators/              # デコレーター（横断的関心事）
+│   ├── __init__.py
+│   ├── basic.py             # 基本デコレータ
+│   ├── security.py          # セキュリティデコレータ
+│   ├── data_access.py       # データアクセスデコレータ
+│   └── reliability.py       # 信頼性デコレータ
 ├── middlewares/             # カスタムミドルウェア
 │   ├── __init__.py
 │   ├── error_handler.py    # エラーハンドリング
 │   ├── logging.py          # リクエストロギング
 │   ├── metrics.py          # Prometheusメトリクス収集
-│   └── rate_limit.py       # レート制限
-├── dependencies.py          # 依存性注入の定義
+│   ├── rate_limit.py       # レート制限
+│   └── security_headers.py # セキュリティヘッダー
 └── __init__.py
 ```
 
-#### `api/routes/agents.py` - AI Agentエンドポイント
+#### `api/core/` - APIコア機能
+
+APIレイヤーの基盤となる依存性注入と例外ハンドリング機能を提供します。
+
+**`dependencies.py`** - 依存性注入の定義:
+- データベースセッション (`DatabaseDep`)
+- サービス層の注入 (`UserServiceDep`, `AgentServiceDep`, `FileServiceDep`, `SessionServiceDep`)
+- 認証ユーザー (`CurrentUserDep`, `CurrentSuperuserDep`, `CurrentUserOptionalDep`)
+
+**`exception_handlers.py`** - グローバル例外ハンドラー:
+- カスタム例外を適切なHTTPレスポンスに変換
+- 統一的なエラーレスポンス形式を提供
+
+#### `api/decorators/` - デコレータ（横断的関心事）
+
+関数やメソッドに追加機能を付与するデコレータを提供します。機能別に4つのモジュールに分割されています。
+
+**`basic.py`** - 基本機能デコレータ:
+- `@log_execution`: 関数の実行をログに記録
+- `@measure_performance`: 実行時間を測定
+- `@async_timeout`: タイムアウト制御
+
+**`security.py`** - セキュリティデコレータ:
+- `@validate_permissions`: リソースベースの権限検証
+- `@handle_service_errors`: サービス層のエラーをHTTP例外に変換
+
+**`data_access.py`** - データアクセスデコレータ:
+- `@transactional`: データベーストランザクション管理
+- `@cache_result`: 関数の結果をRedisにキャッシュ
+
+**`reliability.py`** - 信頼性向上デコレータ:
+- `@retry_on_error`: エラー時の自動リトライ（Exponential Backoff）
+
+#### `api/routes/v1/sample_agents.py` - AI Agentエンドポイント（API v1）
 
 ```python
-from fastapi import APIRouter, Depends
-from app.api.dependencies import SessionServiceDep
+from fastapi import APIRouter
+
+from app.api.core import AgentServiceDep, CurrentUserDep
 
 router = APIRouter()
 
 @router.post("/chat")
 async def chat(
     request: ChatRequest,
-    service: SessionServiceDep,
+    service: AgentServiceDep,
+    current_user: CurrentUserDep,
 ):
     """AI Agentとチャット"""
     return await service.process_message(request)
 ```
 
-#### `api/routes/files.py` - ファイル管理エンドポイント
+#### `api/routes/v1/sample_files.py` - ファイル管理エンドポイント（API v1）
 
 ```python
 from fastapi import APIRouter, UploadFile
-from app.api.dependencies import FileServiceDep
+
+from app.api.core import CurrentUserDep, FileServiceDep
 
 router = APIRouter()
 
@@ -176,9 +325,57 @@ router = APIRouter()
 async def upload_file(
     file: UploadFile,
     service: FileServiceDep,
+    current_user: CurrentUserDep,
 ):
     """ファイルをアップロード"""
     return await service.upload(file)
+```
+
+#### `api/routes/system/` - システムエンドポイント（インフラ）
+
+APIバージョンに依存しないインフラストラクチャ関連のエンドポイント。
+
+```python
+# root.py - ルートエンドポイント
+from fastapi import APIRouter
+
+router = APIRouter()
+
+@router.get("/")
+async def root():
+    """アプリケーション基本情報を返す"""
+    return {"message": f"Welcome to {settings.APP_NAME}", "version": settings.VERSION}
+
+# health.py - ヘルスチェック
+@router.get("/health")
+async def health():
+    """データベースとRedisの接続状態を確認"""
+    return {"status": "healthy", "services": {"database": "healthy", "redis": "healthy"}}
+
+# metrics.py - Prometheusメトリクス
+@router.get("/metrics")
+async def metrics():
+    """Prometheusメトリクスを出力"""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
+```
+
+#### `api/exception_handlers.py` - グローバル例外ハンドラー
+
+```python
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from app.core.exceptions import AppException
+
+async def app_exception_handler(request: Request, exc: AppException):
+    """カスタムアプリケーション例外のハンドラー"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"error": exc.message, "details": exc.details},
+    )
+
+def register_exception_handlers(app: FastAPI):
+    """FastAPIアプリに例外ハンドラーを登録"""
+    app.add_exception_handler(AppException, app_exception_handler)
 ```
 
 #### `api/dependencies.py` - 依存性注入
@@ -190,22 +387,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 def get_user_service(db: DatabaseDep) -> UserService:
-    return UserService(db)
+    return SampleUserService(db)
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
 ```
 
 ### models/ - データベースモデル
 
 SQLAlchemyのORMモデルを定義します。
 
-```
+```text
 models/
 ├── __init__.py
-├── user.py                  # ユーザーモデル
-├── session.py               # セッションモデル
-├── file.py                  # ファイルモデル
-└── message.py               # メッセージモデル
+├── sample_user.py                  # ユーザーモデル
+├── sample_session.py               # セッションモデル
+├── sample_file.py                  # ファイルモデル
+└── base.py               # メッセージモデル
 ```
 
 #### 例: `models/user.py`
@@ -215,8 +412,8 @@ from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True)
@@ -225,34 +422,37 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # リレーションシップ
-    sessions: Mapped[list["Session"]] = relationship(back_populates="user")
-    files: Mapped[list["File"]] = relationship(back_populates="user")
+    sessions: Mapped[list["SampleSession"]] = relationship(back_populates="user")
+    files: Mapped[list["SampleFile"]] = relationship(back_populates="user")
 ```
 
 ### schemas/ - Pydanticスキーマ
 
 APIリクエスト/レスポンスのバリデーションスキーマ。
 
-```
+```text
 schemas/
 ├── __init__.py
-├── user.py                  # ユーザースキーマ
-├── agent.py                 # Agent関連スキーマ
-├── file.py                  # ファイルスキーマ
-└── common.py                # 共通スキーマ
+├── common.py                # 共通スキーマ
+├── sample_user.py           # ユーザースキーマ
+├── sample_agents.py         # AI Agent/チャット関連スキーマ
+├── sample_sessions.py       # セッション/メッセージスキーマ
+└── sample_file.py           # ファイルスキーマ
 ```
+
+**注**: Pydantic v2対応済み（`ConfigDict`使用）
 
 #### 例: `schemas/user.py`
 
 ```python
 from pydantic import BaseModel, EmailStr
 
-class UserCreate(BaseModel):
+class SampleUserCreate(BaseModel):
     email: EmailStr
     username: str
     password: str
 
-class UserResponse(BaseModel):
+class SampleUserResponse(BaseModel):
     id: int
     email: str
     username: str
@@ -265,12 +465,12 @@ class UserResponse(BaseModel):
 
 データベース操作を抽象化します。
 
-```
+```text
 repositories/
 ├── __init__.py
 ├── base.py                  # ベースリポジトリ（共通CRUD）
-├── user.py                  # ユーザーリポジトリ
-├── session.py               # セッションリポジトリ
+├── sample_user.py                  # ユーザーリポジトリ
+├── sample_session.py               # セッションリポジトリ
 └── file.py                  # ファイルリポジトリ
 ```
 
@@ -308,14 +508,14 @@ class BaseRepository(Generic[ModelType]):
 
 ```python
 from app.repositories.base import BaseRepository
-from app.models.user import User
+from app.models.sample_user import SampleUser
 
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     def __init__(self, db: AsyncSession):
-        super().__init__(User, db)
+        super().__init__(SampleUser, db)
 
-    async def get_by_email(self, email: str) -> User | None:
-        query = select(User).where(User.email == email)
+    async def get_by_email(self, email: str) -> SampleUser | None:
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 ```
@@ -324,26 +524,28 @@ class UserRepository(BaseRepository[User]):
 
 ビジネスルールと複雑なロジックを実装します。
 
-```
+```text
 services/
 ├── __init__.py
-├── user.py                  # ユーザーサービス
-├── session.py               # セッションサービス
-└── file.py                  # ファイルサービス
+├── sample_user.py           # ユーザーサービス
+├── sample_agent.py          # AI Agentサービス
+├── sample_session.py        # セッション管理サービス（新規追加）
+├── sample_file.py           # ファイルサービス
+└── sample_authorization.py  # 認可サービス
 ```
 
 #### 例: `services/user.py`
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.user import UserRepository
+from app.repositories.sample_user import SampleUserRepository
 from app.core.security import hash_password
 
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)
+        self.repository = SampleUserRepository(db)
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         # バリデーション
         existing = await self.repository.get_by_email(user_data.email)
         if existing:
@@ -364,14 +566,118 @@ class UserService:
 
 アプリケーション全体で使用される共通機能。
 
-```
+```text
 core/
 ├── __init__.py
+├── app_factory.py           # FastAPIアプリ生成ファクトリー
+├── lifespan.py              # アプリケーションライフサイクル管理
 ├── cache.py                 # Redisキャッシュマネージャー
+├── config.py                # アプリケーション設定
+├── database.py              # データベース設定
 ├── exceptions.py            # カスタム例外
 ├── logging.py               # ロギング設定（構造化ログ対応）
-└── security.py              # セキュリティ機能
+└── security/                # セキュリティ機能（パッケージ化）
+    ├── __init__.py          # 統一インターフェース
+    ├── password.py          # パスワードハッシュ化と検証
+    ├── jwt.py               # JWT認証
+    └── api_key.py           # APIキー生成
 ```
+
+#### `core/app_factory.py` - アプリファクトリー
+
+FastAPIアプリケーションインスタンスの生成と設定を一元管理。
+
+```python
+from fastapi import FastAPI
+from app.core.lifespan import lifespan
+
+def create_app() -> FastAPI:
+    """FastAPIアプリケーションを生成します。
+
+    Returns:
+        FastAPI: 完全に設定されたFastAPIアプリケーション
+    """
+    app = FastAPI(
+        title=settings.APP_NAME,
+        version=settings.VERSION,
+        lifespan=lifespan,
+    )
+
+    # Exception handlers
+    register_exception_handlers(app)
+
+    # Middlewares
+    app.add_middleware(PrometheusMetricsMiddleware)
+    app.add_middleware(ErrorHandlerMiddleware)
+    app.add_middleware(LoggingMiddleware)
+    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(CORSMiddleware, ...)
+
+    # Routers
+    # API v1 endpoints (versioned business logic)
+    app.include_router(agents.router, prefix="/api/v1/agents", tags=["agents"])
+    app.include_router(files.router, prefix="/api/v1/files", tags=["files"])
+
+    # System endpoints (infrastructure, no versioning)
+    app.include_router(root.router, tags=["root"])
+    app.include_router(health.router, tags=["health"])
+    app.include_router(metrics.router, tags=["metrics"])
+
+    return app
+```
+
+**役割**:
+
+- FastAPIアプリケーションの初期化
+- ミドルウェアの登録（実行順序管理）
+- ルーターの統合（v1エンドポイントとsystemエンドポイントの分離）
+- 例外ハンドラーの登録
+- 設定の一元管理
+
+**エンドポイント構成**:
+
+- `/api/v1/*`: バージョン管理されたビジネスロジックAPI
+- `/`, `/health`, `/metrics`: バージョン非依存のシステムエンドポイント
+
+#### `core/lifespan.py` - ライフサイクル管理
+
+アプリケーションの起動時・終了時の処理を管理。
+
+```python
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """アプリケーションライフサイクル管理。
+
+    起動時:
+        - データベース初期化
+        - Redis接続
+        - ログ出力
+
+    終了時:
+        - Redis切断
+        - データベース接続クローズ
+    """
+    # Startup
+    await init_db()
+    if settings.REDIS_URL:
+        await cache_manager.connect()
+
+    yield
+
+    # Shutdown
+    if settings.REDIS_URL:
+        await cache_manager.disconnect()
+    await close_db()
+```
+
+**役割**:
+
+- データベース接続の初期化とクローズ
+- Redis接続の確立と切断
+- gracefulシャットダウンの保証
 
 #### `core/exceptions.py`
 
@@ -390,23 +696,50 @@ class ValidationError(AppException):
         super().__init__(message, status_code=422)
 ```
 
-#### `core/security.py`
+#### `core/security/` - セキュリティパッケージ
+
+セキュリティ機能を責任ごとに分割したパッケージ。
 
 ```python
-from passlib.context import CryptContext
-from jose import jwt
+# core/security/__init__.py - 統一インターフェース
+from app.core.security.password import hash_password, verify_password, validate_password_strength
+from app.core.security.jwt import create_access_token, decode_access_token
+from app.core.security.api_key import generate_api_key
 
-pwd_context = CryptContext(schemes=["bcrypt"])
-
+# core/security/password.py - パスワード管理
 def hash_password(password: str) -> str:
+    """bcryptでパスワードをハッシュ化"""
     return pwd_context.hash(password)
 
 def verify_password(plain: str, hashed: str) -> bool:
+    """パスワードを検証"""
     return pwd_context.verify(plain, hashed)
 
-def create_access_token(data: dict) -> str:
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """パスワード強度をチェック"""
+    # 8文字以上、大文字、小文字、数字を含むか検証
+    ...
+
+# core/security/jwt.py - JWT認証
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """JWTアクセストークンを生成"""
     return jwt.encode(data, settings.SECRET_KEY)
+
+def decode_access_token(token: str) -> dict[str, Any] | None:
+    """JWTトークンを検証・デコード"""
+    return jwt.decode(token, settings.SECRET_KEY)
+
+# core/security/api_key.py - APIキー生成
+def generate_api_key() -> str:
+    """暗号学的に安全なAPIキーを生成"""
+    return secrets.token_urlsafe(32)
 ```
+
+**役割**:
+
+- `password.py`: bcryptによるパスワードハッシュ化、検証、強度チェック
+- `jwt.py`: JWTトークンの生成、検証、リフレッシュトークン管理
+- `api_key.py`: セキュアなAPIキー生成
 
 #### `core/cache.py`
 
@@ -432,6 +765,7 @@ class CacheManager:
 ```
 
 **役割**:
+
 - Redisへの接続管理
 - JSON形式でのデータのシリアライズ/デシリアライズ
 - TTLベースのキャッシュ管理
@@ -441,7 +775,7 @@ class CacheManager:
 
 LangGraphベースのAI Agent実装。
 
-```
+```text
 agents/
 ├── __init__.py
 ├── graph.py                 # LangGraphの定義
@@ -452,7 +786,7 @@ agents/
 
 ファイルストレージの抽象化レイヤー。
 
-```
+```text
 storage/
 ├── __init__.py
 ├── base.py                  # ストレージインターフェース

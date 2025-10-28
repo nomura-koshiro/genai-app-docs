@@ -1,12 +1,11 @@
-"""Data access layer repositories."""
+"""データアクセス層のリポジトリ。"""
 
-from app.repositories.file import FileRepository
-from app.repositories.session import MessageRepository, SessionRepository
-from app.repositories.user import UserRepository
+from app.repositories.sample_file import SampleFileRepository
+from app.repositories.sample_session import SampleSessionRepository
+from app.repositories.sample_user import SampleUserRepository
 
 __all__ = [
-    "UserRepository",
-    "SessionRepository",
-    "MessageRepository",
-    "FileRepository",
+    "SampleUserRepository",
+    "SampleFileRepository",
+    "SampleSessionRepository",
 ]

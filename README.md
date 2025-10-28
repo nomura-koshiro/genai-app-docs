@@ -16,26 +16,39 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 
 ## 🚀 クイックスタート
 
-### 前提条件
+### 推奨環境：WSL2完結型（Windows）
 
-- Python 3.13+
-- uvパッケージマネージャー
+**Windows開発者には、すべてをWSL2（Linux）で完結させる構成を推奨します。**
 
-### セットアップ
+メリット：
+- ✅ **高速**: ファイルI/Oが高速
+- ✅ **シンプル**: 環境が統一、パスの混乱なし
+- ✅ **軽量**: Docker Desktopが不要
+- ✅ **本番と同じ**: 本番環境（Linux）と完全一致
+
+**VSCodeについて**: Windows側のVSCodeで編集できます（Remote-WSL拡張を使用）
+
+### セットアップ（WSL2）
 
 ```bash
-# 依存関係のインストール
-uv sync
+# WSL2に入る
+wsl
 
-# 環境変数の設定
-cp .env.example .env
-# .envファイルを編集してAPIキーや設定を記入
-
-# 開発サーバーの起動
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# セットアップスクリプトを実行
+cd /mnt/c/developments/genai-app-docs
+bash scripts/setup-wsl2.sh
 ```
 
-ブラウザで [http://localhost:8000/docs](http://localhost:8000/docs) を開いてAPIドキュメントを確認してください。
+このスクリプトが以下を自動実行します：
+- Dockerのインストールと起動
+- プロジェクトのコピー（`~/projects/genai-app-docs`）
+- uvと依存関係のインストール
+- 環境変数ファイルの作成
+- PostgreSQLの起動
+
+完了後、ブラウザで [http://localhost:8000/docs](http://localhost:8000/docs) を開いてAPIドキュメントを確認してください。
+
+詳細は [WSL2セットアップガイド](./docs/01-getting-started/02-wsl2-docker-setup.md) を参照してください。
 
 ## 📁 ディレクトリ構成
 
@@ -43,135 +56,82 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 backend/
 ├── src/
 │   ├── app/
-│   │   ├── main.py              # FastAPIアプリケーションのエントリーポイント
+│   │   ├── main.py              # アプリケーションエントリーポイント
 │   │   ├── config.py            # 設定管理（環境変数）
 │   │   ├── database.py          # データベース接続・セッション管理
 │   │   │
 │   │   ├── api/                 # APIレイヤー
 │   │   │   ├── routes/          # エンドポイント定義
-│   │   │   │   ├── agents.py   # AIエージェントAPI
-│   │   │   │   └── files.py    # ファイル管理API
-│   │   │   ├── dependencies.py # 依存性注入
-│   │   │   └── middlewares/    # ミドルウェア
+│   │   │   │   ├── v1/          # API v1（ビジネスロジック）
+│   │   │   │   └── system/      # システムエンドポイント
+│   │   │   ├── exception_handlers.py
+│   │   │   ├── dependencies.py
+│   │   │   └── middlewares/
 │   │   │
 │   │   ├── agents/              # AIエージェント
-│   │   │   ├── graph.py         # LangGraphエージェント定義
-│   │   │   └── tools.py         # カスタムツール
-│   │   │
 │   │   ├── models/              # SQLAlchemyモデル
-│   │   │   ├── user.py
-│   │   │   ├── session.py
-│   │   │   └── file.py
-│   │   │
-│   │   ├── schemas/             # Pydanticスキーマ（バリデーション）
-│   │   │   ├── user.py
-│   │   │   ├── agent.py
-│   │   │   └── file.py
-│   │   │
+│   │   ├── schemas/             # Pydanticスキーマ
 │   │   ├── repositories/        # データアクセス層
-│   │   │   ├── base.py
-│   │   │   ├── user.py
-│   │   │   ├── session.py
-│   │   │   └── file.py
-│   │   │
 │   │   ├── services/            # ビジネスロジック層
-│   │   │   ├── user.py
-│   │   │   ├── session.py
-│   │   │   └── file.py
-│   │   │
 │   │   ├── storage/             # ファイルストレージ
-│   │   │   ├── base.py          # ストレージインターフェース
-│   │   │   ├── local.py         # ローカルファイルシステム
-│   │   │   └── azure_blob.py   # Azure Blob Storage
-│   │   │
 │   │   └── core/                # コア機能
-│   │       ├── exceptions.py   # カスタム例外
-│   │       ├── logging.py      # ログ設定
-│   │       └── security.py     # 認証・セキュリティ
 │   │
 │   └── alembic/                 # データベースマイグレーション
-│       └── env.py
 │
 ├── tests/                       # テストコード
-├── uploads/                     # ローカルファイルストレージ（開発環境）
-├── pyproject.toml               # プロジェクト設定・依存関係
-└── .env.example                 # 環境変数テンプレート
+├── docs/                        # ドキュメント
+└── pyproject.toml               # プロジェクト設定・依存関係
 ```
 
-## 📜 よく使うコマンド
+詳細は [プロジェクト構造](./docs/02-architecture/01-project-structure.md) を参照してください。
 
-### 開発サーバー
+## 📜 よく使うコマンド（WSL2内）
 
 ```bash
-# 開発サーバー起動（ホットリロード）
+# 開発
+cd ~/projects/genai-app-docs
+
+# Dockerサービス起動（必要に応じて）
+sudo service docker start
+
+# 開発サーバー起動
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# または VSCode で F5 キーを押してデバッグ起動
 
-# または（VSCodeのF5キーでも起動可能）
+# テスト実行
+uv run pytest                           # すべてのテスト
+uv run pytest tests/test_services.py -v # 特定のテスト
+
+# コード品質
+uv run ruff check src tests             # リント実行
+uv run ruff format src tests            # フォーマット実行
+uv run ruff check --fix src tests       # リント自動修正
+
+# Docker (PostgreSQL)
+docker-compose up -d postgres           # PostgreSQL起動
+docker-compose ps                       # 状態確認
+docker-compose logs postgres            # ログ確認
+docker-compose down                     # コンテナ停止
+
+# データベース (Alembic)
+cd src && uv run alembic revision --autogenerate -m "message"  # マイグレーション生成
+cd src && uv run alembic upgrade head   # マイグレーション適用
 ```
 
-### コード品質
+## 📖 ドキュメント
 
-```bash
-# リント実行
-uv run ruff check src tests
+詳細なドキュメントは `docs/` ディレクトリを参照してください。
 
-# フォーマット実行
-uv run ruff format src tests
-
-# リント問題を自動修正
-uv run ruff check --fix src tests
-
-# すべてのチェック（リント + フォーマット）
-uv run ruff check src tests && uv run ruff format --check src tests
-```
-
-### テスト
-
-```bash
-# すべてのテストを実行
-uv run pytest
-
-# 詳細出力付き
-uv run pytest -v
-
-# カバレッジ付きで実行
-uv run pytest --cov=app --cov-report=html --cov-report=term
-
-# 特定のテストファイルを実行
-uv run pytest tests/test_agents.py
-```
-
-### データベース（Alembic）
-
-```bash
-# マイグレーションファイルを自動生成
-cd src && uv run alembic revision --autogenerate -m "migration message"
-
-# マイグレーションを適用
-cd src && uv run alembic upgrade head
-
-# 1つ前に戻す
-cd src && uv run alembic downgrade -1
-
-# マイグレーション履歴を確認
-cd src && uv run alembic history
-```
-
-### 依存関係管理
-
-```bash
-# 依存関係のインストール
-uv sync
-
-# 開発用依存関係も含めてインストール
-uv sync --all-groups
-
-# パッケージを追加
-uv add {package-name}
-
-# 開発用パッケージを追加
-uv add --dev {package-name}
-```
+| ドキュメント | 内容 |
+|------------|------|
+| [📚 ドキュメント目次](./docs/README.md) | 全ドキュメントの一覧 |
+| [🐧 WSL2セットアップ](./docs/01-getting-started/02-wsl2-docker-setup.md) | WSL2完結型環境構築 |
+| [⚡ クイックスタート](./docs/01-getting-started/05-quick-start.md) | 最速でAPIを起動 |
+| [🎓 プロジェクト概要](./docs/01-getting-started/06-project-overview.md) | 全体像の理解 |
+| [🏗️ プロジェクト構造](./docs/02-architecture/01-project-structure.md) | ディレクトリ構成 |
+| [💻 技術スタック](./docs/03-core-concepts/01-tech-stack/index.md) | 使用技術 |
+| [📝 コーディング規約](./docs/04-development/03-coding-standards/) | 規約とベストプラクティス |
+| [🧪 テスト戦略](./docs/05-testing/01-testing-strategy/index.md) | テストの書き方 |
 
 ## 🛠️ 技術スタック
 
@@ -180,97 +140,19 @@ uv add --dev {package-name}
 | **フレームワーク** | FastAPI 0.115+, Uvicorn |
 | **AI/エージェント** | LangChain 0.3+, LangGraph 0.2+, LangServe 0.3+ |
 | **LLM統合** | langchain-anthropic, langchain-openai |
-| **データベース** | SQLAlchemy 2.0+, Alembic, PostgreSQL / SQLite |
+| **データベース** | SQLAlchemy 2.0+, Alembic, PostgreSQL |
 | **ストレージ** | Azure Blob Storage, ローカルファイルシステム |
 | **バリデーション** | Pydantic, Pydantic Settings |
 | **セキュリティ** | python-jose, passlib, bcrypt |
 | **テスト** | pytest, pytest-asyncio |
-| **開発ツール** | Ruff (linter & formatter), uv (package manager) |
+| **開発ツール** | Ruff, uv |
 | **可観測性** | LangSmith |
 
-## 🔧 環境設定
-
-`.env`ファイルで以下の環境変数を設定してください。
-
-### 必須設定
-
-```bash
-# 環境（development / staging / production）
-ENVIRONMENT=development
-
-# LLMプロバイダー（いずれか1つ以上必要）
-ANTHROPIC_API_KEY=your-api-key
-OPENAI_API_KEY=your-api-key
-# または Azure OpenAI
-AZURE_OPENAI_API_KEY=your-api-key
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-
-# データベース
-DATABASE_URL=sqlite:///./app.db  # 開発環境
-# DATABASE_URL=postgresql://user:password@localhost/dbname  # 本番環境
-```
-
-### オプション設定
-
-```bash
-# ストレージ設定
-STORAGE_BACKEND=local  # local または azure
-UPLOAD_DIR=uploads
-
-# Azure Blob Storage（STORAGE_BACKEND=azureの場合）
-AZURE_STORAGE_ACCOUNT_NAME=your-account
-AZURE_STORAGE_CONTAINER_NAME=your-container
-
-# LangSmithトレーシング（オプション）
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_API_KEY=your-langsmith-key
-LANGCHAIN_PROJECT=your-project-name
-
-# セキュリティ
-SECRET_KEY=your-secret-key-here  # 本番環境では必ず変更
-```
-
-## 📖 APIドキュメント
-
-開発サーバー起動後、以下のURLでAPIドキュメントにアクセスできます：
-
-| ドキュメント | URL | 説明 |
-|------------|-----|------|
-| **Swagger UI** | http://localhost:8000/docs | インタラクティブなAPIドキュメント |
-| **ReDoc** | http://localhost:8000/redoc | 読みやすいAPIリファレンス |
-| **OpenAPI JSON** | http://localhost:8000/openapi.json | OpenAPI仕様（JSON） |
+詳細は [技術スタック](./docs/03-core-concepts/01-tech-stack/index.md) を参照してください。
 
 ## 🏗️ アーキテクチャ
 
-### レイヤードアーキテクチャ
-
-このプロジェクトはレイヤードアーキテクチャを採用しています：
-
-```text
-┌─────────────────────────────────────┐
-│  API Layer (routes)                 │  エンドポイント定義
-│  - Request/Response handling         │
-│  - Validation (Pydantic)            │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  Service Layer (services)           │  ビジネスロジック
-│  - Business logic                   │
-│  - Transaction management           │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  Repository Layer (repositories)    │  データアクセス
-│  - Database operations              │
-│  - Query abstraction                │
-└─────────────────────────────────────┘
-              ↓
-┌─────────────────────────────────────┐
-│  Data Layer (models)                │  データモデル
-│  - SQLAlchemy models                │
-│  - Database schema                  │
-└─────────────────────────────────────┘
-```
+このプロジェクトはレイヤードアーキテクチャを採用しています。
 
 ### 主要原則
 
@@ -279,114 +161,25 @@ SECRET_KEY=your-secret-key-here  # 本番環境では必ず変更
 3. **単一方向のデータフロー** - API → Service → Repository → Model
 4. **型安全性** - Pydantic、Type Hintsによる型チェック
 
-## 💻 VSCode設定
-
-このプロジェクトには`.vscode/`ディレクトリに推奨設定が含まれています：
-
-### 含まれる設定ファイル
-
-| ファイル | 内容 |
-|---------|------|
-| **settings.json** | Ruff、Python、フォーマット設定 |
-| **launch.json** | FastAPIのデバッグ設定（F5キーで起動） |
-| **tasks.json** | よく使うタスク（Ctrl+Shift+Bでサーバー起動） |
-| **extensions.json** | 推奨VSCode拡張機能 |
-
-### クイックスタート
-
-1. VSCodeでプロジェクトを開く
-2. 拡張機能パネルで「推奨」タブを確認
-3. 「すべてインストール」をクリック
-4. **F5キー**でFastAPIをデバッグ起動
-5. **Ctrl+Shift+B**で開発サーバー起動
-
-### おすすめ拡張機能
-
-- **ms-python.python** - Python開発の基本
-- **charliermarsh.ruff** - Ruffサポート（リント・フォーマット）
-- **humao.rest-client** - VSCode内でAPIテスト
-- **mtxr.sqltools** - データベース管理
-
-## 🚀 デプロイ
-
-### 開発環境
-
-```bash
-# ストレージ: ローカルファイルシステム
-STORAGE_BACKEND=local
-
-# データベース: SQLite
-DATABASE_URL=sqlite:///./app.db
-```
-
-### 本番環境
-
-```bash
-# ストレージ: Azure Blob Storage
-STORAGE_BACKEND=azure
-AZURE_STORAGE_ACCOUNT_NAME=your-account
-AZURE_STORAGE_CONTAINER_NAME=your-container
-
-# データベース: PostgreSQL
-DATABASE_URL=postgresql://user:password@host:5432/database
-
-# 環境設定
-ENVIRONMENT=production
-```
-
-### Dockerデプロイ（予定）
-
-```bash
-# Dockerイメージのビルド
-docker build -t ai-agent-app .
-
-# コンテナの起動
-docker run -p 8000:8000 --env-file .env ai-agent-app
-```
-
-## 🧪 テスト
-
-### テスト構成
+### レイヤー構成
 
 ```text
-tests/
-├── conftest.py           # pytestフィクスチャ
-├── test_agents/          # エージェント関連テスト
-├── test_api/             # APIエンドポイントテスト
-├── test_repositories/    # リポジトリテスト
-└── test_services/        # サービスロジックテスト
+API Layer (routes/)
+    ↓
+Service Layer (services/)
+    ↓
+Repository Layer (repositories/)
+    ↓
+Data Layer (models/)
 ```
 
-### テスト実行
-
-```bash
-# すべてのテストを実行
-uv run pytest
-
-# VSCodeのテストエクスプローラーからも実行可能
-# または launch.json の "Python: Pytest すべて" を使用
-```
+詳細は [レイヤードアーキテクチャ](./docs/02-architecture/02-layered-architecture.md) を参照してください。
 
 ## 🔗 関連リンク
-
-### ドキュメント
 
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
 - [LangChain Documentation](https://python.langchain.com/)
 - [LangGraph Documentation](https://langchain-ai.github.io/langgraph/)
 - [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
-
-### ツール
-
 - [uv Documentation](https://docs.astral.sh/uv/)
 - [Ruff Documentation](https://docs.astral.sh/ruff/)
-- [Alembic Documentation](https://alembic.sqlalchemy.org/)
-
-### クラウド
-
-- [Azure Blob Storage](https://azure.microsoft.com/ja-jp/products/storage/blobs)
-- [LangSmith](https://smith.langchain.com/)
-
-## 📝 ライセンス
-
-MIT

@@ -1,0 +1,233 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(cd:*)",
+      "Bash(ls:*)",
+      "Bash(pwd:*)",
+      "Bash(echo:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(which:*)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(git:status)",
+      "Bash(git:diff)",
+      "Bash(git:log)",
+      "Bash(git:branch)",
+      "Bash(git:show)",
+      "Bash(git:add:*)",
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Bash(pytest:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*.tmp)",
+      "Bash(rm:*.log)",
+      "Bash(rm:node_modules/.cache/*)",
+      "Bash(rm:.next/*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)"
+    ],
+    "deny": [
+      "Bash(rm:rf:/)",
+      "Bash(rm:rf:~)",
+      "Bash(rm:*.py)",
+      "Bash(rm:*.ts)",
+      "Bash(rm:*.tsx)",
+      "Bash(rm:*.js)",
+      "Bash(rm:*.jsx)",
+      "Bash(rm:*.json)",
+      "Bash(rm:*.md)",
+      "Bash(git:push)",
+      "Bash(git:force)",
+      "Bash(git:reset:--hard)"
+    ],
+    "ask": [
+      "Bash(git:commit)",
+      "Bash(git:checkout)",
+      "Bash(git:merge)",
+      "Bash(git:pull)",
+      "Bash(rm:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)"
+    ]
+  },
+  "agents": {
+    "backend-developer": {
+      "path": ".claude/agents/backend-developer.md",
+      "enabled": true,
+      "description": "Backend Developer Agent specialized in FastAPI, SQLAlchemy, and Python development"
+    },
+    "frontend-developer": {
+      "path": ".claude/agents/frontend-developer.md", 
+      "enabled": true,
+      "description": "Frontend Developer Agent specialized in React, Next.js, and TypeScript development"
+    },
+    "backend-code-reviewer": {
+      "path": ".claude/agents/backend-code-reviewer.md",
+      "enabled": true,
+      "description": "Backend Code Reviewer Agent for Python code review"
+    },
+    "frontend-code-reviewer": {
+      "path": ".claude/agents/frontend-code-reviewer.md",
+      "enabled": true,
+      "description": "Frontend Code Reviewer Agent for TypeScript/React code review"
+    },
+    "backend-issue-developer": {
+      "path": ".claude/agents/backend-issue-developer.md",
+      "enabled": true,
+      "description": "Backend Issue Developer Agent for issue-specific backend development"
+    },
+    "frontend-issue-developer": {
+      "path": ".claude/agents/frontend-issue-developer.md",
+      "enabled": true,
+      "description": "Frontend Issue Developer Agent for issue-specific frontend development"
+    }
+  },
+  "hooks": [
+    {
+      "matcher": "Edit(apps/frontend/**/*.{ts,tsx})|Write(apps/frontend/**/*.{ts,tsx})|MultiEdit(apps/frontend/**/*.{ts,tsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/frontend && pnpm format \"$CLAUDE_FILE_PATHS\"",
+          "description": "Auto-format TypeScript files with Prettier"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(apps/frontend/**/*.{ts,tsx})|Write(apps/frontend/**/*.{ts,tsx})|MultiEdit(apps/frontend/**/*.{ts,tsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/frontend && pnpm lint:fix \"$CLAUDE_FILE_PATHS\" 2>/dev/null || echo '⚠️ ESLint warnings detected - please review'",
+          "description": "Auto-fix ESLint issues in TypeScript files"
+        }
+      ]
+    },
+    {
+      "matcher": "Write(apps/frontend/src/components/**/*.{ts,tsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "echo '✅ Component created. Consider adding:' && echo '  - Storybook story (.stories.tsx)' && echo '  - Unit tests (.test.tsx)' && echo '  - JSDoc documentation'",
+          "description": "Remind about component best practices"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(apps/backend/**/*.py)|Write(apps/backend/**/*.py)|MultiEdit(apps/backend/**/*.py)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/backend && python -m black \"$CLAUDE_FILE_PATHS\" 2>/dev/null || echo '⚠️ Black formatter not available'",
+          "description": "Auto-format Python files with Black"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(apps/backend/**/*.py)|Write(apps/backend/**/*.py)|MultiEdit(apps/backend/**/*.py)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/backend && python -m isort \"$CLAUDE_FILE_PATHS\" 2>/dev/null || echo '⚠️ isort not available'",
+          "description": "Sort Python imports with isort"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(**/*.{ts,tsx,js,jsx})|Write(**/*.{ts,tsx,js,jsx})|MultiEdit(**/*.{ts,tsx,js,jsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "npx tsc --noEmit 2>&1 | head -20 || echo '✅ TypeScript check passed'",
+          "description": "Type check TypeScript files"
+        }
+      ]
+    },
+    {
+      "matcher": "Write(apps/frontend/src/features/**/*.{ts,tsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "echo '📁 Feature module created. Structure check:' && echo '  ✓ api/ - API calls and queries' && echo '  ✓ components/ - Feature-specific components' && echo '  ✓ hooks/ - Custom hooks' && echo '  ✓ stores/ - Zustand stores' && echo '  ✓ types/ - TypeScript types' && echo '  ✓ utils/ - Helper functions'",
+          "description": "Feature module structure reminder"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(package.json)|Write(package.json)|MultiEdit(package.json)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "pnpm install --frozen-lockfile 2>/dev/null || pnpm install",
+          "description": "Auto-install dependencies after package.json changes"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(apps/backend/requirements.txt)|Write(apps/backend/requirements.txt)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/backend && pip install -r requirements.txt 2>/dev/null || echo '⚠️ Please manually install Python dependencies'",
+          "description": "Auto-install Python dependencies"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(**/*.test.{ts,tsx,js,jsx})|Write(**/*.test.{ts,tsx,js,jsx})",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "pnpm test --run \"$CLAUDE_FILE_PATHS\" 2>/dev/null || echo '⚠️ Tests will be run later'",
+          "description": "Auto-run tests after test file changes"
+        }
+      ]
+    },
+    {
+      "matcher": "Edit(apps/backend/**/*.py)|Write(apps/backend/**/*.py)",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "cd apps/backend && python -m mypy \"$CLAUDE_FILE_PATHS\" --ignore-missing-imports 2>/dev/null || echo '⚠️ mypy not available'",
+          "description": "Type check Python files with mypy"
+        }
+      ]
+    }
+  ],
+  "environment": {
+    "NODE_ENV": "development",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "ui": {
+    "theme": "dark",
+    "fontSize": 14,
+    "fontFamily": "JetBrains Mono, Consolas, monospace"
+  },
+  "editor": {
+    "tabSize": 2,
+    "insertSpaces": true,
+    "wordWrap": "on"
+  },
+  "typescript": {
+    "preferences": {
+      "strictMode": true,
+      "includePackageJsonAutoImports": true
+    }
+  },
+  "project": {
+    "name": "Training Tracker",
+    "type": "fullstack",
+    "primaryLanguage": "typescript",
+    "frameworks": [
+      "next.js",
+      "react",
+      "fastapi"
+    ],
+    "packageManager": "pnpm"
+  }
+}

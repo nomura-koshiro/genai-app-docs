@@ -7,6 +7,7 @@
 リポジトリ層は、データベース操作を抽象化し、ビジネスロジックからデータアクセスの詳細を隠蔽します。
 
 **責務**:
+
 - CRUD操作の実装
 - クエリの構築と実行
 - データ取得ロジックの集約
@@ -83,32 +84,32 @@ class BaseRepository(Generic[ModelType]):
 ## 具体的なリポジトリ
 
 ```python
-# src/app/repositories/user.py
+# src/app/repositories/sample_user.py
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.user import User
+from app.models.sample_user import SampleUser
 from app.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[User]):
+class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザーリポジトリ。"""
 
     def __init__(self, db: AsyncSession):
         super().__init__(User, db)
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを取得。"""
-        query = select(User).where(User.email == email)
+        query = select(SampleUser).where(SampleUser.email == email)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> User | None:
+    async def get_by_username(self, username: str) -> SampleUser | None:
         """ユーザー名でユーザーを取得。"""
-        query = select(User).where(User.username == username)
+        query = select(SampleUser).where(SampleUser.username == username)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[SampleUser]:
         """アクティブなユーザーを取得。"""
         return await self.get_multi(skip=skip, limit=limit, is_active=True)
 ```
@@ -124,14 +125,14 @@ async def get_by_criteria(
     self,
     email: str | None = None,
     is_active: bool | None = None
-) -> list[User]:
+) -> list[SampleUser]:
     """条件でフィルタリング。"""
-    query = select(User)
+    query = select(SampleUser)
 
     if email:
-        query = query.where(User.email.like(f"%{email}%"))
+        query = query.where(SampleUser.email.like(f"%{email}%"))
     if is_active is not None:
-        query = query.where(User.is_active == is_active)
+        query = query.where(SampleUser.is_active == is_active)
 
     result = await self.db.execute(query)
     return list(result.scalars().all())
@@ -140,12 +141,12 @@ async def get_by_criteria(
 ### JOIN
 
 ```python
-async def get_with_sessions(self, user_id: int) -> User | None:
+async def get_with_sessions(self, user_id: int) -> SampleUser | None:
     """セッション情報と一緒にユーザーを取得。"""
     query = (
-        select(User)
-        .options(selectinload(User.sessions))
-        .where(User.id == user_id)
+        select(SampleUser)
+        .options(selectinload(SampleUser.sessions))
+        .where(SampleUser.id == user_id)
     )
     result = await self.db.execute(query)
     return result.scalar_one_or_none()
@@ -160,8 +161,9 @@ async def get_with_sessions(self, user_id: int) -> User | None:
    - バリデーションはサービス層
 
 2. **特定のクエリはメソッドとして定義**
+
    ```python
-   async def get_active_users_with_recent_sessions(self) -> list[User]:
+   async def get_active_users_with_recent_sessions(self) -> list[SampleUser]:
        """最近セッションを持つアクティブユーザーを取得。"""
        # 複雑なクエリをメソッド化
    ```

@@ -13,34 +13,10 @@
         "--port", "8000"
       ],
       "cwd": "${workspaceFolder}/src",
-      "envFile": "${workspaceFolder}/.env",
+      "envFile": "${workspaceFolder}/.env.local",
       "justMyCode": false,
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "FastAPI: プロダクションモード",
-      "type": "debugpy",
-      "request": "launch",
-      "module": "uvicorn",
-      "args": [
-        "app.main:app",
-        "--host", "0.0.0.0",
-        "--port", "8000",
-        "--workers", "1"
-      ],
-      "cwd": "${workspaceFolder}/src",
-      "envFile": "${workspaceFolder}/.env",
-      "justMyCode": true,
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Python: 現在のファイル",
-      "type": "debugpy",
-      "request": "launch",
-      "program": "${file}",
       "console": "integratedTerminal",
-      "envFile": "${workspaceFolder}/.env",
-      "justMyCode": true
+      "preLaunchTask": "PostgreSQL起動"
     },
     {
       "name": "Python: Pytest 現在のテスト",
@@ -54,7 +30,8 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": false,
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env.local",
+      "preLaunchTask": "PostgreSQL起動"
     },
     {
       "name": "Python: Pytest すべて",
@@ -67,7 +44,8 @@
       ],
       "console": "integratedTerminal",
       "justMyCode": false,
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env.local",
+      "preLaunchTask": "PostgreSQL起動"
     }
   ]
 }

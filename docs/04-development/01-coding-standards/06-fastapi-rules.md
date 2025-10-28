@@ -21,25 +21,25 @@ FastAPIを使用したAPI開発における規約とベストプラクティス�
 各リソースごとにルーターを分割します。
 
 ```python
-# src/app/api/routes/users.py
+# src/app/api/routes/sample_users.py
 from fastapi import APIRouter, status
-from app.api.dependencies import CurrentUserDep, UserServiceDep
-from app.schemas.user import UserCreate, UserResponse
+from app.api.core import CurrentSampleUserDep, SampleUserServiceDep
+from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 router = APIRouter()
 
 
 @router.post(
     "/register",
-    response_model=UserResponse,
+    response_model=SampleUserResponse,
     status_code=status.HTTP_201_CREATED,
     summary="ユーザー登録",
     description="新しいユーザーアカウントを作成します"
 )
 async def register(
-    user_data: UserCreate,
-    user_service: UserServiceDep,
-) -> UserResponse:
+    user_data: SampleUserCreate,
+    user_service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザー登録エンドポイント。
 
     Args:
@@ -50,19 +50,19 @@ async def register(
         作成されたユーザー情報
     """
     user = await user_service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=SampleUserResponse,
     summary="現在のユーザー情報取得"
 )
 async def get_current_user_info(
-    current_user: CurrentUserDep,
-) -> UserResponse:
+    current_user: CurrentSampleUserDep,
+) -> SampleUserResponse:
     """認証済みユーザーの情報を取得。"""
-    return UserResponse.model_validate(current_user)
+    return SampleUserResponse.model_validate(current_user)
 ```
 
 ### エンドポイントの命名
@@ -104,7 +104,7 @@ from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.services.user import UserService
+from app.services.sample_user import SampleUserService
 
 # データベース依存性
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
@@ -113,17 +113,17 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 # サービス依存性
 def get_user_service(db: DatabaseDep) -> UserService:
     """UserServiceインスタンスを取得。"""
-    return UserService(db)
+    return SampleUserService(db)
 
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 
 # 認証依存性
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,
-) -> User:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser:
     """現在の認証済みユーザーを取得。"""
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -142,19 +142,19 @@ async def get_current_user(
     return user
 
 
-CurrentUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
 ```
 
 ### 依存性の使用
 
 ```python
 # src/app/api/routes/agents.py
-from app.api.dependencies import CurrentUserOptionalDep, SessionServiceDep
+from app.api.core import CurrentUserOptionalDep, SampleSessionServiceDep
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     request: ChatRequest,
-    session_service: SessionServiceDep = None,
+    session_service: SampleSessionServiceDep = None,
     current_user: CurrentUserOptionalDep = None,
 ) -> ChatResponse:
     """エージェントとチャット。
@@ -204,23 +204,23 @@ async def chat(
 
 ```python
 # ✅ 良い例：非同期エンドポイント
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.get("/users/{user_id}", response_model=SampleUserResponse)
 async def get_user(
     user_id: int,
-    user_service: UserServiceDep,
-) -> UserResponse:
+    user_service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザー詳細を取得。"""
     user = await user_service.get_user(user_id)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
 
 # ✅ 良い例：複数の非同期操作
 @router.get("/users/{user_id}/dashboard", response_model=DashboardResponse)
 async def get_user_dashboard(
     user_id: int,
-    user_service: UserServiceDep,
-    session_service: SessionServiceDep,
-    file_service: FileServiceDep,
+    user_service: SampleUserServiceDep,
+    session_service: SampleSessionServiceDep,
+    file_service: SampleFileServiceDep,
 ) -> DashboardResponse:
     """ユーザーダッシュボードデータを取得。"""
     # 並列実行で高速化
@@ -254,62 +254,62 @@ def get_user(user_id: int):  # asyncがない
 
 ```python
 # ✅ 良い例
-@router.post("/users", response_model=UserResponse, status_code=201)
+@router.post("/users", response_model=SampleUserResponse, status_code=201)
 async def create_user(
-    user_data: UserCreate,
-    user_service: UserServiceDep,
-) -> UserResponse:
+    user_data: SampleUserCreate,
+    user_service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザーを作成。"""
     user = await user_service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
 
-@router.get("/users", response_model=list[UserResponse])
+@router.get("/users", response_model=list[SampleUserResponse])
 async def list_users(
     skip: int = 0,
     limit: int = 100,
-    user_service: UserServiceDep,
-) -> list[UserResponse]:
+    user_service: SampleUserServiceDep,
+) -> list[SampleUserResponse]:
     """ユーザー一覧を取得。"""
     users = await user_service.list_users(skip=skip, limit=limit)
-    return [UserResponse.model_validate(user) for user in users]
+    return [SampleUserResponse.model_validate(sample_user) for user in users]
 
 
 # ❌ 悪い例：response_modelなし
 @router.post("/users")
-async def create_user(user_data: UserCreate, user_service: UserServiceDep):
+async def create_user(user_data: SampleUserCreate, user_service: SampleUserServiceDep):
     return await user_service.create_user(user_data)
 ```
 
 ### Pydanticスキーマの使用
 
 ```python
-# src/app/schemas/user.py
+# src/app/schemas/sample_user.py
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 
 
-class UserBase(BaseModel):
+class SampleUserBase(BaseModel):
     """ベースユーザースキーマ。"""
 
     email: EmailStr = Field(..., description="メールアドレス")
     username: str = Field(..., min_length=3, max_length=50, description="ユーザー名")
 
 
-class UserCreate(UserBase):
+class SampleUserCreate(SampleUserBase):
     """ユーザー作成スキーマ。"""
 
     password: str = Field(..., min_length=8, max_length=100, description="パスワード")
 
 
-class UserUpdate(BaseModel):
+class SampleUserUpdate(BaseModel):
     """ユーザー更新スキーマ。"""
 
     username: str | None = Field(None, min_length=3, max_length=50)
     email: EmailStr | None = None
 
 
-class UserResponse(UserBase):
+class SampleUserResponse(SampleUserBase):
     """ユーザーレスポンススキーマ。"""
 
     id: int = Field(..., description="ユーザーID")
@@ -361,11 +361,11 @@ app.add_exception_handler(AppException, app_exception_handler)
 from fastapi import HTTPException, status
 
 @router.get("/users/{user_id}")
-async def get_user(user_id: int, user_service: UserServiceDep):
+async def get_user(user_id: int, user_service: SampleUserServiceDep):
     """ユーザーを取得。"""
     try:
         user = await user_service.get_user(user_id)
-        return UserResponse.model_validate(user)
+        return SampleUserResponse.model_validate(sample_user)
     except NotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -387,20 +387,20 @@ async def get_user(user_id: int, user_service: UserServiceDep):
 ```python
 from fastapi import Query
 
-@router.get("/users", response_model=list[UserResponse])
+@router.get("/users", response_model=list[SampleUserResponse])
 async def list_users(
     skip: int = Query(0, ge=0, description="スキップする件数"),
     limit: int = Query(100, ge=1, le=1000, description="取得する最大件数"),
     is_active: bool | None = Query(None, description="アクティブ状態でフィルタ"),
-    user_service: UserServiceDep = None,
-) -> list[UserResponse]:
+    user_service: SampleUserServiceDep = None,
+) -> list[SampleUserResponse]:
     """ユーザー一覧を取得。"""
     users = await user_service.list_users(
         skip=skip,
         limit=limit,
         is_active=is_active
     )
-    return [UserResponse.model_validate(user) for user in users]
+    return [SampleUserResponse.model_validate(sample_user) for user in users]
 ```
 
 ### パスパラメータ
@@ -408,14 +408,14 @@ async def list_users(
 ```python
 from fastapi import Path
 
-@router.get("/users/{user_id}", response_model=UserResponse)
+@router.get("/users/{user_id}", response_model=SampleUserResponse)
 async def get_user(
     user_id: int = Path(..., gt=0, description="ユーザーID"),
-    user_service: UserServiceDep = None,
-) -> UserResponse:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUserResponse:
     """ユーザー詳細を取得。"""
     user = await user_service.get_user(user_id)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 ```
 
 ### リクエストボディ
@@ -423,14 +423,14 @@ async def get_user(
 ```python
 from fastapi import Body
 
-@router.post("/users", response_model=UserResponse)
+@router.post("/users", response_model=SampleUserResponse)
 async def create_user(
-    user_data: UserCreate = Body(..., description="ユーザー作成データ"),
-    user_service: UserServiceDep = None,
-) -> UserResponse:
+    user_data: SampleUserCreate = Body(..., description="ユーザー作成データ"),
+    user_service: SampleUserServiceDep = None,
+) -> SampleUserResponse:
     """ユーザーを作成。"""
     user = await user_service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 ```
 
 ---
@@ -504,11 +504,11 @@ async def catch_exceptions_middleware(request: Request, call_next):
 # ❌ 悪い例
 @router.get("/users/{user_id}")
 def get_user(user_id: int):  # asyncがない
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).filter(SampleUser.id == user_id).first()
 
 # ✅ 良い例
 @router.get("/users/{user_id}")
-async def get_user(user_id: int, user_service: UserServiceDep):
+async def get_user(user_id: int, user_service: SampleUserServiceDep):
     return await user_service.get_user(user_id)
 ```
 
@@ -517,14 +517,14 @@ async def get_user(user_id: int, user_service: UserServiceDep):
 ```python
 # ❌ 悪い例
 @router.post("/users")
-async def create_user(data: UserCreate):
+async def create_user(data: SampleUserCreate):
     return await service.create_user(data)
 
 # ✅ 良い例
-@router.post("/users", response_model=UserResponse)
-async def create_user(data: UserCreate, service: UserServiceDep):
+@router.post("/users", response_model=SampleUserResponse)
+async def create_user(data: SampleUserCreate, service: SampleUserServiceDep):
     user = await service.create_user(data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 ```
 
 ### 間違い3: 依存性注入を使わない
@@ -532,16 +532,16 @@ async def create_user(data: UserCreate, service: UserServiceDep):
 ```python
 # ❌ 悪い例
 @router.post("/users")
-async def create_user(data: UserCreate):
+async def create_user(data: SampleUserCreate):
     db = SessionLocal()  # 手動でセッション作成
-    service = UserService(db)
+    service = SampleUserService(db)
     return await service.create_user(data)
 
 # ✅ 良い例
 @router.post("/users")
 async def create_user(
-    data: UserCreate,
-    service: UserServiceDep,  # 依存性注入
+    data: SampleUserCreate,
+    service: SampleUserServiceDep,  # 依存性注入
 ):
     return await service.create_user(data)
 ```

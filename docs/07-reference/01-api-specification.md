@@ -18,20 +18,14 @@
 
 ### ベースURL
 
-```
+```text
 開発環境: http://localhost:8000
 本番環境: https://api.your-domain.com
 ```
 
-### API バージョン
-
-```
-v0.1.0
-```
-
 ### コンテンツタイプ
 
-```
+```text
 Content-Type: application/json
 ```
 
@@ -51,7 +45,7 @@ Content-Type: application/json
 
 ### 認証方式
 
-**Bearer Token（JWT）**
+#### Bearer Token（JWT）
 
 ```http
 Authorization: Bearer <your_jwt_token>
@@ -59,7 +53,8 @@ Authorization: Bearer <your_jwt_token>
 
 ### トークン取得
 
-現在は認証エンドポイントが実装されていません（将来実装予定）。
+POST `/api/v1/sample-users/sample-login` でメールアドレスとパスワードを送信することで、
+JWTアクセストークンとリフレッシュトークンを取得できます。
 
 ---
 
@@ -69,19 +64,164 @@ Authorization: Bearer <your_jwt_token>
 |---------|--------------|------|------|
 | GET | `/` | ルートエンドポイント | 不要 |
 | GET | `/health` | ヘルスチェック | 不要 |
-| POST | `/api/agents/chat` | AIエージェントとチャット | オプション |
-| GET | `/api/agents/sessions/{session_id}` | セッション情報取得 | オプション |
-| DELETE | `/api/agents/sessions/{session_id}` | セッション削除 | オプション |
-| POST | `/api/files/upload` | ファイルアップロード | オプション |
-| GET | `/api/files/download/{file_id}` | ファイルダウンロード | オプション |
-| DELETE | `/api/files/{file_id}` | ファイル削除 | オプション |
-| GET | `/api/files/list` | ファイル一覧取得 | オプション |
+| POST | `/api/v1/sample-users` | ユーザー登録 | 不要 |
+| POST | `/api/v1/sample-users/sample-login` | ログイン | 不要 |
+| POST | `/api/v1/sample-users/refresh` | トークンリフレッシュ | 不要 |
+| GET | `/api/v1/sample-users/sample-me` | 現在のユーザー情報取得 | 必須 |
+| POST | `/api/v1/sample-users/api-key` | APIキー生成 | 必須 |
+| GET | `/api/v1/sample-users/{user_id}` | 特定ユーザー取得（管理者のみ） | 必須 |
+| GET | `/api/v1/sample-users` | ユーザー一覧取得（管理者のみ） | 必須 |
+| POST | `/api/v1/sample-agents/sample-chat` | AIエージェントとチャット | オプション |
+| GET | `/api/v1/sample-agents/sample-sessions/{session_id}` | セッション情報取得 | オプション |
+| DELETE | `/api/v1/sample-agents/sample-sessions/{session_id}` | セッション削除 | オプション |
+| POST | `/api/v1/sample-files/sample-upload` | ファイルアップロード | オプション |
+| GET | `/api/v1/sample-files/sample-download/{file_id}` | ファイルダウンロード | オプション |
+| DELETE | `/api/v1/sample-files/sample-{file_id}` | ファイル削除 | オプション |
+| GET | `/api/v1/sample-files/sample-list` | ファイル一覧取得 | オプション |
+
+---
+
+## ユーザーAPI
+
+### ユーザー登録 - POST /api/v1/sample-users
+
+新しいユーザーアカウントを作成します。
+
+#### リクエスト
+
+```json
+{
+  "email": "user@example.com",
+  "username": "johndoe",
+  "password": "SecurePass123!"
+}
+```
+
+#### レスポンス（201 Created）
+
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "johndoe",
+  "is_active": true,
+  "is_superuser": false,
+  "created_at": "2025-10-22T00:00:00Z",
+  "updated_at": "2025-10-22T00:00:00Z"
+}
+```
+
+---
+
+### ログイン - POST /api/v1/sample-users/sample-login
+
+メールアドレスとパスワードで認証し、JWTトークンを取得します。
+
+#### リクエスト
+
+```json
+{
+  "email": "user@example.com",
+  "password": "SecurePass123!"
+}
+```
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**セキュリティ機能:**
+
+- ログイン失敗5回でアカウントロック（1時間）
+- ログイン監査（last_login_at, last_login_ip）
+
+---
+
+### トークンリフレッシュ - POST /api/v1/sample-users/refresh
+
+リフレッシュトークンを使用して新しいアクセストークンを取得します。
+
+#### リクエスト
+
+```json
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "bearer"
+}
+```
+
+**注意:**
+
+- リフレッシュトークンの有効期限は7日間です
+- データベースに保存されたトークンと照合されます
+
+---
+
+### APIキー生成 - POST /api/v1/sample-users/api-key
+
+認証済みユーザーのAPIキーを生成します（認証必須）。
+
+#### リクエスト
+
+リクエストボディなし。`Authorization: Bearer <token>` ヘッダーが必要です。
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "api_key": "dGhpcyBpcyBhIHNlY3VyZSByYW5kb20gYXBpIGtleQ...",
+  "created_at": "2025-10-22T00:00:00Z",
+  "message": "APIキーは一度しか表示されません。安全に保管してください。"
+}
+```
+
+**注意:**
+
+- APIキーは一度しか表示されません
+- 既存のAPIキーがある場合は上書きされます
+
+---
+
+### 現在のユーザー情報取得 - GET /api/v1/sample-users/sample-me
+
+認証済みユーザー自身の情報を取得します（認証必須）。
+
+#### レスポンス（200 OK）
+
+```json
+{
+  "id": 1,
+  "email": "user@example.com",
+  "username": "johndoe",
+  "is_active": true,
+  "is_superuser": false,
+  "created_at": "2025-10-22T00:00:00Z",
+  "updated_at": "2025-10-22T00:00:00Z"
+}
+```
 
 ---
 
 ## エージェントAPI
 
-### チャット - POST /api/agents/chat
+**実装状況**: 現在はMVP（最低限実装）として、エコーバック機能を提供しています。
+将来的にLangChain/LangGraphを使用した本格的なAI統合に置き換え可能です。
+
+### チャット - POST /api/v1/sample-agents/sample-chat
 
 AIエージェントとチャットします。
 
@@ -98,7 +238,7 @@ AIエージェントとチャットします。
 }
 ```
 
-**パラメータ**
+#### パラメータ
 
 | フィールド | 型 | 必須 | 説明 |
 |----------|---|------|------|
@@ -108,18 +248,20 @@ AIエージェントとチャットします。
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
-  "response": "東京の今日の天気は晴れ、最高気温は25度です。",
+  "response": "エコー: こんにちは、今日の天気を教えてください",
   "session_id": "session_abc123",
   "tokens_used": 150,
-  "model": "gpt-4"
+  "model": "echo-v1"
 }
 ```
 
-**レスポンスフィールド**
+**注意**: 現在の実装はエコーバック機能（入力メッセージに「エコー: 」を付けて返す）です。
+
+#### レスポンスフィールド
 
 | フィールド | 型 | 説明 |
 |----------|---|------|
@@ -131,7 +273,7 @@ AIエージェントとチャットします。
 #### cURLサンプル
 
 ```bash
-curl -X POST "http://localhost:8000/api/agents/chat" \
+curl -X POST "http://localhost:8000/api/v1/sample-agents/sample-chat" \
   -H "Content-Type: application/json" \
   -d '{
     "message": "こんにちは",
@@ -142,7 +284,7 @@ curl -X POST "http://localhost:8000/api/agents/chat" \
 
 ---
 
-### セッション取得 - GET /api/agents/sessions/{session_id}
+### セッション取得 - GET /api/v1/sample-agents/sample-sessions/{session_id}
 
 セッション情報と会話履歴を取得します。
 
@@ -154,7 +296,7 @@ curl -X POST "http://localhost:8000/api/agents/chat" \
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
@@ -182,12 +324,12 @@ curl -X POST "http://localhost:8000/api/agents/chat" \
 #### cURLサンプル
 
 ```bash
-curl -X GET "http://localhost:8000/api/agents/sessions/session_abc123"
+curl -X GET "http://localhost:8000/api/v1/sample-agents/sample-sessions/session_abc123"
 ```
 
 ---
 
-### セッション削除 - DELETE /api/agents/sessions/{session_id}
+### セッション削除 - DELETE /api/v1/sample-agents/sample-sessions/{session_id}
 
 セッションと関連するメッセージを削除します。
 
@@ -199,7 +341,7 @@ curl -X GET "http://localhost:8000/api/agents/sessions/session_abc123"
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
@@ -210,14 +352,14 @@ curl -X GET "http://localhost:8000/api/agents/sessions/session_abc123"
 #### cURLサンプル
 
 ```bash
-curl -X DELETE "http://localhost:8000/api/agents/sessions/session_abc123"
+curl -X DELETE "http://localhost:8000/api/v1/sample-agents/sample-sessions/session_abc123"
 ```
 
 ---
 
 ## ファイルAPI
 
-### ファイルアップロード - POST /api/files/upload
+### ファイルアップロード - POST /api/v1/sample-files/sample-upload
 
 ファイルをアップロードします。
 
@@ -225,13 +367,13 @@ curl -X DELETE "http://localhost:8000/api/agents/sessions/session_abc123"
 
 **Content-Type:** `multipart/form-data`
 
-```
+```text
 file: (binary)
 ```
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
@@ -243,7 +385,7 @@ file: (binary)
 }
 ```
 
-**レスポンスフィールド**
+#### レスポンスフィールド
 
 | フィールド | 型 | 説明 |
 |----------|---|------|
@@ -255,19 +397,23 @@ file: (binary)
 
 #### 制限事項
 
-- 最大ファイルサイズ: 10MB（デフォルト）
-- 環境変数 `MAX_UPLOAD_SIZE` で変更可能
+- **最大ファイルサイズ**: 10MB
+- **許可されているファイルタイプ**:
+  - テキスト: `text/plain`, `text/csv`, `application/json`
+  - 画像: `image/png`, `image/jpeg`, `image/gif`
+  - ドキュメント: `application/pdf`, `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+- **保存先**: ローカルファイルシステム（`./uploads` ディレクトリ）
 
 #### cURLサンプル
 
 ```bash
-curl -X POST "http://localhost:8000/api/files/upload" \
+curl -X POST "http://localhost:8000/api/v1/sample-files/sample-upload" \
   -F "file=@/path/to/document.pdf"
 ```
 
 ---
 
-### ファイルダウンロード - GET /api/files/download/{file_id}
+### ファイルダウンロード - GET /api/v1/sample-files/sample-download/{file_id}
 
 ファイルをダウンロードします。
 
@@ -279,13 +425,13 @@ curl -X POST "http://localhost:8000/api/files/upload" \
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 バイナリストリームとして返却
 
-**レスポンスヘッダー**
+#### レスポンスヘッダー
 
-```
+```text
 Content-Type: application/pdf
 Content-Disposition: attachment; filename="document.pdf"
 ```
@@ -293,13 +439,13 @@ Content-Disposition: attachment; filename="document.pdf"
 #### cURLサンプル
 
 ```bash
-curl -X GET "http://localhost:8000/api/files/download/file_xyz789" \
+curl -X GET "http://localhost:8000/api/v1/sample-files/sample-download/file_xyz789" \
   -o downloaded_file.pdf
 ```
 
 ---
 
-### ファイル削除 - DELETE /api/files/{file_id}
+### ファイル削除 - DELETE /api/v1/sample-files/sample-{file_id}
 
 ファイルを削除します。
 
@@ -311,7 +457,7 @@ curl -X GET "http://localhost:8000/api/files/download/file_xyz789" \
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
@@ -323,12 +469,12 @@ curl -X GET "http://localhost:8000/api/files/download/file_xyz789" \
 #### cURLサンプル
 
 ```bash
-curl -X DELETE "http://localhost:8000/api/files/file_xyz789"
+curl -X DELETE "http://localhost:8000/api/v1/sample-files/sample-file_xyz789"
 ```
 
 ---
 
-### ファイル一覧取得 - GET /api/files/list
+### ファイル一覧取得 - GET /api/v1/sample-files/sample-list
 
 アップロードされたファイル一覧を取得します。
 
@@ -341,7 +487,7 @@ curl -X DELETE "http://localhost:8000/api/files/file_xyz789"
 
 #### レスポンス
 
-**成功（200 OK）**
+#### 成功（200 OK）
 
 ```json
 {
@@ -368,7 +514,7 @@ curl -X DELETE "http://localhost:8000/api/files/file_xyz789"
 #### cURLサンプル
 
 ```bash
-curl -X GET "http://localhost:8000/api/files/list?skip=0&limit=10"
+curl -X GET "http://localhost:8000/api/v1/sample-files/sample-list?skip=0&limit=10"
 ```
 
 ---
@@ -393,18 +539,34 @@ curl -X GET "http://localhost:8000/api/files/list?skip=0&limit=10"
 
 ### ヘルスチェック - GET /health
 
-アプリケーションのヘルス状態を確認します。
+アプリケーションのヘルス状態を確認します。データベースとRedisの接続状態も含まれます。
 
 #### レスポンス
 
 ```json
 {
   "status": "healthy",
-  "timestamp": "2025-10-14T12:00:00.000000",
+  "timestamp": "2025-10-16T12:00:00.000000Z",
   "version": "0.1.0",
-  "environment": "development"
+  "environment": "development",
+  "services": {
+    "database": "healthy",
+    "redis": "healthy"
+  }
 }
 ```
+
+#### レスポンスフィールド
+
+| フィールド | 型 | 説明 |
+|----------|---|------|
+| status | string | 全体のステータス（"healthy" または "degraded"） |
+| timestamp | string | チェック実行時刻（ISO 8601形式、UTC） |
+| version | string | アプリケーションバージョン |
+| environment | string | 実行環境（development/staging/production） |
+| services | object | 各サービスの個別ステータス |
+| services.database | string | データベース接続状態（"healthy" または "unhealthy"） |
+| services.redis | string | Redis接続状態（"healthy", "unhealthy", "disabled"） |
 
 ---
 
@@ -439,7 +601,7 @@ curl -X GET "http://localhost:8000/api/files/list?skip=0&limit=10"
 
 ### エラー例
 
-**404 Not Found**
+#### 404 Not Found
 
 ```json
 {
@@ -451,7 +613,7 @@ curl -X GET "http://localhost:8000/api/files/list?skip=0&limit=10"
 }
 ```
 
-**422 Validation Error**
+#### 422 Validation Error
 
 ```json
 {
@@ -464,7 +626,7 @@ curl -X GET "http://localhost:8000/api/files/list?skip=0&limit=10"
 }
 ```
 
-**429 Rate Limit Exceeded**
+#### 429 Rate Limit Exceeded
 
 ```json
 {
@@ -504,7 +666,7 @@ import requests
 
 # チャットAPI
 response = requests.post(
-    "http://localhost:8000/api/agents/chat",
+    "http://localhost:8000/api/v1/sample-agents/sample-chat",
     json={
         "message": "こんにちは",
         "session_id": None
@@ -517,7 +679,7 @@ print(data["response"])
 with open("document.pdf", "rb") as f:
     files = {"file": f}
     response = requests.post(
-        "http://localhost:8000/api/files/upload",
+        "http://localhost:8000/api/v1/sample-files/sample-upload",
         files=files
     )
     file_data = response.json()
@@ -528,7 +690,7 @@ with open("document.pdf", "rb") as f:
 
 ```javascript
 // チャットAPI
-const response = await fetch('http://localhost:8000/api/agents/chat', {
+const response = await fetch('http://localhost:8000/api/v1/sample-agents/sample-chat', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -545,7 +707,7 @@ console.log(data.response);
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 
-const uploadResponse = await fetch('http://localhost:8000/api/files/upload', {
+const uploadResponse = await fetch('http://localhost:8000/api/v1/sample-files/sample-upload', {
   method: 'POST',
   body: formData
 });

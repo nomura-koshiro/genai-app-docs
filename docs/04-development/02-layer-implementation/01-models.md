@@ -7,6 +7,7 @@ SQLAlchemyを使用したデータベースモデルの定義方法について�
 モデル層は、データベーステーブルの構造とリレーションシップを定義します。
 
 **責務**:
+
 - テーブル構造の定義
 - カラムの型と制約
 - エンティティ間のリレーションシップ
@@ -19,17 +20,17 @@ SQLAlchemyを使用したデータベースモデルの定義方法について�
 ### シンプルなモデル
 
 ```python
-# src/app/models/user.py
+# src/app/models/sample_user.py
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
-class User(Base):
+class SampleUser(Base):
     """ユーザーデータベースモデル。"""
 
-    __tablename__ = "users"
+    __tablename__ = "sample_users"
 
     # プライマリキー
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
@@ -67,12 +68,12 @@ class User(Base):
     )
 
     # リレーションシップ
-    sessions: Mapped[list["Session"]] = relationship(
+    sessions: Mapped[list["SampleSession"]] = relationship(
         "Session",
         back_populates="user",
         cascade="all, delete-orphan"
     )
-    files: Mapped[list["File"]] = relationship(
+    files: Mapped[list["SampleFile"]] = relationship(
         "File",
         back_populates="user",
         cascade="all, delete-orphan"
@@ -90,13 +91,13 @@ class User(Base):
 
 ```python
 # 親モデル（User）
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # One-to-Many: 1人のユーザーが複数のセッションを持つ
-    sessions: Mapped[list["Session"]] = relationship(
+    sessions: Mapped[list["SampleSession"]] = relationship(
         "Session",
         back_populates="user",
         cascade="all, delete-orphan"  # ユーザー削除時にセッションも削除
@@ -104,20 +105,20 @@ class User(Base):
 
 
 # 子モデル（Session）
-class Session(Base):
-    __tablename__ = "sessions"
+class SampleSession(Base):
+    __tablename__ = "sample_sessions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # 外部キー
     user_id: Mapped[int | None] = mapped_column(
         Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("sample_users.id", ondelete="CASCADE"),
         nullable=True
     )
 
     # リレーションシップ
-    user: Mapped["User"] = relationship("User", back_populates="sessions")
+    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="sessions")
 ```
 
 ### Many-to-Many（中間テーブル使用）
@@ -127,13 +128,13 @@ class Session(Base):
 user_groups = Table(
     "user_groups",
     Base.metadata,
-    Column("user_id", Integer, ForeignKey("users.id")),
+    Column("user_id", Integer, ForeignKey("sample_users.id")),
     Column("group_id", Integer, ForeignKey("groups.id")),
 )
 
 
-class User(Base):
-    __tablename__ = "users"
+class SampleUser(Base):
+    __tablename__ = "sample_users"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
@@ -169,7 +170,11 @@ class Group(Base):
 id: Mapped[int] = mapped_column(primary_key=True)
 email: Mapped[str] = mapped_column(String(255))
 is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+```
 
+### 非推奨の書き方
+
+```python
 # ❌ 非推奨：古い書き方
 id = Column(Integer, primary_key=True)
 email = Column(String(255))
@@ -195,7 +200,7 @@ created_at = Column(DateTime, default=datetime.now)  # タイムゾーンなし
 # ✅ 推奨：削除時の動作を明示
 user_id: Mapped[int] = mapped_column(
     Integer,
-    ForeignKey("users.id", ondelete="CASCADE"),  # ユーザー削除時にセッションも削除
+    ForeignKey("sample_users.id", ondelete="CASCADE"),  # ユーザー削除時にセッションも削除
     nullable=False
 )
 

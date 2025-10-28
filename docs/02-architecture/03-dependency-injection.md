@@ -86,7 +86,7 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 ```python
 from fastapi import APIRouter
-from app.api.dependencies import DatabaseDep
+from app.api.core import DatabaseDep
 
 router = APIRouter()
 
@@ -99,7 +99,7 @@ async def get_user(user_id: int, db: DatabaseDep):
         db: データベースセッション（自動注入）
     """
     # データベースセッションが自動的に注入される
-    user = await db.get(User, user_id)
+    user = await db.get(SampleUser, user_id)
     return user
 ```
 
@@ -109,62 +109,62 @@ async def get_user(user_id: int, db: DatabaseDep):
 
 ```python
 # src/app/api/dependencies.py
-from app.services.user import UserService
-from app.services.file import FileService
-from app.services.session import SessionService
+from app.services.sample_user import SampleUserService
+from app.services.sample_file import SampleFileService
+from app.services.sample_session import SampleSessionService
 
-def get_user_service(db: DatabaseDep) -> UserService:
-    """UserServiceインスタンスを取得する。
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
+    """SampleUserServiceインスタンスを取得する。
 
     Args:
         db: データベースセッション（自動注入）
 
     Returns:
-        UserService: ユーザーサービスインスタンス
+        SampleUserService: ユーザーサービスインスタンス
     """
-    return UserService(db)
+    return SampleUserService(db)
 
-def get_file_service(db: DatabaseDep) -> FileService:
-    """FileServiceインスタンスを取得する。"""
-    return FileService(db)
+def get_sample_file_service(db: DatabaseDep) -> SampleFileService:
+    """SampleFileServiceインスタンスを取得する。"""
+    return SampleFileService(db)
 
-def get_session_service(db: DatabaseDep) -> SessionService:
-    """SessionServiceインスタンスを取得する。"""
-    return SessionService(db)
+def get_sample_session_service(db: DatabaseDep) -> SampleSessionService:
+    """SampleSessionServiceインスタンスを取得する。"""
+    return SampleSessionService(db)
 
 # 型エイリアスの定義
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
-FileServiceDep = Annotated[FileService, Depends(get_file_service)]
-SessionServiceDep = Annotated[SessionService, Depends(get_session_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
+SampleFileServiceDep = Annotated[SampleFileService, Depends(get_sample_file_service)]
+SampleSessionServiceDep = Annotated[SampleSessionService, Depends(get_sample_session_service)]
 ```
 
 ### サービスの使用例
 
 ```python
-# src/app/api/routes/users.py
+# src/app/api/routes/sample_users.py
 from fastapi import APIRouter, status
-from app.api.dependencies import UserServiceDep
-from app.schemas.user import UserCreate, UserResponse
+from app.api.core import SampleUserServiceDep
+from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 router = APIRouter()
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(
-    user_data: UserCreate,
-    service: UserServiceDep,  # サービスが自動注入される
-) -> UserResponse:
+    user_data: SampleUserCreate,
+    service: SampleUserServiceDep,  # サービスが自動注入される
+) -> SampleUserResponse:
     """新しいユーザーを作成する。"""
     user = await service.create_user(user_data)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 
 @router.get("/{user_id}")
 async def get_user(
     user_id: int,
-    service: UserServiceDep,
-) -> UserResponse:
+    service: SampleUserServiceDep,
+) -> SampleUserResponse:
     """ユーザーを取得する。"""
     user = await service.get_user(user_id)
-    return UserResponse.model_validate(user)
+    return SampleUserResponse.model_validate(sample_user)
 ```
 
 ## 認証の依存性注入
@@ -175,12 +175,12 @@ async def get_user(
 # src/app/api/dependencies.py
 from fastapi import Header, HTTPException
 from app.core.security import decode_access_token
-from app.models.user import User
+from app.models.sample_user import SampleUser
 
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,
-) -> User:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser:
     """現在の認証済みユーザーを取得する。
 
     Args:
@@ -224,7 +224,7 @@ async def get_current_user(
 
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)]
-) -> User:
+) -> SampleUser:
     """現在のアクティブユーザーを取得する。
 
     Args:
@@ -242,7 +242,7 @@ async def get_current_active_user(
 
 async def get_current_superuser(
     current_user: Annotated[User, Depends(get_current_active_user)]
-) -> User:
+) -> SampleUser:
     """現在のスーパーユーザーを取得する。
 
     Args:
@@ -259,7 +259,7 @@ async def get_current_superuser(
     return current_user
 
 # 型エイリアス
-CurrentUserDep = Annotated[User, Depends(get_current_active_user)]
+CurrentSampleUserDep = Annotated[User, Depends(get_current_active_user)]
 CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]
 ```
 
@@ -268,23 +268,23 @@ CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]
 ```python
 # src/app/api/routes/files.py
 from fastapi import APIRouter, UploadFile
-from app.api.dependencies import CurrentUserDep, FileServiceDep
+from app.api.core import CurrentSampleUserDep, SampleFileServiceDep
 
 router = APIRouter()
 
 @router.post("/upload")
 async def upload_file(
     file: UploadFile,
-    current_user: CurrentUserDep,  # 認証済みユーザーが必要
-    service: FileServiceDep,
+    current_user: CurrentSampleUserDep,  # 認証済みユーザーが必要
+    service: SampleFileServiceDep,
 ):
     """ファイルをアップロードする（認証必須）。"""
     return await service.upload_file(file, current_user.id)
 
 @router.get("/")
 async def list_files(
-    current_user: CurrentUserDep,
-    service: FileServiceDep,
+    current_user: CurrentSampleUserDep,
+    service: SampleFileServiceDep,
 ):
     """現在のユーザーのファイル一覧を取得する。"""
     return await service.list_user_files(current_user.id)
@@ -293,13 +293,13 @@ async def list_files(
 ### 管理者専用エンドポイント
 
 ```python
-from app.api.dependencies import CurrentSuperuserDep
+from app.api.core import CurrentSuperuserDep
 
 @router.delete("/users/{user_id}")
 async def delete_user(
     user_id: int,
     current_user: CurrentSuperuserDep,  # スーパーユーザーのみアクセス可
-    service: UserServiceDep,
+    service: SampleUserServiceDep,
 ):
     """ユーザーを削除する（管理者専用）。"""
     await service.delete_user(user_id)
@@ -314,8 +314,8 @@ async def delete_user(
 # src/app/api/dependencies.py
 async def get_current_user_optional(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,
-) -> User | None:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser | None:
     """現在のユーザーを取得する（認証なしでもOK）。
 
     Returns:
@@ -361,24 +361,24 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 # レベル2: サービス（データベースに依存）
 def get_user_service(db: DatabaseDep) -> UserService:
-    return UserService(db)
+    return SampleUserService(db)
 
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
 
 # レベル3: 認証（サービスに依存）
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,  # サービスを注入
-) -> User:
+    user_service: SampleUserServiceDep = None,  # サービスを注入
+) -> SampleUser:
     # ...
     return user
 
-CurrentUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
 
 # レベル4: 認可（認証に依存）
 async def get_current_active_user(
     current_user: Annotated[User, Depends(get_current_user)]
-) -> User:
+) -> SampleUser:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
@@ -386,15 +386,45 @@ async def get_current_active_user(
 
 依存関係グラフ:
 
+```mermaid
+graph TD
+    A[HTTPリクエスト] --> B[FastAPI Router]
+
+    subgraph "依存性注入の解決"
+        B --> C1[get_db]
+        C1 --> D1[AsyncSession生成]
+
+        B --> C2[get_user_service]
+        D1 -.注入.-> C2
+        C2 --> D2[UserService<br/>インスタンス化]
+
+        B --> C3[get_current_user]
+        D2 -.注入.-> C3
+        C3 --> D3[トークン検証<br/>ユーザー取得]
+
+        B --> C4[get_current_active_user]
+        D3 -.注入.-> C4
+        C4 --> D4[アクティブ確認]
+    end
+
+    D1 --> E[ハンドラー関数]
+    D2 --> E
+    D4 --> E
+
+    E --> F[ビジネスロジック実行]
+    F --> G[レスポンス返却]
+
+    G --> H[session.commit]
+    H --> I[session.close]
+
+    style C1 fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
+    style C2 fill:#f48fb1,stroke:#880e4f,stroke-width:3px,color:#000
+    style C3 fill:#aed581,stroke:#33691e,stroke-width:3px,color:#000
+    style C4 fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
+    style E fill:#4db6ac,stroke:#004d40,stroke-width:3px,color:#000
 ```
-get_db()
-  ↓
-get_user_service(db)
-  ↓
-get_current_user(user_service)
-  ↓
-get_current_active_user(current_user)
-```
+
+この図から、各依存関係が階層的に解決され、最終的にハンドラー関数に注入される様子が分かります。
 
 ## 依存関係のスコープ
 
@@ -453,7 +483,7 @@ async def test_endpoint(
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.api.dependencies import get_db
+from app.api.core import get_db
 
 # テスト用のデータベースセッション
 async def override_get_db():
@@ -473,7 +503,7 @@ def client():
 def test_create_user(client):
     """ユーザー作成のテスト（テスト用DBを使用）。"""
     response = client.post(
-        "/api/users/",
+        "/api/sample-users/",
         json={
             "email": "test@example.com",
             "username": "testuser",
@@ -513,11 +543,11 @@ from fastapi import Depends
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 # サービス
-UserServiceDep = Annotated[UserService, Depends(get_user_service)]
-FileServiceDep = Annotated[FileService, Depends(get_file_service)]
+SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleFileServiceDep = Annotated[FileService, Depends(get_file_service)]
 
 # 認証
-CurrentUserDep = Annotated[User, Depends(get_current_active_user)]
+CurrentSampleUserDep = Annotated[User, Depends(get_current_active_user)]
 CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]
 ```
 
@@ -540,8 +570,8 @@ async def get_db():  # 型ヒントなし
 ```python
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: UserServiceDep = None,
-) -> User:
+    user_service: SampleUserServiceDep = None,
+) -> SampleUser:
     """現在の認証済みユーザーを取得する。
 
     Args:

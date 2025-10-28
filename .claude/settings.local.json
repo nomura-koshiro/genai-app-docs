@@ -1,9 +1,30 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv:*)",
+      "Bash(git mv:*)",
+      "Bash(mv:*)",
+      "Bash(git add:*)",
+      "Bash(test:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(find:*)",
+      "Bash(uv run:*)",
+      "Bash(python -m app.main:*)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(git reset:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: プロジェクト全体のセットアップと構成\n\n- Claude Code エージェント、コマンド、設定の追加\n- WSL2/Docker セットアップガイドの整備\n- プロジェクト構造とドキュメントの再構成\n- セキュリティ機能の強化（セキュリティヘッダー、認証、データ保護）\n- API構造の改善（v1 バージョニング、システムルート分離）\n- テスト構成とデータベーステストパターンの改善\n- サンプルモデル・リポジトリ・サービスの追加\n- 環境設定の整理（local/staging/production）\n- Serena AI メモリーとプロジェクト設定の追加\n- Linter/Formatter設定とマークダウンリンター追加\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: プロジェクト全体のセットアップと構成\n\n- Claude Code エージェント、コマンド、設定の追加\n- WSL2/Docker セットアップガイドの整備\n- プロジェクト構造とドキュメントの再構成\n- セキュリティ機能の強化（セキュリティヘッダー、認証、データ保護）\n- API構造の改善（v1 バージョニング、システムルート分離）\n- テスト構成とデータベーステストパターンの改善\n- サンプルモデル・リポジトリ・サービスの追加\n- 環境設定の整理（local/staging/production）\n- Serena AI メモリーとプロジェクト設定の追加\n- Linter/Formatter設定とマークダウンリンター追加\n- Pydantic v2 ConfigDict移行とテスト実装（76テスト）\n- bcrypt互換性修正とセキュリティ強化\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git commit:*)",
       "Bash(tree:*)",
-      "Read(//c/developments/docs/docs/04-development/01-coding-standards/**)"
+      "Bash(xargs:*)",
+      "Bash(git rm:*)",
+      "Bash(dir /B \"C:\\developments\\genai-app-docs\\docs\")",
+      "Bash(python -m pytest:*)",
+      "Bash(wsl --list:*)",
+      "Bash(wsl:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(head:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -7,6 +7,7 @@
 サービス層は、ビジネスロジックを実装し、複数のリポジトリを調整します。
 
 **責務**:
+
 - ビジネスルールの実装
 - 複数のリポジトリの調整
 - トランザクション境界の定義
@@ -17,22 +18,22 @@
 ## 基本的なサービス
 
 ```python
-# src/app/services/user.py
+# src/app/services/sample_user.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import AuthenticationError, NotFoundError, ValidationError
 from app.core.security import hash_password, verify_password
-from app.models.user import User
-from app.repositories.user import UserRepository
-from app.schemas.user import UserCreate
+from app.models.sample_user import SampleUser
+from app.repositories.sample_user import SampleUserRepository
+from app.schemas.sample_user import SampleUserCreate
 
 
-class UserService:
+class SampleUserService:
     """ユーザー関連のビジネスロジック用サービス。"""
 
     def __init__(self, db: AsyncSession):
-        self.repository = UserRepository(db)
+        self.repository = SampleUserRepository(db)
 
-    async def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
         """新しいユーザーを作成。"""
         # バリデーション
         existing_user = await self.repository.get_by_email(user_data.email)
@@ -60,7 +61,7 @@ class UserService:
         )
         return user
 
-    async def authenticate(self, email: str, password: str) -> User:
+    async def authenticate(self, email: str, password: str) -> SampleUser:
         """ユーザーを認証。"""
         user = await self.repository.get_by_email(email)
         if not user:
@@ -74,7 +75,7 @@ class UserService:
 
         return user
 
-    async def get_user(self, user_id: int) -> User:
+    async def get_user(self, user_id: int) -> SampleUser:
         """ユーザーを取得。"""
         user = await self.repository.get(user_id)
         if not user:
@@ -93,7 +94,7 @@ class SessionService:
     def __init__(self, db: AsyncSession):
         self.session_repo = SessionRepository(db)
         self.message_repo = MessageRepository(db)
-        self.user_repo = UserRepository(db)
+        self.user_repo = SampleUserRepository(db)
 
     async def create_session_with_message(
         self,
@@ -147,24 +148,27 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 ## ベストプラクティス
 
 1. **ビジネスロジックはサービス層に**
+
    ```python
    # ✅ サービス層でバリデーション
-   async def create_user(self, user_data: UserCreate) -> User:
+   async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
        if await self.repository.get_by_email(user_data.email):
            raise ValidationError("Email already exists")
        return await self.repository.create(...)
    ```
 
 2. **リポジトリを通じてデータアクセス**
+
    ```python
    # ✅ リポジトリ使用
    user = await self.repository.get(user_id)
 
    # ❌ 直接DBアクセス
-   user = await self.db.get(User, user_id)
+   user = await self.db.get(SampleUser, user_id)
    ```
 
 3. **カスタム例外を使用**
+
    ```python
    if not user:
        raise NotFoundError("User not found", details={"user_id": user_id})
