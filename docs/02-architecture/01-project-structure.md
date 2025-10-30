@@ -216,10 +216,14 @@ api/
 ├── routes/                  # エンドポイント定義
 │   ├── v1/                  # API v1 エンドポイント（ビジネスロジック）
 │   │   ├── __init__.py
-│   │   ├── sample_users.py      # ユーザー管理エンドポイント
-│   │   ├── sample_agents.py     # AI Agent/チャットエンドポイント
-│   │   ├── sample_sessions.py   # セッション管理エンドポイント
-│   │   └── sample_files.py      # ファイル管理エンドポイント
+│   │   ├── users.py             # Azure AD対応ユーザー管理
+│   │   ├── projects.py          # プロジェクト管理
+│   │   ├── project_members.py   # プロジェクトメンバー管理
+│   │   ├── project_files.py     # プロジェクトファイル管理
+│   │   ├── sample_users.py      # サンプルユーザー管理（レガシー）
+│   │   ├── sample_agents.py     # AI Agent/チャット
+│   │   ├── sample_sessions.py   # セッション管理
+│   │   └── sample_files.py      # ファイル管理（レガシー）
 │   └── system/              # システムエンドポイント（インフラ）
 │       ├── __init__.py
 │       ├── root.py          # / (ルート)
@@ -387,9 +391,13 @@ SQLAlchemyのORMモデルを定義します。
 models/
 ├── __init__.py
 ├── base.py                  # ベースモデル
-├── sample_user.py           # ユーザーモデル
+├── user.py                  # Azure AD対応ユーザーモデル
+├── project.py               # プロジェクトモデル
+├── project_member.py        # プロジェクトメンバーモデル
+├── project_file.py          # プロジェクトファイルモデル
+├── sample_user.py           # サンプルユーザーモデル（レガシー）
 ├── sample_session.py        # セッションモデル
-└── sample_file.py           # ファイルモデル
+└── sample_file.py           # ファイルモデル（レガシー）
 ```
 
 #### 例: `models/user.py`
@@ -421,10 +429,14 @@ APIリクエスト/レスポンスのバリデーションスキーマ。
 schemas/
 ├── __init__.py
 ├── common.py                # 共通スキーマ
-├── sample_user.py           # ユーザースキーマ
+├── user.py                  # Azure AD対応ユーザースキーマ
+├── project.py               # プロジェクトスキーマ
+├── project_member.py        # プロジェクトメンバースキーマ
+├── project_file.py          # プロジェクトファイルスキーマ
+├── sample_user.py           # サンプルユーザースキーマ（レガシー）
 ├── sample_agents.py         # AI Agent/チャット関連スキーマ
 ├── sample_sessions.py       # セッション/メッセージスキーマ
-└── sample_file.py           # ファイルスキーマ
+└── sample_file.py           # ファイルスキーマ（レガシー）
 ```
 
 **注**: Pydantic v2対応済み（`ConfigDict`使用）
@@ -456,9 +468,13 @@ class SampleUserResponse(BaseModel):
 repositories/
 ├── __init__.py
 ├── base.py                  # ベースリポジトリ（共通CRUD）
-├── sample_user.py           # ユーザーリポジトリ
+├── user.py                  # Azure AD対応ユーザーリポジトリ
+├── project.py               # プロジェクトリポジトリ
+├── project_member.py        # プロジェクトメンバーリポジトリ
+├── project_file.py          # プロジェクトファイルリポジトリ
+├── sample_user.py           # サンプルユーザーリポジトリ（レガシー）
 ├── sample_session.py        # セッションリポジトリ
-└── sample_file.py           # ファイルリポジトリ
+└── sample_file.py           # ファイルリポジトリ（レガシー）
 ```
 
 #### `repositories/base.py` - ベースリポジトリ
@@ -514,10 +530,14 @@ class SampleUserRepository(BaseRepository[SampleUser]):
 ```text
 services/
 ├── __init__.py
-├── sample_user.py           # ユーザーサービス
+├── user.py                  # Azure AD対応ユーザーサービス
+├── project.py               # プロジェクトサービス
+├── project_member.py        # プロジェクトメンバーサービス
+├── project_file.py          # プロジェクトファイルサービス
+├── sample_user.py           # サンプルユーザーサービス（レガシー）
 ├── sample_agent.py          # AI Agentサービス
-├── sample_session.py        # セッション管理サービス（新規追加）
-├── sample_file.py           # ファイルサービス
+├── sample_session.py        # セッション管理サービス
+├── sample_file.py           # ファイルサービス（レガシー）
 └── sample_authorization.py  # 認可サービス
 ```
 
