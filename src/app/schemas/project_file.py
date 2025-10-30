@@ -53,7 +53,7 @@ class ProjectFileUploadResponse(BaseModel):
         ...     file_size=1024000,
         ...     mime_type="application/pdf",
         ...     uploaded_by=user_id,
-        ...     uploaded_at=datetime.utcnow(),
+        ...     uploaded_at=datetime.now(UTC),
         ...     message="File uploaded successfully"
         ... )
     """
@@ -97,7 +97,7 @@ class ProjectFileResponse(BaseModel):
         ...     file_size=1024000,
         ...     mime_type="application/pdf",
         ...     uploaded_by=user_id,
-        ...     uploaded_at=datetime.utcnow(),
+        ...     uploaded_at=datetime.now(UTC),
         ...     uploader=UserResponse(...)
         ... )
 

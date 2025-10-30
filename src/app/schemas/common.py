@@ -24,7 +24,7 @@
     >>> params = PaginationParams(skip=0, limit=10)
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -144,7 +144,7 @@ class HealthResponse(BaseModel):
     """
 
     status: str = Field(..., description="ヘルスステータス")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="チェック時刻")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="チェック時刻")
     version: str = Field(..., description="アプリケーションバージョン")
 
 
