@@ -105,7 +105,6 @@ class SampleUserService:
             ValidationError: 権限不足（roles/is_activeの更新にSystemAdminが必要）
             NotFoundError: ユーザーが存在しない
         """
-        # 権限チェック: roles または is_active の更新は管理者のみ
         if ("roles" in update_data or "is_active" in update_data):
             if "SystemAdmin" not in current_user_roles:
                 raise ValidationError(
@@ -113,12 +112,10 @@ class SampleUserService:
                     details={"required_role": "SystemAdmin"},
                 )
 
-        # ユーザー取得
         user = await self.repository.get(user_id)
         if not user:
             raise NotFoundError("User not found", details={"user_id": user_id})
 
-        # 更新実行
         updated_user = await self.repository.update(user, **update_data)
         return updated_user
 

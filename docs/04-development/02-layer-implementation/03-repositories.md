@@ -76,12 +76,10 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
             list[ModelType]: モデルインスタンスのリスト
 
         Example:
-            # N+1クエリ問題を回避
             users = await user_repo.get_multi(
                 limit=10,
                 load_relations=["sessions", "files"]
             )
-            # リレーションシップが事前ロード済み（追加クエリなし）
             for user in users:
                 print(f"{user.username}: {len(user.sessions)} sessions")
         """

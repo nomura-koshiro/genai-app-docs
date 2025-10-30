@@ -516,7 +516,7 @@ await db.commit()
 
 # クライアントには平文のapi_keyを返す（一度だけ）
 return APIKeyResponse(
-    api_key=api_key,  # 平文（最初で最後）
+    api_key=api_key,
     created_at=created_at,
     message="APIキーは一度しか表示されません。安全に保管してください。",
 )
