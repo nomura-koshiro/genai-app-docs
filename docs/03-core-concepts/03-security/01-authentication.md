@@ -4,52 +4,354 @@
 
 ## 目次
 
+- [認証モードの選択](#認証モードの選択)
+- [Azure AD認証（本番環境）](#azure-ad認証本番環境)
+- [開発モード認証](#開発モード認証)
+- [レガシー: JWT認証（参考）](#レガシー-jwt認証参考)
 - [パスワードハッシュ化](#パスワードハッシュ化)
-- [JWT認証](#jwt認証)
-- [パスワード強度検証](#パスワード強度検証)
-- [認証依存性注入](#認証依存性注入)
 - [APIキー生成](#apiキー生成)
 
 ---
 
-## パスワードハッシュ化
+## 認証モードの選択
 
-**実装場所**: `src/app/core/security/`
+camp-backendは環境に応じて2つの認証モードを提供します。
 
-### アルゴリズム
+### 認証モードの設定
 
-- **bcrypt**: パスワードハッシュアルゴリズム
-- **コスト**: 自動（デフォルト12ラウンド）
-- **Salt**: ランダムsalt自動生成
-- **レインボーテーブル攻撃耐性**: あり
+**環境変数**: `AUTH_MODE`
 
-```python
-from passlib.context import CryptContext
+```bash
+# 本番環境: Azure AD認証（必須）
+AUTH_MODE=production
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# パスワードのハッシュ化
-hashed = hash_password("SecurePass123!")  # → $2b$12$KIX...
-
-# パスワードの検証
-is_valid = verify_password("SecurePass123!", hashed)  # → True
+# 開発環境: モック認証（開発のみ）
+AUTH_MODE=development
 ```
 
-**セキュリティ特性**:
+**実装場所**: `src/app/core/config.py`
 
-- 定時間比較（タイミング攻撃対策）
-- bcryptのsalt自動処理
-- 同じパスワードでも毎回異なるハッシュ生成
+```python
+AUTH_MODE: Literal["development", "production"] = Field(
+    default="development",
+    description="Authentication mode: development (JWT) or production (Azure AD)",
+)
+```
 
-**参照**: `src/app/core/security/password.py`, `jwt.py`, `api_key.py`
+### セキュリティ検証
+
+本番環境では開発モード認証が自動的に禁止されます：
+
+```python
+@model_validator(mode="after")
+def validate_dev_auth_not_in_production(self) -> Settings:
+    """本番環境で開発モード認証が有効な場合にエラーを発生させます。"""
+    if self.ENVIRONMENT == "production" and self.AUTH_MODE == "development":
+        raise ValueError(
+            "Development authentication cannot be enabled in production environment. "
+            "Set AUTH_MODE=production for production."
+        )
+    return self
+```
 
 ---
 
-## JWT認証
+## Azure AD認証（本番環境）
 
-**実装場所**: `src/app/core/security/`
+本番環境では、**Azure AD Bearer認証**を使用します。`fastapi-azure-auth`ライブラリにより、Azure ADトークンの自動検証を実現します。
+
+### 必要な環境変数
+
+```bash
+# 認証モード
+AUTH_MODE=production
+
+# Azure AD設定
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-backend-client-id
+AZURE_CLIENT_SECRET=your-client-secret  # オプション
+AZURE_OPENAPI_CLIENT_ID=your-swagger-client-id
+```
+
+**実装場所**: `src/app/core/config.py`
+
+```python
+# 認証モード切り替え
+AUTH_MODE: Literal["development", "production"] = Field(
+    default="development",
+    description="Authentication mode: development (JWT) or production (Azure AD)",
+)
+
+# Azure AD設定（本番モード用）
+AZURE_TENANT_ID: str | None = Field(
+    default=None,
+    description="Azure AD Tenant ID",
+)
+AZURE_CLIENT_ID: str | None = Field(
+    default=None,
+    description="Azure AD Application (client) ID for backend",
+)
+AZURE_CLIENT_SECRET: str | None = Field(
+    default=None,
+    description="Azure AD Application client secret (for backend authentication)",
+)
+AZURE_OPENAPI_CLIENT_ID: str | None = Field(
+    default=None,
+    description="Azure AD Application (client) ID for Swagger UI",
+)
+```
+
+### Azure ADトークン自動検証
+
+**実装場所**: `src/app/api/core/dependencies.py`
+
+Azure AD認証は`fastapi-azure-auth`により自動的に処理されます：
+
+```python
+from app.core.security.azure_ad import get_current_azure_user, AzureUser
+
+# 本番環境でのみ有効
+if settings.AUTH_MODE == "production":
+    from app.core.security.azure_ad import AzureUser as AuthUserType
+    from app.core.security.azure_ad import get_current_azure_user
+```
+
+### AzureUserクラス
+
+Azure ADから取得されるユーザー情報：
+
+- **oid**: Azure AD Object ID（一意識別子）
+- **email**: メールアドレス
+- **preferred_username**: ユーザー名
+- **name**: 表示名
+- **roles**: ロールリスト（Azure AD App Roles）
+
+### 自動ユーザー同期
+
+Azure AD認証されたユーザーは、自動的にデータベースのUserモデルと同期されます：
+
+**実装場所**: `src/app/api/core/dependencies.py`
+
+```python
+async def get_authenticated_user_from_azure(
+    user_service: AzureUserServiceDep,
+    azure_user: Any = Depends(
+        get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user
+    ),
+) -> User:
+    """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserモデルと紐付け。
+
+    環境変数AUTH_MODEに応じて以下を切り替え:
+    - production: Azure ADトークン検証
+    - development: モックトークン検証
+
+    Args:
+        user_service: Azure AD用ユーザーサービス（自動注入）
+        azure_user: Azure ADまたはDevユーザー（自動注入）
+
+    Returns:
+        User: データベースのユーザーモデル（新しいAzure AD対応モデル）
+
+    Note:
+        - Azure OIDでユーザーを検索、存在しない場合は自動作成します
+        - 既存ユーザーの場合、メール/表示名が変わっていれば更新します
+    """
+    # Azure OIDでユーザーを検索（または作成）
+    user = await user_service.get_or_create_by_azure_oid(
+        azure_oid=azure_user.oid,
+        email=azure_user.email or azure_user.preferred_username,
+        display_name=getattr(azure_user, "name", None),
+        roles=getattr(azure_user, "roles", []),
+    )
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found or could not be created")
+
+    return user
+```
+
+### エンドポイントでの使用方法
+
+**依存性注入型の定義**:
+
+```python
+# src/app/api/core/dependencies.py
+CurrentUserAzureDep = Annotated[User, Depends(get_current_active_user_azure)]
+"""Azure AD認証済みアクティブユーザーの依存性型。
+
+この依存性を使用すると、エンドポイントはAzure AD認証（本番）またはモック認証（開発）を
+自動的に実行します。環境変数AUTH_MODEで切り替えます。
+"""
+```
+
+**エンドポイント実装例**:
+
+```python
+from fastapi import APIRouter
+from app.api.core.dependencies import CurrentUserAzureDep
+
+router = APIRouter()
+
+@router.get("/profile")
+async def get_profile(user: CurrentUserAzureDep):
+    """Azure AD認証されたユーザーのプロフィールを取得。
+
+    本番環境ではAzure ADトークンを検証、開発環境ではモックトークンを使用。
+    """
+    return {
+        "email": user.email,
+        "azure_oid": user.azure_oid,
+        "display_name": user.display_name,
+        "roles": user.roles,
+        "is_active": user.is_active,
+    }
+```
+
+### Userモデル（Azure AD対応）
+
+**実装場所**: `src/app/models/user.py`
+
+```python
+class User(Base, TimestampMixin):
+    """Azure AD認証用ユーザーモデル。
+
+    SampleUserとは異なる新しいモデル:
+    - プライマリキーがUUID型
+    - azure_oidフィールドを持つ
+    - パスワード認証は含まない（Azure ADのみ）
+    """
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    azure_oid: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    roles: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+```
+
+---
+
+## 開発モード認証
+
+開発環境では、**モック認証**を使用して簡易的な認証を提供します。
+
+### 必要な環境変数
+
+```bash
+# 認証モード
+AUTH_MODE=development
+
+# モックトークン設定（オプション）
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+DEV_MOCK_USER_EMAIL=dev.user@example.com
+DEV_MOCK_USER_OID=dev-azure-oid-12345
+DEV_MOCK_USER_NAME=Development User
+```
+
+**実装場所**: `src/app/core/config.py`
+
+```python
+# 開発モード設定
+DEV_MOCK_TOKEN: str = Field(
+    default="mock-access-token-dev-12345",
+    description="Development mode mock token",
+)
+DEV_MOCK_USER_EMAIL: str = Field(
+    default="dev.user@example.com",
+    description="Development mode mock user email",
+)
+DEV_MOCK_USER_OID: str = Field(
+    default="dev-azure-oid-12345",
+    description="Development mode mock Azure Object ID",
+)
+DEV_MOCK_USER_NAME: str = Field(
+    default="Development User",
+    description="Development mode mock user name",
+)
+```
+
+### DevUserクラス
+
+**実装場所**: `src/app/core/security/dev_auth.py`
+
+```python
+class DevUser:
+    """開発モード用のモックユーザークラス。
+
+    Azure AD Userと互換性のある構造を持ちます。
+    """
+
+    def __init__(self):
+        """DevUserインスタンスを初期化します。
+
+        環境変数から以下の設定を読み込みます:
+            - DEV_MOCK_USER_OID: Azure Object ID
+            - DEV_MOCK_USER_EMAIL: メールアドレス
+            - DEV_MOCK_USER_NAME: 表示名
+        """
+        self.oid = settings.DEV_MOCK_USER_OID
+        self.preferred_username = settings.DEV_MOCK_USER_EMAIL
+        self.email = settings.DEV_MOCK_USER_EMAIL
+        self.name = settings.DEV_MOCK_USER_NAME
+        self.roles = []
+```
+
+### モック認証の動作
+
+**実装場所**: `src/app/core/security/dev_auth.py`
+
+```python
+async def get_current_dev_user(
+    credentials: HTTPAuthorizationCredentials = Security(security)
+) -> DevUser:
+    """開発モード用の認証（トークンチェックのみ）。
+
+    Authorizationヘッダーから受け取ったBearerトークンが
+    環境変数DEV_MOCK_TOKENと一致するかをチェックします。
+    """
+    token = credentials.credentials
+
+    # モックトークンと一致するかチェック
+    if token != settings.DEV_MOCK_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid development token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return DevUser()
+```
+
+### エンドポイントでの使用方法
+
+開発モードでも同じ`CurrentUserAzureDep`を使用できます：
+
+```python
+@router.get("/dev-test")
+async def dev_test(user: CurrentUserAzureDep):
+    """開発モードでテスト。
+
+    Authorization: Bearer mock-access-token-dev-12345
+    """
+    return {"email": user.email, "oid": user.azure_oid}
+```
+
+### セキュリティ考慮事項
+
+- **本番環境では絶対に使用しない**: `validate_dev_auth_not_in_production()`で自動検証
+- **固定トークン**: モックトークンは固定値（セキュアではない）
+- **開発専用**: ローカル開発環境でのみ使用
+
+---
+
+## レガシー: JWT認証（参考）
+
+以下は、SampleUserモデル用のレガシー認証機能です。段階的に Azure AD 認証に移行中です。
 
 ### トークン生成
+
+**実装場所**: `src/app/core/security/jwt.py`
 
 ```python
 def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str
@@ -81,43 +383,9 @@ def decode_access_token(token: str) -> dict[str, Any] | None
 
 **無効なトークンの場合**: `None`を返し、警告ログを記録
 
-**参照**: `src/app/core/security/password.py`, `jwt.py`, `api_key.py`
-
----
-
-## パスワード強度検証
-
-**実装場所**: `src/app/core/security/password.py`, `jwt.py`, `api_key.py`
-
-### パスワード要件（必須）
-
-- 最小8文字
-- 大文字を1つ以上含む（A-Z）
-- 小文字を1つ以上含む（a-z）
-- 数字を1つ以上含む（0-9）
-
-### 推奨事項
-
-- 特殊文字を1つ以上含む（!@#$%^&*(),.?":{}|<>）
-- 12文字以上
-
-```python
-is_valid, error = validate_password_strength("password")
-# → (False, "パスワードには大文字を含めてください")
-
-is_valid, error = validate_password_strength("SecurePass123!")
-# → (True, "")
-```
-
-**参照**: `src/app/core/security/password.py`, `jwt.py`, `api_key.py`
-
----
-
-## 認証依存性注入
+### 認証依存性注入（SampleUser用）
 
 **実装場所**: `src/app/api/dependencies.py`
-
-### 階層的な認証チェック
 
 ```python
 # 基本認証
@@ -133,7 +401,7 @@ async def get_current_superuser(current_user: SampleUser = Depends(get_current_u
 async def get_current_user_optional(authorization: str | None = Header(None)) -> SampleUser | None
 ```
 
-### 認証フロー
+**認証フロー**:
 
 1. Authorizationヘッダーから`Bearer <token>`を抽出
 2. JWTトークンをデコードして検証
@@ -143,9 +411,62 @@ async def get_current_user_optional(authorization: str | None = Header(None)) ->
 
 ---
 
+## パスワードハッシュ化
+
+**実装場所**: `src/app/core/security/password.py`
+
+### アルゴリズム
+
+- **bcrypt**: パスワードハッシュアルゴリズム
+- **コスト**: 自動（デフォルト12ラウンド）
+- **Salt**: ランダムsalt自動生成
+- **レインボーテーブル攻撃耐性**: あり
+
+```python
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# パスワードのハッシュ化
+hashed = hash_password("SecurePass123!")  # → $2b$12$KIX...
+
+# パスワードの検証
+is_valid = verify_password("SecurePass123!", hashed)  # → True
+```
+
+**セキュリティ特性**:
+
+- 定時間比較（タイミング攻撃対策）
+- bcryptのsalt自動処理
+- 同じパスワードでも毎回異なるハッシュ生成
+
+### パスワード強度検証
+
+**パスワード要件（必須）**:
+
+- 最小8文字
+- 大文字を1つ以上含む（A-Z）
+- 小文字を1つ以上含む（a-z）
+- 数字を1つ以上含む（0-9）
+
+**推奨事項**:
+
+- 特殊文字を1つ以上含む（!@#$%^&*(),.?":{}|<>）
+- 12文字以上
+
+```python
+is_valid, error = validate_password_strength("password")
+# → (False, "パスワードには大文字を含めてください")
+
+is_valid, error = validate_password_strength("SecurePass123!")
+# → (True, "")
+```
+
+---
+
 ## APIキー生成
 
-**実装場所**: `src/app/core/security/password.py`, `jwt.py`, `api_key.py`
+**実装場所**: `src/app/core/security/api_key.py`
 
 ```python
 def generate_api_key() -> str
@@ -166,29 +487,12 @@ api_key = generate_api_key()
 hashed_api_key = hash_password(api_key)
 ```
 
-**セキュリティ実装**:
+### APIキーのハッシュ化保存
 
-生成されたAPIキーとリフレッシュトークンは、データベースに**ハッシュ化して保存**されます。
-
----
-
-## トークンとAPIキーのハッシュ化保存
-
-**実装場所**: `src/app/models/sample_user.py`, `src/app/api/routes/v1/sample_users.py`
-
-### データベーススキーマ
+**実装場所**: `src/app/models/sample_user.py`
 
 ```python
-# src/app/models/sample_user.py
 class SampleUser(Base):
-    # リフレッシュトークン（ハッシュ化して保存）
-    refresh_token_hash: Mapped[str | None] = mapped_column(
-        String(100), nullable=True, default=None
-    )
-    refresh_token_expires_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, default=None
-    )
-
     # APIキー（ハッシュ化して保存）
     api_key_hash: Mapped[str | None] = mapped_column(
         String(100), nullable=True, default=None, index=True
@@ -198,43 +502,7 @@ class SampleUser(Base):
     )
 ```
 
-### ログイン時のリフレッシュトークンハッシュ化
-
-**実装場所**: `src/app/api/routes/v1/sample_users.py:204-212`
-
-```python
-# JWTトークンを生成
-access_token = create_access_token(data={"sub": str(user.id)})
-refresh_token = create_refresh_token(data={"sub": str(user.id)})
-
-# リフレッシュトークンをハッシュ化してデータベースに保存
-user.refresh_token_hash = hash_password(refresh_token)
-user.refresh_token_expires_at = datetime.now(UTC) + timedelta(days=7)
-await db.commit()
-
-# クライアントには平文のrefresh_tokenを返す（一度だけ）
-return TokenWithRefresh(
-    access_token=access_token,
-    refresh_token=refresh_token,  # 平文（最初で最後）
-    token_type="bearer",
-)
-```
-
-### リフレッシュトークン検証
-
-**実装場所**: `src/app/api/routes/v1/sample_users.py:411-414`
-
-```python
-# クライアントから受け取った平文トークンと、DBのハッシュを比較
-if not user.refresh_token_hash or not verify_password(
-    request_data.refresh_token, user.refresh_token_hash
-):
-    raise AuthenticationError("リフレッシュトークンが一致しません")
-```
-
-### APIキー生成時のハッシュ化
-
-**実装場所**: `src/app/api/routes/v1/sample_users.py:453-458`
+**APIキー生成時のハッシュ化**（`src/app/api/routes/v1/sample_users.py`）:
 
 ```python
 # APIキー生成
@@ -265,10 +533,10 @@ return APIKeyResponse(
 
 ## 関連ドキュメント
 
-- [セキュリティ概要](./03-security.md) - セキュリティ機能の全体像
-- [リクエスト保護](./03-security-request-protection.md) - CORS、レート制限、入力バリデーション
-- [データ保護](./03-security-data-protection.md) - データベース、ファイルアップロード
-- [インフラストラクチャ](./03-security-infrastructure.md) - エラーハンドリング、環境設定
-- [ベストプラクティス](./03-security-best-practices.md) - セキュリティ強化の推奨事項
+- [セキュリティ概要](./README.md) - セキュリティ機能の全体像
+- [リクエスト保護](./02-request-protection.md) - CORS、レート制限、入力バリデーション
+- [データ保護](./03-data-protection.md) - データベース、ファイルアップロード
+- [インフラストラクチャ](./04-infrastructure.md) - エラーハンドリング、環境設定
+- [ベストプラクティス](./05-best-practices.md) - セキュリティ強化の推奨事項
 
 ---

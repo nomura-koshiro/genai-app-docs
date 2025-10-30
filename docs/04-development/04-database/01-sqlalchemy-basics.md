@@ -31,12 +31,18 @@ class Base(DeclarativeBase):
     pass
 
 
-async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """データベースセッション取得。"""
+async def get_db() -> AsyncGenerator[AsyncSession]:
+    """FastAPI依存性注入用のデータベースセッションジェネレータ。
+
+    トランザクション管理:
+        - このジェネレータは commit() を実行しません
+        - commit() はサービス層の @transactional デコレータが責任を持ちます
+        - これによりトランザクション境界をサービス層で明確に定義できます
+    """
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
+            # 注意: ここでは commit() しない（サービス層で@transactionalデコレータが実行）
         except Exception:
             await session.rollback()
             raise
@@ -84,6 +90,149 @@ async def update_user(db: AsyncSession, user: SampleUser, username: str) -> Samp
 async def delete_user(db: AsyncSession, user: SampleUser) -> None:
     await db.delete(user)
     await db.flush()
+```
+
+## トランザクション管理の設計思想
+
+camp-backendでは、トランザクション管理を**サービス層の責任**としています。
+
+### 設計パターン
+
+```
+┌─────────────────────────────────────┐
+│  エンドポイント層                    │
+│  - リクエスト受付                    │
+│  - レスポンス返却                    │
+└──────────┬──────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────┐
+│  サービス層                          │
+│  - ビジネスロジック                  │
+│  - @transactional デコレータ         │  ← トランザクション境界
+│  - commit() / rollback() の責任      │
+└──────────┬──────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────┐
+│  リポジトリ層                        │
+│  - flush() のみ実行                  │
+│  - commit() は実行しない             │
+└──────────┬──────────────────────────┘
+           │
+           ▼
+┌─────────────────────────────────────┐
+│  データベース層 (get_db())           │
+│  - セッション提供                    │
+│  - commit() は実行しない             │
+│  - エラー時の自動 rollback()         │
+└─────────────────────────────────────┘
+```
+
+### なぜget_db()でcommitしないのか
+
+1. **トランザクション境界の明確化**
+   - サービス層が「どこからどこまでが1つのトランザクションか」を定義
+   - 複数のリポジトリ操作を1つのトランザクションにまとめられる
+
+2. **柔軟性の確保**
+   - 途中でエラーが発生した場合、サービス層で適切にロールバック
+   - 複雑なビジネスロジックでも対応可能
+
+3. **AOPパターンの活用**
+   - `@transactional`デコレータで横断的関心事を分離
+   - ビジネスロジックとトランザクション管理を分離
+
+### @transactionalデコレータ
+
+**注意**: 現在の実装では明示的な`@transactional`デコレータはありませんが、サービス層で明示的に`commit()`を呼び出すパターンを使用しています。
+
+**将来的な実装例**:
+
+```python
+from functools import wraps
+from sqlalchemy.ext.asyncio import AsyncSession
+
+def transactional(func):
+    """サービス層メソッドにトランザクション管理を追加するデコレータ。"""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        # 引数からAsyncSessionを探す
+        db_session = None
+        for arg in args:
+            if isinstance(arg, AsyncSession):
+                db_session = arg
+                break
+
+        if not db_session:
+            # self.dbの場合
+            self = args[0]
+            if hasattr(self, 'db'):
+                db_session = self.db
+
+        try:
+            result = await func(*args, **kwargs)
+            await db_session.commit()  # ← ここでcommit
+            return result
+        except Exception:
+            await db_session.rollback()
+            raise
+
+    return wrapper
+```
+
+**使用例**:
+
+```python
+class UserService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+        self.repository = UserRepository(User, db)
+
+    @transactional
+    async def create_user_with_profile(
+        self,
+        email: str,
+        username: str,
+        profile_data: dict,
+    ) -> User:
+        """ユーザーとプロフィールを同時に作成（1つのトランザクション）。"""
+        # ユーザー作成
+        user = await self.repository.create(
+            email=email,
+            username=username,
+        )
+
+        # プロフィール作成
+        profile = await self.profile_repository.create(
+            user_id=user.id,
+            **profile_data,
+        )
+
+        # @transactionalデコレータが自動的にcommit()
+        return user
+```
+
+### 現在のパターン（明示的commit）
+
+現在の実装では、サービス層で明示的に`commit()`を呼び出します：
+
+```python
+async def create_user(
+    self,
+    email: str,
+    username: str,
+) -> User:
+    """ユーザーを作成します。"""
+    user = await self.repository.create(
+        email=email,
+        username=username,
+    )
+
+    # サービス層で明示的にcommit
+    await self.db.commit()
+
+    return user
 ```
 
 ## タイムゾーン対応のタイムスタンプ
