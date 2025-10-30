@@ -2,12 +2,31 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "PostgreSQL起動（Windows）",
+      "label": "PostgreSQL起動確認と起動",
       "type": "shell",
       "command": "powershell",
       "args": [
-        "-Command",
-        "pg_ctl -D $env:USERPROFILE\\scoop\\apps\\postgresql\\current\\data -l $env:USERPROFILE\\scoop\\apps\\postgresql\\current\\logfile start"
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}\\scripts\\dev.ps1",
+        "start-postgres"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false,
+        "close": true
+      }
+    },
+    {
+      "label": "環境セットアップ",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}\\scripts\\dev.ps1",
+        "setup"
       ],
       "problemMatcher": [],
       "presentation": {
@@ -15,9 +34,40 @@
         "panel": "shared",
         "showReuseMessage": false,
         "clear": false
-      },
-      "windows": {
-        "command": "powershell"
+      }
+    },
+    {
+      "label": "環境完全リセット",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}\\scripts\\dev.ps1",
+        "setup", "-Clean"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
+    },
+    {
+      "label": "データベースリセット",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy", "Bypass",
+        "-File", "${workspaceFolder}\\scripts\\dev.ps1",
+        "reset-db"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
       }
     },
     {

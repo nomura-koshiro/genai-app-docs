@@ -21,6 +21,21 @@
 
 ### PostgreSQLの起動確認
 
+**推奨: スクリプトを使用**
+
+```powershell
+# PostgreSQL起動（自動で状態確認）
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+```
+
+このスクリプトは以下を実行します：
+
+- PostgreSQLが起動しているか確認
+- 未起動の場合のみ起動
+- 起動確認（最大5秒待機）
+
+**手動操作:**
+
 Scoop版の場合：
 
 ```powershell
@@ -137,12 +152,31 @@ psql -U postgres -d camp_backend_db < backup_20250128.sql
 
 ## データベースのリセット
 
+### 推奨: スクリプトを使用
+
 開発中にデータベースを初期状態に戻す：
+
+```powershell
+# データベースリセットスクリプトを実行
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+```
+
+このスクリプトは以下を自動実行します：
+
+1. `camp_backend_db`を削除・再作成
+2. `camp_backend_db_test`を削除・再作成
+3. マイグレーション実行（`alembic upgrade head`）
+
+### 手動でリセット
 
 ```powershell
 # データベースを削除して再作成
 psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db;"
 psql -U postgres -c "CREATE DATABASE camp_backend_db;"
+
+# テストデータベースも同様に
+psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db_test;"
+psql -U postgres -c "CREATE DATABASE camp_backend_db_test;"
 
 # マイグレーション実行
 cd src
@@ -226,6 +260,46 @@ await cache_manager.delete("user:123")
 await cache_manager.clear("user:*")
 ```
 
+## 利用可能なスクリプト
+
+開発に便利なスクリプトが用意されています（`scripts\dev.ps1`）：
+
+### PostgreSQL起動
+
+PostgreSQLを起動します（既に起動している場合はスキップ）。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+```
+
+### データベースリセット
+
+データベースをリセットします（削除・再作成・マイグレーション）。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+```
+
+### 環境セットアップ
+
+開発環境をセットアップします。
+
+```powershell
+# 通常のセットアップ
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup
+
+# 環境を完全リセットしてから再構築
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup -Clean
+```
+
+### ヘルプ表示
+
+利用可能なコマンドを表示します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 help
+```
+
 ## 次のステップ
 
 - [プロジェクト構造](../02-architecture/01-project-structure.md) - モデルの配置
@@ -271,6 +345,13 @@ netstat -ano | findstr :5432
 ```
 
 ### データベースが破損した場合
+
+```powershell
+# データベースリセットスクリプトを実行
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+```
+
+または手動で：
 
 ```powershell
 # 完全リセット

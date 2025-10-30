@@ -172,7 +172,22 @@ DEBUG=true
 
 **重要**: PostgreSQLのパスワードを変更している場合は、`DATABASE_URL`の`postgres:postgres`部分を`postgres:あなたのパスワード`に変更してください。
 
-## ステップ6: 動作確認
+## ステップ6: データベースのセットアップ
+
+データベースをセットアップします：
+
+```powershell
+# データベースリセットスクリプトを実行
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+```
+
+このスクリプトは以下を自動実行します：
+
+- データベース削除・再作成
+- テストデータベース削除・再作成
+- マイグレーション実行
+
+## ステップ7: 動作確認
 
 ### テストの実行
 
@@ -188,7 +203,19 @@ uv run pytest tests/ -v
 
 ### アプリケーションの起動
 
+**推奨: VS Codeで起動（PostgreSQL自動起動）**
+
+1. VS Codeでプロジェクトを開く
+2. **F5キー**を押す
+
+PostgreSQLが自動的に起動し、FastAPIアプリケーションが起動します。
+
+**または: コマンドラインで起動**
+
 ```powershell
+# PostgreSQLを起動（未起動の場合）
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+
 # アプリケーションを起動
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```

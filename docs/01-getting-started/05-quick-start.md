@@ -8,13 +8,17 @@
 
 ## 起動方法
 
-### VS Codeで起動
+### VS Codeで起動（推奨）
 
 1. VS Codeでプロジェクトを開く
-2. PostgreSQLが起動していることを確認
-3. **F5キー**を押す
+2. **F5キー**を押す
 
-これだけです！FastAPIサーバーが起動します。
+これだけです！PostgreSQLが自動的に起動し、FastAPIサーバーが起動します。
+
+**仕組み:**
+- `.vscode/launch.json`の`preLaunchTask`でPostgreSQL起動タスクを実行
+- `scripts/dev.ps1 start-postgres`がPostgreSQLの状態を確認して起動
+- FastAPIアプリケーションが起動
 
 ### 起動確認
 
@@ -91,10 +95,11 @@ VS Codeで **Shift+F5** を押すか、ターミナルで **Ctrl+C** を押し�
 ### 手動起動（コマンドライン）
 
 ```powershell
-# PostgreSQLが起動していることを確認後、以下を実行
+# PostgreSQLを起動（未起動の場合）
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
 
 # アプリケーション起動
-uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uv run python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### ログレベルの変更
@@ -127,6 +132,13 @@ PORT=8001
 
 PostgreSQLが起動していない可能性があります。
 
+```powershell
+# PostgreSQL起動スクリプトを実行
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+```
+
+または、手動で起動：
+
 Scoop版の場合：
 
 ```powershell
@@ -155,22 +167,26 @@ curl http://localhost:8000/health
 
 ### 環境が壊れた・依存関係を更新したい
 
-依存関係を再インストールします：
+**完全リセット（環境＋データベース）:**
+
+```powershell
+# 1. 環境を完全リセット
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup -Clean
+
+# 2. データベースをリセット
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+```
+
+**依存関係のみ再インストール:**
 
 ```powershell
 # プロジェクトディレクトリで実行
 uv sync --reinstall
 ```
 
-データベースをリセットする場合：
+**データベースのみリセット:**
 
 ```powershell
-# データベースを削除して再作成
-psql -U postgres -c "DROP DATABASE IF EXISTS camp_backend_db;"
-psql -U postgres -c "CREATE DATABASE camp_backend_db;"
-
-# マイグレーション実行
-cd src
-uv run alembic upgrade head
-cd ..
+# データベースリセットスクリプトを実行
+powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
 ```
