@@ -537,7 +537,6 @@ class ProjectService:
         from pathlib import Path
 
         from sqlalchemy import select
-        from sqlalchemy.orm import selectinload
 
         from app.models.project_file import ProjectFile
 

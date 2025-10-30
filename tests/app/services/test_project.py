@@ -447,9 +447,7 @@ async def test_check_user_access(db_session: AsyncSession):
 async def test_delete_project_with_physical_files(db_session: AsyncSession, tmp_path):
     """プロジェクト削除時に物理ファイルも削除されることを確認。"""
     # Arrange
-    from pathlib import Path
 
-    from app.models.project import Project
     from app.models.project_file import ProjectFile
 
     service = ProjectService(db_session)

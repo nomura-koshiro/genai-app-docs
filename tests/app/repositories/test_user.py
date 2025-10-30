@@ -278,7 +278,6 @@ async def test_repository_get_active_users_with_n_plus_one_prevention(db_session
 
     # クエリカウントをリセット
     await db_session.execute(text("SELECT 1"))  # ダミークエリでフラッシュ
-    query_count_start = 0
 
     # project_membershipsにアクセス（追加クエリが発行されないはず）
     for user in active_users:
