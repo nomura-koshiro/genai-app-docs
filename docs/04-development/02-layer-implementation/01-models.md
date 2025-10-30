@@ -220,6 +220,7 @@ default=lambda: datetime.now(UTC)
 ```
 
 **理由**:
+
 - Python 3.11+推奨の書き方
 - タイムゾーン情報の明示
 - PostgreSQLの`TIMESTAMP WITH TIME ZONE`と連携
@@ -339,6 +340,7 @@ class User(Base):
 ```
 
 **特徴**:
+
 - UUID主キー（従来のint型から変更）
 - Azure AD Object ID（azure_oid）で一意識別
 - パスワードなし（Azure AD認証のみ）
@@ -346,6 +348,7 @@ class User(Base):
 - プロジェクトメンバーシップのリレーション
 
 **User vs SampleUserの使い分け**:
+
 - **User**: 新規開発、Azure AD統合機能
 - **SampleUser**: レガシー、段階的移行中のサンプルコード
 

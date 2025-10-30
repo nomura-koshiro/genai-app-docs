@@ -179,10 +179,12 @@ class BaseRepository(Generic[ModelType, IDType]):
 ### パフォーマンス比較
 
 **N+1問題あり（悪い例）**:
+
 - 10ユーザー × 各5プロジェクト = 51クエリ（1 + 10×5）
 - 実行時間: 約500ms
 
 **selectinload使用（良い例）**:
+
 - 2クエリのみ（ユーザーリスト + メンバーシップ一括取得）
 - 実行時間: 約20ms
 
@@ -201,6 +203,7 @@ class BaseRepository(Generic[ModelType, IDType]):
 
 4. **N+1検出ツール**
    - `nplusone`ライブラリでN+1問題を自動検出
+
 ```
 
 ## 参考リンク

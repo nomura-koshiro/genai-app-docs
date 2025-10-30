@@ -93,6 +93,7 @@ DEV_MOCK_USER_NAME=Development User
 ```
 
 **特徴**:
+
 - モックトークンを使用（Azure AD不要）
 - 開発・テストに最適
 - 本番環境では使用禁止（バリデーションエラーが発生）
@@ -108,6 +109,7 @@ AZURE_OPENAPI_CLIENT_ID=your-swagger-client-id
 ```
 
 **特徴**:
+
 - Azure AD Bearer認証
 - トークン有効期限の自動検証
 - Swagger UIでのOAuth2統合
@@ -245,7 +247,7 @@ openssl rand -hex 32
 
 ### ステップ1: アプリ登録（バックエンドAPI）
 
-1. **Azure Portal** にアクセス: https://portal.azure.com
+1. **Azure Portal** にアクセス: <https://portal.azure.com>
 2. **Azure Active Directory** → **アプリの登録** → **新規登録**
 3. 以下を入力:
    - **名前**: `camp-backend-api`
@@ -356,11 +358,13 @@ print(response.json())
 #### エラー: "Invalid token"
 
 **原因**:
+
 - トークンの有効期限が切れている
 - AZURE_CLIENT_IDが正しくない
 - テナントIDが一致していない
 
 **対処法**:
+
 1. トークンの有効期限を確認（通常1時間）
 2. `.env.production` の `AZURE_CLIENT_ID` を確認
 3. Azure Portalで設定を再確認
@@ -368,10 +372,12 @@ print(response.json())
 #### エラー: "Development authentication cannot be enabled in production"
 
 **原因**:
+
 - 本番環境で `AUTH_MODE=development` が設定されている
 - 環境変数の優先順位が誤っている
 
 **対処法**:
+
 1. `.env.production` で `AUTH_MODE=production` を設定
 2. シェルの環境変数を確認: `$env:AUTH_MODE`
 3. 不要な環境変数を削除
@@ -379,24 +385,30 @@ print(response.json())
 #### エラー: "AZURE_TENANT_ID or AZURE_CLIENT_ID not configured"
 
 **原因**:
+
 - 環境変数が設定されていない
 - ファイル名が間違っている（`.env.production` でなく `.env.prod` など）
 
 **対処法**:
+
 1. `.env.production` ファイルが存在することを確認
 2. 環境変数が正しく設定されていることを確認:
+
    ```powershell
    Select-String -Path .env.production -Pattern "AZURE_"
    ```
+
 3. アプリケーション起動時のログを確認
 
 #### Swagger UIでOAuth2が動作しない
 
 **原因**:
+
 - リダイレクトURIが正しく設定されていない
 - Swagger UI用アプリにAPIのアクセス許可がない
 
 **対処法**:
+
 1. Azure Portalでリダイレクトウリを確認: `http://localhost:8000/docs/oauth2-redirect`
 2. Swagger UI用アプリの **APIのアクセス許可** を確認
 3. ブラウザの開発者ツールでエラーを確認
@@ -520,7 +532,7 @@ def validate_dev_auth_not_in_production(self) -> 'Settings':
     return self
 ```
 
-#### エラーメッセージ
+**エラーメッセージ**:
 
 ```text
 ValueError: Development authentication cannot be enabled in production environment. Set AUTH_MODE=production for production.
@@ -531,6 +543,7 @@ ValueError: Development authentication cannot be enabled in production environme
 開発モードで複数ユーザーをテストする場合:
 
 1. **データベースに直接ユーザーを作成**:
+
    ```sql
    INSERT INTO users (id, azure_oid, email, display_name, roles, is_active)
    VALUES (
@@ -544,6 +557,7 @@ ValueError: Development authentication cannot be enabled in production environme
    ```
 
 2. **モックトークンを切り替える**（環境変数を変更して再起動）:
+
    ```ini
    DEV_MOCK_USER_EMAIL=user1@example.com
    DEV_MOCK_USER_OID=azure-oid-1

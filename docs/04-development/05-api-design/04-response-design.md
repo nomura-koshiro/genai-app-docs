@@ -91,6 +91,7 @@ async def app_exception_handler(request: Request, exc: AppException):
 #### ユーザー詳細取得 (GET /api/v1/users/me)
 
 **リクエスト**:
+
 ```http
 GET /api/v1/users/me HTTP/1.1
 Host: api.example.com
@@ -98,6 +99,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (200 OK)**:
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -113,12 +115,14 @@ Authorization: Bearer <token>
 ```
 
 **特徴**:
+
 - このエンドポイントを呼び出すたびに `last_login` が更新されます
 - クライアントIPアドレスは監査ログに記録されます
 
 #### プロジェクト一覧取得 (GET /api/v1/projects)
 
 **リクエスト**:
+
 ```http
 GET /api/v1/projects?skip=0&limit=10 HTTP/1.1
 Host: api.example.com
@@ -126,6 +130,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (200 OK)**:
+
 ```json
 [
   {
@@ -152,12 +157,14 @@ Authorization: Bearer <token>
 ```
 
 **特徴**:
+
 - 自分がメンバーとして所属するプロジェクトのみ表示されます
 - レスポンスは配列形式です（ページネーション情報は含まれません）
 
 #### ユーザー一覧取得 (GET /api/v1/users)
 
 **リクエスト**:
+
 ```http
 GET /api/v1/users?skip=0&limit=10 HTTP/1.1
 Host: api.example.com
@@ -165,6 +172,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (200 OK)**:
+
 ```json
 {
   "users": [
@@ -198,12 +206,14 @@ Authorization: Bearer <token>
 ```
 
 **特徴**:
+
 - SystemAdmin権限が必要です
 - ページネーション情報（total, skip, limit）が含まれます
 
 #### プロジェクトメンバー一覧取得 (GET /api/v1/projects/{project_id}/members)
 
 **リクエスト**:
+
 ```http
 GET /api/v1/projects/660e8400-e29b-41d4-a716-446655440001/members?skip=0&limit=10 HTTP/1.1
 Host: api.example.com
@@ -211,6 +221,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (200 OK)**:
+
 ```json
 {
   "members": [
@@ -259,12 +270,14 @@ Authorization: Bearer <token>
 ```
 
 **特徴**:
+
 - ユーザー情報がネストされた形式で含まれます
 - `added_by` はプロジェクト作成時のオーナーの場合は `null` です
 
 #### ファイル一覧取得 (GET /api/v1/projects/{project_id}/files)
 
 **リクエスト**:
+
 ```http
 GET /api/v1/projects/660e8400-e29b-41d4-a716-446655440001/files?skip=0&limit=10 HTTP/1.1
 Host: api.example.com
@@ -272,6 +285,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (200 OK)**:
+
 ```json
 {
   "files": [
@@ -304,6 +318,7 @@ Authorization: Bearer <token>
 ```
 
 **特徴**:
+
 - `filename` はサーバー側で管理される一意のファイル名です
 - `original_filename` はユーザーがアップロードした元のファイル名です
 
@@ -320,6 +335,7 @@ Authorization: Bearer <token>
 #### 400 Bad Request - バリデーションエラー
 
 **リクエスト**:
+
 ```http
 PATCH /api/v1/users/me HTTP/1.1
 Host: api.example.com
@@ -332,6 +348,7 @@ Content-Type: application/json
 ```
 
 **レスポンス (400 Bad Request)**:
+
 ```json
 {
   "type": "about:blank",
@@ -346,15 +363,18 @@ Content-Type: application/json
 ```
 
 **原因**:
+
 - リクエストボディのバリデーションに失敗しました
 - `email` フィールドが不正な形式です
 
 **対処法**:
+
 - 正しい形式のメールアドレスを送信してください
 
 #### 401 Unauthorized - 認証エラー
 
 **リクエスト**:
+
 ```http
 GET /api/v1/users/me HTTP/1.1
 Host: api.example.com
@@ -362,6 +382,7 @@ Authorization: Bearer invalid-token
 ```
 
 **レスポンス (401 Unauthorized)**:
+
 ```json
 {
   "type": "about:blank",
@@ -373,16 +394,19 @@ Authorization: Bearer invalid-token
 ```
 
 **原因**:
+
 - 認証トークンが無効または期限切れです
 - Authorizationヘッダーが欠落しています
 
 **対処法**:
+
 - 有効なAzure ADトークンを取得してください
 - 開発環境では、正しいモックトークンを使用してください
 
 #### 403 Forbidden - 権限エラー
 
 **リクエスト**:
+
 ```http
 PATCH /api/v1/projects/660e8400-e29b-41d4-a716-446655440001 HTTP/1.1
 Host: api.example.com
@@ -395,6 +419,7 @@ Content-Type: application/json
 ```
 
 **レスポンス (403 Forbidden)**:
+
 ```json
 {
   "type": "about:blank",
@@ -408,16 +433,19 @@ Content-Type: application/json
 ```
 
 **原因**:
+
 - 必要なプロジェクトロール（OWNER/ADMIN）を持っていません
 - プロジェクトのメンバーではありません
 
 **対処法**:
+
 - プロジェクトオーナーに権限の変更を依頼してください
 - 自分が所属するプロジェクトのみ操作してください
 
 #### 404 Not Found - リソースなし
 
 **リクエスト**:
+
 ```http
 GET /api/v1/projects/999e8400-e29b-41d4-a716-446655440999 HTTP/1.1
 Host: api.example.com
@@ -425,6 +453,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (404 Not Found)**:
+
 ```json
 {
   "type": "about:blank",
@@ -437,16 +466,19 @@ Authorization: Bearer <token>
 ```
 
 **原因**:
+
 - 指定されたIDのリソースが存在しません
 - リソースが削除されている可能性があります
 
 **対処法**:
+
 - IDを確認してください
 - リソース一覧を取得して、存在するIDを使用してください
 
 #### 422 Unprocessable Entity - セマンティックエラー
 
 **リクエスト**:
+
 ```http
 PATCH /api/v1/users/550e8400-e29b-41d4-a716-446655440001 HTTP/1.1
 Host: api.example.com
@@ -459,6 +491,7 @@ Content-Type: application/json
 ```
 
 **レスポンス (422 Unprocessable Entity)**:
+
 ```json
 {
   "type": "about:blank",
@@ -472,16 +505,19 @@ Content-Type: application/json
 ```
 
 **原因**:
+
 - ビジネスロジックの制約に違反しています
 - 管理者権限が必要なフィールドを更新しようとしています
 
 **対処法**:
+
 - 管理者に依頼してください
 - 一般ユーザーが更新可能なフィールドのみ変更してください
 
 #### 409 Conflict - 重複エラー
 
 **リクエスト**:
+
 ```http
 POST /api/v1/projects HTTP/1.1
 Host: api.example.com
@@ -495,6 +531,7 @@ Content-Type: application/json
 ```
 
 **レスポンス (409 Conflict)**:
+
 ```json
 {
   "type": "about:blank",
@@ -508,15 +545,18 @@ Content-Type: application/json
 ```
 
 **原因**:
+
 - 一意制約に違反しています
 - プロジェクトコードが既に使用されています
 
 **対処法**:
+
 - 異なるプロジェクトコードを使用してください
 
 #### 500 Internal Server Error - サーバーエラー
 
 **リクエスト**:
+
 ```http
 GET /api/v1/users/me HTTP/1.1
 Host: api.example.com
@@ -524,6 +564,7 @@ Authorization: Bearer <token>
 ```
 
 **レスポンス (500 Internal Server Error)**:
+
 ```json
 {
   "type": "about:blank",
@@ -535,10 +576,12 @@ Authorization: Bearer <token>
 ```
 
 **原因**:
+
 - サーバー側で予期しないエラーが発生しました
 - データベース接続エラー、外部サービスエラーなど
 
 **対処法**:
+
 - しばらく待ってから再試行してください
 - 問題が続く場合は管理者に連絡してください
 - エラーの詳細はサーバーログに記録されています

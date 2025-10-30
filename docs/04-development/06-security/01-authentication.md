@@ -338,6 +338,7 @@ AZURE_CLIENT_ID=your-client-id
 ### 参考ドキュメント
 
 詳細は以下のドキュメントを参照してください：
+
 - `azure-entra-id-backend-implementation.md`: 実装詳細
 - [fastapi-azure-auth GitHub](https://github.com/Intility/fastapi-azure-auth)
 - [python-jose JWT検証](https://github.com/mpdavis/python-jose)

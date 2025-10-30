@@ -128,12 +128,14 @@ PORT=8001
 PostgreSQLが起動していない可能性があります。
 
 Scoop版の場合：
+
 ```powershell
 # PostgreSQL起動
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data start
 ```
 
 公式インストーラー版の場合：
+
 ```powershell
 # サービス確認
 Get-Service postgresql*
