@@ -618,7 +618,7 @@ Authorization: Bearer mock-access-token-dev-12345
 }
 ```
 
-詳細は [ページネーション設計](./04-pagination.md) を参照してください。
+詳細は [ページネーション設計](./05-pagination.md) を参照してください。
 
 ### エラーレスポンス (RFC 9457)
 
@@ -647,7 +647,7 @@ Authorization: Bearer mock-access-token-dev-12345
 - `instance`: リクエストパス
 - カスタムフィールド: 追加の詳細情報
 
-詳細は [エラーレスポンス設計](./05-error-responses.md) を参照してください。
+詳細は [エラーレスポンス設計](./06-error-responses.md) を参照してください。
 
 ### ステータスコード
 
@@ -665,6 +665,6 @@ Authorization: Bearer mock-access-token-dev-12345
 
 ## 参考リンク
 
-- [レスポンス設計](./03-response-design.md)
-- [バリデーション](./02-validation.md)
-- [エンドポイント設計](./01-endpoint-design.md)
+- [レスポンス設計](./04-response-design.md)
+- [バリデーション](./03-validation.md)
+- [エンドポイント設計](./02-endpoint-design.md)

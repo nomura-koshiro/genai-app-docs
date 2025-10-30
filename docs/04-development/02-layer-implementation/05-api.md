@@ -157,7 +157,7 @@ async def create_user(
 3. ビジネスロジックに集中できる
 4. 約60%のコード削減
 
-詳細: [エラーレスポンス](../../04-api-design/05-error-responses.md#エラーハンドリングデコレータ推奨)
+詳細: [エラーレスポンス](../../04-api-desig./06-error-responses.md#エラーハンドリングデコレータ推奨)
 
 ---
 

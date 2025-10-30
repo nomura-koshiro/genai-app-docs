@@ -106,11 +106,12 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 
 | ドキュメント | 内容 |
 |------------|------|
-| [エンドポイント設計](./04-development/05-api-design/01-endpoint-design.md) | RESTful原則 |
-| [バリデーション](./04-development/05-api-design/02-validation.md) | リクエスト検証 |
-| [レスポンス設計](./04-development/05-api-design/03-response-design.md) | 統一的なレスポンス |
-| [ページネーション](./04-development/05-api-design/04-pagination.md) | リスト取得パターン |
-| [エラーレスポンス](./04-development/05-api-design/05-error-responses.md) | エラー処理 |
+| [API概要](./04-development/05-api-design/01-api-overview.md) | エンドポイント一覧 |
+| [エンドポイント設計](./04-development/05-api-design/02-endpoint-design.md) | RESTful原則 |
+| [バリデーション](./04-development/05-api-design/03-validation.md) | リクエスト検証 |
+| [レスポンス設計](./04-development/05-api-design/04-response-design.md) | 統一的なレスポンス |
+| [ページネーション](./04-development/05-api-design/05-pagination.md) | リスト取得パターン |
+| [エラーレスポンス](./04-development/05-api-design/06-error-responses.md) | エラー処理 |
 
 #### [セキュリティ実装](./04-development/06-security/)
 

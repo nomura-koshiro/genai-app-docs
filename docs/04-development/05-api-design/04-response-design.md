@@ -315,7 +315,7 @@ Authorization: Bearer <token>
 
 **Content-Type**: `application/problem+json`
 
-詳細は [エラーレスポンス設計](./05-error-responses.md) を参照してください。
+詳細は [エラーレスポンス設計](./06-error-responses.md) を参照してください。
 
 #### 400 Bad Request - バリデーションエラー
 
@@ -575,6 +575,6 @@ Authorization: Bearer <token>
 ## 参考リンク
 
 - [API仕様概要](./01-api-overview.md)
-- [エラーレスポンス設計](./05-error-responses.md)
-- [ページネーション設計](./04-pagination.md)
+- [エラーレスポンス設計](./06-error-responses.md)
+- [ページネーション設計](./05-pagination.md)
 - [RFC 9457 Problem Details for HTTP APIs](https://www.rfc-editor.org/rfc/rfc9457.html)
