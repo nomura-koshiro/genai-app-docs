@@ -291,6 +291,7 @@ DateTime(timezone=False)  # PostgreSQL: TIMESTAMP WITHOUT TIME ZONE（非推奨�
 ```
 
 **推奨**: 必ず`timezone=True`を使用してタイムゾーン情報を保持してください。
+
 ```
 
 ## 参考リンク

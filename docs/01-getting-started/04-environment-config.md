@@ -520,7 +520,8 @@ def validate_dev_auth_not_in_production(self) -> 'Settings':
     return self
 ```
 
-**エラーメッセージ**:
+#### エラーメッセージ
+
 ```text
 ValueError: Development authentication cannot be enabled in production environment. Set AUTH_MODE=production for production.
 ```
