@@ -2,6 +2,55 @@
 
 統一されたエラーハンドリングとレスポンスについて説明します。
 
+## RFC 9457準拠のエラーレスポンス
+
+このプロジェクトは、**RFC 9457 Problem Details for HTTP APIs**標準に準拠したエラーレスポンス形式を採用しています。
+
+### RFC 9457とは
+
+RFC 9457は、HTTP APIのエラーレスポンスを標準化するための仕様です。以下の利点があります：
+
+- **標準化**: クライアントが一貫した形式でエラーを処理できる
+- **相互運用性**: 異なるAPIでも同じ形式でエラーを扱える
+- **デバッグ性**: 詳細な問題情報を構造化して提供できる
+
+### エラーレスポンス形式
+
+**Content-Type**: `application/problem+json`
+
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "User with ID 12345 was not found",
+  "instance": "/api/v1/users/12345",
+  "user_id": "12345"
+}
+```
+
+**必須フィールド**:
+
+| フィールド | 型 | 説明 |
+|----------|---|------|
+| `type` | string | 問題タイプを識別するURI（デフォルト: "about:blank"） |
+| `title` | string | 人間が読める短い要約（HTTPステータスコードに対応） |
+| `status` | integer | HTTPステータスコード（100-599） |
+
+**オプションフィールド**:
+
+| フィールド | 型 | 説明 |
+|----------|---|------|
+| `detail` | string | この問題発生の具体的な説明 |
+| `instance` | string | この問題が発生したリクエストパス |
+| カスタムフィールド | any | 追加の詳細情報（`user_id`, `field`など） |
+
+### 参考リンク
+
+- [RFC 9457仕様](https://www.rfc-editor.org/rfc/rfc9457.html)
+
+---
+
 ## カスタム例外
 
 ```python
@@ -42,61 +91,100 @@ class AuthenticationError(AppException):
         super().__init__(message, status_code=401, details=details)
 ```
 
-## 例外ハンドラー
+## RFC 9457準拠の例外ハンドラー
 
 ```python
-# src/app/api/middlewares/error_handler.py
-from fastapi import Request
+# src/app/api/core/exception_handlers.py
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+
 from app.core.exceptions import AppException
 
+# HTTPステータスコードからtitleへのマッピング（RFC 9457推奨）
+STATUS_CODE_TITLES = {
+    400: "Bad Request",
+    401: "Unauthorized",
+    403: "Forbidden",
+    404: "Not Found",
+    422: "Unprocessable Entity",
+    500: "Internal Server Error",
+    502: "Bad Gateway",
+    503: "Service Unavailable",
+}
 
-async def app_exception_handler(request: Request, exc: AppException) -> JSONResponse:
-    """アプリケーション例外ハンドラー。"""
+
+async def app_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """RFC 9457準拠のエラーレスポンスを返すグローバルハンドラー。"""
+    assert isinstance(exc, AppException), "Expected AppException instance"
+
+    # RFC 9457準拠のレスポンスボディを構築
+    problem_details = {
+        "type": "about:blank",  # デフォルトの問題タイプURI
+        "title": STATUS_CODE_TITLES.get(exc.status_code, "Error"),
+        "status": exc.status_code,
+        "detail": exc.message,
+        "instance": str(request.url.path),  # リクエストパスのみ
+    }
+
+    # 追加の詳細情報をマージ（RFC 9457は拡張フィールドを許可）
+    if exc.details:
+        problem_details.update(exc.details)
+
     return JSONResponse(
         status_code=exc.status_code,
-        content={
-            "error": exc.message,
-            "details": exc.details
-        }
+        content=problem_details,
+        media_type="application/problem+json",  # RFC 9457準拠のContent-Type
     )
 
 
+def register_exception_handlers(app: FastAPI):
+    """FastAPIアプリケーションにカスタム例外ハンドラーを登録します。"""
+    app.add_exception_handler(AppException, app_exception_handler)
+
+
 # src/app/main.py
-from app.api.middlewares.error_handler import app_exception_handler
-from app.core.exceptions import AppException
+from app.api.core.exception_handlers import register_exception_handlers
 
 app = FastAPI()
-app.add_exception_handler(AppException, app_exception_handler)
+register_exception_handlers(app)
 ```
 
 ## 使用例
 
 ```python
 # サービス層
-class SampleUserService:
-    async def get_user(self, user_id: int) -> SampleUser:
+from app.core.exceptions import NotFoundError, ValidationError
+
+
+class UserService:
+    async def get_user(self, user_id: uuid.UUID) -> User:
         user = await self.repository.get(user_id)
         if not user:
             raise NotFoundError(
-                f"User not found",
-                details={"user_id": user_id}
+                "User not found",
+                details={"user_id": str(user_id)}
             )
         return user
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
+    async def create_user(self, user_data: UserCreate) -> User:
         if await self.repository.get_by_email(user_data.email):
             raise ValidationError(
                 "Email already exists",
-                details={"email": user_data.email}
+                details={"email": user_data.email, "field": "email"}
             )
         return await self.repository.create(**user_data.model_dump())
 
 
-# エラーレスポンス例
+# RFC 9457準拠のエラーレスポンス例
+# HTTP 404 Not Found
+# Content-Type: application/problem+json
 # {
-#   "error": "User not found",
-#   "details": {"user_id": 123}
+#   "type": "about:blank",
+#   "title": "Not Found",
+#   "status": 404,
+#   "detail": "User not found",
+#   "instance": "/api/v1/users/12345678-1234-1234-1234-123456789abc",
+#   "user_id": "12345678-1234-1234-1234-123456789abc"
 # }
 ```
 

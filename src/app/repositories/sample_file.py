@@ -10,7 +10,7 @@ from app.repositories.base import BaseRepository
 logger = get_logger(__name__)
 
 
-class SampleFileRepository(BaseRepository[SampleFile]):
+class SampleFileRepository(BaseRepository[SampleFile, int]):
     """サンプル: ファイルリポジトリ。
 
     ファイルのCRUD操作を提供します。

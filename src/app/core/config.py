@@ -63,7 +63,7 @@ import os
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ def get_env_file() -> tuple[str, ...]:
     }
 
     env_name = env_mapping.get(environment, "local")
-    project_root = Path(__file__).parent.parent.parent
+    project_root = Path(__file__).parent.parent.parent.parent
 
     # 環境別.envファイルのパス
     env_specific = project_root / f".env.{env_name}"
@@ -300,6 +300,76 @@ class Settings(BaseSettings):
     # ファイルアップロード設定
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MBデフォルト
 
+    # ================================================================================
+    # Azure AD認証設定
+    # ================================================================================
+
+    # 認証モード切り替え
+    AUTH_MODE: Literal["development", "production"] = Field(
+        default="development",
+        description="Authentication mode: development (JWT) or production (Azure AD)",
+    )
+
+    # Azure AD設定（本番モード用）
+    AZURE_TENANT_ID: str | None = Field(
+        default=None,
+        description="Azure AD Tenant ID",
+    )
+    AZURE_CLIENT_ID: str | None = Field(
+        default=None,
+        description="Azure AD Application (client) ID for backend",
+    )
+    AZURE_CLIENT_SECRET: str | None = Field(
+        default=None,
+        description="Azure AD Client Secret (optional for token validation)",
+    )
+    AZURE_OPENAPI_CLIENT_ID: str | None = Field(
+        default=None,
+        description="Azure AD Application (client) ID for Swagger UI",
+    )
+
+    # 開発モード設定
+    DEV_MOCK_TOKEN: str = Field(
+        default="mock-access-token-dev-12345",
+        description="Development mode mock token",
+    )
+    DEV_MOCK_USER_EMAIL: str = Field(
+        default="dev.user@example.com",
+        description="Development mode mock user email",
+    )
+    DEV_MOCK_USER_OID: str = Field(
+        default="dev-azure-oid-12345",
+        description="Development mode mock Azure Object ID",
+    )
+    DEV_MOCK_USER_NAME: str = Field(
+        default="Development User",
+        description="Development mode mock user name",
+    )
+
+    @model_validator(mode='after')
+    def validate_dev_auth_not_in_production(self) -> 'Settings':
+        """本番環境で開発モード認証が有効な場合にエラーを発生させます。
+
+        セキュリティリスクを防ぐため、本番環境（ENVIRONMENT=production）で
+        開発モード認証（AUTH_MODE=development）が有効な場合にエラーを発生させます。
+
+        Raises:
+            ValueError: 本番環境で開発モード認証が有効な場合
+
+        Returns:
+            Settings: バリデーション済み設定オブジェクト
+
+        Note:
+            - ENVIRONMENT="production" かつ AUTH_MODE="development" の組み合わせは禁止
+            - 他の環境（development, staging）では開発モード認証を許可
+        """
+        if self.ENVIRONMENT == "production" and self.AUTH_MODE == "development":
+            raise ValueError(
+                "Development authentication cannot be enabled in production environment. "
+                "Set AUTH_MODE=production for production."
+            )
+        return self
+
     def __init__(self, **kwargs):
         """設定を初期化し、環境に応じたバリデーションを実行します。
 
@@ -356,8 +426,8 @@ class Settings(BaseSettings):
                 # 開発環境のみワイルドカードまたはlocalhostを許可
                 self.ALLOWED_ORIGINS = ["http://localhost:3000", "http://localhost:5173"]
 
-        # 本番環境でのCORS設定厳格化
-        if self.ENVIRONMENT == "production":
+        # 本番環境でのCORS設定厳格化（ALLOWED_ORIGINSがNoneでない場合のみチェック）
+        if self.ENVIRONMENT == "production" and self.ALLOWED_ORIGINS is not None:
             if "*" in self.ALLOWED_ORIGINS:
                 raise ValueError("本番環境ではワイルドカードCORS (*)は許可されていません")
 
@@ -392,6 +462,17 @@ class Settings(BaseSettings):
         # 開発環境でも警告
         if self.ENVIRONMENT == "development" and "dev-secret-key" in self.SECRET_KEY:
             logger.warning("Using default SECRET_KEY. Set a custom key for better security even in development.")
+
+        # ✨ 追加: Azure AD設定の検証（本番モードのみ）
+        if self.AUTH_MODE == "production":
+            if not self.AZURE_TENANT_ID:
+                raise ValueError("AUTH_MODE=productionの場合、AZURE_TENANT_IDが必要です")
+            if not self.AZURE_CLIENT_ID:
+                raise ValueError("AUTH_MODE=productionの場合、AZURE_CLIENT_IDが必要です")
+
+            logger.info("✅ Azure AD認証が有効化されました（本番モード）")
+        else:
+            logger.info("⚠️  開発モード認証が有効化されました（モック認証）")
 
 
 settings = Settings()

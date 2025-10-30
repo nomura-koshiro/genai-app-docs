@@ -81,6 +81,65 @@ class SampleUserService:
         if not user:
             raise NotFoundError("User not found", details={"user_id": user_id})
         return user
+
+    async def update_user(
+        self,
+        user_id: int,
+        update_data: dict[str, Any],
+        current_user_roles: list[str],
+    ) -> SampleUser:
+        """ユーザー情報を更新。
+
+        このメソッドは、権限チェックとビジネスロジックをカプセル化し、
+        API層からビジネスロジックを分離します（SOLID原則のSRP準拠）。
+
+        Args:
+            user_id: 更新対象ユーザーID
+            update_data: 更新データ（display_name, roles, is_active等）
+            current_user_roles: 実行ユーザーのロール（権限チェック用）
+
+        Returns:
+            更新されたユーザーインスタンス
+
+        Raises:
+            ValidationError: 権限不足（roles/is_activeの更新にSystemAdminが必要）
+            NotFoundError: ユーザーが存在しない
+        """
+        # 権限チェック: roles または is_active の更新は管理者のみ
+        if ("roles" in update_data or "is_active" in update_data):
+            if "SystemAdmin" not in current_user_roles:
+                raise ValidationError(
+                    "rolesまたはis_activeの更新には管理者権限が必要です",
+                    details={"required_role": "SystemAdmin"},
+                )
+
+        # ユーザー取得
+        user = await self.repository.get(user_id)
+        if not user:
+            raise NotFoundError("User not found", details={"user_id": user_id})
+
+        # 更新実行
+        updated_user = await self.repository.update(user, **update_data)
+        return updated_user
+
+    async def count_users(self, is_active: bool | None = None) -> int:
+        """ユーザー総数を取得。
+
+        ページネーションのtotal値として使用します。
+        オプションでアクティブフラグによるフィルタリングが可能です。
+
+        Args:
+            is_active: アクティブフラグフィルタ
+                - True: アクティブユーザーのみ
+                - False: 非アクティブユーザーのみ
+                - None: 全ユーザー（デフォルト）
+
+        Returns:
+            条件に一致するユーザー総数
+        """
+        if is_active is not None:
+            return await self.repository.count(is_active=is_active)
+        return await self.repository.count()
 ```
 
 ---

@@ -37,13 +37,21 @@ async def test_security_headers_on_health(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_hsts_header_present(client: AsyncClient):
-    """HSTSヘッダーが追加されることを確認。"""
+    """HSTSヘッダーが追加されることを確認（本番環境のみ）。"""
     response = await client.get("/")
 
-    # セキュリティヘッダーミドルウェアによりHSTSヘッダーが追加される
-    assert "Strict-Transport-Security" in response.headers
-    hsts_value = response.headers["Strict-Transport-Security"]
-    assert "max-age=" in hsts_value
+    # 開発環境ではHSTSヘッダーは追加されない（DEBUG=Trueのため）
+    # 本番環境（DEBUG=False）でのみHSTSヘッダーが追加される
+    # テスト環境ではDEBUG=Trueなので、HSTSヘッダーがないことを確認
+    from app.core.config import settings
+    if settings.DEBUG:
+        # 開発/テスト環境: HSTSヘッダーなし
+        assert "Strict-Transport-Security" not in response.headers
+    else:
+        # 本番環境: HSTSヘッダーあり
+        assert "Strict-Transport-Security" in response.headers
+        hsts_value = response.headers["Strict-Transport-Security"]
+        assert "max-age=" in hsts_value
 
 
 @pytest.mark.asyncio

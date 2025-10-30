@@ -71,6 +71,65 @@ notepad .env.production
 - `STORAGE_BACKEND`: azure
 - `AZURE_OPENAI_ENDPOINT`: Azure OpenAI
 - `LANGCHAIN_TRACING_V2`: true（監視有効化）
+- **Azure AD認証設定**:
+  - `AUTH_MODE`: `production`（本番モード）
+  - `AZURE_TENANT_ID`: Azure ADテナントID
+  - `AZURE_CLIENT_ID`: バックエンドのアプリケーション（クライアント）ID
+  - `AZURE_OPENAPI_CLIENT_ID`: Swagger UIのアプリケーションID（オプション）
+
+## 認証モードの設定
+
+プロジェクトは、開発環境と本番環境で異なる認証方式をサポートしています。
+
+### 開発モード（Development）
+
+```powershell
+# .env.local
+AUTH_MODE=development
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+DEV_MOCK_USER_EMAIL=dev.user@example.com
+DEV_MOCK_USER_OID=dev-azure-oid-12345
+DEV_MOCK_USER_NAME=Development User
+```
+
+**特徴**:
+- モックトークンを使用（Azure AD不要）
+- 開発・テストに最適
+- 本番環境では使用禁止（バリデーションエラーが発生）
+
+### 本番モード（Production）
+
+```powershell
+# .env.production
+AUTH_MODE=production
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-backend-client-id
+AZURE_OPENAPI_CLIENT_ID=your-swagger-client-id
+```
+
+**特徴**:
+- Azure AD Bearer認証
+- トークン有効期限の自動検証
+- Swagger UIでのOAuth2統合
+
+### セキュリティバリデーション
+
+本番環境で開発モード認証を有効にすると、アプリケーション起動時にエラーが発生します：
+
+```python
+# src/app/core/config.py
+@model_validator(mode='after')
+def validate_dev_auth_not_in_production(self) -> 'Settings':
+    """本番環境で開発モード認証が有効な場合にエラーを発生させます。"""
+    if self.ENVIRONMENT == "production" and self.AUTH_MODE == "development":
+        raise ValueError(
+            "Development authentication cannot be enabled in production environment. "
+            "Set AUTH_MODE=production for production."
+        )
+    return self
+```
+
+---
 
 ## 環境の切り替え
 

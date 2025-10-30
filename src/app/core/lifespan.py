@@ -94,6 +94,24 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Redisキャッシュが無効です（REDIS_URLが設定されていません）")
 
+    # ✨ 追加: Azure AD認証の初期化（本番モードのみ）
+    if settings.AUTH_MODE == "production":
+        try:
+            from app.core.security.azure_ad import initialize_azure_scheme
+
+            await initialize_azure_scheme()
+            logger.info("Azure AD認証スキームを初期化しました")
+        except ImportError:
+            logger.error("fastapi-azure-authがインストールされていません")
+        except Exception as e:
+            logger.error(
+                "Azure AD初期化エラー",
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
+    else:
+        logger.info(f"認証モード: {settings.AUTH_MODE}（開発モード）")
+
     yield
 
     # アプリケーションシャットダウン処理

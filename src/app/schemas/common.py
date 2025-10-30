@@ -47,32 +47,78 @@ class MessageResponse(BaseModel):
     message: str = Field(..., description="レスポンスメッセージ")
 
 
-class ErrorResponse(BaseModel):
-    """エラー情報レスポンススキーマ。
+class ProblemDetails(BaseModel):
+    """RFC 9457 Problem Details for HTTP APIs準拠のエラースキーマ。
 
-    APIエラー発生時の詳細情報を返します。FastAPIの例外ハンドラーで使用されます。
+    HTTPエラーレスポンスの標準形式を提供します。
+    RFC 9457仕様に準拠し、相互運用性とデバッグ性を向上させます。
+
+    Reference:
+        https://www.rfc-editor.org/rfc/rfc9457.html
 
     Attributes:
-        error (str): エラーメッセージ
-        details (dict[str, Any] | None): 追加のエラー詳細情報（オプション）
-        timestamp (datetime): エラー発生時刻（UTC、自動設定）
+        type (str): 問題タイプを識別するURI
+            - デフォルト: "about:blank"（一般的なHTTPステータスコードエラー）
+            - カスタムURI: "https://api.example.com/problems/validation-error"
+        title (str): 人間が読める短い要約（HTTPステータスコードに対応）
+            例: "Not Found", "Validation Error", "Unauthorized"
+        status (int): HTTPステータスコード（100-599）
+        detail (str | None): この問題の具体的な説明
+            例: "User with ID 12345 was not found"
+        instance (str | None): この問題発生の特定のURIインスタンス
+            例: "/api/v1/users/12345"
 
     Example:
-        >>> from datetime import datetime
-        >>> error = ErrorResponse(
-        ...     error="Validation failed",
-        ...     details={"field": "email", "reason": "invalid format"},
-        ...     timestamp=datetime.utcnow()
+        >>> # 基本的な使用例
+        >>> problem = ProblemDetails(
+        ...     type="about:blank",
+        ...     title="Not Found",
+        ...     status=404,
+        ...     detail="User with ID 12345 was not found",
+        ...     instance="/api/v1/users/12345"
+        ... )
+        >>>
+        >>> # カスタム問題タイプの例
+        >>> problem = ProblemDetails(
+        ...     type="https://api.example.com/problems/validation-error",
+        ...     title="Validation Error",
+        ...     status=422,
+        ...     detail="Email format is invalid",
+        ...     instance="/api/v1/users",
+        ...     field="email",  # 追加のカスタムフィールド
+        ...     value="invalid"
         ... )
 
     Note:
-        - FastAPIのエラーハンドラーで自動的に使用されます
-        - detailsにはデバッグ情報を含めますが、機密情報は含めないでください
+        - Content-Type: application/problem+json を使用します
+        - 拡張フィールド（field, valueなど）の追加が可能です
+        - 機密情報（パスワード、トークン等）を含めないでください
     """
 
-    error: str = Field(..., description="エラーメッセージ")
-    details: dict[str, Any] | None = Field(None, description="追加のエラー詳細")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="エラー発生時刻")
+    type: str = Field(
+        default="about:blank",
+        description="問題タイプを識別するURI"
+    )
+    title: str = Field(
+        ...,
+        description="人間が読める短い要約"
+    )
+    status: int = Field(
+        ...,
+        ge=100,
+        le=599,
+        description="HTTPステータスコード"
+    )
+    detail: str | None = Field(
+        None,
+        description="この問題の具体的な説明"
+    )
+    instance: str | None = Field(
+        None,
+        description="この問題発生の特定のURIインスタンス"
+    )
+
+    model_config = {"extra": "allow"}  # RFC 9457は追加フィールドを許可
 
 
 class HealthResponse(BaseModel):

@@ -11,6 +11,7 @@
     - トランザクション管理: flush()のみ実行、commit()は呼び出し側の責任
 """
 
+import uuid
 from typing import Any
 
 from sqlalchemy import select
@@ -22,7 +23,7 @@ from app.models.base import Base
 logger = get_logger(__name__)
 
 
-class BaseRepository[ModelType: Base]:
+class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
     """SQLAlchemyモデルの共通CRUD操作を提供するベースリポジトリクラス。
 
     このクラスは、すべてのリポジトリで共通のデータベース操作を実装します。
@@ -63,7 +64,7 @@ class BaseRepository[ModelType: Base]:
         self.model = model
         self.db = db
 
-    async def get(self, id: int) -> ModelType | None:
+    async def get(self, id: IDType) -> ModelType | None:
         """IDによってレコードを取得します。
 
         SQLAlchemyの`Session.get()`を使用して、プライマリキーによる
@@ -71,8 +72,7 @@ class BaseRepository[ModelType: Base]:
         セッションのアイデンティティマップを利用するため効率的です。
 
         Args:
-            id (int): レコードのプライマリキーID
-                - 正の整数である必要があります
+            id (IDType): レコードのプライマリキー（intまたはUUID）
                 - データベースに存在しないIDの場合はNoneを返します
 
         Returns:
@@ -359,7 +359,7 @@ class BaseRepository[ModelType: Base]:
         await self.db.refresh(db_obj)
         return db_obj
 
-    async def delete(self, id: int) -> bool:
+    async def delete(self, id: IDType) -> bool:
         """レコードを削除します。
 
         このメソッドは以下の処理を実行します：
@@ -374,8 +374,7 @@ class BaseRepository[ModelType: Base]:
             - CASCADE設定はモデルのリレーションシップ定義で確認してください
 
         Args:
-            id (int): 削除するレコードのプライマリキーID
-                - 正の整数である必要があります
+            id (IDType): 削除するレコードのプライマリキー（intまたはUUID）
                 - 存在しないIDの場合はFalseを返します（エラーは発生しません）
 
         Returns:
@@ -387,7 +386,7 @@ class BaseRepository[ModelType: Base]:
             >>> # レコードを削除
             >>> async with get_db() as db:
             ...     user_repo = UserRepository(db)
-            ...     success = await user_repo.delete(1)
+            ...     success = await user_repo.delete(user_id)
             ...     if success:
             ...         await db.commit()  # 呼び出し側でcommit
             ...         print("User deleted")

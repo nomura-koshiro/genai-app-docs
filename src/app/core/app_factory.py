@@ -26,7 +26,7 @@ from app.api.middlewares import (
     SecurityHeadersMiddleware,
 )
 from app.api.routes.system import health, metrics, root
-from app.api.routes.v1 import sample_agents, sample_files, sample_sessions, sample_users
+from app.api.routes.v1 import project_files, project_members, projects, sample_agents, sample_files, sample_sessions, sample_users, users
 from app.core.config import settings
 from app.core.lifespan import lifespan
 
@@ -68,20 +68,33 @@ def create_app() -> FastAPI:
         - ミドルウェアの実行順序は登録の逆順です（後に追加したものが先に実行される）
         - lifespanコンテキストマネージャーでアプリの起動・終了処理を管理しています
     """
+    # ✨ 追加: Swagger UIのOAuth設定（本番モードのみ）
+    swagger_ui_init_oauth = None
+    if settings.AUTH_MODE == "production":
+        swagger_ui_init_oauth = {
+            "usePkceWithAuthorizationCodeGrant": True,
+            "clientId": settings.AZURE_OPENAPI_CLIENT_ID,
+            "scopes": f"api://{settings.AZURE_CLIENT_ID}/access_as_user",
+        }
+
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.VERSION,
-        description="""
+        description=f"""
     # AIエージェントアプリケーション API
 
     LangChain/LangGraphを使用したAIエージェントアプリケーションのバックエンドAPI。
+
+    ## 認証モード: {settings.AUTH_MODE}
+
+    {"### Azure AD認証が有効です" if settings.AUTH_MODE == "production" else "### 開発モード認証（モック）"}
 
     ## 主な機能
 
     - **AIエージェントとのチャット**: LangGraphによる高度な会話エンジン
     - **セッション管理**: 会話履歴の保存と取得
     - **ファイル処理**: ファイルのアップロード・ダウンロード
-    - **認証・認可**: JWT認証とロールベース制御
+    - **認証・認可**: {"Azure AD認証" if settings.AUTH_MODE == "production" else "JWT認証"} とロールベース制御
     - **モニタリング**: Prometheusメトリクス収集
 
     ## 認証
@@ -97,6 +110,8 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         openapi_url="/openapi.json",
+        swagger_ui_oauth2_redirect_url="/oauth2-redirect" if settings.AUTH_MODE == "production" else None,
+        swagger_ui_init_oauth=swagger_ui_init_oauth,
         contact={
             "name": "開発チーム",
             "email": "nomura.koshiro@gmail.com",
@@ -138,6 +153,26 @@ def create_app() -> FastAPI:
     app.include_router(sample_agents.router, prefix="/api/v1/sample-agents", tags=["sample-agents"])
     app.include_router(sample_sessions.router, prefix="/api/v1/sample-sessions", tags=["sample-sessions"])
     app.include_router(sample_files.router, prefix="/api/v1/sample-files", tags=["sample-files"])
+
+    # Azure AD認証用ユーザー管理API
+    app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+
+    # プロジェクト管理API
+    app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
+
+    # プロジェクトメンバー管理API
+    app.include_router(
+        project_members.router,
+        prefix="/api/v1/projects/{project_id}/members",
+        tags=["project-members"],
+    )
+
+    # プロジェクトファイル管理API
+    app.include_router(
+        project_files.router,
+        prefix="/api/v1",
+        tags=["project-files"],
+    )
 
     # 基本エンドポイントを登録
     app.include_router(root.router, tags=["root"])

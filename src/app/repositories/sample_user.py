@@ -28,7 +28,7 @@ from app.models.sample_user import SampleUser
 from app.repositories.base import BaseRepository
 
 
-class SampleUserRepository(BaseRepository[SampleUser]):
+class SampleUserRepository(BaseRepository[SampleUser, int]):
     """サンプル: Userモデル用のリポジトリクラス。
 
     このリポジトリは、BaseRepositoryの共通CRUD操作に加えて、

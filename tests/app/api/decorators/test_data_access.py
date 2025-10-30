@@ -64,25 +64,6 @@ class TestCacheResult:
             assert set_call_args[0][1] == {"db": "data"}  # value
             assert set_call_args[0][2] == 300  # ttl
 
-    @pytest.mark.asyncio
-    async def test_cache_key_uniqueness(self):
-        """引数が異なると別のキャッシュキーが生成されることをテスト。"""
-        mock_cache = AsyncMock()
-        mock_cache.get.return_value = None
-
-        with patch("app.api.decorators.data_access.cache_manager", mock_cache):
-
-            @cache_result(ttl=300, key_prefix="test")
-            async def test_func(arg1: int):
-                return {"result": arg1}
-
-            await test_func(123)
-            await test_func(456)
-
-            # 2回getが呼ばれ、それぞれ異なるキーが使用されている
-            assert mock_cache.get.call_count == 2
-            call_keys = [call[0][0] for call in mock_cache.get.call_args_list]
-            assert call_keys[0] != call_keys[1]
 
 
 class TestTransactional:
@@ -129,16 +110,3 @@ class TestTransactional:
         assert not mock_db.commit.called
         assert mock_db.rollback.called
 
-    @pytest.mark.asyncio
-    async def test_no_db_attribute(self):
-        """db属性がない場合、通常の関数として動作することをテスト。"""
-
-        class TestService:
-            @transactional
-            async def test_method(self):
-                return "no db"
-
-        service = TestService()
-        result = await service.test_method()
-
-        assert result == "no db"

@@ -164,3 +164,51 @@ def file_data():
         "content_type": "text/plain",
         "size": 1024,
     }
+
+
+@pytest.fixture
+def mock_azure_user():
+    """Azure ADユーザーのモックデータ。"""
+    return {
+        "oid": "test-azure-oid-12345",
+        "email": "test@example.com",
+        "name": "Test User",
+        "preferred_username": "testuser",
+    }
+
+
+@pytest.fixture
+def override_auth(request):
+    """認証依存性をオーバーライドするヘルパーfixture。
+
+    使用例:
+        def test_example(client, override_auth, mock_user):
+            override_auth(mock_user)
+            response = client.get("/api/v1/users")
+            # テスト処理
+
+    Args:
+        request: pytestリクエストオブジェクト（クリーンアップ用）
+
+    Yields:
+        callable: ユーザーオブジェクトを受け取り、認証をオーバーライドする関数
+    """
+    from app.api.core.dependencies import get_current_active_user_azure
+    from app.main import app
+
+    def _override(user):
+        """指定されたユーザーで認証をオーバーライド。
+
+        Args:
+            user: モックユーザーオブジェクト（User model instance）
+
+        Returns:
+            User: 渡されたユーザーオブジェクト（チェーン可能）
+        """
+        app.dependency_overrides[get_current_active_user_azure] = lambda: user
+        return user
+
+    yield _override
+
+    # クリーンアップ: テスト終了後に自動的にオーバーライドをクリア
+    app.dependency_overrides.clear()

@@ -28,19 +28,47 @@
     ...     return {"email": current_user.email}
 """
 
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated, Any
+
+__all__ = ["AuthUserType", "DatabaseDep", "UserServiceDep", "AzureUserServiceDep"]
 
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
 from app.models.sample_user import SampleUser
+from app.models.user import User
+from app.services.project import ProjectService
 from app.services.sample_agent import SampleAgentService
 from app.services.sample_file import SampleFileService
 from app.services.sample_session import SampleSessionService
 from app.services.sample_user import SampleUserService
+from app.services.user import UserService
+
+# ================================================================================
+# Azure AD / 開発モード認証のインポート
+# ================================================================================
+
+# 認証モードに応じてインポート
+if TYPE_CHECKING:
+    from app.core.security.azure_ad import AzureUser as AuthUserType
+    from app.core.security.azure_ad import get_current_azure_user
+    from app.core.security.dev_auth import get_current_dev_user
+elif settings.AUTH_MODE == "production":
+    from app.core.security.azure_ad import AzureUser as AuthUserType
+    from app.core.security.azure_ad import get_current_azure_user
+
+    def get_current_dev_user() -> Any:  # type: ignore[misc]
+        raise NotImplementedError("Dev auth not available in production mode")
+else:
+    from app.core.security.dev_auth import DevUser as AuthUserType  # type: ignore[assignment]
+    from app.core.security.dev_auth import get_current_dev_user
+
+    def get_current_azure_user() -> Any:  # type: ignore[misc]
+        raise NotImplementedError("Azure auth not available in development mode")
 
 # データベース依存性
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
@@ -70,6 +98,27 @@ def get_user_service(db: DatabaseDep) -> SampleUserService:
 
 UserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
 """ユーザーサービスの依存性型。"""
+
+
+def get_azure_user_service(db: DatabaseDep) -> UserService:
+    """Azure AD用ユーザーサービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        UserService: 初期化されたAzure AD用ユーザーサービスインスタンス
+
+    Note:
+        - この関数はFastAPIのDependsで自動的に呼び出されます
+        - サービスインスタンスはリクエストごとに生成されます
+        - Azure AD認証用の新しいUserモデルを使用します
+    """
+    return UserService(db)
+
+
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+"""Azure AD用ユーザーサービスの依存性型。"""
 
 
 def get_agent_service(db: DatabaseDep) -> SampleAgentService:
@@ -118,6 +167,22 @@ def get_session_service(db: DatabaseDep) -> SampleSessionService:
 
 SessionServiceDep = Annotated[SampleSessionService, Depends(get_session_service)]
 """セッションサービスの依存性型。"""
+
+
+def get_project_service(db: DatabaseDep) -> ProjectService:
+    """プロジェクトサービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        ProjectService: 初期化されたプロジェクトサービスインスタンス
+    """
+    return ProjectService(db)
+
+
+ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
+"""プロジェクトサービスの依存性型。"""
 
 
 # 認証依存性
@@ -256,6 +321,90 @@ async def get_current_superuser(
     return current_user
 
 
+# ================================================================================
+# ✨ 新規: Azure AD / 開発モード認証
+# ================================================================================
+
+
+async def get_authenticated_user_from_azure(
+    user_service: AzureUserServiceDep,
+    azure_user: Any = Depends(
+        get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user
+    ),
+) -> User:
+    """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserモデルと紐付け。
+
+    環境変数AUTH_MODEに応じて以下を切り替え:
+    - production: Azure ADトークン検証
+    - development: モックトークン検証
+
+    Args:
+        user_service: Azure AD用ユーザーサービス（自動注入）
+        azure_user: Azure ADまたはDevユーザー（自動注入）
+
+    Returns:
+        User: データベースのユーザーモデル（新しいAzure AD対応モデル）
+
+    Raises:
+        HTTPException: ユーザーが見つからない、または作成できない場合（404エラー）
+
+    Example:
+        >>> # 開発モード
+        >>> # Authorization: Bearer mock-access-token-dev-12345
+        >>> user = await get_authenticated_user_from_azure(user_service, dev_user)
+        >>> print(user.email)
+        'dev.user@example.com'
+        >>>
+        >>> # 本番モード
+        >>> # Authorization: Bearer <Azure_AD_Token>
+        >>> user = await get_authenticated_user_from_azure(user_service, azure_user)
+        >>> print(user.email)
+        'user@company.com'
+
+    Note:
+        - Azure OIDでユーザーを検索、存在しない場合は自動作成します
+        - 既存ユーザーの場合、メール/表示名が変わっていれば更新します
+        - この関数は既存のJWT認証（get_current_user）と並行して使用できます
+        - 新しいUserモデル（UUID主キー、azure_oid）を使用します
+    """
+    # Azure OIDでユーザーを検索（または作成）
+    user = await user_service.get_or_create_by_azure_oid(
+        azure_oid=azure_user.oid,
+        email=azure_user.email or azure_user.preferred_username,
+        display_name=getattr(azure_user, "name", None),
+        roles=getattr(azure_user, "roles", []),
+    )
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found or could not be created")
+
+    return user
+
+
+async def get_current_active_user_azure(
+    current_user: Annotated[User, Depends(get_authenticated_user_from_azure)],
+) -> User:
+    """Azure AD認証されたユーザーのアクティブ状態を検証します。
+
+    Args:
+        current_user: 認証済みユーザー（get_authenticated_user_from_azureから自動注入）
+
+    Returns:
+        User: アクティブな認証済みユーザー（新しいAzure AD対応モデル）
+
+    Raises:
+        HTTPException: ユーザーが無効化されている場合（400エラー）
+
+    Example:
+        >>> @router.get("/azure-protected")
+        >>> async def azure_protected(user: CurrentUserAzureDep):
+        ...     return {"message": f"Hello, {user.email}"}
+    """
+    if not current_user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
 # オプション認証（認証あり/なし両対応のエンドポイント用）
 async def get_current_user_optional(
     user_service: UserServiceDep,
@@ -315,4 +464,22 @@ CurrentUserOptionalDep = Annotated[SampleUser | None, Depends(get_current_user_o
 
 この依存性を使用すると、エンドポイントは認証済みユーザーとゲストユーザーの
 両方に対応します。認証失敗時に例外を発生させず、Noneを返します。
+"""
+
+# ✨ 新規: Azure AD認証用依存性型
+CurrentUserAzureDep = Annotated[User, Depends(get_current_active_user_azure)]
+"""Azure AD認証済みアクティブユーザーの依存性型。
+
+この依存性を使用すると、エンドポイントはAzure AD認証（本番）またはモック認証（開発）を
+自動的に実行します。環境変数AUTH_MODEで切り替えます。
+
+注意: このUserモデルはSampleUserとは異なる新しいAzure AD対応モデルです。
+- プライマリキーがUUID型
+- azure_oidフィールドを持つ
+- パスワード認証は含まない（Azure ADのみ）
+
+使用例:
+    >>> @router.get("/profile")
+    >>> async def get_profile(user: CurrentUserAzureDep):
+    ...     return {"email": user.email, "azure_oid": user.azure_oid, "display_name": user.display_name}
 """

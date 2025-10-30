@@ -189,7 +189,7 @@ def setup_logging() -> None:
 
     # structlog設定
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore[arg-type]
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,

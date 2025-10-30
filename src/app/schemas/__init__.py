@@ -1,6 +1,20 @@
 """APIリクエスト/レスポンス検証のためのPydanticスキーマ。"""
 
-from app.schemas.common import ErrorResponse, HealthResponse, MessageResponse
+from app.schemas.common import HealthResponse, MessageResponse, ProblemDetails
+from app.schemas.project_file import (
+    ProjectFileDeleteResponse,
+    ProjectFileListResponse,
+    ProjectFileResponse,
+    ProjectFileUploadResponse,
+)
+from app.schemas.project_member import (
+    ProjectMemberCreate,
+    ProjectMemberListResponse,
+    ProjectMemberResponse,
+    ProjectMemberUpdate,
+    ProjectMemberWithUser,
+    UserRoleResponse,
+)
 from app.schemas.sample_agents import (
     SampleChatRequest,
     SampleChatResponse,
@@ -28,7 +42,7 @@ from app.schemas.sample_user import (
 
 __all__ = [
     # 共通スキーマ
-    "ErrorResponse",
+    "ProblemDetails",
     "HealthResponse",
     "MessageResponse",
     # ユーザースキーマ
@@ -51,4 +65,16 @@ __all__ = [
     "SampleSessionCreateRequest",
     "SampleSessionUpdateRequest",
     "SampleDeleteResponse",
+    # プロジェクトファイルスキーマ
+    "ProjectFileUploadResponse",
+    "ProjectFileResponse",
+    "ProjectFileListResponse",
+    "ProjectFileDeleteResponse",
+    # プロジェクトメンバースキーマ
+    "ProjectMemberCreate",
+    "ProjectMemberUpdate",
+    "ProjectMemberResponse",
+    "ProjectMemberWithUser",
+    "ProjectMemberListResponse",
+    "UserRoleResponse",
 ]

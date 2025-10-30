@@ -108,12 +108,13 @@ def validate_permissions(
                 )
 
             # リソースIDを取得
+            resource_id: str | int
             if get_resource_id:
                 resource_id = get_resource_id(kwargs)
             else:
                 # デフォルト: {resource_type}_id
                 resource_id_key = f"{resource_type}_id"
-                resource_id = kwargs.get(resource_id_key)
+                resource_id = kwargs.get(resource_id_key)  # type: ignore[assignment]
                 if not resource_id:
                     raise ValidationError(
                         f"リソースID（{resource_id_key}）が指定されていません",
@@ -239,7 +240,7 @@ def handle_service_errors[T](
                 details=e.details,
             )
             raise HTTPException(
-                status_code=400,
+                status_code=422,
                 detail={
                     "error": e.message,
                     "details": e.details,

@@ -234,8 +234,117 @@ async def get_me(current_user: CurrentSampleUserDep) -> SampleUserResponse:
     return SampleUserResponse.model_validate(current_user)
 ```
 
+## Azure AD認証（本番環境）
+
+本番環境では、Azure AD（Microsoft Entra ID）を使用したBearerトークン認証を使用します。
+
+### トークン検証の仕組み
+
+```python
+# src/app/core/security/azure_ad.py
+from fastapi import Security
+from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
+from fastapi_azure_auth.user import User as AzureUser
+
+# Azure AD認証スキーム
+azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
+    app_client_id=settings.AZURE_CLIENT_ID,
+    tenant_id=settings.AZURE_TENANT_ID,
+    scopes={
+        f'api://{settings.AZURE_CLIENT_ID}/access_as_user': 'Access API as user',
+    },
+    allow_guest_users=False,
+)
+
+async def get_current_azure_user(
+    user: AzureUser = Security(azure_scheme, scopes=['access_as_user'])
+) -> AzureUser:
+    """Azure ADから認証済みユーザーを取得。"""
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Azure AD authentication failed"
+        )
+    return user
+```
+
+### 自動的に実行される検証
+
+fastapi-azure-authライブラリは、以下のセキュリティチェックを**自動的に**実行します：
+
+| 検証項目 | 説明 | 期限切れ時の動作 |
+|---------|------|----------------|
+| **JWT署名** | Azure ADの公開鍵で署名を検証 | HTTP 401 Unauthorized |
+| **有効期限（exp）** | トークンの`exp`クレームを現在時刻と比較 | HTTP 401 Unauthorized（ExpiredSignatureError） |
+| **発行者（iss）** | `iss`クレームがAzure ADテナントと一致するか確認 | HTTP 401 Unauthorized |
+| **オーディエンス（aud）** | `aud`クレームがクライアントIDと一致するか確認 | HTTP 401 Unauthorized |
+| **スコープ（scp）** | 要求されたスコープが含まれているか確認 | HTTP 403 Forbidden |
+
+### トークン有効期限チェック
+
+トークンの有効期限チェックは、fastapi-azure-authが内部で使用している
+**python-joseライブラリにより自動的に実行**されます。
+
+```python
+# JWT検証フロー（自動実行）
+1. クライアントがBearerトークンを送信
+   ↓
+2. SingleTenantAzureAuthorizationCodeBearerがトークンを受信
+   ↓
+3. python-joseによるJWT検証
+   - Base64デコード
+   - 署名検証（Azure AD公開鍵）
+   - expクレーム検証（現在時刻 < exp）★ 自動実行
+   - issクレーム検証
+   - audクレーム検証
+   ↓
+4. スコープ検証（access_as_user）
+   ↓
+5. AzureUserオブジェクト生成
+   ↓
+6. get_current_azure_user()に渡される
+```
+
+### 期限切れトークンのエラーレスポンス
+
+```json
+// Authorization: Bearer <expired-token>
+// HTTP 401 Unauthorized
+{
+  "detail": "Token signature has expired"
+}
+```
+
+### 認証モードの切り替え
+
+環境変数`AUTH_MODE`で認証方式を切り替えます：
+
+```bash
+# 開発モード（JWT認証）
+AUTH_MODE=development
+
+# 本番モード（Azure AD認証）
+AUTH_MODE=production
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-client-id
+```
+
+### なぜ明示的な有効期限チェックが不要か
+
+1. **ライブラリレベルでの検証**: fastapi-azure-authはpython-joseを使用し、JWTデコード時に自動的に`exp`クレームを検証
+2. **FastAPIセキュリティ統合**: Security依存性により、エンドポイント実行前に自動的にトークン検証が実行
+3. **標準的な実装**: JWT RFC 7519に準拠した標準的な有効期限検証
+
+### 参考ドキュメント
+
+詳細は以下のドキュメントを参照してください：
+- `azure-entra-id-backend-implementation.md`: 実装詳細
+- [fastapi-azure-auth GitHub](https://github.com/Intility/fastapi-azure-auth)
+- [python-jose JWT検証](https://github.com/mpdavis/python-jose)
+
 ## 参考リンク
 
 - [FastAPI Security](https://fastapi.tiangolo.com/tutorial/security/)
 - [JWT.io](https://jwt.io/)
 - [Passlib Documentation](https://passlib.readthedocs.io/)
+- [JWT RFC 7519](https://tools.ietf.org/html/rfc7519)

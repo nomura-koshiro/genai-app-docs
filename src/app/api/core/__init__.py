@@ -21,11 +21,14 @@
 # 依存性注入
 from app.api.core.dependencies import (
     AgentServiceDep,
+    AzureUserServiceDep,
     CurrentSuperuserDep,
+    CurrentUserAzureDep,
     CurrentUserDep,
     CurrentUserOptionalDep,
     DatabaseDep,
     FileServiceDep,
+    ProjectServiceDep,
     SessionServiceDep,
     UserServiceDep,
     get_agent_service,
@@ -34,6 +37,7 @@ from app.api.core.dependencies import (
     get_current_user_optional,
     get_db,
     get_file_service,
+    get_project_service,
     get_session_service,
     get_user_service,
 )
@@ -48,15 +52,19 @@ __all__ = [
     # Service Dependencies
     "UserServiceDep",
     "get_user_service",
+    "AzureUserServiceDep",
     "AgentServiceDep",
     "get_agent_service",
     "FileServiceDep",
     "get_file_service",
+    "ProjectServiceDep",
+    "get_project_service",
     "SessionServiceDep",
     "get_session_service",
     # Authentication Dependencies
     "CurrentUserDep",
     "get_current_active_user",
+    "CurrentUserAzureDep",
     "CurrentSuperuserDep",
     "get_current_superuser",
     "CurrentUserOptionalDep",

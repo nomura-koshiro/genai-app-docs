@@ -11,7 +11,7 @@ from app.repositories.base import BaseRepository
 logger = get_logger(__name__)
 
 
-class SampleSessionRepository(BaseRepository[SampleSession]):
+class SampleSessionRepository(BaseRepository[SampleSession, int]):
     """サンプル: セッションリポジトリ。
 
     セッションのCRUD操作を提供します。
