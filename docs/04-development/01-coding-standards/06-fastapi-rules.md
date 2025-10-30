@@ -285,7 +285,7 @@ async def create_user(user_data: SampleUserCreate, user_service: SampleUserServi
 
 ```python
 # src/app/schemas/sample_user.py
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import datetime
 
 
@@ -316,9 +316,7 @@ class SampleUserResponse(SampleUserBase):
     is_active: bool = Field(..., description="アクティブ状態")
     created_at: datetime = Field(..., description="作成日時")
 
-    class Config:
-        """Pydantic設定。"""
-        from_attributes = True  # SQLAlchemyモデルから変換可能
+    model_config = ConfigDict(from_attributes=True)  # SQLAlchemyモデルから変換可能
 ```
 
 ---

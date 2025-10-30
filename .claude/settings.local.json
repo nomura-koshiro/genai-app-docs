@@ -62,7 +62,10 @@
       "Bash(where:*)",
       "Bash(/c/Users/nomura.koshiro/AppData/Local/Microsoft/WindowsApps/python3 -m pytest:*)",
       "Bash(py:*)",
-      "Bash(python3 -m pytest:*)"
+      "Bash(python3 -m pytest:*)",
+      "Bash(python3:*)",
+      "Bash(do echo \"Processing: $file\")",
+      "Bash(perl -i -p0e:*)"
     ],
     "deny": [],
     "ask": []

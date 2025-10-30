@@ -20,7 +20,7 @@ Pydanticを使用したデータバリデーションとシリアライゼーシ
 ```python
 # src/app/schemas/sample_user.py
 from datetime import datetime
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class SampleUserBase(BaseModel):
@@ -60,9 +60,7 @@ class SampleUserResponse(SampleUserBase):
     is_active: bool = Field(..., description="アクティブ状態")
     created_at: datetime = Field(..., description="作成日時")
 
-    class Config:
-        """Pydantic設定。"""
-        from_attributes = True  # SQLAlchemyモデルから変換可能
+    model_config = ConfigDict(from_attributes=True)  # SQLAlchemyモデルから変換可能
 ```
 
 ---
@@ -135,8 +133,7 @@ class SampleUserResponse(SampleUserBase):
     id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)  # SQLAlchemyモデルから変換可能
 ```
 
 ### 2. Fieldでメタデータを提供

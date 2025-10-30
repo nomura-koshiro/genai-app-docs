@@ -18,7 +18,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.task import TaskPriority, TaskStatus
 
@@ -61,10 +61,7 @@ class TaskResponse(TaskBase):
     updated_at: datetime = Field(..., description="更新日時")
     is_overdue: bool = Field(False, description="期限切れかどうか")
 
-    class Config:
-        """Pydantic設定。"""
-
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaskListResponse(BaseModel):

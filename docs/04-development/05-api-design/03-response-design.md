@@ -5,7 +5,7 @@ APIレスポンスの統一フォーマットについて説明します。
 ## 基本的なレスポンス
 
 ```python
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SampleUserResponse(BaseModel):
@@ -15,8 +15,7 @@ class SampleUserResponse(BaseModel):
     username: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True  # SQLAlchemyモデルから変換
+    model_config = ConfigDict(from_attributes=True)  # SQLAlchemyモデルから変換
 
 
 class MessageResponse(BaseModel):
@@ -33,7 +32,7 @@ async def delete_user(user_id: int):
 ## リストレスポンス
 
 ```python
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PaginatedResponse(BaseModel):
