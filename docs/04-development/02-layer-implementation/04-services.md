@@ -188,19 +188,24 @@ class SessionService:
 ## トランザクション管理
 
 ```python
-# データベースセッションがトランザクションを管理
+# データベースセッションの提供
 # src/app/core/database.py
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()  # 成功時にコミット
+            # commitはサービス層または@transactionalデコレータが責任を持つ
         except Exception:
             await session.rollback()  # エラー時にロールバック
             raise
         finally:
             await session.close()
 ```
+
+**設計思想**:
+- `get_db()`はセッションの提供のみを担当
+- トランザクション境界（commit/rollback）はサービス層が定義
+- `@transactional`デコレータ（将来実装予定）または明示的なcommitで管理
 
 ---
 

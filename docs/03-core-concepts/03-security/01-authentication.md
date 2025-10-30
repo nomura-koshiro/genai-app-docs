@@ -93,7 +93,7 @@ AZURE_CLIENT_ID: str | None = Field(
 )
 AZURE_CLIENT_SECRET: str | None = Field(
     default=None,
-    description="Azure AD Application client secret (for backend authentication)",
+    description="Azure AD Client Secret (optional for token validation)",
 )
 AZURE_OPENAPI_CLIENT_ID: str | None = Field(
     default=None,

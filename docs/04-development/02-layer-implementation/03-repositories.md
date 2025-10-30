@@ -139,8 +139,8 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         await self.db.refresh(db_obj)
         return db_obj
 
-    async def delete(self, id: int) -> bool:
-        """レコードを削除。"""
+    async def delete(self, id: IDType) -> bool:
+        """レコードを削除。IDTypeはintまたはUUID。"""
         db_obj = await self.get(id)
         if db_obj:
             await self.db.delete(db_obj)

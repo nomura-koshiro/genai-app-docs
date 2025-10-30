@@ -57,13 +57,13 @@ class SampleUser(Base):
     # タイムスタンプ
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(timezone.utc),
-        onupdate=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
+        onupdate=lambda: datetime.now(UTC),
         nullable=False
     )
 
@@ -186,7 +186,7 @@ email = Column(String(255))
 # ✅ 推奨
 created_at: Mapped[datetime] = mapped_column(
     DateTime(timezone=True),  # タイムゾーン付き
-    default=lambda: datetime.now(timezone.utc),
+    default=lambda: datetime.now(UTC),
     nullable=False
 )
 
@@ -216,7 +216,7 @@ created_at: Mapped[datetime] = mapped_column(
 default=datetime.utcnow
 
 # ❌ 非推奨（古い書き方）
-default=lambda: datetime.now(timezone.utc)
+default=lambda: datetime.now(UTC)
 ```
 
 **理由**:
