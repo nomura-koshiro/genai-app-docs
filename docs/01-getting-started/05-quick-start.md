@@ -134,7 +134,7 @@ PostgreSQLが起動していない可能性があります。
 
 ```powershell
 # PostgreSQL起動スクリプトを実行
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+.\scripts\start-postgres.ps1
 ```
 
 または、手動で起動：
@@ -171,16 +171,19 @@ curl http://localhost:8000/health
 
 ```powershell
 # 1. 環境を完全リセット
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup -Clean
+.\scripts\reset-environment.ps1
 
 # 2. データベースをリセット
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```
 
 **依存関係のみ再インストール:**
 
 ```powershell
-# プロジェクトディレクトリで実行
+# 環境リセットスクリプトを使用（推奨）
+.\scripts\reset-environment.ps1
+
+# または手動で
 uv sync --reinstall
 ```
 
@@ -188,5 +191,5 @@ uv sync --reinstall
 
 ```powershell
 # データベースリセットスクリプトを実行
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```

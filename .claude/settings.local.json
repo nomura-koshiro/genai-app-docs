@@ -65,7 +65,20 @@
       "Bash(python3 -m pytest:*)",
       "Bash(python3:*)",
       "Bash(do echo \"Processing: $file\")",
-      "Bash(perl -i -p0e:*)"
+      "Bash(perl -i -p0e:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/start-postgres.ps1)",
+      "Bash(pg_ctl:*)",
+      "Bash(Get-Process postgres -ErrorAction SilentlyContinue)",
+      "Bash(powershell -Command \"Get-Process postgres -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/reset-environment.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/reset-database.ps1)",
+      "Bash(powershell -Command \"Get-Process postgres -ErrorAction SilentlyContinue | Select-Object -First 1\")",
+      "Bash(powershell -Command \". scripts/lib/common.ps1; Test-PostgreSQLRunning\")",
+      "Bash(powershell -Command:*)",
+      "Bash(psql:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1 -Help)",
+      "Bash(do powershell -Command \"Get-Content ''$file'' -Raw | Out-File -Encoding UTF8 ''$file.new''\")"
     ],
     "deny": [],
     "ask": []

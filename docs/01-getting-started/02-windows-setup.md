@@ -5,11 +5,134 @@ WSL2を使用せず、Windows上で直接開発環境を構築する手順です
 ## 前提条件
 
 - Windows 10/11
-- 管理者権限
+- 管理者権限（PostgreSQLインストール時に必要な場合があります）
 
-## ステップ1: PostgreSQLのインストール
+---
 
-### 方法A: Scoopを使用（推奨）
+## セットアップ方法の選択
+
+### 🚀 方法1: スクリプトで自動セットアップ（推奨・初心者向け）
+
+**最速でセットアップ完了！** スクリプトがすべて自動実行します。
+
+- ⏱️ **所要時間**: 約10分
+- ✅ **対象**: 素早くセットアップしたい方、初めての方
+- 📝 **手順**: 最小限のコマンド実行のみ
+
+**→ [方法1へジャンプ](#方法1-スクリプトで自動セットアップ推奨)**
+
+### 🔧 方法2: 手動セットアップ（詳細を理解したい方向け）
+
+各ステップを手動で実行し、構成を理解しながらセットアップします。
+
+- ⏱️ **所要時間**: 約20-30分
+- ✅ **対象**: 詳細を理解したい方、カスタマイズしたい方
+- 📝 **手順**: 各コンポーネントを個別にインストール
+
+**→ [方法2へジャンプ](#方法2-手動セットアップ詳細を理解したい方向け)**
+
+---
+
+## 方法1: スクリプトで自動セットアップ（推奨）
+
+### ステップ1: PostgreSQLとuvのインストール
+
+まず、PostgreSQLとuvを手動でインストールします。
+
+#### 1-1. PostgreSQLのインストール
+
+**Scoop使用（推奨）:**
+
+```powershell
+# Scoopをインストール
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
+
+# PostgreSQLをインストール
+scoop install postgresql
+
+# PostgreSQLを初期化・起動
+$PGDATA = "$env:USERPROFILE\scoop\apps\postgresql\current\data"
+if (-not (Test-Path "$PGDATA\PG_VERSION")) {
+    initdb -D $PGDATA -U postgres -W -E UTF8 --locale=C
+}
+pg_ctl -D $PGDATA -l "$env:USERPROFILE\scoop\apps\postgresql\current\logfile" start
+```
+
+**または公式インストーラー:**
+
+- [PostgreSQL公式サイト](https://www.postgresql.org/download/windows/)からダウンロード
+- パスワード: `postgres`（開発用）
+- ポート: `5432`（デフォルト）
+
+#### 1-2. uvのインストール
+
+```powershell
+# uvをインストール（Pythonはuvが自動管理します）
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# 新しいPowerShellセッションを開く（PATHを反映）
+```
+
+### ステップ2: プロジェクトのセットアップ
+
+```powershell
+# プロジェクトディレクトリに移動
+cd C:\path\to\camp_backend
+
+# セットアップスクリプトを実行
+.\scripts\setup-windows.ps1
+```
+
+スクリプトが以下を自動実行します：
+
+- ✅ PostgreSQL起動確認
+- ✅ uvインストール確認
+- ✅ Python 3.13の自動インストール
+- ✅ 依存関係のインストール（118パッケージ）
+- ✅ .env.localファイルの作成
+- ✅ データベースの作成（camp_backend_db / camp_backend_db_test）
+
+### ステップ3: データベースのセットアップ
+
+```powershell
+# データベースをリセット＆マイグレーション実行
+.\scripts\reset-database.ps1
+```
+
+このスクリプトは以下を自動実行します：
+
+- ✅ データベース削除・再作成
+- ✅ テストデータベース削除・再作成
+- ✅ マイグレーション実行
+
+### ステップ4: 動作確認
+
+```powershell
+# テスト実行
+uv run pytest tests/ -v
+```
+
+すべてのテストがPASSすれば **セットアップ完了** です！🎉
+
+### ステップ5: アプリケーション起動
+
+**VS Codeで起動（推奨）:**
+
+1. VS Codeでプロジェクトを開く
+2. **F5キー**を押す
+
+PostgreSQLが自動起動し、FastAPIアプリケーションが起動します。
+
+ブラウザで <http://localhost:8000/docs> にアクセスして動作確認してください。
+
+---
+
+## 方法2: 手動セットアップ（詳細を理解したい方向け）
+
+### ステップ1: PostgreSQLのインストール
+
+#### 方法A: Scoopを使用（推奨）
 
 Scoopは軽量なWindows用パッケージマネージャーです。
 
@@ -22,13 +145,13 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 Invoke-RestMethod -Uri https://get.scoop.sh | Invoke-Expression
 ```
 
-1. **PostgreSQLをインストール：**
+3. **PostgreSQLをインストール：**
 
 ```powershell
 scoop install postgresql
 ```
 
-1. **PostgreSQLを起動：**
+4. **PostgreSQLを起動：**
 
 ```powershell
 # データディレクトリのパスを確認
@@ -50,7 +173,7 @@ pg_ctl -D $PGDATA -l "$env:USERPROFILE\scoop\apps\postgresql\current\logfile" st
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 ```
 
-### 方法B: 公式インストーラー
+#### 方法B: 公式インストーラー
 
 1. [PostgreSQL公式サイト](https://www.postgresql.org/download/windows/)からインストーラーをダウンロード
 
@@ -68,7 +191,7 @@ pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 
 4. PostgreSQLサービスが自動起動するように設定されています
 
-## ステップ2: データベースの作成と確認
+### ステップ2: データベースの作成と確認
 
 PowerShellで実行：
 
@@ -82,19 +205,9 @@ psql -U postgres -l
 
 **注意**: データベースが既に存在する場合は、エラーが表示されますが問題ありません。`psql -U postgres -l`でcamp_backend_dbが表示されていればOKです。
 
-## ステップ3: Pythonのインストール
+### ステップ3: uvのインストール
 
-1. [Python公式サイト](https://www.python.org/downloads/)からPython 3.13をダウンロード
-
-2. インストール時に **"Add Python to PATH"** にチェックを入れる
-
-3. インストール完了後、確認：
-
-```powershell
-python --version
-```
-
-## ステップ4: uvのインストール
+uvは高速なPythonパッケージマネージャーで、**Pythonのインストールも自動的に管理**します。
 
 PowerShellで実行：
 
@@ -109,34 +222,9 @@ refreshenv
 uv --version
 ```
 
-## ステップ5: プロジェクトのセットアップ
+**重要**: uvをインストールすると、プロジェクトのセットアップ時に必要なPython 3.13が自動的にインストールされます。手動でPythonをインストールする必要はありません。
 
-### 方法A: 自動セットアップ（推奨）
-
-PowerShellで実行：
-
-```powershell
-# プロジェクトディレクトリに移動
-cd path\to\camp_backend
-
-# セットアップスクリプトを実行
-.\scripts\setup-windows.ps1
-```
-
-スクリプトが自動的に以下を実行します：
-
-- PostgreSQLの起動確認
-- uvのインストール確認
-- Python依存関係のインストール（uv sync）
-- .env.localファイルの作成（.env.local.exampleからコピー）
-
-**注意**: スクリプト実行ポリシーの警告が出た場合：
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-### 方法B: 手動セットアップ
+### ステップ4: プロジェクトのセットアップ
 
 ```powershell
 # プロジェクトディレクトリに移動
@@ -154,11 +242,11 @@ notepad .env.local
 
 **.env.localの確認と編集：**
 
-セットアップスクリプトで作成された`.env.local`を確認し、必要に応じて編集してください：
+以下の設定を確認してください：
 
 ```ini
 # データベース設定
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/camp_backend_db
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_db?ssl=disable
 
 # セキュリティ設定（開発環境用）
 SECRET_KEY=your-secret-key-here-min-32-characters-long
@@ -172,13 +260,13 @@ DEBUG=true
 
 **重要**: PostgreSQLのパスワードを変更している場合は、`DATABASE_URL`の`postgres:postgres`部分を`postgres:あなたのパスワード`に変更してください。
 
-## ステップ6: データベースのセットアップ
+### ステップ5: データベースのセットアップ
 
 データベースをセットアップします：
 
 ```powershell
 # データベースリセットスクリプトを実行
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```
 
 このスクリプトは以下を自動実行します：
@@ -187,9 +275,9 @@ powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
 - テストデータベース削除・再作成
 - マイグレーション実行
 
-## ステップ7: 動作確認
+### ステップ6: 動作確認
 
-### テストの実行
+#### テストの実行
 
 ```powershell
 # プロジェクトディレクトリにいることを確認
@@ -201,7 +289,7 @@ uv run pytest tests/ -v
 
 すべてのテストがPASSすれば、セットアップは成功です！
 
-### アプリケーションの起動
+#### アプリケーションの起動
 
 **推奨: VS Codeで起動（PostgreSQL自動起動）**
 
@@ -214,7 +302,7 @@ PostgreSQLが自動的に起動し、FastAPIアプリケーションが起動し
 
 ```powershell
 # PostgreSQLを起動（未起動の場合）
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+.\scripts\start-postgres.ps1
 
 # アプリケーションを起動
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -227,6 +315,8 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - **API ドキュメント (ReDoc)**: <http://localhost:8000/redoc>
 - **ヘルスチェック**: <http://localhost:8000/health>
 
+---
+
 ## トラブルシューティング
 
 ### PostgreSQLに接続できない（Scoop版）
@@ -238,13 +328,13 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 Get-Process postgres -ErrorAction SilentlyContinue
 ```
 
-1. PostgreSQLを起動：
+2. PostgreSQLを起動：
 
 ```powershell
-pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data -l "$env:USERPROFILE\scoop\apps\postgresql\current\logfile" start
+.\scripts\start-postgres.ps1
 ```
 
-1. 起動確認：
+3. 起動確認：
 
 ```powershell
 pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
@@ -258,7 +348,7 @@ pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data status
 Get-Service postgresql*
 ```
 
-1. サービスを起動：
+2. サービスを起動：
 
 ```powershell
 Start-Service postgresql-x64-16  # バージョンによって名前が異なります
@@ -290,13 +380,13 @@ $env:Path += ";$env:USERPROFILE\.local\bin"
 psql -U postgres -l | findstr camp_backend_db
 ```
 
-1. .env.localのDATABASE_URLが正しいか確認：
+2. .env.localのDATABASE_URLが正しいか確認：
 
 ```powershell
 Get-Content .env.local | Select-String DATABASE_URL
 ```
 
-1. PostgreSQLに接続できるか確認：
+3. PostgreSQLに接続できるか確認：
 
 ```powershell
 psql -U postgres -d camp_backend_db -c "SELECT version();"
@@ -311,6 +401,18 @@ notepad .env.local
 ```
 
 32文字以上のランダムな文字列を設定します。
+
+### 環境をリセットしたい
+
+```powershell
+# 環境リセット（仮想環境・依存関係）
+.\scripts\reset-environment.ps1
+
+# データベースリセット
+.\scripts\reset-database.ps1
+```
+
+---
 
 ## 次のステップ
 

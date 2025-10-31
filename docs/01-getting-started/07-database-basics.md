@@ -25,14 +25,14 @@
 
 ```powershell
 # PostgreSQL起動（自動で状態確認）
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+.\scripts\start-postgres.ps1
 ```
 
 このスクリプトは以下を実行します：
 
-- PostgreSQLが起動しているか確認
+- PostgreSQLが起動しているか確認（接続テスト）
 - 未起動の場合のみ起動
-- 起動確認（最大5秒待機）
+- 起動確認（リトライあり）
 
 **手動操作:**
 
@@ -158,7 +158,7 @@ psql -U postgres -d camp_backend_db < backup_20250128.sql
 
 ```powershell
 # データベースリセットスクリプトを実行
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```
 
 このスクリプトは以下を自動実行します：
@@ -262,14 +262,14 @@ await cache_manager.clear("user:*")
 
 ## 利用可能なスクリプト
 
-開発に便利なスクリプトが用意されています（`scripts\dev.ps1`）：
+開発に便利なスクリプトが用意されています：
 
 ### PostgreSQL起動
 
 PostgreSQLを起動します（既に起動している場合はスキップ）。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
+.\scripts\start-postgres.ps1
 ```
 
 ### データベースリセット
@@ -277,27 +277,27 @@ powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 start-postgres
 データベースをリセットします（削除・再作成・マイグレーション）。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```
 
 ### 環境セットアップ
 
-開発環境をセットアップします。
+初回の開発環境をセットアップします。
 
 ```powershell
 # 通常のセットアップ
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup
+.\scripts\setup-windows.ps1
 
-# 環境を完全リセットしてから再構築
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 setup -Clean
+# 環境クリーン後に再セットアップ
+.\scripts\setup-windows.ps1 -Clean
 ```
 
-### ヘルプ表示
+### 環境リセット
 
-利用可能なコマンドを表示します。
+開発環境（仮想環境・依存関係）をリセットします。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 help
+.\scripts\reset-environment.ps1
 ```
 
 ## 次のステップ
@@ -348,7 +348,7 @@ netstat -ano | findstr :5432
 
 ```powershell
 # データベースリセットスクリプトを実行
-powershell -ExecutionPolicy Bypass -File scripts\dev.ps1 reset-db
+.\scripts\reset-database.ps1
 ```
 
 または手動で：
