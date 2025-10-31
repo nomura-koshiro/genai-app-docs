@@ -159,7 +159,7 @@ class ProjectMemberService:
                     details={"user_id": str(member_data.user_id)},
                 )
 
-            # 追加者の権限確認（ADMIN以上）
+            # 追加者の権限確認（PROJECT_ADMIN）
             adder_role = await self.repository.get_user_role(project_id, added_by)
             if adder_role is None:
                 logger.warning(
@@ -172,7 +172,7 @@ class ProjectMemberService:
                     details={"project_id": str(project_id)},
                 )
 
-            if adder_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            if adder_role != ProjectRole.PROJECT_ADMIN:
                 logger.warning(
                     "メンバー追加の権限がありません",
                     project_id=str(project_id),
@@ -182,22 +182,9 @@ class ProjectMemberService:
                 raise AuthorizationError(
                     "メンバーを追加する権限がありません",
                     details={
-                        "required_roles": ["owner", "admin"],
+                        "required_role": "project_admin",
                         "current_role": adder_role.value,
                     },
-                )
-
-            # OWNERロール追加の場合は追加者がOWNERであることを確認
-            if member_data.role == ProjectRole.OWNER and adder_role != ProjectRole.OWNER:
-                logger.warning(
-                    "OWNERロールの追加はOWNERのみ実行可能です",
-                    project_id=str(project_id),
-                    added_by=str(added_by),
-                    adder_role=adder_role.value,
-                )
-                raise AuthorizationError(
-                    "OWNER ロールを追加できるのは OWNER のみです",
-                    details={"current_role": adder_role.value},
                 )
 
             # 重複チェック
@@ -325,7 +312,7 @@ class ProjectMemberService:
                     details={"project_id": str(project_id)},
                 )
 
-            # 追加者の権限確認（ADMIN以上）
+            # 追加者の権限確認（PROJECT_ADMIN）
             adder_role = await self.repository.get_user_role(project_id, added_by)
             if adder_role is None:
                 logger.warning(
@@ -338,7 +325,7 @@ class ProjectMemberService:
                     details={"project_id": str(project_id)},
                 )
 
-            if adder_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            if adder_role != ProjectRole.PROJECT_ADMIN:
                 logger.warning(
                     "メンバー追加の権限がありません",
                     project_id=str(project_id),
@@ -348,7 +335,7 @@ class ProjectMemberService:
                 raise AuthorizationError(
                     "メンバーを追加する権限がありません",
                     details={
-                        "required_roles": ["owner", "admin"],
+                        "required_role": "project_admin",
                         "current_role": adder_role.value,
                     },
                 )
@@ -368,24 +355,6 @@ class ProjectMemberService:
                         )
                         logger.debug(
                             "ユーザーが見つかりません",
-                            user_id=str(member_data.user_id),
-                        )
-                        continue
-
-                    # OWNERロール追加の場合は追加者がOWNERであることを確認
-                    if (
-                        member_data.role == ProjectRole.OWNER
-                        and adder_role != ProjectRole.OWNER
-                    ):
-                        failed_members.append(
-                            ProjectMemberBulkError(
-                                user_id=member_data.user_id,
-                                role=member_data.role,
-                                error="OWNER ロールを追加できるのは OWNER のみです",
-                            )
-                        )
-                        logger.debug(
-                            "OWNERロールの追加はOWNERのみ実行可能です",
                             user_id=str(member_data.user_id),
                         )
                         continue
@@ -608,7 +577,7 @@ class ProjectMemberService:
                     details={"member_id": str(member_id)},
                 )
 
-            # リクエスタの権限確認（OWNER/ADMIN）
+            # リクエスタの権限確認（PROJECT_ADMIN）
             requester_role = await self.repository.get_user_role(
                 member.project_id, requester_id
             )
@@ -623,7 +592,7 @@ class ProjectMemberService:
                     details={"project_id": str(member.project_id)},
                 )
 
-            if requester_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            if requester_role != ProjectRole.PROJECT_ADMIN:
                 logger.warning(
                     "ロール更新の権限がありません",
                     project_id=str(member.project_id),
@@ -633,39 +602,24 @@ class ProjectMemberService:
                 raise AuthorizationError(
                     "ロールを更新する権限がありません",
                     details={
-                        "required_roles": ["owner", "admin"],
+                        "required_role": "project_admin",
                         "current_role": requester_role.value,
                     },
                 )
 
-            # OWNERロール変更の場合はリクエスタがOWNERであることを確認
-            if (
-                member.role == ProjectRole.OWNER or new_role == ProjectRole.OWNER
-            ) and requester_role != ProjectRole.OWNER:
-                logger.warning(
-                    "OWNERロールの変更はOWNERのみ実行可能です",
-                    project_id=str(member.project_id),
-                    requester_id=str(requester_id),
-                    requester_role=requester_role.value,
+            # 最後のPROJECT_ADMINの降格禁止
+            if member.role == ProjectRole.PROJECT_ADMIN and new_role != ProjectRole.PROJECT_ADMIN:
+                admin_count = await self.repository.count_by_role(
+                    member.project_id, ProjectRole.PROJECT_ADMIN
                 )
-                raise AuthorizationError(
-                    "OWNER ロールを変更できるのは OWNER のみです",
-                    details={"current_role": requester_role.value},
-                )
-
-            # 最後のOWNERの降格禁止
-            if member.role == ProjectRole.OWNER and new_role != ProjectRole.OWNER:
-                owner_count = await self.repository.count_by_role(
-                    member.project_id, ProjectRole.OWNER
-                )
-                if owner_count <= 1:
+                if admin_count <= 1:
                     logger.warning(
-                        "最後のOWNERは降格できません",
+                        "最後のPROJECT_ADMINは降格できません",
                         project_id=str(member.project_id),
                         member_id=str(member_id),
                     )
                     raise ValidationError(
-                        "プロジェクトには最低1人のOWNERが必要です",
+                        "プロジェクトには最低1人のPROJECT_ADMINが必要です",
                         details={"project_id": str(member.project_id)},
                     )
 
@@ -774,7 +728,7 @@ class ProjectMemberService:
                     details={"project_id": str(project_id)},
                 )
 
-            # リクエスタの権限確認（OWNER/ADMIN）
+            # リクエスタの権限確認（PROJECT_ADMIN）
             requester_role = await self.repository.get_user_role(project_id, requester_id)
             if requester_role is None:
                 logger.warning(
@@ -787,7 +741,7 @@ class ProjectMemberService:
                     details={"project_id": str(project_id)},
                 )
 
-            if requester_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            if requester_role != ProjectRole.PROJECT_ADMIN:
                 logger.warning(
                     "ロール更新の権限がありません",
                     project_id=str(project_id),
@@ -797,7 +751,7 @@ class ProjectMemberService:
                 raise AuthorizationError(
                     "ロールを更新する権限がありません",
                     details={
-                        "required_roles": ["owner", "admin"],
+                        "required_role": "project_admin",
                         "current_role": requester_role.value,
                     },
                 )
@@ -838,38 +792,21 @@ class ProjectMemberService:
                         )
                         continue
 
-                    # OWNERロール変更の場合はリクエスタがOWNERであることを確認
-                    if (
-                        member.role == ProjectRole.OWNER or update_data.role == ProjectRole.OWNER
-                    ) and requester_role != ProjectRole.OWNER:
-                        failed_updates.append(
-                            ProjectMemberBulkUpdateError(
-                                member_id=update_data.member_id,
-                                role=update_data.role,
-                                error="OWNER ロールを変更できるのは OWNER のみです",
-                            )
+                    # 最後のPROJECT_ADMINの降格禁止
+                    if member.role == ProjectRole.PROJECT_ADMIN and update_data.role != ProjectRole.PROJECT_ADMIN:
+                        admin_count = await self.repository.count_by_role(
+                            project_id, ProjectRole.PROJECT_ADMIN
                         )
-                        logger.debug(
-                            "OWNERロールの変更はOWNERのみ実行可能です",
-                            member_id=str(update_data.member_id),
-                        )
-                        continue
-
-                    # 最後のOWNERの降格禁止
-                    if member.role == ProjectRole.OWNER and update_data.role != ProjectRole.OWNER:
-                        owner_count = await self.repository.count_by_role(
-                            project_id, ProjectRole.OWNER
-                        )
-                        if owner_count <= 1:
+                        if admin_count <= 1:
                             failed_updates.append(
                                 ProjectMemberBulkUpdateError(
                                     member_id=update_data.member_id,
                                     role=update_data.role,
-                                    error="プロジェクトには最低1人のOWNERが必要です",
+                                    error="プロジェクトには最低1人のPROJECT_ADMINが必要です",
                                 )
                             )
                             logger.debug(
-                                "最後のOWNERは降格できません",
+                                "最後のPROJECT_ADMINは降格できません",
                                 member_id=str(update_data.member_id),
                             )
                             continue
@@ -993,7 +930,7 @@ class ProjectMemberService:
                     details={"member_id": str(member_id)},
                 )
 
-            # リクエスタの権限確認（OWNER/ADMIN）
+            # リクエスタの権限確認（PROJECT_ADMIN）
             requester_role = await self.repository.get_user_role(
                 member.project_id, requester_id
             )
@@ -1008,7 +945,7 @@ class ProjectMemberService:
                     details={"project_id": str(member.project_id)},
                 )
 
-            if requester_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            if requester_role != ProjectRole.PROJECT_ADMIN:
                 logger.warning(
                     "メンバー削除の権限がありません",
                     project_id=str(member.project_id),
@@ -1018,7 +955,7 @@ class ProjectMemberService:
                 raise AuthorizationError(
                     "メンバーを削除する権限がありません",
                     details={
-                        "required_roles": ["owner", "admin"],
+                        "required_role": "project_admin",
                         "current_role": requester_role.value,
                     },
                 )
@@ -1035,19 +972,19 @@ class ProjectMemberService:
                     details={"member_id": str(member_id)},
                 )
 
-            # 最後のOWNERの削除禁止
-            if member.role == ProjectRole.OWNER:
-                owner_count = await self.repository.count_by_role(
-                    member.project_id, ProjectRole.OWNER
+            # 最後のPROJECT_ADMINの削除禁止
+            if member.role == ProjectRole.PROJECT_ADMIN:
+                admin_count = await self.repository.count_by_role(
+                    member.project_id, ProjectRole.PROJECT_ADMIN
                 )
-                if owner_count <= 1:
+                if admin_count <= 1:
                     logger.warning(
-                        "最後のOWNERは削除できません",
+                        "最後のPROJECT_ADMINは削除できません",
                         project_id=str(member.project_id),
                         member_id=str(member_id),
                     )
                     raise ValidationError(
-                        "プロジェクトには最低1人のOWNERが必要です",
+                        "プロジェクトには最低1人のPROJECT_ADMINが必要です",
                         details={"project_id": str(member.project_id)},
                     )
 
@@ -1126,19 +1063,19 @@ class ProjectMemberService:
                     details={"project_id": str(project_id), "user_id": str(user_id)},
                 )
 
-            # 最後のOWNERの退出禁止
-            if member.role == ProjectRole.OWNER:
-                owner_count = await self.repository.count_by_role(
-                    project_id, ProjectRole.OWNER
+            # 最後のPROJECT_ADMINの退出禁止
+            if member.role == ProjectRole.PROJECT_ADMIN:
+                admin_count = await self.repository.count_by_role(
+                    project_id, ProjectRole.PROJECT_ADMIN
                 )
-                if owner_count <= 1:
+                if admin_count <= 1:
                     logger.warning(
-                        "最後のOWNERは退出できません",
+                        "最後のPROJECT_ADMINは退出できません",
                         project_id=str(project_id),
                         user_id=str(user_id),
                     )
                     raise ValidationError(
-                        "プロジェクトには最低1人のOWNERが必要です。他のメンバーをOWNERに昇格させてから退出してください。",
+                        "プロジェクトには最低1人のPROJECT_ADMINが必要です。他のメンバーをPROJECT_ADMINに昇格させてから退出してください。",
                         details={"project_id": str(project_id)},
                     )
 
