@@ -38,7 +38,10 @@ from app.models.project_member import ProjectMember, ProjectRole
 from app.repositories.project import ProjectRepository
 from app.repositories.project_member import ProjectMemberRepository
 from app.repositories.user import UserRepository
-from app.schemas.project_member import ProjectMemberCreate
+from app.schemas.project_member import (
+    ProjectMemberBulkError,
+    ProjectMemberCreate,
+)
 
 logger = get_logger(__name__)
 
@@ -243,6 +246,221 @@ class ProjectMemberService:
                 "メンバー追加中に予期しないエラーが発生しました",
                 project_id=str(project_id),
                 user_id=str(member_data.user_id),
+                added_by=str(added_by),
+                error=str(e),
+                exc_info=True,
+            )
+            raise
+
+    @measure_performance
+    @transactional
+    async def add_members_bulk(
+        self,
+        project_id: uuid.UUID,
+        members_data: list["ProjectMemberCreate"],
+        added_by: uuid.UUID,
+    ) -> tuple[list[ProjectMember], list["ProjectMemberBulkError"]]:
+        """プロジェクトに複数のメンバーを一括追加します。
+
+        このメソッドは複数のメンバーを一括で追加し、成功と失敗を分けて返します。
+        一部失敗しても成功したメンバーは追加されます。
+
+        処理フロー：
+        1. プロジェクトの存在確認
+        2. 追加者の権限確認（ADMIN以上）
+        3. 各メンバーについて：
+           a. ユーザーの存在確認
+           b. 権限チェック
+           c. 重複チェック
+           d. メンバー追加（失敗は記録して継続）
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            members_data (list[ProjectMemberCreate]): 追加するメンバーのリスト
+            added_by (uuid.UUID): 追加者のユーザーUUID
+
+        Returns:
+            tuple[list[ProjectMember], list[ProjectMemberBulkError]]:
+                (追加に成功したメンバーリスト, 失敗情報リスト)
+
+        Raises:
+            NotFoundError: プロジェクトが見つからない場合
+            AuthorizationError: 追加者の権限が不足している場合
+
+        Example:
+            >>> members_data = [
+            ...     ProjectMemberCreate(user_id=user1_id, role=ProjectRole.MEMBER),
+            ...     ProjectMemberCreate(user_id=user2_id, role=ProjectRole.VIEWER)
+            ... ]
+            >>> added, failed = await member_service.add_members_bulk(
+            ...     project_id, members_data, added_by=admin_id
+            ... )
+            >>> print(f"Added: {len(added)}, Failed: {len(failed)}")
+
+        Note:
+            - ADMIN 以上の権限が必要
+            - OWNER ロールの追加は OWNER のみが実行可能
+            - 一部失敗しても成功したメンバーは追加されます
+        """
+        logger.info(
+            "プロジェクトメンバー一括追加開始",
+            project_id=str(project_id),
+            member_count=len(members_data),
+            added_by=str(added_by),
+            action="add_members_bulk",
+        )
+
+        added_members: list[ProjectMember] = []
+        failed_members: list[ProjectMemberBulkError] = []
+
+        try:
+            # プロジェクトの存在確認
+            project = await self.project_repository.get(project_id)
+            if not project:
+                logger.warning("プロジェクトが見つかりません", project_id=str(project_id))
+                raise NotFoundError(
+                    "プロジェクトが見つかりません",
+                    details={"project_id": str(project_id)},
+                )
+
+            # 追加者の権限確認（ADMIN以上）
+            adder_role = await self.repository.get_user_role(project_id, added_by)
+            if adder_role is None:
+                logger.warning(
+                    "追加者はプロジェクトのメンバーではありません",
+                    project_id=str(project_id),
+                    added_by=str(added_by),
+                )
+                raise AuthorizationError(
+                    "このプロジェクトへのアクセス権限がありません",
+                    details={"project_id": str(project_id)},
+                )
+
+            if adder_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+                logger.warning(
+                    "メンバー追加の権限がありません",
+                    project_id=str(project_id),
+                    added_by=str(added_by),
+                    adder_role=adder_role.value,
+                )
+                raise AuthorizationError(
+                    "メンバーを追加する権限がありません",
+                    details={
+                        "required_roles": ["owner", "admin"],
+                        "current_role": adder_role.value,
+                    },
+                )
+
+            # 各メンバーを追加
+            for member_data in members_data:
+                try:
+                    # ユーザーの存在確認
+                    user = await self.user_repository.get(member_data.user_id)
+                    if not user:
+                        failed_members.append(
+                            ProjectMemberBulkError(
+                                user_id=member_data.user_id,
+                                role=member_data.role,
+                                error="ユーザーが見つかりません",
+                            )
+                        )
+                        logger.debug(
+                            "ユーザーが見つかりません",
+                            user_id=str(member_data.user_id),
+                        )
+                        continue
+
+                    # OWNERロール追加の場合は追加者がOWNERであることを確認
+                    if (
+                        member_data.role == ProjectRole.OWNER
+                        and adder_role != ProjectRole.OWNER
+                    ):
+                        failed_members.append(
+                            ProjectMemberBulkError(
+                                user_id=member_data.user_id,
+                                role=member_data.role,
+                                error="OWNER ロールを追加できるのは OWNER のみです",
+                            )
+                        )
+                        logger.debug(
+                            "OWNERロールの追加はOWNERのみ実行可能です",
+                            user_id=str(member_data.user_id),
+                        )
+                        continue
+
+                    # 重複チェック
+                    existing_member = await self.repository.get_by_project_and_user(
+                        project_id, member_data.user_id
+                    )
+                    if existing_member:
+                        failed_members.append(
+                            ProjectMemberBulkError(
+                                user_id=member_data.user_id,
+                                role=member_data.role,
+                                error=f"ユーザーは既にプロジェクトのメンバーです（現在のロール: {existing_member.role.value}）",
+                            )
+                        )
+                        logger.debug(
+                            "メンバーは既に存在します",
+                            user_id=str(member_data.user_id),
+                            existing_role=existing_member.role.value,
+                        )
+                        continue
+
+                    # メンバーを追加
+                    member = await self.repository.create(
+                        project_id=project_id,
+                        user_id=member_data.user_id,
+                        role=member_data.role,
+                        added_by=added_by,
+                    )
+
+                    await self.db.flush()
+                    await self.db.refresh(member)
+
+                    added_members.append(member)
+
+                    logger.debug(
+                        "メンバーを追加しました",
+                        member_id=str(member.id),
+                        user_id=str(member_data.user_id),
+                        role=member_data.role.value,
+                    )
+
+                except Exception as e:
+                    # 個別のメンバー追加で予期しないエラーが発生した場合
+                    failed_members.append(
+                        ProjectMemberBulkError(
+                            user_id=member_data.user_id,
+                            role=member_data.role,
+                            error=f"予期しないエラーが発生しました: {str(e)}",
+                        )
+                    )
+                    logger.error(
+                        "メンバー追加中にエラーが発生しました",
+                        user_id=str(member_data.user_id),
+                        error=str(e),
+                        exc_info=True,
+                    )
+
+            logger.info(
+                "プロジェクトメンバー一括追加完了",
+                project_id=str(project_id),
+                total_requested=len(members_data),
+                total_added=len(added_members),
+                total_failed=len(failed_members),
+                added_by=str(added_by),
+            )
+
+            return added_members, failed_members
+
+        except (NotFoundError, AuthorizationError):
+            raise
+        except Exception as e:
+            logger.error(
+                "メンバー一括追加中に予期しないエラーが発生しました",
+                project_id=str(project_id),
+                member_count=len(members_data),
                 added_by=str(added_by),
                 error=str(e),
                 exc_info=True,

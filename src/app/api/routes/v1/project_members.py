@@ -35,6 +35,8 @@ from app.api.core import CurrentUserAzureDep, DatabaseDep
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.project_member import (
+    ProjectMemberBulkCreate,
+    ProjectMemberBulkResponse,
     ProjectMemberCreate,
     ProjectMemberListResponse,
     ProjectMemberUpdate,
@@ -147,6 +149,134 @@ async def add_project_member(
     )
 
     return ProjectMemberWithUser.model_validate(member)
+
+
+@router.post(
+    "/bulk",
+    response_model=ProjectMemberBulkResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="プロジェクトメンバー複数人追加",
+    description="""
+    プロジェクトに複数のメンバーを一括追加します。
+
+    **ADMIN以上の権限が必要です。**
+
+    - OWNER ロールの追加は OWNER のみが実行可能
+    - 一部失敗しても成功したメンバーは追加されます
+    - 最大100人まで一度に追加可能
+
+    リクエストボディ:
+        - members: 追加するメンバーのリスト
+            - user_id: 追加するユーザーのUUID
+            - role: プロジェクトロール（owner/admin/member/viewer）
+
+    レスポンス:
+        - added: 追加に成功したメンバーリスト
+        - failed: 追加に失敗したメンバーリスト（エラー理由付き）
+        - total_requested: リクエストされたメンバー数
+        - total_added: 追加に成功したメンバー数
+        - total_failed: 追加に失敗したメンバー数
+    """,
+)
+@handle_service_errors
+async def add_project_members_bulk(
+    project_id: uuid.UUID,
+    bulk_data: ProjectMemberBulkCreate,
+    db: DatabaseDep,
+    current_user: CurrentUserAzureDep,
+) -> ProjectMemberBulkResponse:
+    """プロジェクトに複数のメンバーを一括追加します。
+
+    Args:
+        project_id (uuid.UUID): プロジェクトのUUID
+        bulk_data (ProjectMemberBulkCreate): 一括追加データ
+        db (AsyncSession): データベースセッション（自動注入）
+        current_user (User): 認証済みユーザー（自動注入）
+
+    Returns:
+        ProjectMemberBulkResponse: 一括追加レスポンス
+
+    Raises:
+        HTTPException:
+            - 401: 認証されていない
+            - 403: 権限不足
+            - 404: プロジェクトが見つからない
+            - 422: バリデーションエラー
+            - 500: 内部エラー
+
+    Example:
+        >>> # リクエスト
+        >>> POST /api/v1/projects/{project_id}/members/bulk
+        >>> Authorization: Bearer <Azure_AD_Token>
+        >>> {
+        ...     "members": [
+        ...         {"user_id": "user1-uuid", "role": "member"},
+        ...         {"user_id": "user2-uuid", "role": "viewer"}
+        ...     ]
+        ... }
+        >>>
+        >>> # レスポンス (201 Created)
+        >>> {
+        ...     "project_id": "project-uuid",
+        ...     "added": [
+        ...         {
+        ...             "id": "member1-uuid",
+        ...             "project_id": "project-uuid",
+        ...             "user_id": "user1-uuid",
+        ...             "role": "member",
+        ...             "joined_at": "2024-01-15T10:30:00Z",
+        ...             "added_by": "admin-uuid",
+        ...             "user": { ... }
+        ...         }
+        ...     ],
+        ...     "failed": [
+        ...         {
+        ...             "user_id": "user2-uuid",
+        ...             "role": "viewer",
+        ...             "error": "ユーザーが見つかりません"
+        ...         }
+        ...     ],
+        ...     "total_requested": 2,
+        ...     "total_added": 1,
+        ...     "total_failed": 1
+        ... }
+
+    Note:
+        - ADMIN 以上の権限が必要
+        - OWNER ロールの追加は OWNER のみが実行可能
+        - 一部失敗しても成功したメンバーは追加されます
+    """
+    logger.info(
+        "メンバー一括追加リクエスト",
+        project_id=str(project_id),
+        member_count=len(bulk_data.members),
+        added_by=str(current_user.id),
+        action="add_members_bulk",
+    )
+
+    member_service = ProjectMemberService(db)
+    added_members, failed_members = await member_service.add_members_bulk(
+        project_id=project_id,
+        members_data=bulk_data.members,
+        added_by=current_user.id,
+    )
+
+    logger.info(
+        "メンバー一括追加完了",
+        project_id=str(project_id),
+        total_requested=len(bulk_data.members),
+        total_added=len(added_members),
+        total_failed=len(failed_members),
+    )
+
+    return ProjectMemberBulkResponse(
+        project_id=project_id,
+        added=[ProjectMemberWithUser.model_validate(m) for m in added_members],
+        failed=failed_members,
+        total_requested=len(bulk_data.members),
+        total_added=len(added_members),
+        total_failed=len(failed_members),
+    )
 
 
 @router.get(

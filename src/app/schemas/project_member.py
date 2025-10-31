@@ -209,3 +209,94 @@ class UserRoleResponse(BaseModel):
     role: ProjectRole = Field(..., description="プロジェクトロール")
     is_owner: bool = Field(..., description="OWNER ロールかどうか")
     is_admin: bool = Field(..., description="ADMIN 以上のロールかどうか")
+
+
+# ================================================================================
+# 複数人登録スキーマ
+# ================================================================================
+
+
+class ProjectMemberBulkCreate(BaseModel):
+    """プロジェクトメンバー複数人追加リクエストスキーマ。
+
+    プロジェクトに複数のメンバーを一括追加する際に使用します。
+
+    Attributes:
+        members (list[ProjectMemberCreate]): 追加するメンバーのリスト
+
+    Example:
+        >>> bulk_create = ProjectMemberBulkCreate(
+        ...     members=[
+        ...         ProjectMemberCreate(user_id=uuid.uuid4(), role=ProjectRole.MEMBER),
+        ...         ProjectMemberCreate(user_id=uuid.uuid4(), role=ProjectRole.VIEWER)
+        ...     ]
+        ... )
+
+    Note:
+        - 各メンバーは個別にバリデーションされます
+        - 重複するメンバーは追加されません
+        - 一部失敗しても成功したメンバーは追加されます
+    """
+
+    members: list[ProjectMemberCreate] = Field(
+        ..., min_length=1, max_length=100, description="追加するメンバーのリスト（最大100件）"
+    )
+
+
+class ProjectMemberBulkError(BaseModel):
+    """メンバー追加失敗情報スキーマ。
+
+    複数人登録時の個別の失敗情報を表します。
+
+    Attributes:
+        user_id (uuid.UUID): 失敗したユーザーID
+        role (ProjectRole): 指定されたロール
+        error (str): エラーメッセージ
+
+    Example:
+        >>> error = ProjectMemberBulkError(
+        ...     user_id=uuid.uuid4(),
+        ...     role=ProjectRole.MEMBER,
+        ...     error="ユーザーは既にプロジェクトのメンバーです"
+        ... )
+    """
+
+    user_id: uuid.UUID = Field(..., description="失敗したユーザーID")
+    role: ProjectRole = Field(..., description="指定されたロール")
+    error: str = Field(..., description="エラーメッセージ")
+
+
+class ProjectMemberBulkResponse(BaseModel):
+    """プロジェクトメンバー複数人追加レスポンススキーマ。
+
+    複数人登録APIのレスポンス形式を定義します。
+
+    Attributes:
+        project_id (uuid.UUID): プロジェクトID
+        added (list[ProjectMemberWithUser]): 追加に成功したメンバーリスト
+        failed (list[ProjectMemberBulkError]): 追加に失敗したメンバーリスト
+        total_requested (int): リクエストされたメンバー数
+        total_added (int): 追加に成功したメンバー数
+        total_failed (int): 追加に失敗したメンバー数
+
+    Example:
+        >>> response = ProjectMemberBulkResponse(
+        ...     project_id=uuid.uuid4(),
+        ...     added=[member1, member2],
+        ...     failed=[error1],
+        ...     total_requested=3,
+        ...     total_added=2,
+        ...     total_failed=1
+        ... )
+
+    Note:
+        - 一部失敗しても成功したメンバーは追加されます
+        - failed リストで失敗理由を確認できます
+    """
+
+    project_id: uuid.UUID = Field(..., description="プロジェクトID")
+    added: list[ProjectMemberWithUser] = Field(..., description="追加に成功したメンバーリスト")
+    failed: list[ProjectMemberBulkError] = Field(..., description="追加に失敗したメンバーリスト")
+    total_requested: int = Field(..., description="リクエストされたメンバー数")
+    total_added: int = Field(..., description="追加に成功したメンバー数")
+    total_failed: int = Field(..., description="追加に失敗したメンバー数")

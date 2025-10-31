@@ -13,6 +13,9 @@ from app.schemas.project_file import (
     ProjectFileUploadResponse,
 )
 from app.schemas.project_member import (
+    ProjectMemberBulkCreate,
+    ProjectMemberBulkError,
+    ProjectMemberBulkResponse,
     ProjectMemberCreate,
     ProjectMemberListResponse,
     ProjectMemberResponse,
@@ -90,6 +93,9 @@ __all__ = [
     "ProjectMemberResponse",
     "ProjectMemberWithUser",
     "ProjectMemberListResponse",
+    "ProjectMemberBulkCreate",
+    "ProjectMemberBulkResponse",
+    "ProjectMemberBulkError",
     "UserRoleResponse",
     # ユーザースキーマ
     "UserResponse",
