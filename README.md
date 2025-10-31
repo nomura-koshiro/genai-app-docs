@@ -18,11 +18,34 @@ FastAPI + LangChain + LangGraphをベースにした、AIエージェント機�
 
 ### 前提条件
 
-- Python 3.13
-- uv（Pythonパッケージマネージャー）
-- PostgreSQL（ローカルインストール）
+- **Windows 10/11**
+- **uv** - Pythonパッケージマネージャー（Python 3.13を自動管理）
+- **PostgreSQL** - データベースサーバー（ローカルインストール）
 
 ### セットアップ
+
+#### 方法1: スクリプトで自動セットアップ（推奨）
+
+```powershell
+# 1. PostgreSQLとuvをインストール（未インストールの場合）
+# PostgreSQL: scoop install postgresql
+# uv: Invoke-RestMethod https://astral.sh/uv/install.ps1 | Invoke-Expression
+
+# 2. プロジェクトディレクトリに移動
+cd C:\path\to\camp_backend
+
+# 3. 自動セットアップを実行
+.\scripts\setup-windows.ps1
+
+# 4. データベースをセットアップ
+.\scripts\reset-database.ps1
+
+# 5. 開発サーバー起動
+# VS CodeでF5キーを押す、または:
+uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+#### 方法2: 手動セットアップ
 
 ```powershell
 # 1. uvのインストール（未インストールの場合）
@@ -38,7 +61,8 @@ uv sync
 Copy-Item .env.local.example .env.local
 # .env.localファイルを編集して、必要な環境変数を設定してください
 
-# 5. PostgreSQLの起動（事前に起動しておいてください）
+# 5. PostgreSQLの起動
+.\scripts\start-postgres.ps1
 
 # 6. データベースマイグレーション
 cd src
@@ -50,6 +74,8 @@ uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 完了後、ブラウザで [http://localhost:8000/docs](http://localhost:8000/docs) を開いてAPIドキュメントを確認してください。
+
+詳細なセットアップ手順は [Windows環境セットアップ](./docs/01-getting-started/02-windows-setup.md) を参照してください。
 
 ## 📁 ディレクトリ構成
 
@@ -86,7 +112,12 @@ camp_backend/
 │
 ├── tests/                       # テストコード
 ├── docs/                        # ドキュメント
-├── scripts/                     # ユーティリティスクリプト
+├── scripts/                     # 環境セットアップ・管理スクリプト
+│   ├── lib/                     # 共通関数ライブラリ
+│   ├── setup-windows.ps1        # 初回環境セットアップ
+│   ├── start-postgres.ps1       # PostgreSQL起動
+│   ├── reset-database.ps1       # データベースリセット
+│   └── reset-environment.ps1    # 環境リセット
 ├── uploads/                     # アップロードファイル
 ├── pyproject.toml               # プロジェクト設定・依存関係
 └── uv.lock                      # 依存関係ロックファイル
@@ -96,21 +127,48 @@ camp_backend/
 
 ## 📜 よく使うコマンド
 
+### 開発サーバー
+
 ```powershell
 # 開発サーバー起動
 uv run python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 # または VSCode で F5 キーを押してデバッグ起動
+```
 
-# テスト実行
+### 環境管理スクリプト
+
+```powershell
+# PostgreSQL起動
+.\scripts\start-postgres.ps1
+
+# 初回セットアップ
+.\scripts\setup-windows.ps1
+
+# データベースリセット（削除・再作成・マイグレーション）
+.\scripts\reset-database.ps1
+
+# 環境リセット（仮想環境・依存関係の再構築）
+.\scripts\reset-environment.ps1
+```
+
+### テスト実行
+
+```powershell
 uv run pytest                           # すべてのテスト
 uv run pytest tests/test_services.py -v # 特定のテスト
+```
 
-# コード品質
+### コード品質
+
+```powershell
 uv run ruff check src tests             # リント実行
 uv run ruff format src tests            # フォーマット実行
 uv run ruff check --fix src tests       # リント自動修正
+```
 
-# データベース (Alembic)
+### データベース (Alembic)
+
+```powershell
 cd src
 uv run alembic revision --autogenerate -m "message"  # マイグレーション生成
 uv run alembic upgrade head                          # マイグレーション適用
