@@ -59,7 +59,7 @@ async def test_get_by_project_and_user(db_session, test_project, test_users):
     member = ProjectMember(
         project_id=test_project.id,
         user_id=test_users[0].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     db_session.add(member)
     await db_session.commit()
@@ -71,7 +71,7 @@ async def test_get_by_project_and_user(db_session, test_project, test_users):
     assert found_member is not None
     assert found_member.project_id == test_project.id
     assert found_member.user_id == test_users[0].id
-    assert found_member.role == ProjectRole.OWNER
+    assert found_member.role == ProjectRole.PROJECT_ADMIN
 
 
 @pytest.mark.asyncio
@@ -89,7 +89,7 @@ async def test_list_by_project(db_session, test_project, test_users):
         member = ProjectMember(
             project_id=test_project.id,
             user_id=user.id,
-            role=ProjectRole.OWNER if i == 0 else ProjectRole.MEMBER,
+            role=ProjectRole.PROJECT_ADMIN if i == 0 else ProjectRole.MEMBER,
         )
         db_session.add(member)
     await db_session.commit()
@@ -185,7 +185,7 @@ async def test_count_by_role(db_session, test_project, test_users):
     member1 = ProjectMember(
         project_id=test_project.id,
         user_id=test_users[0].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     member2 = ProjectMember(
         project_id=test_project.id,
@@ -201,7 +201,7 @@ async def test_count_by_role(db_session, test_project, test_users):
     await db_session.commit()
 
     # Act
-    owner_count = await repo.count_by_role(test_project.id, ProjectRole.OWNER)
+    owner_count = await repo.count_by_role(test_project.id, ProjectRole.PROJECT_ADMIN)
     member_count = await repo.count_by_role(test_project.id, ProjectRole.MEMBER)
 
     # Assert
@@ -221,7 +221,7 @@ async def test_get_user_role(db_session, test_project, test_users):
     member = ProjectMember(
         project_id=test_project.id,
         user_id=test_users[0].id,
-        role=ProjectRole.ADMIN,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     db_session.add(member)
     await db_session.commit()
@@ -230,7 +230,7 @@ async def test_get_user_role(db_session, test_project, test_users):
     role = await repo.get_user_role(test_project.id, test_users[0].id)
 
     # Assert
-    assert role == ProjectRole.ADMIN
+    assert role == ProjectRole.PROJECT_ADMIN
 
 
 @pytest.mark.asyncio

@@ -46,17 +46,17 @@ class ProjectMemberCreate(BaseModel):
     Example:
         >>> member = ProjectMemberCreate(
         ...     user_id=uuid.uuid4(),
-        ...     role=ProjectRole.ADMIN
+        ...     role=ProjectRole.MEMBER
         ... )
 
     Note:
-        - OWNER ロールの追加は OWNER のみが実行可能
+        - PROJECT_ADMIN 権限が必要
         - 重複するメンバーは追加できません
     """
 
     user_id: uuid.UUID = Field(..., description="追加するユーザーのID")
     role: ProjectRole = Field(
-        default=ProjectRole.MEMBER, description="プロジェクトロール（owner/admin/member/viewer）"
+        default=ProjectRole.MEMBER, description="プロジェクトロール（project_admin/member/viewer）"
     )
 
 
@@ -69,11 +69,11 @@ class ProjectMemberUpdate(BaseModel):
         role (ProjectRole): 新しいプロジェクトロール
 
     Example:
-        >>> update = ProjectMemberUpdate(role=ProjectRole.ADMIN)
+        >>> update = ProjectMemberUpdate(role=ProjectRole.MEMBER)
 
     Note:
-        - OWNER ロールの変更は OWNER のみが実行可能
-        - 最後の OWNER は削除・降格できません
+        - PROJECT_ADMIN 権限が必要
+        - 最後の PROJECT_ADMIN は降格できません
     """
 
     role: ProjectRole = Field(..., description="新しいプロジェクトロール")
@@ -110,7 +110,7 @@ class ProjectMemberResponse(BaseModel):
     id: uuid.UUID = Field(..., description="メンバーシップID（UUID）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     user_id: uuid.UUID = Field(..., description="ユーザーID")
-    role: ProjectRole = Field(..., description="プロジェクトロール（owner/admin/member/viewer）")
+    role: ProjectRole = Field(..., description="プロジェクトロール（project_admin/member/viewer）")
     joined_at: datetime = Field(..., description="参加日時")
     added_by: uuid.UUID | None = Field(None, description="追加者のユーザーID")
 
@@ -186,29 +186,29 @@ class UserRoleResponse(BaseModel):
         project_id (uuid.UUID): プロジェクトID
         user_id (uuid.UUID): ユーザーID
         role (ProjectRole): プロジェクトロール
-        is_owner (bool): OWNER ロールかどうか
-        is_admin (bool): ADMIN 以上のロールかどうか
+        is_owner (bool): PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
+        is_admin (bool): PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
 
     Example:
         >>> role_info = UserRoleResponse(
         ...     project_id=uuid.uuid4(),
         ...     user_id=uuid.uuid4(),
-        ...     role=ProjectRole.ADMIN,
-        ...     is_owner=False,
+        ...     role=ProjectRole.PROJECT_ADMIN,
+        ...     is_owner=True,
         ...     is_admin=True
         ... )
 
     Note:
         - 権限チェックに使用されます
-        - is_owner: OWNER ロールのみ True
-        - is_admin: OWNER または ADMIN の場合 True
+        - is_owner: PROJECT_ADMIN ロールの場合 True（後方互換性のため維持）
+        - is_admin: PROJECT_ADMIN ロールの場合 True（後方互換性のため維持）
     """
 
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     user_id: uuid.UUID = Field(..., description="ユーザーID")
     role: ProjectRole = Field(..., description="プロジェクトロール")
-    is_owner: bool = Field(..., description="OWNER ロールかどうか")
-    is_admin: bool = Field(..., description="ADMIN 以上のロールかどうか")
+    is_owner: bool = Field(..., description="PROJECT_ADMIN ロールかどうか（後方互換性のため維持）")
+    is_admin: bool = Field(..., description="PROJECT_ADMIN ロールかどうか（後方互換性のため維持）")
 
 
 # ================================================================================

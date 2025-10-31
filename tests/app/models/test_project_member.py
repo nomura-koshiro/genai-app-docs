@@ -51,7 +51,7 @@ async def test_project_member_unique_constraint(db_session):
     member2 = ProjectMember(
         project_id=project.id,
         user_id=user.id,  # 同じユーザー
-        role=ProjectRole.ADMIN,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     db_session.add(member2)
 

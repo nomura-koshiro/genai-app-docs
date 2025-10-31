@@ -54,7 +54,7 @@ async def test_list_by_user(db_session: AsyncSession):
     member1 = ProjectMember(
         project_id=project1.id,
         user_id=user_id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     member2 = ProjectMember(
         project_id=project2.id,
@@ -117,12 +117,12 @@ async def test_list_by_user_with_active_filter(db_session: AsyncSession):
     member1 = ProjectMember(
         project_id=active_project.id,
         user_id=user_id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     member2 = ProjectMember(
         project_id=inactive_project.id,
         user_id=user_id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     db_session.add(member1)
     db_session.add(member2)
@@ -212,7 +212,7 @@ async def test_count_by_user(db_session: AsyncSession):
     member1 = ProjectMember(
         project_id=project1.id,
         user_id=user_id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
     )
     member2 = ProjectMember(
         project_id=project2.id,

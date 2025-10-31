@@ -49,7 +49,7 @@ async def api_test_project_with_owner(db_session, api_test_users):
     owner_member = ProjectMember(
         project_id=project.id,
         user_id=api_test_users[0].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_ADMIN,
         added_by=api_test_users[0].id,
     )
     db_session.add(owner_member)

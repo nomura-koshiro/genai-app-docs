@@ -4,10 +4,10 @@
 メンバーの追加・削除・ロール更新・退出、権限制御を提供します。
 
 主な機能:
-    - メンバー追加（POST /api/v1/projects/{project_id}/members - ADMIN以上）
+    - メンバー追加（POST /api/v1/projects/{project_id}/members - PROJECT_ADMIN）
     - メンバー一覧取得（GET /api/v1/projects/{project_id}/members - メンバー以上）
-    - ロール更新（PATCH /api/v1/projects/{project_id}/members/{member_id} - OWNER/ADMIN）
-    - メンバー削除（DELETE /api/v1/projects/{project_id}/members/{member_id} - OWNER/ADMIN）
+    - ロール更新（PATCH /api/v1/projects/{project_id}/members/{member_id} - PROJECT_ADMIN）
+    - メンバー削除（DELETE /api/v1/projects/{project_id}/members/{member_id} - PROJECT_ADMIN）
     - プロジェクト退出（DELETE /api/v1/projects/{project_id}/members/me - 任意のメンバー）
     - 自分のロール取得（GET /api/v1/projects/{project_id}/members/me - メンバー以上）
 
@@ -60,14 +60,13 @@ router = APIRouter()
     description="""
     プロジェクトに新しいメンバーを追加します。
 
-    **ADMIN以上の権限が必要です。**
+    **PROJECT_ADMINの権限が必要です。**
 
-    - OWNER ロールの追加は OWNER のみが実行可能
     - 重複するメンバーは追加できません
 
     リクエストボディ:
         - user_id: 追加するユーザーのUUID
-        - role: プロジェクトロール（owner/admin/member/viewer）
+        - role: プロジェクトロール（project_admin/member/viewer）
     """,
 )
 @handle_service_errors
@@ -123,8 +122,7 @@ async def add_project_member(
         ... }
 
     Note:
-        - ADMIN 以上の権限が必要
-        - OWNER ロールの追加は OWNER のみが実行可能
+        - PROJECT_ADMIN の権限が必要
     """
     logger.info(
         "メンバー追加リクエスト",
@@ -161,16 +159,15 @@ async def add_project_member(
     description="""
     プロジェクトに複数のメンバーを一括追加します。
 
-    **ADMIN以上の権限が必要です。**
+    **PROJECT_ADMINの権限が必要です。**
 
-    - OWNER ロールの追加は OWNER のみが実行可能
     - 一部失敗しても成功したメンバーは追加されます
     - 最大100人まで一度に追加可能
 
     リクエストボディ:
         - members: 追加するメンバーのリスト
             - user_id: 追加するユーザーのUUID
-            - role: プロジェクトロール（owner/admin/member/viewer）
+            - role: プロジェクトロール（project_admin/member/viewer）
 
     レスポンス:
         - added: 追加に成功したメンバーリスト
@@ -244,8 +241,7 @@ async def add_project_members_bulk(
         ... }
 
     Note:
-        - ADMIN 以上の権限が必要
-        - OWNER ロールの追加は OWNER のみが実行可能
+        - PROJECT_ADMIN の権限が必要
         - 一部失敗しても成功したメンバーは追加されます
     """
     logger.info(
@@ -337,13 +333,13 @@ async def get_project_members(
         ...             "id": "member-uuid",
         ...             "project_id": "project-uuid",
         ...             "user_id": "user-uuid",
-        ...             "role": "owner",
+        ...             "role": "project_admin",
         ...             "joined_at": "2024-01-15T10:30:00Z",
         ...             "added_by": null,
         ...             "user": {
         ...                 "id": "user-uuid",
-        ...                 "email": "owner@example.com",
-        ...                 "display_name": "Owner Name",
+        ...                 "email": "admin@example.com",
+        ...                 "display_name": "Admin Name",
         ...                 ...
         ...             }
         ...         },
@@ -400,8 +396,8 @@ async def get_project_members(
         - project_id: プロジェクトUUID
         - user_id: ユーザーUUID
         - role: プロジェクトロール
-        - is_owner: OWNER ロールかどうか
-        - is_admin: ADMIN 以上のロールかどうか
+        - is_owner: PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
+        - is_admin: PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
     """,
 )
 @handle_service_errors
@@ -435,8 +431,8 @@ async def get_my_role(
         >>> {
         ...     "project_id": "project-uuid",
         ...     "user_id": "user-uuid",
-        ...     "role": "admin",
-        ...     "is_owner": false,
+        ...     "role": "project_admin",
+        ...     "is_owner": true,
         ...     "is_admin": true
         ... }
 
@@ -475,7 +471,7 @@ async def get_my_role(
 
     **任意のメンバーが実行可能です。**
 
-    - 最後の OWNER は退出できません
+    - 最後の PROJECT_ADMIN は退出できません
     """,
 )
 @handle_service_errors
@@ -495,7 +491,7 @@ async def leave_project(
         HTTPException:
             - 401: 認証されていない
             - 404: メンバーシップが見つからない
-            - 422: バリデーションエラー（最後のOWNER退出）
+            - 422: バリデーションエラー（最後のPROJECT_ADMIN退出）
             - 500: 内部エラー
 
     Example:
@@ -506,7 +502,7 @@ async def leave_project(
         >>> # レスポンス (204 No Content)
 
     Note:
-        - 最後の OWNER は退出できません
+        - 最後の PROJECT_ADMIN は退出できません
     """
     logger.info(
         "プロジェクト退出リクエスト",
@@ -535,10 +531,9 @@ async def leave_project(
     description="""
     プロジェクトメンバーのロールを更新します。
 
-    **OWNER/ADMIN の権限が必要です。**
+    **PROJECT_ADMIN の権限が必要です。**
 
-    - OWNER ロールの変更は OWNER のみが実行可能
-    - 最後の OWNER は降格できません
+    - 最後の PROJECT_ADMIN は降格できません
 
     リクエストボディ:
         - role: 新しいプロジェクトロール
@@ -569,7 +564,7 @@ async def update_member_role(
             - 401: 認証されていない
             - 403: 権限不足
             - 404: メンバーが見つからない
-            - 422: バリデーションエラー（最後のOWNER降格）
+            - 422: バリデーションエラー（最後のPROJECT_ADMIN降格）
             - 500: 内部エラー
 
     Example:
@@ -577,7 +572,7 @@ async def update_member_role(
         >>> PATCH /api/v1/projects/{project_id}/members/{member_id}
         >>> Authorization: Bearer <Azure_AD_Token>
         >>> {
-        ...     "role": "admin"
+        ...     "role": "member"
         ... }
         >>>
         >>> # レスポンス (200 OK)
@@ -585,15 +580,14 @@ async def update_member_role(
         ...     "id": "member-uuid",
         ...     "project_id": "project-uuid",
         ...     "user_id": "user-uuid",
-        ...     "role": "admin",
+        ...     "role": "member",
         ...     "joined_at": "2024-01-15T10:30:00Z",
-        ...     "added_by": "owner-uuid",
+        ...     "added_by": "admin-uuid",
         ...     "user": { ... }
         ... }
 
     Note:
-        - OWNER/ADMIN のみが実行可能
-        - OWNER ロールの変更は OWNER のみが実行可能
+        - PROJECT_ADMIN のみが実行可能
     """
     logger.info(
         "ロール更新リクエスト",
@@ -627,10 +621,9 @@ async def update_member_role(
     description="""
     プロジェクトメンバーのロールを一括更新します。
 
-    **OWNER/ADMIN の権限が必要です。**
+    **PROJECT_ADMIN の権限が必要です。**
 
-    - OWNER ロールの変更は OWNER のみが実行可能
-    - 最後の OWNER は降格できません
+    - 最後の PROJECT_ADMIN は降格できません
     - 一部失敗しても成功したメンバーは更新されます
     - 最大100人まで一度に更新可能
 
@@ -679,8 +672,8 @@ async def update_members_bulk(
         >>> Authorization: Bearer <Azure_AD_Token>
         >>> {
         ...     "updates": [
-        ...         {"member_id": "member1-uuid", "role": "admin"},
-        ...         {"member_id": "member2-uuid", "role": "member"}
+        ...         {"member_id": "member1-uuid", "role": "member"},
+        ...         {"member_id": "member2-uuid", "role": "viewer"}
         ...     ]
         ... }
         >>>
@@ -692,16 +685,16 @@ async def update_members_bulk(
         ...             "id": "member1-uuid",
         ...             "project_id": "project-uuid",
         ...             "user_id": "user1-uuid",
-        ...             "role": "admin",
+        ...             "role": "member",
         ...             "joined_at": "2024-01-15T10:30:00Z",
-        ...             "added_by": "owner-uuid",
+        ...             "added_by": "admin-uuid",
         ...             "user": { ... }
         ...         }
         ...     ],
         ...     "failed": [
         ...         {
         ...             "member_id": "member2-uuid",
-        ...             "role": "member",
+        ...             "role": "viewer",
         ...             "error": "メンバーが見つかりません"
         ...         }
         ...     ],
@@ -711,8 +704,7 @@ async def update_members_bulk(
         ... }
 
     Note:
-        - OWNER/ADMIN のみが実行可能
-        - OWNER ロールの変更は OWNER のみが実行可能
+        - PROJECT_ADMIN のみが実行可能
         - 一部失敗しても成功したメンバーは更新されます
     """
     logger.info(
@@ -755,10 +747,10 @@ async def update_members_bulk(
     description="""
     プロジェクトからメンバーを削除します。
 
-    **OWNER/ADMIN の権限が必要です。**
+    **PROJECT_ADMIN の権限が必要です。**
 
     - 自分自身は削除できません（プロジェクト退出を使用）
-    - 最後の OWNER は削除できません
+    - 最後の PROJECT_ADMIN は削除できません
     """,
 )
 @handle_service_errors
@@ -781,7 +773,7 @@ async def remove_member(
             - 401: 認証されていない
             - 403: 権限不足
             - 404: メンバーが見つからない
-            - 422: バリデーションエラー（自分自身削除、最後のOWNER削除）
+            - 422: バリデーションエラー（自分自身削除、最後のPROJECT_ADMIN削除）
             - 500: 内部エラー
 
     Example:
@@ -792,7 +784,7 @@ async def remove_member(
         >>> # レスポンス (204 No Content)
 
     Note:
-        - OWNER/ADMIN のみが実行可能
+        - PROJECT_ADMIN のみが実行可能
         - 自分自身は削除できません
     """
     logger.info(
