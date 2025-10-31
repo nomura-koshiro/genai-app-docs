@@ -24,6 +24,7 @@
 
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Boolean, DateTime, Index, String
@@ -34,6 +35,18 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.project_member import ProjectMember
+
+
+class SystemRole(str, Enum):
+    """システムレベルのロール定義。
+
+    Attributes:
+        SYSTEM_ADMIN: システム管理者（全プロジェクトアクセス可能、システム設定変更可能）
+        USER: 一般ユーザー（デフォルト、プロジェクト単位でアクセス制御）
+    """
+
+    SYSTEM_ADMIN = "system_admin"
+    USER = "user"
 
 
 class User(Base, TimestampMixin):
@@ -121,6 +134,35 @@ class User(Base, TimestampMixin):
         Index("idx_users_azure_oid", "azure_oid", unique=True),
         Index("idx_users_email", "email", unique=True),
     )
+
+    def has_system_role(self, role: "SystemRole") -> bool:
+        """指定されたシステムロールを持っているかチェックします。
+
+        Args:
+            role (SystemRole): チェックするシステムロール
+
+        Returns:
+            bool: ロールを持っている場合True
+
+        Example:
+            >>> user = User(roles=["system_admin"])
+            >>> user.has_system_role(SystemRole.SYSTEM_ADMIN)
+            True
+        """
+        return role.value in self.roles
+
+    def is_system_admin(self) -> bool:
+        """システム管理者かどうかをチェックします。
+
+        Returns:
+            bool: システム管理者の場合True
+
+        Example:
+            >>> user = User(roles=["system_admin"])
+            >>> user.is_system_admin()
+            True
+        """
+        return self.has_system_role(SystemRole.SYSTEM_ADMIN)
 
     def __repr__(self) -> str:
         """ユーザーオブジェクトの文字列表現。
