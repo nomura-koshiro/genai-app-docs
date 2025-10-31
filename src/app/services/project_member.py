@@ -40,7 +40,9 @@ from app.repositories.project_member import ProjectMemberRepository
 from app.repositories.user import UserRepository
 from app.schemas.project_member import (
     ProjectMemberBulkError,
+    ProjectMemberBulkUpdateError,
     ProjectMemberCreate,
+    ProjectMemberRoleUpdate,
 )
 
 logger = get_logger(__name__)
@@ -694,6 +696,244 @@ class ProjectMemberService:
                 "ロール更新中に予期しないエラーが発生しました",
                 member_id=str(member_id),
                 new_role=new_role.value,
+                requester_id=str(requester_id),
+                error=str(e),
+                exc_info=True,
+            )
+            raise
+
+    @measure_performance
+    @transactional
+    async def update_members_bulk(
+        self,
+        project_id: uuid.UUID,
+        updates_data: list["ProjectMemberRoleUpdate"],
+        requester_id: uuid.UUID,
+    ) -> tuple[list[ProjectMember], list["ProjectMemberBulkUpdateError"]]:
+        """プロジェクトの複数メンバーのロールを一括更新します。
+
+        このメソッドは複数のメンバーのロールを一括で更新し、成功と失敗を分けて返します。
+        一部失敗しても成功したメンバーは更新されます。
+
+        処理フロー：
+        1. プロジェクトの存在確認
+        2. リクエスタの権限確認（OWNER/ADMIN）
+        3. 各メンバーについて：
+           a. メンバーの存在確認
+           b. 権限チェック
+           c. 最後のOWNER降格チェック
+           d. ロール更新（失敗は記録して継続）
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            updates_data (list[ProjectMemberRoleUpdate]): 更新するメンバーのリスト
+            requester_id (uuid.UUID): リクエスタのユーザーUUID
+
+        Returns:
+            tuple[list[ProjectMember], list[ProjectMemberBulkUpdateError]]:
+                (更新に成功したメンバーリスト, 失敗情報リスト)
+
+        Raises:
+            NotFoundError: プロジェクトが見つからない場合
+            AuthorizationError: リクエスタの権限が不足している場合
+
+        Example:
+            >>> updates = [
+            ...     ProjectMemberRoleUpdate(member_id=member1_id, role=ProjectRole.ADMIN),
+            ...     ProjectMemberRoleUpdate(member_id=member2_id, role=ProjectRole.MEMBER)
+            ... ]
+            >>> updated, failed = await member_service.update_members_bulk(
+            ...     project_id, updates, requester_id
+            ... )
+            >>> print(f"Updated: {len(updated)}, Failed: {len(failed)}")
+
+        Note:
+            - OWNER/ADMIN の権限が必要
+            - OWNER ロールの変更は OWNER のみが実行可能
+            - 最後の OWNER は降格できません
+            - 一部失敗しても成功したメンバーは更新されます
+        """
+        logger.info(
+            "プロジェクトメンバー一括更新開始",
+            project_id=str(project_id),
+            update_count=len(updates_data),
+            requester_id=str(requester_id),
+            action="update_members_bulk",
+        )
+
+        updated_members: list[ProjectMember] = []
+        failed_updates: list[ProjectMemberBulkUpdateError] = []
+
+        try:
+            # プロジェクトの存在確認
+            project = await self.project_repository.get(project_id)
+            if not project:
+                logger.warning("プロジェクトが見つかりません", project_id=str(project_id))
+                raise NotFoundError(
+                    "プロジェクトが見つかりません",
+                    details={"project_id": str(project_id)},
+                )
+
+            # リクエスタの権限確認（OWNER/ADMIN）
+            requester_role = await self.repository.get_user_role(project_id, requester_id)
+            if requester_role is None:
+                logger.warning(
+                    "リクエスタはプロジェクトのメンバーではありません",
+                    project_id=str(project_id),
+                    requester_id=str(requester_id),
+                )
+                raise AuthorizationError(
+                    "このプロジェクトへのアクセス権限がありません",
+                    details={"project_id": str(project_id)},
+                )
+
+            if requester_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+                logger.warning(
+                    "ロール更新の権限がありません",
+                    project_id=str(project_id),
+                    requester_id=str(requester_id),
+                    requester_role=requester_role.value,
+                )
+                raise AuthorizationError(
+                    "ロールを更新する権限がありません",
+                    details={
+                        "required_roles": ["owner", "admin"],
+                        "current_role": requester_role.value,
+                    },
+                )
+
+            # 各メンバーを更新
+            for update_data in updates_data:
+                try:
+                    # メンバーの存在確認
+                    member = await self.repository.get(update_data.member_id)
+                    if not member:
+                        failed_updates.append(
+                            ProjectMemberBulkUpdateError(
+                                member_id=update_data.member_id,
+                                role=update_data.role,
+                                error="メンバーが見つかりません",
+                            )
+                        )
+                        logger.debug(
+                            "メンバーが見つかりません",
+                            member_id=str(update_data.member_id),
+                        )
+                        continue
+
+                    # プロジェクトIDの確認（異なるプロジェクトのメンバーは更新できない）
+                    if member.project_id != project_id:
+                        failed_updates.append(
+                            ProjectMemberBulkUpdateError(
+                                member_id=update_data.member_id,
+                                role=update_data.role,
+                                error="このメンバーは別のプロジェクトに所属しています",
+                            )
+                        )
+                        logger.debug(
+                            "メンバーが異なるプロジェクトに所属しています",
+                            member_id=str(update_data.member_id),
+                            expected_project_id=str(project_id),
+                            actual_project_id=str(member.project_id),
+                        )
+                        continue
+
+                    # OWNERロール変更の場合はリクエスタがOWNERであることを確認
+                    if (
+                        member.role == ProjectRole.OWNER or update_data.role == ProjectRole.OWNER
+                    ) and requester_role != ProjectRole.OWNER:
+                        failed_updates.append(
+                            ProjectMemberBulkUpdateError(
+                                member_id=update_data.member_id,
+                                role=update_data.role,
+                                error="OWNER ロールを変更できるのは OWNER のみです",
+                            )
+                        )
+                        logger.debug(
+                            "OWNERロールの変更はOWNERのみ実行可能です",
+                            member_id=str(update_data.member_id),
+                        )
+                        continue
+
+                    # 最後のOWNERの降格禁止
+                    if member.role == ProjectRole.OWNER and update_data.role != ProjectRole.OWNER:
+                        owner_count = await self.repository.count_by_role(
+                            project_id, ProjectRole.OWNER
+                        )
+                        if owner_count <= 1:
+                            failed_updates.append(
+                                ProjectMemberBulkUpdateError(
+                                    member_id=update_data.member_id,
+                                    role=update_data.role,
+                                    error="プロジェクトには最低1人のOWNERが必要です",
+                                )
+                            )
+                            logger.debug(
+                                "最後のOWNERは降格できません",
+                                member_id=str(update_data.member_id),
+                            )
+                            continue
+
+                    # ロールを更新
+                    updated_member = await self.repository.update_role(
+                        update_data.member_id, update_data.role
+                    )
+                    if not updated_member:
+                        failed_updates.append(
+                            ProjectMemberBulkUpdateError(
+                                member_id=update_data.member_id,
+                                role=update_data.role,
+                                error="メンバーの更新に失敗しました",
+                            )
+                        )
+                        continue
+
+                    await self.db.flush()
+                    await self.db.refresh(updated_member)
+
+                    updated_members.append(updated_member)
+
+                    logger.debug(
+                        "メンバーロールを更新しました",
+                        member_id=str(update_data.member_id),
+                        old_role=member.role.value,
+                        new_role=update_data.role.value,
+                    )
+
+                except Exception as e:
+                    # 個別のメンバー更新で予期しないエラーが発生した場合
+                    failed_updates.append(
+                        ProjectMemberBulkUpdateError(
+                            member_id=update_data.member_id,
+                            role=update_data.role,
+                            error=f"予期しないエラーが発生しました: {str(e)}",
+                        )
+                    )
+                    logger.error(
+                        "メンバー更新中にエラーが発生しました",
+                        member_id=str(update_data.member_id),
+                        error=str(e),
+                        exc_info=True,
+                    )
+
+            logger.info(
+                "プロジェクトメンバー一括更新完了",
+                project_id=str(project_id),
+                total_requested=len(updates_data),
+                total_updated=len(updated_members),
+                total_failed=len(failed_updates),
+                requester_id=str(requester_id),
+            )
+
+            return updated_members, failed_updates
+
+        except (NotFoundError, AuthorizationError):
+            raise
+        except Exception as e:
+            logger.error(
+                "メンバー一括更新中に予期しないエラーが発生しました",
+                project_id=str(project_id),
+                update_count=len(updates_data),
                 requester_id=str(requester_id),
                 error=str(e),
                 exc_info=True,
