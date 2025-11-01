@@ -50,13 +50,13 @@ class ProjectMemberCreate(BaseModel):
         ... )
 
     Note:
-        - PROJECT_ADMIN 権限が必要
+        - PROJECT_MANAGER 権限が必要
         - 重複するメンバーは追加できません
     """
 
     user_id: uuid.UUID = Field(..., description="追加するユーザーのID")
     role: ProjectRole = Field(
-        default=ProjectRole.MEMBER, description="プロジェクトロール（project_admin/member/viewer）"
+        default=ProjectRole.MEMBER, description="プロジェクトロール（project_manager/project_moderator/member/viewer）"
     )
 
 
@@ -72,8 +72,8 @@ class ProjectMemberUpdate(BaseModel):
         >>> update = ProjectMemberUpdate(role=ProjectRole.MEMBER)
 
     Note:
-        - PROJECT_ADMIN 権限が必要
-        - 最後の PROJECT_ADMIN は降格できません
+        - PROJECT_MANAGER 権限が必要
+        - 最後の PROJECT_MANAGER は降格できません
     """
 
     role: ProjectRole = Field(..., description="新しいプロジェクトロール")
@@ -110,7 +110,7 @@ class ProjectMemberResponse(BaseModel):
     id: uuid.UUID = Field(..., description="メンバーシップID（UUID）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     user_id: uuid.UUID = Field(..., description="ユーザーID")
-    role: ProjectRole = Field(..., description="プロジェクトロール（project_admin/member/viewer）")
+    role: ProjectRole = Field(..., description="プロジェクトロール（project_manager/project_moderator/member/viewer）")
     joined_at: datetime = Field(..., description="参加日時")
     added_by: uuid.UUID | None = Field(None, description="追加者のユーザーID")
 
@@ -186,29 +186,29 @@ class UserRoleResponse(BaseModel):
         project_id (uuid.UUID): プロジェクトID
         user_id (uuid.UUID): ユーザーID
         role (ProjectRole): プロジェクトロール
-        is_owner (bool): PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
-        is_admin (bool): PROJECT_ADMIN ロールかどうか（後方互換性のため維持）
+        is_owner (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）
+        is_admin (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）
 
     Example:
         >>> role_info = UserRoleResponse(
         ...     project_id=uuid.uuid4(),
         ...     user_id=uuid.uuid4(),
-        ...     role=ProjectRole.PROJECT_ADMIN,
+        ...     role=ProjectRole.PROJECT_MANAGER,
         ...     is_owner=True,
         ...     is_admin=True
         ... )
 
     Note:
         - 権限チェックに使用されます
-        - is_owner: PROJECT_ADMIN ロールの場合 True（後方互換性のため維持）
-        - is_admin: PROJECT_ADMIN ロールの場合 True（後方互換性のため維持）
+        - is_owner: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）
+        - is_admin: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）
     """
 
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     user_id: uuid.UUID = Field(..., description="ユーザーID")
     role: ProjectRole = Field(..., description="プロジェクトロール")
-    is_owner: bool = Field(..., description="PROJECT_ADMIN ロールかどうか（後方互換性のため維持）")
-    is_admin: bool = Field(..., description="PROJECT_ADMIN ロールかどうか（後方互換性のため維持）")
+    is_owner: bool = Field(..., description="PROJECT_MANAGER ロールかどうか（後方互換性のため維持）")
+    is_admin: bool = Field(..., description="PROJECT_MANAGER ロールかどうか（後方互換性のため維持）")
 
 
 # ================================================================================

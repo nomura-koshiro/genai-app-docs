@@ -255,7 +255,7 @@ async def test_repository_get_active_users_with_n_plus_one_prevention(db_session
             membership = ProjectMember(
                 project_id=project.id,
                 user_id=user.id,
-                role=ProjectRole.PROJECT_ADMIN,
+                role=ProjectRole.PROJECT_MANAGER,
             )
             db_session.add(membership)
 
@@ -322,7 +322,7 @@ async def test_repository_get_active_users_eager_loading_verification(db_session
     membership = ProjectMember(
         project_id=project.id,
         user_id=user.id,
-        role=ProjectRole.PROJECT_ADMIN,
+        role=ProjectRole.PROJECT_MANAGER,
     )
     db_session.add(membership)
     await db_session.commit()

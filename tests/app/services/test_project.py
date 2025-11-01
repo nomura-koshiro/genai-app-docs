@@ -377,7 +377,7 @@ async def test_delete_project_permission_denied(db_session: AsyncSession):
     admin_member = ProjectMember(
         project_id=project.id,
         user_id=admin_id,
-        role=ProjectRole.PROJECT_ADMIN,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=owner_id,
     )
     db_session.add(admin_member)

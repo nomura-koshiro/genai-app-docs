@@ -47,6 +47,11 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
+# ================================================================================
+# GET Endpoints
+# ================================================================================
+
+
 @router.get(
     "",
     response_model=UserListResponse,
@@ -368,6 +373,11 @@ async def get_user(
     return UserResponse.model_validate(user)
 
 
+# ================================================================================
+# PATCH Endpoints
+# ================================================================================
+
+
 @router.patch(
     "/me",
     response_model=UserResponse,
@@ -465,6 +475,11 @@ async def update_current_user(
     )
 
     return UserResponse.model_validate(updated_user)
+
+
+# ================================================================================
+# DELETE Endpoints
+# ================================================================================
 
 
 @router.delete(

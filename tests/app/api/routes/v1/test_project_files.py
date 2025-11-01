@@ -310,7 +310,7 @@ async def test_delete_file_by_admin(client: AsyncClient, override_auth, db_sessi
     admin_member = ProjectMember(
         project_id=project.id,
         user_id=admin.id,
-        role=ProjectRole.PROJECT_ADMIN,
+        role=ProjectRole.PROJECT_MANAGER,
     )
     db_session.add(uploader_member)
     db_session.add(admin_member)

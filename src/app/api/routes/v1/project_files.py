@@ -40,70 +40,9 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.post(
-    "/projects/{project_id}/files",
-    response_model=ProjectFileUploadResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="プロジェクトファイルアップロード",
-    description="""
-    プロジェクトにファイルをアップロードします。
-
-    - **project_id**: プロジェクトID
-    - **file**: アップロードするファイル（バイナリ）
-
-    権限要件:
-    - プロジェクトメンバー（MEMBER以上）
-
-    制限事項:
-    - 最大ファイルサイズ: 50MB
-    - 許可されるMIMEタイプ: image/*, application/pdf, text/*, .docx, .xlsx
-
-    認証が必要です。アップロードされたファイルはユーザーに紐付けられます。
-    """,
-)
-@handle_service_errors
-@async_timeout(60.0)  # 60秒タイムアウト
-async def upload_file(
-    project_id: uuid.UUID,
-    file: UploadFile,
-    db: DatabaseDep,
-    current_user: CurrentUserAzureDep,
-) -> ProjectFileUploadResponse:
-    """プロジェクトにファイルをアップロードします。
-
-    Args:
-        project_id: プロジェクトID
-        file: アップロードするファイル
-        db: データベースセッション（自動注入）
-        current_user: 現在のユーザー（自動注入）
-
-    Returns:
-        ProjectFileUploadResponse: アップロード成功レスポンス
-
-    Raises:
-        HTTPException:
-            - 401: 認証が必要
-            - 403: アクセス権限なし
-            - 422: ファイルが無効
-            - 500: 内部エラー
-    """
-    file_service = ProjectFileService(db)
-    user_id = current_user.id
-
-    uploaded_file = await file_service.upload_file(project_id, file, uploaded_by=user_id)
-
-    return ProjectFileUploadResponse(
-        id=uploaded_file.id,
-        project_id=uploaded_file.project_id,
-        filename=uploaded_file.filename,
-        original_filename=uploaded_file.original_filename,
-        file_path=uploaded_file.file_path,
-        file_size=uploaded_file.file_size,
-        mime_type=uploaded_file.mime_type,
-        uploaded_by=uploaded_file.uploaded_by,
-        uploaded_at=uploaded_file.uploaded_at,
-        message="File uploaded successfully",
-    )
+# ================================================================================
+# GET Endpoints
+# ================================================================================
 
 
 @router.get(
@@ -264,6 +203,82 @@ async def download_file(
         media_type=file_metadata.mime_type or "application/octet-stream",
         filename=file_metadata.original_filename,
     )
+
+
+# ================================================================================
+# POST Endpoints
+# ================================================================================
+
+
+@router.post(
+    "/projects/{project_id}/files",
+    response_model=ProjectFileUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="プロジェクトファイルアップロード",
+    description="""
+    プロジェクトにファイルをアップロードします。
+
+    - **project_id**: プロジェクトID
+    - **file**: アップロードするファイル（バイナリ）
+
+    権限要件:
+    - プロジェクトメンバー（MEMBER以上）
+
+    制限事項:
+    - 最大ファイルサイズ: 50MB
+    - 許可されるMIMEタイプ: image/*, application/pdf, text/*, .docx, .xlsx
+
+    認証が必要です。アップロードされたファイルはユーザーに紐付けられます。
+    """,
+)
+@handle_service_errors
+@async_timeout(60.0)  # 60秒タイムアウト
+async def upload_file(
+    project_id: uuid.UUID,
+    file: UploadFile,
+    db: DatabaseDep,
+    current_user: CurrentUserAzureDep,
+) -> ProjectFileUploadResponse:
+    """プロジェクトにファイルをアップロードします。
+
+    Args:
+        project_id: プロジェクトID
+        file: アップロードするファイル
+        db: データベースセッション（自動注入）
+        current_user: 現在のユーザー（自動注入）
+
+    Returns:
+        ProjectFileUploadResponse: アップロード成功レスポンス
+
+    Raises:
+        HTTPException:
+            - 401: 認証が必要
+            - 403: アクセス権限なし
+            - 422: ファイルが無効
+            - 500: 内部エラー
+    """
+    file_service = ProjectFileService(db)
+    user_id = current_user.id
+
+    uploaded_file = await file_service.upload_file(project_id, file, uploaded_by=user_id)
+
+    return ProjectFileUploadResponse(
+        id=uploaded_file.id,
+        project_id=uploaded_file.project_id,
+        filename=uploaded_file.filename,
+        original_filename=uploaded_file.original_filename,
+        file_path=uploaded_file.file_path,
+        file_size=uploaded_file.file_size,
+        mime_type=uploaded_file.mime_type,
+        uploaded_by=uploaded_file.uploaded_by,
+        uploaded_at=uploaded_file.uploaded_at,
+        message="File uploaded successfully",
+    )
+
+
+# ================================================================================
+# DELETE Endpoints
+# ================================================================================
 
 
 @router.delete(
