@@ -4,7 +4,7 @@
 
 主な機能:
     - プロジェクトメンバーシップの管理
-    - プロジェクトレベルのロール管理（OWNER/ADMIN/MEMBER/VIEWER）
+    - プロジェクトレベルのロール管理（PROJECT_MANAGER/PROJECT_MODERATOR/MEMBER/VIEWER）
     - メンバー追加者の追跡
 
 テーブル設計:
@@ -43,14 +43,25 @@ class ProjectRole(str, Enum):
     """プロジェクトレベルのロール定義。
 
     Attributes:
-        OWNER: プロジェクト所有者（全権限）
-        ADMIN: プロジェクト管理者（メンバー追加・削除可能）
-        MEMBER: 一般メンバー（ファイルアップロード・ダウンロード可能）
-        VIEWER: 閲覧者（ファイル閲覧のみ）
+        PROJECT_MANAGER: プロジェクトマネージャー（最高権限）
+            - プロジェクト削除
+            - プロジェクト設定変更
+            - メンバー追加・削除・ロール変更（全ロール）
+            - ファイルのアップロード・ダウンロード・削除
+        PROJECT_MODERATOR: 権限管理者（メンバー管理担当）
+            - メンバー追加・削除
+            - ロール変更（VIEWER/MEMBER/PROJECT_MODERATORのみ）
+            - ファイルのアップロード・ダウンロード
+            - プロジェクト内の編集
+        MEMBER: 一般メンバー（編集可能）
+            - ファイルのアップロード・ダウンロード
+            - プロジェクト内の編集
+        VIEWER: 閲覧者（閲覧のみ）
+            - ファイルの閲覧・ダウンロードのみ
     """
 
-    OWNER = "owner"
-    ADMIN = "admin"
+    PROJECT_MANAGER = "project_manager"
+    PROJECT_MODERATOR = "project_moderator"
     MEMBER = "member"
     VIEWER = "viewer"
 
@@ -101,7 +112,7 @@ class ProjectMember(Base):
         SQLEnum(ProjectRole),
         nullable=False,
         default=ProjectRole.MEMBER,
-        comment="Project role (owner/admin/member/viewer)",
+        comment="Project role (project_manager/project_moderator/member/viewer)",
     )
 
     joined_at: Mapped[datetime] = mapped_column(

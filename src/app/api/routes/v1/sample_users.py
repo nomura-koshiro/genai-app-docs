@@ -58,6 +58,169 @@ logger = get_logger(__name__)
 
 router = APIRouter()
 
+@router.get(
+    "/sample-me",
+    response_model=SampleUserResponse,
+    summary="現在のサンプルユーザー情報取得",
+    description="""
+    認証されたサンプルユーザー自身の情報を取得します。
+
+    このエンドポイントはJWT認証が必須です。
+    `Authorization: Bearer <token>` ヘッダーが必要です。
+    """,
+)
+@handle_service_errors
+async def get_current_user(
+    current_user: CurrentUserDep,
+) -> SampleUserResponse:
+    """現在の認証済みユーザーの情報を取得します。
+
+    Args:
+        current_user (User): 認証済みユーザー（自動注入）
+
+    Returns:
+        UserResponse: 現在のユーザー情報
+            - id, email, username, is_active, is_superuser
+            - created_at, updated_at
+
+    Example:
+        >>> # リクエスト
+        >>> GET /api/v1/users/me
+        >>> Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        >>>
+        >>> # レスポンス (200 OK)
+        >>> {
+        ...     "id": 1,
+        ...     "email": "user@example.com",
+        ...     "username": "testuser",
+        ...     "is_active": true,
+        ...     "is_superuser": false,
+        ...     "created_at": "2024-01-01T00:00:00Z",
+        ...     "updated_at": "2024-01-01T00:00:00Z"
+        ... }
+    """
+    return SampleUserResponse.model_validate(current_user)
+
+@router.get(
+    "/{user_id}",
+    response_model=SampleUserResponse,
+    summary="特定サンプルユーザー情報取得",
+    description="""
+    指定されたIDのサンプルユーザー情報を取得します。
+
+    **スーパーユーザー権限が必要です。**
+    """,
+)
+@handle_service_errors
+async def get_user(
+    user_id: int,
+    user_service: UserServiceDep,
+    _superuser: CurrentSuperuserDep,
+) -> SampleUserResponse:
+    """特定のユーザー情報を取得します（管理者専用）。
+
+    Args:
+        user_id (int): 取得するユーザーのID
+        user_service (UserService): ユーザーサービス（自動注入）
+        _superuser (User): スーパーユーザー（権限チェック用、自動注入）
+
+    Returns:
+        UserResponse: 指定されたユーザーの情報
+
+    Raises:
+        HTTPException:
+            - 401: 認証されていない
+            - 403: スーパーユーザー権限がない
+            - 404: ユーザーが見つからない
+            - 500: 内部エラー
+
+    Example:
+        >>> # リクエスト
+        >>> GET /api/v1/users/123
+        >>> Authorization: Bearer <superuser_token>
+        >>>
+        >>> # レスポンス (200 OK)
+        >>> {
+        ...     "id": 123,
+        ...     "email": "user@example.com",
+        ...     "username": "testuser",
+        ...     "is_active": true,
+        ...     "is_superuser": false,
+        ...     "created_at": "2024-01-01T00:00:00Z",
+        ...     "updated_at": "2024-01-01T00:00:00Z"
+        ... }
+    """
+    user = await user_service.get_user(user_id)
+    if not user:
+        raise NotFoundError("ユーザーが見つかりません", details={"user_id": user_id})
+    return SampleUserResponse.model_validate(user)
+
+@router.get(
+    "",
+    response_model=list[SampleUserResponse],
+    summary="サンプルユーザー一覧取得",
+    description="""
+    登録されているすべてのサンプルユーザーの一覧を取得します。
+
+    **スーパーユーザー権限が必要です。**
+
+    - **skip**: スキップするレコード数（デフォルト: 0）
+    - **limit**: 取得する最大レコード数（デフォルト: 100）
+    """,
+)
+@handle_service_errors
+async def list_users(
+    user_service: UserServiceDep,
+    _superuser: CurrentSuperuserDep,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[SampleUserResponse]:
+    """ユーザー一覧を取得します（管理者専用）。
+
+    Args:
+        user_service (UserService): ユーザーサービス（自動注入）
+        _superuser (User): スーパーユーザー（権限チェック用、自動注入）
+        skip (int): スキップするレコード数（ページネーション用）
+        limit (int): 取得する最大レコード数（最大100）
+
+    Returns:
+        list[UserResponse]: ユーザー情報のリスト
+
+    Raises:
+        HTTPException:
+            - 401: 認証されていない
+            - 403: スーパーユーザー権限がない
+            - 500: 内部エラー
+
+    Example:
+        >>> # リクエスト
+        >>> GET /api/v1/users?skip=0&limit=10
+        >>> Authorization: Bearer <superuser_token>
+        >>>
+        >>> # レスポンス (200 OK)
+        >>> [
+        ...     {
+        ...         "id": 1,
+        ...         "email": "user1@example.com",
+        ...         "username": "user1",
+        ...         "is_active": true,
+        ...         "is_superuser": false,
+        ...         "created_at": "2024-01-01T00:00:00Z",
+        ...         "updated_at": "2024-01-01T00:00:00Z"
+        ...     },
+        ...     {
+        ...         "id": 2,
+        ...         "email": "user2@example.com",
+        ...         "username": "user2",
+        ...         "is_active": true,
+        ...         "is_superuser": false,
+        ...         "created_at": "2024-01-02T00:00:00Z",
+        ...         "updated_at": "2024-01-02T00:00:00Z"
+        ...     }
+        ... ]
+    """
+    users = await user_service.list_users(skip=skip, limit=limit)
+    return [SampleUserResponse.model_validate(user) for user in users]
 
 @router.post(
     "",
@@ -123,7 +286,6 @@ async def create_user(
     """
     user = await user_service.create_user(user_data)
     return SampleUserResponse.model_validate(user)
-
 
 @router.post(
     "/sample-login",
@@ -211,174 +373,6 @@ async def login(
         token_type="bearer",
     )
 
-
-@router.get(
-    "/sample-me",
-    response_model=SampleUserResponse,
-    summary="現在のサンプルユーザー情報取得",
-    description="""
-    認証されたサンプルユーザー自身の情報を取得します。
-
-    このエンドポイントはJWT認証が必須です。
-    `Authorization: Bearer <token>` ヘッダーが必要です。
-    """,
-)
-@handle_service_errors
-async def get_current_user(
-    current_user: CurrentUserDep,
-) -> SampleUserResponse:
-    """現在の認証済みユーザーの情報を取得します。
-
-    Args:
-        current_user (User): 認証済みユーザー（自動注入）
-
-    Returns:
-        UserResponse: 現在のユーザー情報
-            - id, email, username, is_active, is_superuser
-            - created_at, updated_at
-
-    Example:
-        >>> # リクエスト
-        >>> GET /api/v1/users/me
-        >>> Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        >>>
-        >>> # レスポンス (200 OK)
-        >>> {
-        ...     "id": 1,
-        ...     "email": "user@example.com",
-        ...     "username": "testuser",
-        ...     "is_active": true,
-        ...     "is_superuser": false,
-        ...     "created_at": "2024-01-01T00:00:00Z",
-        ...     "updated_at": "2024-01-01T00:00:00Z"
-        ... }
-    """
-    return SampleUserResponse.model_validate(current_user)
-
-
-@router.get(
-    "/{user_id}",
-    response_model=SampleUserResponse,
-    summary="特定サンプルユーザー情報取得",
-    description="""
-    指定されたIDのサンプルユーザー情報を取得します。
-
-    **スーパーユーザー権限が必要です。**
-    """,
-)
-@handle_service_errors
-async def get_user(
-    user_id: int,
-    user_service: UserServiceDep,
-    _superuser: CurrentSuperuserDep,
-) -> SampleUserResponse:
-    """特定のユーザー情報を取得します（管理者専用）。
-
-    Args:
-        user_id (int): 取得するユーザーのID
-        user_service (UserService): ユーザーサービス（自動注入）
-        _superuser (User): スーパーユーザー（権限チェック用、自動注入）
-
-    Returns:
-        UserResponse: 指定されたユーザーの情報
-
-    Raises:
-        HTTPException:
-            - 401: 認証されていない
-            - 403: スーパーユーザー権限がない
-            - 404: ユーザーが見つからない
-            - 500: 内部エラー
-
-    Example:
-        >>> # リクエスト
-        >>> GET /api/v1/users/123
-        >>> Authorization: Bearer <superuser_token>
-        >>>
-        >>> # レスポンス (200 OK)
-        >>> {
-        ...     "id": 123,
-        ...     "email": "user@example.com",
-        ...     "username": "testuser",
-        ...     "is_active": true,
-        ...     "is_superuser": false,
-        ...     "created_at": "2024-01-01T00:00:00Z",
-        ...     "updated_at": "2024-01-01T00:00:00Z"
-        ... }
-    """
-    user = await user_service.get_user(user_id)
-    if not user:
-        raise NotFoundError("ユーザーが見つかりません", details={"user_id": user_id})
-    return SampleUserResponse.model_validate(user)
-
-
-@router.get(
-    "",
-    response_model=list[SampleUserResponse],
-    summary="サンプルユーザー一覧取得",
-    description="""
-    登録されているすべてのサンプルユーザーの一覧を取得します。
-
-    **スーパーユーザー権限が必要です。**
-
-    - **skip**: スキップするレコード数（デフォルト: 0）
-    - **limit**: 取得する最大レコード数（デフォルト: 100）
-    """,
-)
-@handle_service_errors
-async def list_users(
-    user_service: UserServiceDep,
-    _superuser: CurrentSuperuserDep,
-    skip: int = 0,
-    limit: int = 100,
-) -> list[SampleUserResponse]:
-    """ユーザー一覧を取得します（管理者専用）。
-
-    Args:
-        user_service (UserService): ユーザーサービス（自動注入）
-        _superuser (User): スーパーユーザー（権限チェック用、自動注入）
-        skip (int): スキップするレコード数（ページネーション用）
-        limit (int): 取得する最大レコード数（最大100）
-
-    Returns:
-        list[UserResponse]: ユーザー情報のリスト
-
-    Raises:
-        HTTPException:
-            - 401: 認証されていない
-            - 403: スーパーユーザー権限がない
-            - 500: 内部エラー
-
-    Example:
-        >>> # リクエスト
-        >>> GET /api/v1/users?skip=0&limit=10
-        >>> Authorization: Bearer <superuser_token>
-        >>>
-        >>> # レスポンス (200 OK)
-        >>> [
-        ...     {
-        ...         "id": 1,
-        ...         "email": "user1@example.com",
-        ...         "username": "user1",
-        ...         "is_active": true,
-        ...         "is_superuser": false,
-        ...         "created_at": "2024-01-01T00:00:00Z",
-        ...         "updated_at": "2024-01-01T00:00:00Z"
-        ...     },
-        ...     {
-        ...         "id": 2,
-        ...         "email": "user2@example.com",
-        ...         "username": "user2",
-        ...         "is_active": true,
-        ...         "is_superuser": false,
-        ...         "created_at": "2024-01-02T00:00:00Z",
-        ...         "updated_at": "2024-01-02T00:00:00Z"
-        ...     }
-        ... ]
-    """
-    users = await user_service.list_users(skip=skip, limit=limit)
-    return [SampleUserResponse.model_validate(user) for user in users]
-
-
 @router.post(
     "/sample-refresh",
     response_model=SampleToken,
@@ -423,7 +417,6 @@ async def refresh_token(
     access_token = create_access_token(data={"sub": str(user.id)})
 
     return SampleToken(access_token=access_token, token_type="bearer")
-
 
 @router.post(
     "/sample-api-key",

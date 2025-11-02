@@ -42,95 +42,9 @@ logger = get_logger(__name__)
 router = APIRouter()
 
 
-@router.post(
-    "",
-    response_model=ProjectResponse,
-    status_code=status.HTTP_201_CREATED,
-    summary="プロジェクト作成",
-    description="""
-    新しいプロジェクトを作成します。
-
-    **認証が必要です。**
-
-    - 作成者は自動的にOWNERロールとしてプロジェクトメンバーに追加されます
-    - プロジェクトコードは一意である必要があります
-
-    リクエストボディ:
-        - name: プロジェクト名（最大255文字）
-        - code: プロジェクトコード（最大50文字、一意）
-        - description: プロジェクト説明（オプション）
-    """,
-)
-@handle_service_errors
-async def create_project(
-    project_data: ProjectCreate,
-    project_service: ProjectServiceDep,
-    current_user: CurrentUserAzureDep,
-) -> ProjectResponse:
-    """プロジェクトを作成します。
-
-    Args:
-        project_data (ProjectCreate): プロジェクト作成データ
-        project_service (ProjectService): プロジェクトサービス（自動注入）
-        current_user (User): 認証済みユーザー（自動注入）
-
-    Returns:
-        ProjectResponse: 作成されたプロジェクト情報
-
-    Raises:
-        HTTPException:
-            - 401: 認証されていない
-            - 409: プロジェクトコード重複
-            - 422: バリデーションエラー
-            - 500: 内部エラー
-
-    Example:
-        >>> # リクエスト
-        >>> POST /api/v1/projects
-        >>> Authorization: Bearer <Azure_AD_Token>
-        >>> {
-        ...     "name": "AI Project",
-        ...     "code": "AI-001",
-        ...     "description": "AI development project"
-        ... }
-        >>>
-        >>> # レスポンス (201 Created)
-        >>> {
-        ...     "id": "12345678-1234-1234-1234-123456789abc",
-        ...     "name": "AI Project",
-        ...     "code": "AI-001",
-        ...     "description": "AI development project",
-        ...     "is_active": true,
-        ...     "created_by": "87654321-4321-4321-4321-cba987654321",
-        ...     "created_at": "2024-01-15T10:30:00Z",
-        ...     "updated_at": "2024-01-15T10:30:00Z"
-        ... }
-
-    Note:
-        - 作成者は自動的にOWNERとしてプロジェクトメンバーに追加されます
-        - プロジェクトコードは一意である必要があります（重複チェック実施）
-    """
-    logger.info(
-        "プロジェクト作成リクエスト",
-        user_id=str(current_user.id),
-        email=current_user.email,
-        project_code=project_data.code,
-        action="create_project",
-    )
-
-    project = await project_service.create_project(
-        project_data=project_data,
-        creator_id=current_user.id,
-    )
-
-    logger.info(
-        "プロジェクトを作成しました",
-        project_id=str(project.id),
-        project_code=project.code,
-        user_id=str(current_user.id),
-    )
-
-    return ProjectResponse.model_validate(project)
+# ================================================================================
+# GET Endpoints
+# ================================================================================
 
 
 @router.get(
@@ -419,6 +333,107 @@ async def get_project_by_code(
     return ProjectResponse.model_validate(project)
 
 
+# ================================================================================
+# POST Endpoints
+# ================================================================================
+
+
+@router.post(
+    "",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="プロジェクト作成",
+    description="""
+    新しいプロジェクトを作成します。
+
+    **認証が必要です。**
+
+    - 作成者は自動的にOWNERロールとしてプロジェクトメンバーに追加されます
+    - プロジェクトコードは一意である必要があります
+
+    リクエストボディ:
+        - name: プロジェクト名（最大255文字）
+        - code: プロジェクトコード（最大50文字、一意）
+        - description: プロジェクト説明（オプション）
+    """,
+)
+@handle_service_errors
+async def create_project(
+    project_data: ProjectCreate,
+    project_service: ProjectServiceDep,
+    current_user: CurrentUserAzureDep,
+) -> ProjectResponse:
+    """プロジェクトを作成します。
+
+    Args:
+        project_data (ProjectCreate): プロジェクト作成データ
+        project_service (ProjectService): プロジェクトサービス（自動注入）
+        current_user (User): 認証済みユーザー（自動注入）
+
+    Returns:
+        ProjectResponse: 作成されたプロジェクト情報
+
+    Raises:
+        HTTPException:
+            - 401: 認証されていない
+            - 409: プロジェクトコード重複
+            - 422: バリデーションエラー
+            - 500: 内部エラー
+
+    Example:
+        >>> # リクエスト
+        >>> POST /api/v1/projects
+        >>> Authorization: Bearer <Azure_AD_Token>
+        >>> {
+        ...     "name": "AI Project",
+        ...     "code": "AI-001",
+        ...     "description": "AI development project"
+        ... }
+        >>>
+        >>> # レスポンス (201 Created)
+        >>> {
+        ...     "id": "12345678-1234-1234-1234-123456789abc",
+        ...     "name": "AI Project",
+        ...     "code": "AI-001",
+        ...     "description": "AI development project",
+        ...     "is_active": true,
+        ...     "created_by": "87654321-4321-4321-4321-cba987654321",
+        ...     "created_at": "2024-01-15T10:30:00Z",
+        ...     "updated_at": "2024-01-15T10:30:00Z"
+        ... }
+
+    Note:
+        - 作成者は自動的にOWNERとしてプロジェクトメンバーに追加されます
+        - プロジェクトコードは一意である必要があります（重複チェック実施）
+    """
+    logger.info(
+        "プロジェクト作成リクエスト",
+        user_id=str(current_user.id),
+        email=current_user.email,
+        project_code=project_data.code,
+        action="create_project",
+    )
+
+    project = await project_service.create_project(
+        project_data=project_data,
+        creator_id=current_user.id,
+    )
+
+    logger.info(
+        "プロジェクトを作成しました",
+        project_id=str(project.id),
+        project_code=project.code,
+        user_id=str(current_user.id),
+    )
+
+    return ProjectResponse.model_validate(project)
+
+
+# ================================================================================
+# PATCH Endpoints
+# ================================================================================
+
+
 @router.patch(
     "/{project_id}",
     response_model=ProjectResponse,
@@ -511,6 +526,11 @@ async def update_project(
     )
 
     return ProjectResponse.model_validate(updated_project)
+
+
+# ================================================================================
+# DELETE Endpoints
+# ================================================================================
 
 
 @router.delete(

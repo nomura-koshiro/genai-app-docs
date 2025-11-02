@@ -102,6 +102,59 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
         """
         super().__init__(ProjectMember, db)
 
+    async def count_by_project(self, project_id: uuid.UUID) -> int:
+        """プロジェクトのメンバー数を取得します。
+
+        ページネーションのtotal値として使用されます。
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+
+        Returns:
+            int: プロジェクトのメンバー総数
+
+        Example:
+            >>> total = await member_repo.count_by_project(project_id)
+            >>> print(f"Project members: {total}")
+        """
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(ProjectMember)
+            .where(ProjectMember.project_id == project_id)
+        )
+        return result.scalar_one()
+
+    async def count_by_role(
+        self,
+        project_id: uuid.UUID,
+        role: ProjectRole,
+    ) -> int:
+        """プロジェクトの特定ロールのメンバー数を取得します。
+
+        最後のOWNER保護などのビジネスルールチェックに使用されます。
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            role (ProjectRole): カウント対象のロール
+
+        Returns:
+            int: 指定されたロールのメンバー数
+
+        Example:
+            >>> owner_count = await member_repo.count_by_role(
+            ...     project_id, ProjectRole.OWNER
+            ... )
+            >>> if owner_count <= 1:
+            ...     raise ValidationError("Cannot remove last owner")
+        """
+        result = await self.db.execute(
+            select(func.count())
+            .select_from(ProjectMember)
+            .where(ProjectMember.project_id == project_id)
+            .where(ProjectMember.role == role)
+        )
+        return result.scalar_one()
+
     async def get(self, id: uuid.UUID) -> ProjectMember | None:
         """UUIDによってプロジェクトメンバーを取得します。
 
@@ -166,6 +219,32 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             .where(ProjectMember.user_id == user_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_user_role(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> ProjectRole | None:
+        """ユーザーのプロジェクトロールを取得します。
+
+        権限チェックに使用されます。
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            user_id (uuid.UUID): ユーザーのUUID
+
+        Returns:
+            ProjectRole | None: ユーザーのロール、メンバーでない場合はNone
+
+        Example:
+            >>> role = await member_repo.get_user_role(project_id, user_id)
+            >>> if role == ProjectRole.OWNER:
+            ...     print("User is owner")
+            >>> elif role is None:
+            ...     print("User is not a member")
+        """
+        member = await self.get_by_project_and_user(project_id, user_id)
+        return member.role if member else None
 
     async def list_by_project(
         self,
@@ -329,82 +408,3 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             await self.db.flush()
             return True
         return False
-
-    async def count_by_project(self, project_id: uuid.UUID) -> int:
-        """プロジェクトのメンバー数を取得します。
-
-        ページネーションのtotal値として使用されます。
-
-        Args:
-            project_id (uuid.UUID): プロジェクトのUUID
-
-        Returns:
-            int: プロジェクトのメンバー総数
-
-        Example:
-            >>> total = await member_repo.count_by_project(project_id)
-            >>> print(f"Project members: {total}")
-        """
-        result = await self.db.execute(
-            select(func.count())
-            .select_from(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-        )
-        return result.scalar_one()
-
-    async def count_by_role(
-        self,
-        project_id: uuid.UUID,
-        role: ProjectRole,
-    ) -> int:
-        """プロジェクトの特定ロールのメンバー数を取得します。
-
-        最後のOWNER保護などのビジネスルールチェックに使用されます。
-
-        Args:
-            project_id (uuid.UUID): プロジェクトのUUID
-            role (ProjectRole): カウント対象のロール
-
-        Returns:
-            int: 指定されたロールのメンバー数
-
-        Example:
-            >>> owner_count = await member_repo.count_by_role(
-            ...     project_id, ProjectRole.OWNER
-            ... )
-            >>> if owner_count <= 1:
-            ...     raise ValidationError("Cannot remove last owner")
-        """
-        result = await self.db.execute(
-            select(func.count())
-            .select_from(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-            .where(ProjectMember.role == role)
-        )
-        return result.scalar_one()
-
-    async def get_user_role(
-        self,
-        project_id: uuid.UUID,
-        user_id: uuid.UUID,
-    ) -> ProjectRole | None:
-        """ユーザーのプロジェクトロールを取得します。
-
-        権限チェックに使用されます。
-
-        Args:
-            project_id (uuid.UUID): プロジェクトのUUID
-            user_id (uuid.UUID): ユーザーのUUID
-
-        Returns:
-            ProjectRole | None: ユーザーのロール、メンバーでない場合はNone
-
-        Example:
-            >>> role = await member_repo.get_user_role(project_id, user_id)
-            >>> if role == ProjectRole.OWNER:
-            ...     print("User is owner")
-            >>> elif role is None:
-            ...     print("User is not a member")
-        """
-        member = await self.get_by_project_and_user(project_id, user_id)
-        return member.role if member else None

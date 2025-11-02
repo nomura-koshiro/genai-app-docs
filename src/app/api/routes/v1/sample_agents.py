@@ -22,56 +22,6 @@ logger = get_logger(__name__)
 
 router = APIRouter()
 
-
-@router.post(
-    "/sample-chat",
-    response_model=SampleChatResponse,
-    summary="サンプルAIエージェントとチャット",
-    description="""
-    サンプルAIエージェントとチャットします。
-
-    - **message**: ユーザーメッセージ（1-10000文字）
-    - **session_id**: セッション識別子（新規の場合は省略）
-    - **context**: 追加コンテキスト情報（オプション）
-
-    認証はオプションです。認証済みユーザーの場合、セッションがユーザーに紐付けられます。
-    """,
-)
-@handle_service_errors
-@async_timeout(300.0)  # 5分タイムアウト（AI処理時間）
-async def chat(
-    request: SampleChatRequest,
-    agent_service: AgentServiceDep,
-    current_user: CurrentUserOptionalDep = None,
-) -> SampleChatResponse:
-    """AIエージェントとチャットします。
-
-    Args:
-        request: チャットリクエスト
-        agent_service: エージェントサービス（自動注入）
-        current_user: 現在のユーザー（オプション、自動注入）
-
-    Returns:
-        ChatResponse: エージェントのレスポンス
-
-    Raises:
-        HTTPException:
-            - 400: メッセージが無効
-            - 404: セッションが見つからない
-            - 500: 内部エラー
-    """
-    user_id = current_user.id if current_user else None
-
-    result = await agent_service.chat(
-        message=request.message,
-        session_id=request.session_id,
-        user_id=user_id,
-        context=request.context,
-    )
-
-    return SampleChatResponse(**result)
-
-
 @router.get(
     "/sample-sessions/{session_id}",
     response_model=SampleSessionResponse,
@@ -122,6 +72,53 @@ async def get_session(
         metadata=session.session_metadata,
     )
 
+@router.post(
+    "/sample-chat",
+    response_model=SampleChatResponse,
+    summary="サンプルAIエージェントとチャット",
+    description="""
+    サンプルAIエージェントとチャットします。
+
+    - **message**: ユーザーメッセージ（1-10000文字）
+    - **session_id**: セッション識別子（新規の場合は省略）
+    - **context**: 追加コンテキスト情報（オプション）
+
+    認証はオプションです。認証済みユーザーの場合、セッションがユーザーに紐付けられます。
+    """,
+)
+@handle_service_errors
+@async_timeout(300.0)  # 5分タイムアウト（AI処理時間）
+async def chat(
+    request: SampleChatRequest,
+    agent_service: AgentServiceDep,
+    current_user: CurrentUserOptionalDep = None,
+) -> SampleChatResponse:
+    """AIエージェントとチャットします。
+
+    Args:
+        request: チャットリクエスト
+        agent_service: エージェントサービス（自動注入）
+        current_user: 現在のユーザー（オプション、自動注入）
+
+    Returns:
+        ChatResponse: エージェントのレスポンス
+
+    Raises:
+        HTTPException:
+            - 400: メッセージが無効
+            - 404: セッションが見つからない
+            - 500: 内部エラー
+    """
+    user_id = current_user.id if current_user else None
+
+    result = await agent_service.chat(
+        message=request.message,
+        session_id=request.session_id,
+        user_id=user_id,
+        context=request.context,
+    )
+
+    return SampleChatResponse(**result)
 
 @router.delete(
     "/sample-sessions/{session_id}",

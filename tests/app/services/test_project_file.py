@@ -430,7 +430,7 @@ class TestProjectFileService:
         admin_member = ProjectMember(
             project_id=project.id,
             user_id=admin.id,
-            role=ProjectRole.ADMIN,
+            role=ProjectRole.PROJECT_MANAGER,
         )
         db_session.add(uploader_member)
         db_session.add(admin_member)

@@ -36,6 +36,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
+
 class SampleUserBase(BaseModel):
     """ベースユーザースキーマ。
 
@@ -60,60 +61,6 @@ class SampleUserBase(BaseModel):
 
     email: EmailStr = Field(..., description="ユーザーメールアドレス")
     username: str = Field(..., min_length=3, max_length=50, description="ユーザー名")
-
-
-class SampleUserCreate(SampleUserBase):
-    """新規ユーザー登録リクエストスキーマ。
-
-    ユーザー登録時のリクエストボディを定義します。
-
-    Attributes:
-        email (EmailStr): ユーザーメールアドレス（SampleUserBaseから継承）
-        username (str): ユーザー名（SampleUserBaseから継承）
-        password (str): ユーザーパスワード
-            - 最小8文字、最大100文字
-            - 強度チェックはサービス層で実施
-
-    Example:
-        >>> user = SampleUserCreate(
-        ...     email="john@example.com",
-        ...     username="johndoe",
-        ...     password="SecurePass123!"
-        ... )
-
-    Note:
-        - passwordは平文で送信されますが、サーバー側でbcryptハッシュ化されます
-        - HTTPS必須（平文パスワード送信のため）
-        - POST /users/register エンドポイントで使用されます
-    """
-
-    password: str = Field(..., min_length=8, max_length=100, description="ユーザーパスワード")
-
-
-class SampleUserLogin(BaseModel):
-    """ユーザーログインリクエストスキーマ。
-
-    ログイン時のリクエストボディを定義します。
-
-    Attributes:
-        email (EmailStr): ユーザーメールアドレス
-        password (str): ユーザーパスワード
-
-    Example:
-        >>> login_data = SampleUserLogin(
-        ...     email="john@example.com",
-        ...     password="SecurePass123!"
-        ... )
-
-    Note:
-        - HTTPS必須（平文パスワード送信のため）
-        - POST /users/login エンドポイントで使用されます
-        - 認証成功時はSampleToken型のレスポンスが返されます
-    """
-
-    email: EmailStr = Field(..., description="ユーザーメールアドレス")
-    password: str = Field(..., description="ユーザーパスワード")
-
 
 class SampleUserResponse(SampleUserBase):
     """ユーザー情報レスポンススキーマ。
@@ -154,7 +101,6 @@ class SampleUserResponse(SampleUserBase):
     is_superuser: bool = Field(False, description="ユーザーがスーパーユーザーかどうか")
     created_at: datetime = Field(..., description="ユーザー作成時刻")
 
-
 class SampleToken(BaseModel):
     """JWTトークンレスポンススキーマ。
 
@@ -182,7 +128,6 @@ class SampleToken(BaseModel):
 
     access_token: str = Field(..., description="JWTアクセストークン")
     token_type: str = Field("bearer", description="トークンタイプ")
-
 
 class SampleTokenPayload(BaseModel):
     """JWTトークンペイロードスキーマ。
@@ -213,7 +158,6 @@ class SampleTokenPayload(BaseModel):
     sub: str = Field(..., description="サブジェクト（ユーザーID）")
     exp: int = Field(..., description="有効期限タイムスタンプ")
 
-
 class SampleTokenWithRefresh(BaseModel):
     """アクセストークンとリフレッシュトークンのレスポンススキーマ。"""
 
@@ -221,12 +165,10 @@ class SampleTokenWithRefresh(BaseModel):
     refresh_token: str = Field(..., description="JWTリフレッシュトークン")
     token_type: str = Field("bearer", description="トークンタイプ")
 
-
 class SampleRefreshTokenRequest(BaseModel):
     """リフレッシュトークンリクエストスキーマ。"""
 
     refresh_token: str = Field(..., description="リフレッシュトークン")
-
 
 class SampleAPIKeyResponse(BaseModel):
     """APIキーレスポンススキーマ。"""
@@ -234,3 +176,54 @@ class SampleAPIKeyResponse(BaseModel):
     api_key: str = Field(..., description="生成されたAPIキー")
     created_at: datetime = Field(..., description="作成日時")
     message: str = Field(..., description="警告メッセージ")
+
+class SampleUserCreate(SampleUserBase):
+    """新規ユーザー登録リクエストスキーマ。
+
+    ユーザー登録時のリクエストボディを定義します。
+
+    Attributes:
+        email (EmailStr): ユーザーメールアドレス（SampleUserBaseから継承）
+        username (str): ユーザー名（SampleUserBaseから継承）
+        password (str): ユーザーパスワード
+            - 最小8文字、最大100文字
+            - 強度チェックはサービス層で実施
+
+    Example:
+        >>> user = SampleUserCreate(
+        ...     email="john@example.com",
+        ...     username="johndoe",
+        ...     password="SecurePass123!"
+        ... )
+
+    Note:
+        - passwordは平文で送信されますが、サーバー側でbcryptハッシュ化されます
+        - HTTPS必須（平文パスワード送信のため）
+        - POST /users/register エンドポイントで使用されます
+    """
+
+    password: str = Field(..., min_length=8, max_length=100, description="ユーザーパスワード")
+
+class SampleUserLogin(BaseModel):
+    """ユーザーログインリクエストスキーマ。
+
+    ログイン時のリクエストボディを定義します。
+
+    Attributes:
+        email (EmailStr): ユーザーメールアドレス
+        password (str): ユーザーパスワード
+
+    Example:
+        >>> login_data = SampleUserLogin(
+        ...     email="john@example.com",
+        ...     password="SecurePass123!"
+        ... )
+
+    Note:
+        - HTTPS必須（平文パスワード送信のため）
+        - POST /users/login エンドポイントで使用されます
+        - 認証成功時はSampleToken型のレスポンスが返されます
+    """
+
+    email: EmailStr = Field(..., description="ユーザーメールアドレス")
+    password: str = Field(..., description="ユーザーパスワード")

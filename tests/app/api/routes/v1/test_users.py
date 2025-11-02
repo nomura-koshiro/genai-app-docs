@@ -13,7 +13,6 @@ from httpx import AsyncClient
 
 from app.models.user import User
 
-
 @pytest.fixture
 async def mock_admin_user(db_session):
     """モック管理者ユーザー（SystemAdminロール）。"""

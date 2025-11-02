@@ -9,7 +9,6 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.models.user import User
 from app.services.user import UserService
 
-
 @pytest.mark.asyncio
 async def test_get_or_create_by_azure_oid_new_user(db_session):
     """新規ユーザー作成テスト（Azure OID初回ログイン）。"""
@@ -138,46 +137,6 @@ async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
             email="duplicate@company.com",  # 同じメール
             display_name="User 2",
         )
-
-
-@pytest.mark.asyncio
-async def test_update_last_login(db_session):
-    """最終ログイン情報更新テスト。"""
-    # Arrange
-    user = User(
-        azure_oid="login-oid",
-        email="login@company.com",
-        display_name="Login User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
-    assert user.last_login is None
-
-    service = UserService(db_session)
-
-    # Act
-    updated_user = await service.update_last_login(
-        user_id=user.id,
-        client_ip="192.168.1.1",
-    )
-
-    # Assert
-    assert updated_user.last_login is not None
-    assert isinstance(updated_user.last_login, datetime)
-
-
-@pytest.mark.asyncio
-async def test_update_last_login_user_not_found(db_session):
-    """存在しないユーザーの最終ログイン更新エラーテスト。"""
-    # Arrange
-    service = UserService(db_session)
-    non_existent_id = uuid.uuid4()
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.update_last_login(user_id=non_existent_id)
 
 
 @pytest.mark.asyncio
@@ -454,6 +413,46 @@ async def test_count_users_inactive_only(db_session):
 
     # Assert
     assert inactive_count == 2  # 非アクティブユーザーのみ
+
+
+@pytest.mark.asyncio
+async def test_update_last_login(db_session):
+    """最終ログイン情報更新テスト。"""
+    # Arrange
+    user = User(
+        azure_oid="login-oid",
+        email="login@company.com",
+        display_name="Login User",
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+
+    assert user.last_login is None
+
+    service = UserService(db_session)
+
+    # Act
+    updated_user = await service.update_last_login(
+        user_id=user.id,
+        client_ip="192.168.1.1",
+    )
+
+    # Assert
+    assert updated_user.last_login is not None
+    assert isinstance(updated_user.last_login, datetime)
+
+
+@pytest.mark.asyncio
+async def test_update_last_login_user_not_found(db_session):
+    """存在しないユーザーの最終ログイン更新エラーテスト。"""
+    # Arrange
+    service = UserService(db_session)
+    non_existent_id = uuid.uuid4()
+
+    # Act & Assert
+    with pytest.raises(NotFoundError):
+        await service.update_last_login(user_id=non_existent_id)
 
 
 @pytest.mark.asyncio

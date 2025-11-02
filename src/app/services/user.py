@@ -73,6 +73,65 @@ class UserService:
         self.repository = UserRepository(db)
 
     @measure_performance
+    async def count_users(self, is_active: bool | None = None) -> int:
+        """ユーザー総数を取得します。
+
+        このメソッドは、ページネーションのtotal値として使用されます。
+        オプションでアクティブフラグによるフィルタリングが可能です。
+
+        Args:
+            is_active (bool | None): アクティブフラグフィルタ
+                - True: アクティブユーザーのみ
+                - False: 非アクティブユーザーのみ
+                - None: 全ユーザー（デフォルト）
+
+        Returns:
+            int: 条件に一致するユーザー総数
+                - フィルタなしの場合: 全ユーザー数
+                - フィルタありの場合: 条件に一致するユーザー数
+
+        Example:
+            >>> # 全ユーザー数を取得
+            >>> total = await user_service.count_users()
+            >>> print(f"Total users: {total}")
+            Total users: 150
+            >>>
+            >>> # アクティブユーザー数を取得
+            >>> active_count = await user_service.count_users(is_active=True)
+            >>> print(f"Active users: {active_count}")
+            Active users: 120
+            >>>
+            >>> # ページネーションと組み合わせて使用
+            >>> total = await user_service.count_users()
+            >>> users = await user_service.list_users(skip=0, limit=10)
+            >>> print(f"Showing {len(users)} of {total} users")
+            Showing 10 of 150 users
+
+        Note:
+            - COUNT(*)クエリを使用するため効率的です
+            - 取得操作はDEBUGレベルでログに記録されます
+            - ページネーションのtotal値として推奨されます
+        """
+        logger.debug(
+            "ユーザー総数を取得中",
+            is_active=is_active,
+            action="count_users",
+        )
+
+        if is_active is not None:
+            total = await self.repository.count(is_active=is_active)
+        else:
+            total = await self.repository.count()
+
+        logger.debug(
+            "ユーザー総数を正常に取得しました",
+            total=total,
+            is_active=is_active,
+        )
+
+        return total
+
+    @measure_performance
     @transactional
     async def get_or_create_by_azure_oid(
         self,
@@ -263,79 +322,6 @@ class UserService:
             )
             raise
 
-    @measure_performance
-    @transactional
-    async def update_last_login(self, user_id: uuid.UUID, client_ip: str | None = None) -> User:
-        """ユーザーの最終ログイン情報を更新します。
-
-        このメソッドは、ユーザーがログインした際に呼び出され、
-        最終ログイン日時（とオプションでIPアドレス）を記録します。
-
-        Args:
-            user_id (uuid.UUID): ユーザーのUUID
-            client_ip (str | None): クライアントのIPアドレス（オプション）
-                - IPv4/IPv6両方サポート
-                - ロギング用途
-
-        Returns:
-            User: 更新されたユーザーモデルインスタンス
-                - last_login: 現在のUTC日時に更新されます
-
-        Raises:
-            NotFoundError: 指定されたユーザーIDが存在しない場合
-            Exception: データベース操作で予期しないエラーが発生した場合
-
-        Example:
-            >>> user = await user_service.update_last_login(
-            ...     user_id=uuid.UUID("12345678-1234-1234-1234-123456789abc"),
-            ...     client_ip="192.168.1.1"
-            ... )
-            >>> print(f"Last login: {user.last_login}")
-            Last login: 2024-01-15 10:30:00+00:00
-
-        Note:
-            - last_loginはUTCタイムゾーンで記録されます
-            - @transactionalデコレータにより自動コミットされます
-            - 監査ログにINFOレベルで記録されます
-        """
-        logger.info(
-            "ユーザーの最終ログイン情報を更新中",
-            user_id=str(user_id),
-            client_ip=client_ip,
-            action="update_last_login",
-        )
-
-        try:
-            user = await self.repository.get_by_id(user_id)
-            if not user:
-                logger.warning("ユーザーが見つかりません", user_id=str(user_id))
-                raise NotFoundError("ユーザーが見つかりません", details={"user_id": str(user_id)})
-
-            user.last_login = datetime.now(UTC)
-            await self.db.flush()
-            await self.db.refresh(user)
-
-            logger.info(
-                "最終ログイン情報を更新しました",
-                user_id=str(user.id),
-                email=user.email,
-                client_ip=client_ip,
-                last_login=user.last_login.isoformat(),
-            )
-
-            return user
-
-        except NotFoundError:
-            raise
-        except Exception as e:
-            logger.error(
-                "最終ログイン情報更新中に予期しないエラーが発生しました",
-                user_id=str(user_id),
-                error=str(e),
-                exc_info=True,
-            )
-            raise
-
     @cache_result(ttl=3600, key_prefix="user")
     @measure_performance
     async def get_user(self, user_id: uuid.UUID) -> User | None:
@@ -369,45 +355,6 @@ class UserService:
         if not user:
             logger.warning("ユーザーが見つかりません", user_id=str(user_id))
             return None
-
-        logger.debug("ユーザーを正常に取得しました", user_id=str(user.id), email=user.email)
-        return user
-
-    @measure_performance
-    async def get_user_by_email(self, email: str) -> User:
-        """メールアドレスでユーザー情報を取得します。
-
-        Args:
-            email (str): 検索対象のメールアドレス（一意制約フィールド）
-
-        Returns:
-            User: 該当するユーザーモデルインスタンス
-                - すべてのユーザー属性を含む
-                - リレーションシップは遅延ロードされます
-
-        Raises:
-            NotFoundError: 指定されたメールアドレスのユーザーが存在しない場合
-
-        Example:
-            >>> user = await user_service.get_user_by_email("user@example.com")
-            >>> print(f"Found user ID: {user.id}")
-            Found user ID: 12345678-1234-1234-1234-123456789abc
-
-        Note:
-            - メールアドレスにはインデックスが設定されており、高速な検索が可能です
-            - 取得操作はDEBUGレベルでログに記録されます
-            - 存在しないユーザーの場合、WARNINGログが記録されます
-        """
-        logger.debug(
-            "メールアドレスでユーザーを取得中",
-            email=email,
-            action="get_user_by_email",
-        )
-
-        user = await self.repository.get_by_email(email)
-        if not user:
-            logger.warning("ユーザーが見つかりません", email=email)
-            raise NotFoundError("ユーザーが見つかりません", details={"email": email})
 
         logger.debug("ユーザーを正常に取得しました", user_id=str(user.id), email=user.email)
         return user
@@ -447,6 +394,45 @@ class UserService:
         if not user:
             logger.warning("ユーザーが見つかりません", azure_oid=azure_oid)
             raise NotFoundError("ユーザーが見つかりません", details={"azure_oid": azure_oid})
+
+        logger.debug("ユーザーを正常に取得しました", user_id=str(user.id), email=user.email)
+        return user
+
+    @measure_performance
+    async def get_user_by_email(self, email: str) -> User:
+        """メールアドレスでユーザー情報を取得します。
+
+        Args:
+            email (str): 検索対象のメールアドレス（一意制約フィールド）
+
+        Returns:
+            User: 該当するユーザーモデルインスタンス
+                - すべてのユーザー属性を含む
+                - リレーションシップは遅延ロードされます
+
+        Raises:
+            NotFoundError: 指定されたメールアドレスのユーザーが存在しない場合
+
+        Example:
+            >>> user = await user_service.get_user_by_email("user@example.com")
+            >>> print(f"Found user ID: {user.id}")
+            Found user ID: 12345678-1234-1234-1234-123456789abc
+
+        Note:
+            - メールアドレスにはインデックスが設定されており、高速な検索が可能です
+            - 取得操作はDEBUGレベルでログに記録されます
+            - 存在しないユーザーの場合、WARNINGログが記録されます
+        """
+        logger.debug(
+            "メールアドレスでユーザーを取得中",
+            email=email,
+            action="get_user_by_email",
+        )
+
+        user = await self.repository.get_by_email(email)
+        if not user:
+            logger.warning("ユーザーが見つかりません", email=email)
+            raise NotFoundError("ユーザーが見つかりません", details={"email": email})
 
         logger.debug("ユーザーを正常に取得しました", user_id=str(user.id), email=user.email)
         return user
@@ -534,63 +520,77 @@ class UserService:
         return users
 
     @measure_performance
-    async def count_users(self, is_active: bool | None = None) -> int:
-        """ユーザー総数を取得します。
+    @transactional
+    async def update_last_login(self, user_id: uuid.UUID, client_ip: str | None = None) -> User:
+        """ユーザーの最終ログイン情報を更新します。
 
-        このメソッドは、ページネーションのtotal値として使用されます。
-        オプションでアクティブフラグによるフィルタリングが可能です。
+        このメソッドは、ユーザーがログインした際に呼び出され、
+        最終ログイン日時（とオプションでIPアドレス）を記録します。
 
         Args:
-            is_active (bool | None): アクティブフラグフィルタ
-                - True: アクティブユーザーのみ
-                - False: 非アクティブユーザーのみ
-                - None: 全ユーザー（デフォルト）
+            user_id (uuid.UUID): ユーザーのUUID
+            client_ip (str | None): クライアントのIPアドレス（オプション）
+                - IPv4/IPv6両方サポート
+                - ロギング用途
 
         Returns:
-            int: 条件に一致するユーザー総数
-                - フィルタなしの場合: 全ユーザー数
-                - フィルタありの場合: 条件に一致するユーザー数
+            User: 更新されたユーザーモデルインスタンス
+                - last_login: 現在のUTC日時に更新されます
+
+        Raises:
+            NotFoundError: 指定されたユーザーIDが存在しない場合
+            Exception: データベース操作で予期しないエラーが発生した場合
 
         Example:
-            >>> # 全ユーザー数を取得
-            >>> total = await user_service.count_users()
-            >>> print(f"Total users: {total}")
-            Total users: 150
-            >>>
-            >>> # アクティブユーザー数を取得
-            >>> active_count = await user_service.count_users(is_active=True)
-            >>> print(f"Active users: {active_count}")
-            Active users: 120
-            >>>
-            >>> # ページネーションと組み合わせて使用
-            >>> total = await user_service.count_users()
-            >>> users = await user_service.list_users(skip=0, limit=10)
-            >>> print(f"Showing {len(users)} of {total} users")
-            Showing 10 of 150 users
+            >>> user = await user_service.update_last_login(
+            ...     user_id=uuid.UUID("12345678-1234-1234-1234-123456789abc"),
+            ...     client_ip="192.168.1.1"
+            ... )
+            >>> print(f"Last login: {user.last_login}")
+            Last login: 2024-01-15 10:30:00+00:00
 
         Note:
-            - COUNT(*)クエリを使用するため効率的です
-            - 取得操作はDEBUGレベルでログに記録されます
-            - ページネーションのtotal値として推奨されます
+            - last_loginはUTCタイムゾーンで記録されます
+            - @transactionalデコレータにより自動コミットされます
+            - 監査ログにINFOレベルで記録されます
         """
-        logger.debug(
-            "ユーザー総数を取得中",
-            is_active=is_active,
-            action="count_users",
+        logger.info(
+            "ユーザーの最終ログイン情報を更新中",
+            user_id=str(user_id),
+            client_ip=client_ip,
+            action="update_last_login",
         )
 
-        if is_active is not None:
-            total = await self.repository.count(is_active=is_active)
-        else:
-            total = await self.repository.count()
+        try:
+            user = await self.repository.get_by_id(user_id)
+            if not user:
+                logger.warning("ユーザーが見つかりません", user_id=str(user_id))
+                raise NotFoundError("ユーザーが見つかりません", details={"user_id": str(user_id)})
 
-        logger.debug(
-            "ユーザー総数を正常に取得しました",
-            total=total,
-            is_active=is_active,
-        )
+            user.last_login = datetime.now(UTC)
+            await self.db.flush()
+            await self.db.refresh(user)
 
-        return total
+            logger.info(
+                "最終ログイン情報を更新しました",
+                user_id=str(user.id),
+                email=user.email,
+                client_ip=client_ip,
+                last_login=user.last_login.isoformat(),
+            )
+
+            return user
+
+        except NotFoundError:
+            raise
+        except Exception as e:
+            logger.error(
+                "最終ログイン情報更新中に予期しないエラーが発生しました",
+                user_id=str(user_id),
+                error=str(e),
+                exc_info=True,
+            )
+            raise
 
     @measure_performance
     @transactional

@@ -32,6 +32,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
+
 class UserBase(BaseModel):
     """ベースユーザースキーマ。
 
@@ -60,7 +61,6 @@ class UserBase(BaseModel):
     email: EmailStr = Field(..., description="ユーザーメールアドレス")
     display_name: str | None = Field(None, max_length=255, description="表示名")
     roles: list[str] = Field(default_factory=list, description="システムレベルのロール")
-
 
 class UserResponse(UserBase):
     """ユーザー情報レスポンススキーマ。
@@ -106,35 +106,6 @@ class UserResponse(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-
-class UserUpdate(BaseModel):
-    """ユーザー情報更新リクエストスキーマ。
-
-    ユーザー情報の更新時に使用します。
-
-    Attributes:
-        display_name (str | None): 表示名（オプション）
-        roles (list[str] | None): システムレベルのロール（オプション）
-        is_active (bool | None): アクティブフラグ（オプション）
-
-    Example:
-        >>> update = UserUpdate(
-        ...     display_name="John Smith",
-        ...     roles=["SystemAdmin", "User"],
-        ...     is_active=True
-        ... )
-
-    Note:
-        - すべてのフィールドはオプションです
-        - 指定されたフィールドのみが更新されます
-        - email と azure_oid は更新できません
-    """
-
-    display_name: str | None = Field(None, max_length=255, description="表示名")
-    roles: list[str] | None = Field(None, description="システムレベルのロール")
-    is_active: bool | None = Field(None, description="アクティブフラグ")
-
-
 class UserListResponse(BaseModel):
     """ユーザー一覧レスポンススキーマ。
 
@@ -163,3 +134,30 @@ class UserListResponse(BaseModel):
     total: int = Field(..., description="総件数")
     skip: int = Field(..., description="スキップ数（オフセット）")
     limit: int = Field(..., description="取得件数")
+
+class UserUpdate(BaseModel):
+    """ユーザー情報更新リクエストスキーマ。
+
+    ユーザー情報の更新時に使用します。
+
+    Attributes:
+        display_name (str | None): 表示名（オプション）
+        roles (list[str] | None): システムレベルのロール（オプション）
+        is_active (bool | None): アクティブフラグ（オプション）
+
+    Example:
+        >>> update = UserUpdate(
+        ...     display_name="John Smith",
+        ...     roles=["SystemAdmin", "User"],
+        ...     is_active=True
+        ... )
+
+    Note:
+        - すべてのフィールドはオプションです
+        - 指定されたフィールドのみが更新されます
+        - email と azure_oid は更新できません
+    """
+
+    display_name: str | None = Field(None, max_length=255, description="表示名")
+    roles: list[str] | None = Field(None, description="システムレベルのロール")
+    is_active: bool | None = Field(None, description="アクティブフラグ")

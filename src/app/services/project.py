@@ -69,122 +69,6 @@ class ProjectService:
         self.repository = ProjectRepository(db)
 
     @measure_performance
-    @transactional
-    async def create_project(
-        self,
-        project_data: ProjectCreate,
-        creator_id: uuid.UUID,
-    ) -> Project:
-        """新しいプロジェクトを作成します。
-
-        このメソッドは以下の処理を実行します：
-        1. プロジェクトコードの重複チェック
-        2. プロジェクトレコードの作成
-        3. 作成者を自動的にOWNERとしてプロジェクトメンバーに追加
-        4. 作成イベントのロギング
-
-        Args:
-            project_data (ProjectCreate): プロジェクト作成用のPydanticスキーマ
-                - name: プロジェクト名
-                - code: プロジェクトコード（一意制約）
-                - description: プロジェクト説明（オプション）
-            creator_id (uuid.UUID): プロジェクト作成者のユーザーID
-                - 自動的にOWNERとして追加されます
-
-        Returns:
-            Project: 作成されたプロジェクトモデルインスタンス
-                - id: 自動生成されたUUID
-                - created_by: 作成者のユーザーID
-                - is_active: True（デフォルト）
-                - created_at, updated_at: 自動生成されたタイムスタンプ
-
-        Raises:
-            ValidationError: 以下の場合に発生
-                - プロジェクトコードが既に使用されている
-            Exception: データベース操作で予期しないエラーが発生した場合
-
-        Example:
-            >>> project_data = ProjectCreate(
-            ...     name="AI Project",
-            ...     code="AI-001",
-            ...     description="AI development project"
-            ... )
-            >>> project = await project_service.create_project(project_data, user_id)
-            >>> print(f"Created project: {project.code}")
-            Created project: AI-001
-
-        Note:
-            - 作成者は自動的にOWNERロールとしてプロジェクトメンバーに追加されます
-            - プロジェクトコードは一意である必要があります
-            - すべての操作は構造化ログに記録されます
-        """
-        logger.info(
-            "プロジェクトを作成中",
-            name=project_data.name,
-            code=project_data.code,
-            creator_id=str(creator_id),
-            action="project_creation",
-        )
-
-        try:
-            # プロジェクトコードの重複チェック
-            existing_project = await self.repository.get_by_code(project_data.code)
-            if existing_project:
-                logger.warning(
-                    "プロジェクト作成失敗: コードが既に存在します",
-                    code=project_data.code,
-                    existing_project_id=str(existing_project.id),
-                )
-                raise ValidationError(
-                    "このプロジェクトコードは既に使用されています",
-                    details={"code": project_data.code},
-                )
-
-            # プロジェクトを作成
-            project = await self.repository.create(
-                name=project_data.name,
-                code=project_data.code,
-                description=project_data.description,
-                created_by=creator_id,
-                is_active=True,
-            )
-
-            # 作成者をOWNERとして追加
-            project_member = ProjectMember(
-                project_id=project.id,
-                user_id=creator_id,
-                role=ProjectRole.OWNER,
-                added_by=creator_id,
-            )
-            self.db.add(project_member)
-
-            await self.db.flush()
-            await self.db.refresh(project)
-
-            logger.info(
-                "プロジェクトを正常に作成しました",
-                project_id=str(project.id),
-                name=project.name,
-                code=project.code,
-                creator_id=str(creator_id),
-            )
-
-            return project
-
-        except ValidationError:
-            raise
-        except Exception as e:
-            logger.error(
-                "プロジェクト作成中に予期しないエラーが発生しました",
-                name=project_data.name,
-                code=project_data.code,
-                creator_id=str(creator_id),
-                error=str(e),
-                exc_info=True,
-            )
-            raise
-
-    @measure_performance
     async def get_project(self, project_id: uuid.UUID) -> Project | None:
         """プロジェクトIDでプロジェクト情報を取得します。
 
@@ -361,6 +245,122 @@ class ProjectService:
 
     @measure_performance
     @transactional
+    async def create_project(
+        self,
+        project_data: ProjectCreate,
+        creator_id: uuid.UUID,
+    ) -> Project:
+        """新しいプロジェクトを作成します。
+
+        このメソッドは以下の処理を実行します：
+        1. プロジェクトコードの重複チェック
+        2. プロジェクトレコードの作成
+        3. 作成者を自動的にOWNERとしてプロジェクトメンバーに追加
+        4. 作成イベントのロギング
+
+        Args:
+            project_data (ProjectCreate): プロジェクト作成用のPydanticスキーマ
+                - name: プロジェクト名
+                - code: プロジェクトコード（一意制約）
+                - description: プロジェクト説明（オプション）
+            creator_id (uuid.UUID): プロジェクト作成者のユーザーID
+                - 自動的にOWNERとして追加されます
+
+        Returns:
+            Project: 作成されたプロジェクトモデルインスタンス
+                - id: 自動生成されたUUID
+                - created_by: 作成者のユーザーID
+                - is_active: True（デフォルト）
+                - created_at, updated_at: 自動生成されたタイムスタンプ
+
+        Raises:
+            ValidationError: 以下の場合に発生
+                - プロジェクトコードが既に使用されている
+            Exception: データベース操作で予期しないエラーが発生した場合
+
+        Example:
+            >>> project_data = ProjectCreate(
+            ...     name="AI Project",
+            ...     code="AI-001",
+            ...     description="AI development project"
+            ... )
+            >>> project = await project_service.create_project(project_data, user_id)
+            >>> print(f"Created project: {project.code}")
+            Created project: AI-001
+
+        Note:
+            - 作成者は自動的にOWNERロールとしてプロジェクトメンバーに追加されます
+            - プロジェクトコードは一意である必要があります
+            - すべての操作は構造化ログに記録されます
+        """
+        logger.info(
+            "プロジェクトを作成中",
+            name=project_data.name,
+            code=project_data.code,
+            creator_id=str(creator_id),
+            action="project_creation",
+        )
+
+        try:
+            # プロジェクトコードの重複チェック
+            existing_project = await self.repository.get_by_code(project_data.code)
+            if existing_project:
+                logger.warning(
+                    "プロジェクト作成失敗: コードが既に存在します",
+                    code=project_data.code,
+                    existing_project_id=str(existing_project.id),
+                )
+                raise ValidationError(
+                    "このプロジェクトコードは既に使用されています",
+                    details={"code": project_data.code},
+                )
+
+            # プロジェクトを作成
+            project = await self.repository.create(
+                name=project_data.name,
+                code=project_data.code,
+                description=project_data.description,
+                created_by=creator_id,
+                is_active=True,
+            )
+
+            # 作成者をOWNERとして追加
+            project_member = ProjectMember(
+                project_id=project.id,
+                user_id=creator_id,
+                role=ProjectRole.OWNER,
+                added_by=creator_id,
+            )
+            self.db.add(project_member)
+
+            await self.db.flush()
+            await self.db.refresh(project)
+
+            logger.info(
+                "プロジェクトを正常に作成しました",
+                project_id=str(project.id),
+                name=project.name,
+                code=project.code,
+                creator_id=str(creator_id),
+            )
+
+            return project
+
+        except ValidationError:
+            raise
+        except Exception as e:
+            logger.error(
+                "プロジェクト作成中に予期しないエラーが発生しました",
+                name=project_data.name,
+                code=project_data.code,
+                creator_id=str(creator_id),
+                error=str(e),
+                exc_info=True,
+            )
+            raise
+
+    @measure_performance
+    @transactional
     async def update_project(
         self,
         project_id: uuid.UUID,
@@ -524,6 +524,70 @@ class ProjectService:
             project_code=project.code,
         )
 
+    async def _check_user_role(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+        required_roles: list[ProjectRole],
+    ) -> ProjectMember:
+        """ユーザーのプロジェクトロールをチェックします。
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            user_id (uuid.UUID): ユーザーのUUID
+            required_roles (list[ProjectRole]): 必要なロールのリスト
+
+        Returns:
+            ProjectMember: ユーザーのメンバーシップ情報
+
+        Raises:
+            AuthorizationError: ユーザーが必要なロールを持っていない場合
+
+        Note:
+            - 内部ヘルパーメソッド（外部からは呼び出されません）
+        """
+        from sqlalchemy import select
+
+        # ユーザーのメンバーシップを取得
+        result = await self.db.execute(
+            select(ProjectMember)
+            .where(ProjectMember.project_id == project_id)
+            .where(ProjectMember.user_id == user_id)
+        )
+        member = result.scalar_one_or_none()
+
+        if not member:
+            logger.warning(
+                "ユーザーはプロジェクトのメンバーではありません",
+                project_id=str(project_id),
+                user_id=str(user_id),
+            )
+            raise AuthorizationError(
+                "このプロジェクトへのアクセス権限がありません",
+                details={
+                    "project_id": str(project_id),
+                    "user_id": str(user_id),
+                },
+            )
+
+        if member.role not in required_roles:
+            logger.warning(
+                "ユーザーは必要なロールを持っていません",
+                project_id=str(project_id),
+                user_id=str(user_id),
+                current_role=member.role.value,
+                required_roles=[role.value for role in required_roles],
+            )
+            raise AuthorizationError(
+                "この操作を実行する権限がありません",
+                details={
+                    "current_role": member.role.value,
+                    "required_roles": [role.value for role in required_roles],
+                },
+            )
+
+        return member
+
     async def _delete_physical_files(self, project) -> None:
         """プロジェクトに関連する物理ファイルを削除します。
 
@@ -596,70 +660,6 @@ class ProjectService:
             deleted_count=deleted_count,
             failed_count=failed_count,
         )
-
-    async def _check_user_role(
-        self,
-        project_id: uuid.UUID,
-        user_id: uuid.UUID,
-        required_roles: list[ProjectRole],
-    ) -> ProjectMember:
-        """ユーザーのプロジェクトロールをチェックします。
-
-        Args:
-            project_id (uuid.UUID): プロジェクトのUUID
-            user_id (uuid.UUID): ユーザーのUUID
-            required_roles (list[ProjectRole]): 必要なロールのリスト
-
-        Returns:
-            ProjectMember: ユーザーのメンバーシップ情報
-
-        Raises:
-            AuthorizationError: ユーザーが必要なロールを持っていない場合
-
-        Note:
-            - 内部ヘルパーメソッド（外部からは呼び出されません）
-        """
-        from sqlalchemy import select
-
-        # ユーザーのメンバーシップを取得
-        result = await self.db.execute(
-            select(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-            .where(ProjectMember.user_id == user_id)
-        )
-        member = result.scalar_one_or_none()
-
-        if not member:
-            logger.warning(
-                "ユーザーはプロジェクトのメンバーではありません",
-                project_id=str(project_id),
-                user_id=str(user_id),
-            )
-            raise AuthorizationError(
-                "このプロジェクトへのアクセス権限がありません",
-                details={
-                    "project_id": str(project_id),
-                    "user_id": str(user_id),
-                },
-            )
-
-        if member.role not in required_roles:
-            logger.warning(
-                "ユーザーは必要なロールを持っていません",
-                project_id=str(project_id),
-                user_id=str(user_id),
-                current_role=member.role.value,
-                required_roles=[role.value for role in required_roles],
-            )
-            raise AuthorizationError(
-                "この操作を実行する権限がありません",
-                details={
-                    "current_role": member.role.value,
-                    "required_roles": [role.value for role in required_roles],
-                },
-            )
-
-        return member
 
     async def check_user_access(
         self,

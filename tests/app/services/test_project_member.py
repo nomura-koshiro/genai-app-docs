@@ -9,7 +9,6 @@ from app.models.user import User
 from app.schemas.project_member import ProjectMemberCreate
 from app.services.project_member import ProjectMemberService
 
-
 @pytest.fixture
 async def test_users(db_session):
     """テスト用ユーザーを作成。"""
@@ -44,13 +43,34 @@ async def test_project_with_owner(db_session, test_users):
     owner_member = ProjectMember(
         project_id=project.id,
         user_id=test_users[0].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=test_users[0].id,
     )
     db_session.add(owner_member)
     await db_session.commit()
     await db_session.refresh(project)
     return project
+
+
+@pytest.mark.asyncio
+async def test_get_user_role(db_session, test_project_with_owner, test_users):
+    """ユーザーロール取得のテスト。"""
+    # Arrange
+    service = ProjectMemberService(db_session)
+    project = test_project_with_owner
+
+    # Act
+    role_info = await service.get_user_role(
+        project_id=project.id,
+        user_id=test_users[0].id,
+    )
+
+    # Assert
+    assert role_info["project_id"] == project.id
+    assert role_info["user_id"] == test_users[0].id
+    assert role_info["role"] == ProjectRole.PROJECT_MANAGER
+    assert role_info["is_owner"] is True
+    assert role_info["is_admin"] is True
 
 
 @pytest.mark.asyncio
@@ -144,7 +164,7 @@ async def test_add_owner_by_non_owner(db_session, test_project_with_owner, test_
     admin_member = ProjectMember(
         project_id=project.id,
         user_id=test_users[1].id,
-        role=ProjectRole.ADMIN,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=test_users[0].id,
     )
     db_session.add(admin_member)
@@ -152,7 +172,7 @@ async def test_add_owner_by_non_owner(db_session, test_project_with_owner, test_
 
     member_data = ProjectMemberCreate(
         user_id=test_users[2].id,
-        role=ProjectRole.OWNER,  # OWNER追加
+        role=ProjectRole.PROJECT_MANAGER,  # OWNER追加
     )
 
     # Act & Assert - ADMINはOWNER追加不可
@@ -183,13 +203,13 @@ async def test_update_member_role_success(db_session, test_project_with_owner, t
     # Act - MEMBERをADMINに昇格
     updated = await service.update_member_role(
         member_id=member_id,
-        new_role=ProjectRole.ADMIN,
+        new_role=ProjectRole.PROJECT_MANAGER,
         requester_id=test_users[0].id,  # OWNER
     )
     await db_session.commit()
 
     # Assert
-    assert updated.role == ProjectRole.ADMIN
+    assert updated.role == ProjectRole.PROJECT_MANAGER
 
 
 @pytest.mark.asyncio
@@ -208,7 +228,7 @@ async def test_update_last_owner_role(db_session, test_project_with_owner, test_
     with pytest.raises(ValidationError) as exc_info:
         await service.update_member_role(
             member_id=owner_member.id,
-            new_role=ProjectRole.ADMIN,
+            new_role=ProjectRole.PROJECT_MANAGER,
             requester_id=test_users[0].id,
         )
 
@@ -278,13 +298,13 @@ async def test_remove_last_owner(db_session, test_project_with_owner, test_users
     second_owner = ProjectMember(
         project_id=project.id,
         user_id=test_users[1].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=test_users[0].id,
     )
     third_owner = ProjectMember(
         project_id=project.id,
         user_id=test_users[2].id,
-        role=ProjectRole.OWNER,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=test_users[0].id,
     )
     db_session.add(second_owner)
@@ -358,24 +378,3 @@ async def test_leave_project_last_owner(db_session, test_project_with_owner, tes
         )
 
     assert "最低1人のOWNER" in str(exc_info.value.message)
-
-
-@pytest.mark.asyncio
-async def test_get_user_role(db_session, test_project_with_owner, test_users):
-    """ユーザーロール取得のテスト。"""
-    # Arrange
-    service = ProjectMemberService(db_session)
-    project = test_project_with_owner
-
-    # Act
-    role_info = await service.get_user_role(
-        project_id=project.id,
-        user_id=test_users[0].id,
-    )
-
-    # Assert
-    assert role_info["project_id"] == project.id
-    assert role_info["user_id"] == test_users[0].id
-    assert role_info["role"] == ProjectRole.OWNER
-    assert role_info["is_owner"] is True
-    assert role_info["is_admin"] is True

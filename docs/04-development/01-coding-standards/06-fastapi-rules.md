@@ -93,7 +93,270 @@ RESTful原則に従います。
 
 ---
 
-## 2. 依存性注入
+## 2. メソッド配置順序（RESTful標準順序）
+
+### 基本原則
+
+すべてのエンドポイント、サービスメソッド、リポジトリメソッドは **RESTful標準順序** で配置します。
+
+**標準順序:** GET → POST → PATCH → DELETE → OTHER（プライベートメソッド等）
+
+この順序により：
+- コードの可読性が向上
+- メソッドの検索が容易
+- コードレビューが効率化
+- チーム全体で一貫した構造
+
+### API Routesでの配置順序
+
+```python
+# src/app/api/routes/v1/users.py
+from fastapi import APIRouter, status
+
+router = APIRouter()
+
+
+# ========================================
+# GET エンドポイント（一覧・詳細取得）
+# ========================================
+
+@router.get("/", response_model=list[UserResponse])
+async def list_users(
+    skip: int = 0,
+    limit: int = 100,
+    user_service: UserServiceDep = None,
+) -> list[UserResponse]:
+    """ユーザー一覧を取得。"""
+    users = await user_service.list_users(skip=skip, limit=limit)
+    return [UserResponse.model_validate(u) for u in users]
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user(
+    current_user: CurrentUserDep,
+) -> UserResponse:
+    """現在のユーザー情報を取得。"""
+    return UserResponse.model_validate(current_user)
+
+
+@router.get("/{user_id}", response_model=UserResponse)
+async def get_user(
+    user_id: int,
+    user_service: UserServiceDep,
+) -> UserResponse:
+    """特定ユーザーを取得。"""
+    user = await user_service.get_user(user_id)
+    return UserResponse.model_validate(user)
+
+
+# ========================================
+# POST エンドポイント（作成・アクション）
+# ========================================
+
+@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_data: UserCreate,
+    user_service: UserServiceDep,
+) -> UserResponse:
+    """ユーザーを作成。"""
+    user = await user_service.create_user(user_data)
+    return UserResponse.model_validate(user)
+
+
+# ========================================
+# PATCH エンドポイント（部分更新）
+# ========================================
+
+@router.patch("/me", response_model=UserResponse)
+async def update_current_user(
+    user_data: UserUpdate,
+    current_user: CurrentUserDep,
+    user_service: UserServiceDep,
+) -> UserResponse:
+    """現在のユーザー情報を更新。"""
+    user = await user_service.update_user(current_user.id, user_data)
+    return UserResponse.model_validate(user)
+
+
+# ========================================
+# DELETE エンドポイント（削除）
+# ========================================
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(
+    user_id: int,
+    user_service: UserServiceDep,
+    current_user: CurrentUserDep,
+) -> None:
+    """ユーザーを削除。"""
+    await user_service.delete_user(user_id)
+```
+
+### Servicesでの配置順序
+
+```python
+# src/app/services/user.py
+class UserService:
+    """ユーザーサービス。"""
+
+    def __init__(self, db: AsyncSession):
+        self.repository = UserRepository(db)
+
+    # ========================================
+    # GET メソッド（取得系）
+    # ========================================
+
+    async def get_user(self, user_id: int) -> User:
+        """ユーザーを取得。"""
+        user = await self.repository.get(user_id)
+        if not user:
+            raise NotFoundError(f"User {user_id} not found")
+        return user
+
+    async def get_user_by_email(self, email: str) -> User | None:
+        """メールアドレスでユーザーを取得。"""
+        return await self.repository.get_by_email(email)
+
+    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+        """ユーザー一覧を取得。"""
+        return await self.repository.get_multi(skip=skip, limit=limit)
+
+    # ========================================
+    # POST メソッド（作成系）
+    # ========================================
+
+    async def create_user(self, user_data: UserCreate) -> User:
+        """ユーザーを作成。"""
+        # バリデーション
+        existing = await self.get_user_by_email(user_data.email)
+        if existing:
+            raise ValidationError("Email already exists")
+
+        # パスワードハッシュ化
+        hashed_password = hash_password(user_data.password)
+
+        # 作成
+        return await self.repository.create(
+            email=user_data.email,
+            username=user_data.username,
+            hashed_password=hashed_password,
+        )
+
+    # ========================================
+    # PATCH メソッド（更新系）
+    # ========================================
+
+    async def update_user(self, user_id: int, user_data: UserUpdate) -> User:
+        """ユーザー情報を更新。"""
+        user = await self.get_user(user_id)
+        return await self.repository.update(user, user_data.model_dump(exclude_unset=True))
+
+    # ========================================
+    # DELETE メソッド（削除系）
+    # ========================================
+
+    async def delete_user(self, user_id: int) -> None:
+        """ユーザーを削除。"""
+        user = await self.get_user(user_id)
+        await self.repository.delete(user)
+
+    # ========================================
+    # OTHER メソッド（プライベート・ヘルパー）
+    # ========================================
+
+    async def _check_user_access(self, user_id: int, current_user: User) -> bool:
+        """ユーザーアクセス権限をチェック（プライベートメソッド）。"""
+        return user_id == current_user.id or current_user.is_superuser
+```
+
+### Repositoriesでの配置順序
+
+```python
+# src/app/repositories/user.py
+class UserRepository(BaseRepository[User]):
+    """ユーザーリポジトリ。"""
+
+    # ========================================
+    # GET メソッド（取得系）
+    # ========================================
+
+    async def get_by_email(self, email: str) -> User | None:
+        """メールアドレスでユーザーを取得。"""
+        query = select(User).where(User.email == email)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_by_azure_oid(self, azure_oid: str) -> User | None:
+        """Azure OIDでユーザーを取得。"""
+        query = select(User).where(User.azure_oid == azure_oid)
+        result = await self.db.execute(query)
+        return result.scalar_one_or_none()
+
+    async def get_active_users(self) -> list[User]:
+        """アクティブユーザー一覧を取得。"""
+        query = select(User).where(User.is_active == True)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
+    # ========================================
+    # POST メソッド（作成系）
+    # ========================================
+    # BaseRepositoryのcreateメソッドを使用
+
+    # ========================================
+    # PATCH メソッド（更新系）
+    # ========================================
+    # BaseRepositoryのupdateメソッドを使用
+
+    # ========================================
+    # DELETE メソッド（削除系）
+    # ========================================
+    # BaseRepositoryのdeleteメソッドを使用
+```
+
+### 順序を守るメリット
+
+1. **可読性の向上**
+   - 同じパターンですべてのファイルが構成される
+   - 目的のメソッドを素早く見つけられる
+
+2. **保守性の向上**
+   - 新しいメソッドを追加する場所が明確
+   - コードレビューが容易
+
+3. **一貫性の確保**
+   - チーム全体で同じ構造
+   - 学習コストの削減
+
+4. **RESTful原則との整合**
+   - API設計のベストプラクティスに準拠
+   - HTTPメソッドの標準的な使用順序と一致
+
+### 注意点
+
+```python
+# ✅ 良い例：RESTful順序を守る
+class UserService:
+    async def get_user(self, user_id: int): pass       # GET
+    async def list_users(self): pass                   # GET
+    async def create_user(self, data): pass            # POST
+    async def update_user(self, user_id, data): pass   # PATCH
+    async def delete_user(self, user_id): pass         # DELETE
+    async def _validate_email(self, email): pass       # PRIVATE
+
+
+# ❌ 悪い例：順序がバラバラ
+class UserService:
+    async def create_user(self, data): pass            # POST
+    async def _validate_email(self, email): pass       # PRIVATE
+    async def delete_user(self, user_id): pass         # DELETE
+    async def get_user(self, user_id: int): pass       # GET
+    async def update_user(self, user_id, data): pass   # PATCH
+    async def list_users(self): pass                   # GET
+```
+
+
+## 3. 依存性注入
 
 ### 依存性の定義
 
@@ -196,7 +459,7 @@ async def chat(
 
 ---
 
-## 3. async/awaitの使用
+## 4. async/awaitの使用
 
 ### 非同期エンドポイント
 
@@ -246,7 +509,7 @@ def get_user(user_id: int):  # asyncがない
 
 ---
 
-## 4. レスポンスモデル
+## 5. レスポンスモデル
 
 ### response_modelの指定
 
@@ -321,7 +584,7 @@ class SampleUserResponse(SampleUserBase):
 
 ---
 
-## 5. エラーハンドリング
+## 6. エラーハンドリング
 
 ### カスタム例外ハンドラー
 
@@ -378,7 +641,7 @@ async def get_user(user_id: int, user_service: SampleUserServiceDep):
 
 ---
 
-## 6. バリデーション
+## 7. バリデーション
 
 ### クエリパラメータ
 
@@ -433,7 +696,9 @@ async def create_user(
 
 ---
 
-## 7. ミドルウェア
+---
+
+## 8. ミドルウェア
 
 ### ログミドルウェア
 

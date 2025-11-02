@@ -11,80 +11,6 @@ from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
 from app.services.project import ProjectService
 
-
-@pytest.mark.asyncio
-async def test_create_project_success(db_session: AsyncSession):
-    """プロジェクト作成の成功ケース。"""
-    # Arrange
-    service = ProjectService(db_session)
-    creator_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = User(
-        id=creator_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"creator-{uuid.uuid4()}@example.com",
-        display_name="Creator User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    project_data = ProjectCreate(
-        name="Test Project",
-        code="TEST-001",
-        description="Test description",
-    )
-
-    # Act
-    project = await service.create_project(project_data, creator_id)
-    await db_session.commit()
-
-    # Assert
-    assert project.id is not None
-    assert project.name == "Test Project"
-    assert project.code == "TEST-001"
-    assert project.created_by == creator_id
-
-
-@pytest.mark.asyncio
-async def test_create_project_duplicate_code(db_session: AsyncSession):
-    """重複コードでのプロジェクト作成エラー。"""
-    # Arrange
-    service = ProjectService(db_session)
-    creator_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = User(
-        id=creator_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"creator-{uuid.uuid4()}@example.com",
-        display_name="Creator User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # 最初のプロジェクトを作成
-    first_project = ProjectCreate(
-        name="First Project",
-        code="DUP-001",
-        description="First project",
-    )
-    await service.create_project(first_project, creator_id)
-    await db_session.commit()
-
-    # Act & Assert - 同じコードで再度作成しようとするとエラー
-    duplicate_project = ProjectCreate(
-        name="Duplicate Project",
-        code="DUP-001",
-        description="Duplicate project",
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        await service.create_project(duplicate_project, creator_id)
-
-    assert "既に使用されています" in str(exc_info.value.message)
-
-
 @pytest.mark.asyncio
 async def test_get_project_success(db_session: AsyncSession):
     """プロジェクト取得の成功ケース。"""
@@ -215,6 +141,79 @@ async def test_list_user_projects(db_session: AsyncSession):
 
     # Assert
     assert len(result) == 2
+
+
+@pytest.mark.asyncio
+async def test_create_project_success(db_session: AsyncSession):
+    """プロジェクト作成の成功ケース。"""
+    # Arrange
+    service = ProjectService(db_session)
+    creator_id = uuid.uuid4()
+
+    # ユーザーを作成
+    user = User(
+        id=creator_id,
+        azure_oid=f"azure-oid-{uuid.uuid4()}",
+        email=f"creator-{uuid.uuid4()}@example.com",
+        display_name="Creator User",
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    project_data = ProjectCreate(
+        name="Test Project",
+        code="TEST-001",
+        description="Test description",
+    )
+
+    # Act
+    project = await service.create_project(project_data, creator_id)
+    await db_session.commit()
+
+    # Assert
+    assert project.id is not None
+    assert project.name == "Test Project"
+    assert project.code == "TEST-001"
+    assert project.created_by == creator_id
+
+
+@pytest.mark.asyncio
+async def test_create_project_duplicate_code(db_session: AsyncSession):
+    """重複コードでのプロジェクト作成エラー。"""
+    # Arrange
+    service = ProjectService(db_session)
+    creator_id = uuid.uuid4()
+
+    # ユーザーを作成
+    user = User(
+        id=creator_id,
+        azure_oid=f"azure-oid-{uuid.uuid4()}",
+        email=f"creator-{uuid.uuid4()}@example.com",
+        display_name="Creator User",
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    # 最初のプロジェクトを作成
+    first_project = ProjectCreate(
+        name="First Project",
+        code="DUP-001",
+        description="First project",
+    )
+    await service.create_project(first_project, creator_id)
+    await db_session.commit()
+
+    # Act & Assert - 同じコードで再度作成しようとするとエラー
+    duplicate_project = ProjectCreate(
+        name="Duplicate Project",
+        code="DUP-001",
+        description="Duplicate project",
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        await service.create_project(duplicate_project, creator_id)
+
+    assert "既に使用されています" in str(exc_info.value.message)
 
 
 @pytest.mark.asyncio
@@ -377,7 +376,7 @@ async def test_delete_project_permission_denied(db_session: AsyncSession):
     admin_member = ProjectMember(
         project_id=project.id,
         user_id=admin_id,
-        role=ProjectRole.ADMIN,
+        role=ProjectRole.PROJECT_MANAGER,
         added_by=owner_id,
     )
     db_session.add(admin_member)
@@ -386,61 +385,6 @@ async def test_delete_project_permission_denied(db_session: AsyncSession):
     # Act & Assert - ADMINは削除できない（OWNERのみ）
     with pytest.raises(AuthorizationError):
         await service.delete_project(project.id, admin_id)
-
-
-@pytest.mark.asyncio
-async def test_check_user_access(db_session: AsyncSession):
-    """ユーザーアクセスチェック。"""
-    # Arrange
-    service = ProjectService(db_session)
-    owner_id = uuid.uuid4()
-    member_id = uuid.uuid4()
-    non_member_id = uuid.uuid4()
-
-    # ユーザーを作成
-    owner = User(
-        id=owner_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"owner-{uuid.uuid4()}@example.com",
-        display_name="Owner User",
-    )
-    member = User(
-        id=member_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"member-{uuid.uuid4()}@example.com",
-        display_name="Member User",
-    )
-    db_session.add(owner)
-    db_session.add(member)
-    await db_session.commit()
-
-    # プロジェクトを作成
-    project_data = ProjectCreate(
-        name="Access Test",
-        code=f"ACCESS-{uuid.uuid4().hex[:6]}",
-        description="Access test",
-    )
-    project = await service.create_project(project_data, owner_id)
-
-    # MEMBERとして追加
-    member_obj = ProjectMember(
-        project_id=project.id,
-        user_id=member_id,
-        role=ProjectRole.MEMBER,
-        added_by=owner_id,
-    )
-    db_session.add(member_obj)
-    await db_session.commit()
-
-    # Act & Assert
-    # OWNERはアクセス可能
-    assert await service.check_user_access(project.id, owner_id) is True
-
-    # MEMBERはアクセス可能
-    assert await service.check_user_access(project.id, member_id) is True
-
-    # 非メンバーはアクセス不可
-    assert await service.check_user_access(project.id, non_member_id) is False
 
 
 @pytest.mark.asyncio
@@ -605,3 +549,58 @@ async def test_delete_project_without_files(db_session: AsyncSession):
     # Assert: プロジェクトが削除されたことを確認
     deleted_project = await service.get_project(project_id)
     assert deleted_project is None
+
+
+@pytest.mark.asyncio
+async def test_check_user_access(db_session: AsyncSession):
+    """ユーザーアクセスチェック。"""
+    # Arrange
+    service = ProjectService(db_session)
+    owner_id = uuid.uuid4()
+    member_id = uuid.uuid4()
+    non_member_id = uuid.uuid4()
+
+    # ユーザーを作成
+    owner = User(
+        id=owner_id,
+        azure_oid=f"azure-oid-{uuid.uuid4()}",
+        email=f"owner-{uuid.uuid4()}@example.com",
+        display_name="Owner User",
+    )
+    member = User(
+        id=member_id,
+        azure_oid=f"azure-oid-{uuid.uuid4()}",
+        email=f"member-{uuid.uuid4()}@example.com",
+        display_name="Member User",
+    )
+    db_session.add(owner)
+    db_session.add(member)
+    await db_session.commit()
+
+    # プロジェクトを作成
+    project_data = ProjectCreate(
+        name="Access Test",
+        code=f"ACCESS-{uuid.uuid4().hex[:6]}",
+        description="Access test",
+    )
+    project = await service.create_project(project_data, owner_id)
+
+    # MEMBERとして追加
+    member_obj = ProjectMember(
+        project_id=project.id,
+        user_id=member_id,
+        role=ProjectRole.MEMBER,
+        added_by=owner_id,
+    )
+    db_session.add(member_obj)
+    await db_session.commit()
+
+    # Act & Assert
+    # OWNERはアクセス可能
+    assert await service.check_user_access(project.id, owner_id) is True
+
+    # MEMBERはアクセス可能
+    assert await service.check_user_access(project.id, member_id) is True
+
+    # 非メンバーはアクセス不可
+    assert await service.check_user_access(project.id, non_member_id) is False

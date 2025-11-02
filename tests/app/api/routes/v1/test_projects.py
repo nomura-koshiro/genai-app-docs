@@ -14,7 +14,6 @@ from httpx import AsyncClient
 
 from app.models.user import User
 
-
 @pytest.fixture
 async def mock_current_user(db_session):
     """モック認証ユーザー（DB保存済み）。"""
@@ -28,73 +27,6 @@ async def mock_current_user(db_session):
     await db_session.commit()
     await db_session.refresh(user)
     return user
-
-
-@pytest.mark.asyncio
-async def test_create_project_endpoint_success(client: AsyncClient, override_auth, mock_current_user):
-    """プロジェクト作成エンドポイントの成功ケース。"""
-    # Arrange
-    override_auth(mock_current_user)
-
-    project_data = {
-        "name": "Test Project",
-        "code": f"TEST-{uuid.uuid4().hex[:6]}",
-        "description": "Test description",
-    }
-
-    # Act
-    response = await client.post("/api/v1/projects", json=project_data)
-
-    # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert "id" in data
-    assert data["name"] == project_data["name"]
-    assert data["code"] == project_data["code"]
-    assert data["description"] == project_data["description"]
-
-
-@pytest.mark.asyncio
-async def test_create_project_duplicate_code(client: AsyncClient, override_auth, mock_current_user):
-    """重複コードでのプロジェクト作成失敗のテスト。"""
-    # Arrange
-    override_auth(mock_current_user)
-
-    unique_code = f"DUP-{uuid.uuid4().hex[:6]}"
-    project_data = {
-        "name": "First Project",
-        "code": unique_code,
-        "description": "First project",
-    }
-
-    # 最初のプロジェクトを作成
-    await client.post("/api/v1/projects", json=project_data)
-
-    # Act - 同じコードで2回目の作成を試みる
-    duplicate_project = {
-        "name": "Duplicate Project",
-        "code": unique_code,
-        "description": "Duplicate project",
-    }
-    response = await client.post("/api/v1/projects", json=duplicate_project)
-
-    # Assert
-    assert response.status_code == 422  # Validation error for duplicate code
-
-
-@pytest.mark.asyncio
-async def test_unauthorized_access(client: AsyncClient):
-    """認証なしでのアクセステスト。"""
-    # Act - 認証なしでプロジェクト作成を試みる
-    project_data = {
-        "name": "Unauthorized Project",
-        "code": f"UNAUTH-{uuid.uuid4().hex[:6]}",
-        "description": "Unauthorized project",
-    }
-    response = await client.post("/api/v1/projects", json=project_data)
-
-    # Assert - 認証エラー
-    assert response.status_code in [401, 403]
 
 
 @pytest.mark.asyncio
@@ -170,6 +102,58 @@ async def test_get_project_not_found(client: AsyncClient, override_auth, mock_cu
 
 
 @pytest.mark.asyncio
+async def test_create_project_endpoint_success(client: AsyncClient, override_auth, mock_current_user):
+    """プロジェクト作成エンドポイントの成功ケース。"""
+    # Arrange
+    override_auth(mock_current_user)
+
+    project_data = {
+        "name": "Test Project",
+        "code": f"TEST-{uuid.uuid4().hex[:6]}",
+        "description": "Test description",
+    }
+
+    # Act
+    response = await client.post("/api/v1/projects", json=project_data)
+
+    # Assert
+    assert response.status_code == 201
+    data = response.json()
+    assert "id" in data
+    assert data["name"] == project_data["name"]
+    assert data["code"] == project_data["code"]
+    assert data["description"] == project_data["description"]
+
+
+@pytest.mark.asyncio
+async def test_create_project_duplicate_code(client: AsyncClient, override_auth, mock_current_user):
+    """重複コードでのプロジェクト作成失敗のテスト。"""
+    # Arrange
+    override_auth(mock_current_user)
+
+    unique_code = f"DUP-{uuid.uuid4().hex[:6]}"
+    project_data = {
+        "name": "First Project",
+        "code": unique_code,
+        "description": "First project",
+    }
+
+    # 最初のプロジェクトを作成
+    await client.post("/api/v1/projects", json=project_data)
+
+    # Act - 同じコードで2回目の作成を試みる
+    duplicate_project = {
+        "name": "Duplicate Project",
+        "code": unique_code,
+        "description": "Duplicate project",
+    }
+    response = await client.post("/api/v1/projects", json=duplicate_project)
+
+    # Assert
+    assert response.status_code == 422  # Validation error for duplicate code
+
+
+@pytest.mark.asyncio
 async def test_update_project_endpoint(client: AsyncClient, override_auth, mock_current_user):
     """プロジェクト更新エンドポイントのテスト。"""
     # Arrange
@@ -197,3 +181,18 @@ async def test_update_project_endpoint(client: AsyncClient, override_auth, mock_
     data = response.json()
     assert data["name"] == "Updated Name"
     assert data["description"] == "Updated description"
+
+
+@pytest.mark.asyncio
+async def test_unauthorized_access(client: AsyncClient):
+    """認証なしでのアクセステスト。"""
+    # Act - 認証なしでプロジェクト作成を試みる
+    project_data = {
+        "name": "Unauthorized Project",
+        "code": f"UNAUTH-{uuid.uuid4().hex[:6]}",
+        "description": "Unauthorized project",
+    }
+    response = await client.post("/api/v1/projects", json=project_data)
+
+    # Assert - 認証エラー
+    assert response.status_code in [401, 403]

@@ -36,6 +36,26 @@ class SampleFileRepository(BaseRepository[SampleFile, int]):
         result = await self.db.execute(select(SampleFile).filter(SampleFile.file_id == file_id))
         return result.scalar_one_or_none()
 
+    async def list_files(self, user_id: int | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
+        """ファイル一覧を取得します。
+
+        Args:
+            user_id: ユーザーID（指定した場合、そのユーザーのファイルのみ）
+            skip: スキップするレコード数
+            limit: 取得する最大レコード数
+
+        Returns:
+            list[SampleFile]: ファイルのリスト
+        """
+        query = select(SampleFile).order_by(SampleFile.created_at.desc())
+
+        if user_id is not None:
+            query = query.filter(SampleFile.user_id == user_id)
+
+        query = query.offset(skip).limit(limit)
+        result = await self.db.execute(query)
+        return list(result.scalars().all())
+
     async def create_file(
         self,
         file_id: str,
@@ -86,23 +106,3 @@ class SampleFileRepository(BaseRepository[SampleFile, int]):
         await self.db.delete(file)
         await self.db.flush()
         return True
-
-    async def list_files(self, user_id: int | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
-        """ファイル一覧を取得します。
-
-        Args:
-            user_id: ユーザーID（指定した場合、そのユーザーのファイルのみ）
-            skip: スキップするレコード数
-            limit: 取得する最大レコード数
-
-        Returns:
-            list[SampleFile]: ファイルのリスト
-        """
-        query = select(SampleFile).order_by(SampleFile.created_at.desc())
-
-        if user_id is not None:
-            query = query.filter(SampleFile.user_id == user_id)
-
-        query = query.offset(skip).limit(limit)
-        result = await self.db.execute(query)
-        return list(result.scalars().all())

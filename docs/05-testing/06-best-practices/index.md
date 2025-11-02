@@ -183,6 +183,299 @@ class TestUserAuthentication:
             pass
 ```
 
+
+## テストメソッドの配置順序
+
+### RESTful標準順序
+
+テストメソッドも本体コードと同じ **RESTful標準順序** で配置します。
+
+**標準順序:** フィクスチャ → GET → POST → PATCH → DELETE → OTHER
+
+この順序により：
+- 本体コードとテストコードの対応が明確
+- テストの検索が容易
+- コードレビューが効率化
+
+### テストファイルの構造
+
+```python
+# tests/app/services/test_user.py
+import pytest
+from app.services.user import UserService
+
+# ========================================
+# フィクスチャ（ファイル先頭）
+# ========================================
+
+@pytest.fixture
+def test_users(db_session):
+    """テスト用ユーザーのフィクスチャ。"""
+    users = [
+        User(email=f"user{i}@example.com", username=f"user{i}")
+        for i in range(3)
+    ]
+    db_session.add_all(users)
+    db_session.commit()
+    return users
+
+
+@pytest.fixture
+def user_service(db_session):
+    """UserServiceのフィクスチャ。"""
+    return UserService(db_session)
+
+
+# ========================================
+# GET メソッドのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_get_user_success(user_service, test_users):
+    """ユーザー取得が成功する。"""
+    user_id = test_users[0].id
+    user = await user_service.get_user(user_id)
+    assert user.id == user_id
+    assert user.email == test_users[0].email
+
+
+@pytest.mark.asyncio
+async def test_get_user_not_found(user_service):
+    """存在しないユーザーIDでNotFoundErrorが発生する。"""
+    with pytest.raises(NotFoundError):
+        await user_service.get_user(99999)
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_email_success(user_service, test_users):
+    """メールアドレスでユーザー取得が成功する。"""
+    email = test_users[0].email
+    user = await user_service.get_user_by_email(email)
+    assert user.email == email
+
+
+@pytest.mark.asyncio
+async def test_list_users_returns_all(user_service, test_users):
+    """ユーザー一覧取得が成功する。"""
+    users = await user_service.list_users()
+    assert len(users) == len(test_users)
+
+
+# ========================================
+# POST メソッドのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_create_user_success(user_service):
+    """有効なデータでユーザー作成が成功する。"""
+    user_data = UserCreate(
+        email="new@example.com",
+        username="newuser",
+        password="password123"
+    )
+    user = await user_service.create_user(user_data)
+    assert user.email == user_data.email
+    assert user.username == user_data.username
+    assert user.id is not None
+
+
+@pytest.mark.asyncio
+async def test_create_user_duplicate_email_fails(user_service, test_users):
+    """重複したメールアドレスでValidationErrorが発生する。"""
+    user_data = UserCreate(
+        email=test_users[0].email,  # 既存のメールアドレス
+        username="duplicate",
+        password="password123"
+    )
+    with pytest.raises(ValidationError):
+        await user_service.create_user(user_data)
+
+
+# ========================================
+# PATCH メソッドのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_update_user_success(user_service, test_users):
+    """ユーザー更新が成功する。"""
+    user_id = test_users[0].id
+    update_data = UserUpdate(username="updated")
+    user = await user_service.update_user(user_id, update_data)
+    assert user.username == "updated"
+
+
+@pytest.mark.asyncio
+async def test_update_user_not_found(user_service):
+    """存在しないユーザーの更新でNotFoundErrorが発生する。"""
+    update_data = UserUpdate(username="updated")
+    with pytest.raises(NotFoundError):
+        await user_service.update_user(99999, update_data)
+
+
+# ========================================
+# DELETE メソッドのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_delete_user_success(user_service, test_users):
+    """ユーザー削除が成功する。"""
+    user_id = test_users[0].id
+    await user_service.delete_user(user_id)
+
+    # 削除されたことを確認
+    with pytest.raises(NotFoundError):
+        await user_service.get_user(user_id)
+
+
+@pytest.mark.asyncio
+async def test_delete_user_not_found(user_service):
+    """存在しないユーザーの削除でNotFoundErrorが発生する。"""
+    with pytest.raises(NotFoundError):
+        await user_service.delete_user(99999)
+```
+
+### API Routesテストの配置順序
+
+```python
+# tests/app/api/routes/v1/test_users.py
+import pytest
+from httpx import AsyncClient
+
+# ========================================
+# フィクスチャ
+# ========================================
+
+@pytest.fixture
+async def authenticated_client(client: AsyncClient, test_user):
+    """認証済みクライアントのフィクスチャ。"""
+    token = create_access_token(data={"sub": str(test_user.id)})
+    client.headers["Authorization"] = f"Bearer {token}"
+    return client
+
+
+# ========================================
+# GET エンドポイントのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_get_users_list(authenticated_client):
+    """GET /users - ユーザー一覧取得。"""
+    response = await authenticated_client.get("/api/users")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+
+
+@pytest.mark.asyncio
+async def test_get_current_user(authenticated_client, test_user):
+    """GET /users/me - 現在のユーザー情報取得。"""
+    response = await authenticated_client.get("/api/users/me")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == test_user.email
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_id(authenticated_client, test_user):
+    """GET /users/{user_id} - 特定ユーザー取得。"""
+    response = await authenticated_client.get(f"/api/users/{test_user.id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(test_user.id)
+
+
+# ========================================
+# POST エンドポイントのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_create_user(client: AsyncClient):
+    """POST /users - ユーザー作成。"""
+    user_data = {
+        "email": "new@example.com",
+        "username": "newuser",
+        "password": "password123"
+    }
+    response = await client.post("/api/users", json=user_data)
+    assert response.status_code == 201
+    data = response.json()
+    assert data["email"] == user_data["email"]
+
+
+# ========================================
+# PATCH エンドポイントのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_update_current_user(authenticated_client):
+    """PATCH /users/me - ユーザー情報更新。"""
+    update_data = {"username": "updated"}
+    response = await authenticated_client.patch("/api/users/me", json=update_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["username"] == "updated"
+
+
+# ========================================
+# DELETE エンドポイントのテスト
+# ========================================
+
+@pytest.mark.asyncio
+async def test_delete_user(authenticated_client, test_user):
+    """DELETE /users/{user_id} - ユーザー削除。"""
+    response = await authenticated_client.delete(f"/api/users/{test_user.id}")
+    assert response.status_code == 204
+```
+
+### 順序を守るメリット
+
+1. **本体コードとの対応が明確**
+   - サービスやAPIのメソッド順序とテストが一致
+   - 欠けているテストケースを発見しやすい
+
+2. **テストの追加位置が明確**
+   - 新しいメソッドのテストをどこに追加すべきか自明
+   - チーム全体で一貫した構造
+
+3. **レビューの効率化**
+   - コードレビュー時に本体とテストを並行して確認しやすい
+   - テストカバレッジの確認が容易
+
+4. **保守性の向上**
+   - テストファイル内でメソッドを検索しやすい
+   - テストの重複を防ぐ
+
+### フィクスチャの配置
+
+フィクスチャは**必ずファイルの先頭**に配置します。
+
+```python
+# ✅ 良い例：フィクスチャが先頭
+@pytest.fixture
+def test_data():
+    return {"key": "value"}
+
+@pytest.mark.asyncio
+async def test_get_something():
+    pass
+
+
+# ❌ 悪い例：フィクスチャが途中に混在
+@pytest.mark.asyncio
+async def test_get_something():
+    pass
+
+@pytest.fixture  # テストの間にフィクスチャ
+def test_data():
+    return {"key": "value"}
+
+@pytest.mark.asyncio
+async def test_create_something():
+    pass
+```
+
+---
+
 ## テストの独立性
 
 ### 各テストは独立して実行可能であるべき
