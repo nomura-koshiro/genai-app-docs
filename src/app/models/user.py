@@ -101,7 +101,7 @@ class User(Base, TimestampMixin):
         comment="Display name",
     )
 
-    roles: Mapped[list] = mapped_column(
+    roles: Mapped[list[str]] = mapped_column(
         JSON,
         default=list,
         nullable=False,

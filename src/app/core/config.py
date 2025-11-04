@@ -416,7 +416,22 @@ class Settings(BaseSettings):
         """
         super().__init__(**kwargs)
 
-        # ALLOWED_ORINGSを環境に応じて設定
+        self._validate_cors_settings()
+        self._validate_security_settings()
+        self._validate_llm_config()
+        self._validate_database_config()
+        self._validate_storage_config()
+        self._validate_azure_ad_config()
+
+    def _validate_cors_settings(self) -> None:
+        """CORS設定のバリデーション。
+
+        環境に応じたALLOWED_ORIGINSの設定と検証を行います。
+
+        Raises:
+            ValueError: 本番環境でALLOWED_ORIGINSが未設定、またはワイルドカードが含まれる場合
+        """
+        # ALLOWED_ORIGINSを環境に応じて設定
         if self.ALLOWED_ORIGINS is None:
             if self.ENVIRONMENT == "production":
                 raise ValueError("本番環境ではALLOWED_ORIGINSを明示的に設定する必要があります")
@@ -431,39 +446,88 @@ class Settings(BaseSettings):
             if "*" in self.ALLOWED_ORIGINS:
                 raise ValueError("本番環境ではワイルドカードCORS (*)は許可されていません")
 
+    def _validate_security_settings(self) -> None:
+        """セキュリティ設定のバリデーション。
+
+        SECRET_KEYの検証を行います。
+
+        Raises:
+            ValueError: 本番環境でSECRET_KEYが未設定またはデフォルト値の場合
+        """
         # 本番環境でのSECRET_KEYチェック
         if self.ENVIRONMENT == "production":
             if not self.SECRET_KEY or "dev-secret-key" in self.SECRET_KEY:
                 raise ValueError("本番環境ではSECRET_KEYを設定する必要があります。生成方法: openssl rand -hex 32")
 
-            # LLM API キーの検証
-            if self.LLM_PROVIDER == "anthropic" and not self.ANTHROPIC_API_KEY:
-                raise ValueError("LLM_PROVIDER=anthropicの場合、ANTHROPIC_API_KEYが必要です")
-            elif self.LLM_PROVIDER == "openai" and not self.OPENAI_API_KEY:
-                raise ValueError("LLM_PROVIDER=openaiの場合、OPENAI_API_KEYが必要です")
-            elif self.LLM_PROVIDER == "azure_openai":
-                if not self.AZURE_OPENAI_ENDPOINT or not self.AZURE_OPENAI_API_KEY:
-                    raise ValueError("LLM_PROVIDER=azure_openaiの場合、AZURE_OPENAI_ENDPOINTとAZURE_OPENAI_API_KEYが必要です")
-
-            # データベースURL の検証
-            if not self.DATABASE_URL.startswith("postgresql+asyncpg://"):
-                raise ValueError("DATABASE_URLはasyncpgドライバーを使用する必要があります (postgresql+asyncpg://)")
-
-            if "localhost" in self.DATABASE_URL or "127.0.0.1" in self.DATABASE_URL:
-                logger.warning("本番環境でlocalhostのデータベースURLを使用しています - 意図的ですか？")
-
-            # Azure Storage の検証
-            if self.STORAGE_BACKEND == "azure":
-                if not self.AZURE_STORAGE_ACCOUNT_NAME:
-                    raise ValueError("STORAGE_BACKEND=azureの場合、AZURE_STORAGE_ACCOUNT_NAMEが必要です")
-                if not self.AZURE_STORAGE_CONNECTION_STRING:
-                    raise ValueError("STORAGE_BACKEND=azureの場合、AZURE_STORAGE_CONNECTION_STRINGが必要です")
-
         # 開発環境でも警告
         if self.ENVIRONMENT == "development" and "dev-secret-key" in self.SECRET_KEY:
             logger.warning("Using default SECRET_KEY. Set a custom key for better security even in development.")
 
-        # ✨ 追加: Azure AD設定の検証（本番モードのみ）
+    def _validate_llm_config(self) -> None:
+        """LLM設定のバリデーション。
+
+        本番環境でLLMプロバイダーに応じたAPIキーの存在を検証します。
+
+        Raises:
+            ValueError: 本番環境で必要なAPIキーが未設定の場合
+        """
+        if self.ENVIRONMENT != "production":
+            return
+
+        # LLM API キーの検証
+        if self.LLM_PROVIDER == "anthropic" and not self.ANTHROPIC_API_KEY:
+            raise ValueError("LLM_PROVIDER=anthropicの場合、ANTHROPIC_API_KEYが必要です")
+        elif self.LLM_PROVIDER == "openai" and not self.OPENAI_API_KEY:
+            raise ValueError("LLM_PROVIDER=openaiの場合、OPENAI_API_KEYが必要です")
+        elif self.LLM_PROVIDER == "azure_openai":
+            if not self.AZURE_OPENAI_ENDPOINT or not self.AZURE_OPENAI_API_KEY:
+                raise ValueError("LLM_PROVIDER=azure_openaiの場合、AZURE_OPENAI_ENDPOINTとAZURE_OPENAI_API_KEYが必要です")
+
+    def _validate_database_config(self) -> None:
+        """データベース設定のバリデーション。
+
+        本番環境でデータベースURLの形式と設定を検証します。
+
+        Raises:
+            ValueError: 本番環境でDATABASE_URLが不正な形式の場合
+        """
+        if self.ENVIRONMENT != "production":
+            return
+
+        # データベースURL の検証
+        if not self.DATABASE_URL.startswith("postgresql+asyncpg://"):
+            raise ValueError("DATABASE_URLはasyncpgドライバーを使用する必要があります (postgresql+asyncpg://)")
+
+        if "localhost" in self.DATABASE_URL or "127.0.0.1" in self.DATABASE_URL:
+            logger.warning("本番環境でlocalhostのデータベースURLを使用しています - 意図的ですか？")
+
+    def _validate_storage_config(self) -> None:
+        """ストレージ設定のバリデーション。
+
+        本番環境でAzure Storageを使用する場合に必要な設定を検証します。
+
+        Raises:
+            ValueError: 本番環境でAzure Storage使用時に必要な設定が未設定の場合
+        """
+        if self.ENVIRONMENT != "production":
+            return
+
+        # Azure Storage の検証
+        if self.STORAGE_BACKEND == "azure":
+            if not self.AZURE_STORAGE_ACCOUNT_NAME:
+                raise ValueError("STORAGE_BACKEND=azureの場合、AZURE_STORAGE_ACCOUNT_NAMEが必要です")
+            if not self.AZURE_STORAGE_CONNECTION_STRING:
+                raise ValueError("STORAGE_BACKEND=azureの場合、AZURE_STORAGE_CONNECTION_STRINGが必要です")
+
+    def _validate_azure_ad_config(self) -> None:
+        """Azure AD設定のバリデーション。
+
+        本番モード認証時にAzure AD設定が存在することを検証します。
+
+        Raises:
+            ValueError: 本番モード認証時にAzure AD設定が未設定の場合
+        """
+        # Azure AD設定の検証（本番モードのみ）
         if self.AUTH_MODE == "production":
             if not self.AZURE_TENANT_ID:
                 raise ValueError("AUTH_MODE=productionの場合、AZURE_TENANT_IDが必要です")
