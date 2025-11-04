@@ -28,7 +28,7 @@
     ...     return {"email": current_user.email}
 """
 
-from typing import TYPE_CHECKING, Annotated, Any
+from typing import TYPE_CHECKING, Annotated, Any, NoReturn
 
 __all__ = ["AuthUserType", "DatabaseDep", "UserServiceDep", "AzureUserServiceDep"]
 
@@ -61,13 +61,13 @@ elif settings.AUTH_MODE == "production":
     from app.core.security.azure_ad import AzureUser as AuthUserType
     from app.core.security.azure_ad import get_current_azure_user
 
-    def get_current_dev_user() -> Any:  # type: ignore[misc]
+    def get_current_dev_user() -> NoReturn:
         raise NotImplementedError("Dev auth not available in production mode")
 else:
     from app.core.security.dev_auth import DevUser as AuthUserType  # type: ignore[assignment]
     from app.core.security.dev_auth import get_current_dev_user
 
-    def get_current_azure_user() -> Any:  # type: ignore[misc]
+    def get_current_azure_user() -> NoReturn:
         raise NotImplementedError("Azure auth not available in development mode")
 
 # データベース依存性
