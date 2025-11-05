@@ -97,9 +97,12 @@ async def db_engine():
 
     yield engine
 
-    # テーブルを削除
+    # テーブルを削除（循環依存を避けるため、PostgreSQLのCASCADEを使用）
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
+        await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
 
     await engine.dispose()
 
@@ -212,3 +215,47 @@ def override_auth(request):
 
     # クリーンアップ: テスト終了後に自動的にオーバーライドをクリア
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def test_user(db_session):
+    """テスト用ユーザーを作成します。"""
+    from app.models.user import User
+
+    user = User(
+        azure_oid="test-azure-oid",
+        email="test@example.com",
+        display_name="Test User",
+        roles=["User"],
+    )
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+async def test_project(db_session, test_user):
+    """テスト用プロジェクトを作成します。"""
+    from app.models.project import Project
+    from app.models.project_member import ProjectMember, ProjectRole
+
+    project = Project(
+        name="テストプロジェクト",
+        code="TEST001",
+        description="テスト用プロジェクト",
+    )
+    db_session.add(project)
+    await db_session.flush()
+
+    # プロジェクトマネージャーとして追加
+    member = ProjectMember(
+        project_id=project.id,
+        user_id=test_user.id,
+        role=ProjectRole.PROJECT_MANAGER,
+    )
+    db_session.add(member)
+    await db_session.commit()
+    await db_session.refresh(project)
+
+    return project

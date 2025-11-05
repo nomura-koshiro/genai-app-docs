@@ -73,7 +73,7 @@ async def get_active_users(db: AsyncSession) -> list[SampleUser]:
 
 # 作成
 async def create_user(db: AsyncSession, email: str, username: str) -> SampleUser:
-    user = User(email=email, username=username)
+    user = SampleUser(email=email, username=username)
     db.add(user)
     await db.flush()
     await db.refresh(user)
@@ -98,7 +98,7 @@ camp-backendでは、トランザクション管理を**サービス層の責任
 
 ### 設計パターン
 
-```
+```text
 ┌─────────────────────────────────────┐
 │  エンドポイント層                    │
 │  - リクエスト受付                    │
@@ -184,10 +184,10 @@ def transactional(func):
 **使用例**:
 
 ```python
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.repository = UserRepository(User, db)
+        self.repository = SampleUserRepository(db)
 
     @transactional
     async def create_user_with_profile(
@@ -195,7 +195,7 @@ class UserService:
         email: str,
         username: str,
         profile_data: dict,
-    ) -> User:
+    ) -> SampleUser:
         """ユーザーとプロフィールを同時に作成（1つのトランザクション）。"""
         # ユーザー作成
         user = await self.repository.create(
@@ -222,7 +222,7 @@ async def create_user(
     self,
     email: str,
     username: str,
-) -> User:
+) -> SampleUser:
     """ユーザーを作成します。"""
     user = await self.repository.create(
         email=email,
@@ -291,8 +291,6 @@ DateTime(timezone=False)  # PostgreSQL: TIMESTAMP WITHOUT TIME ZONE（非推奨�
 ```
 
 **推奨**: 必ず`timezone=True`を使用してタイムゾーン情報を保持してください。
-
-```
 
 ## 参考リンク
 

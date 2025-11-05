@@ -1,5 +1,7 @@
 """ビジネスロジック用のユーザーサービス。"""
 
+import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.decorators import cache_result, measure_performance, transactional
@@ -223,13 +225,15 @@ class SampleUserService:
 
             # アカウントロック状態をチェック
             if user.locked_until and user.locked_until > datetime.now(UTC):
+                # 型安全性のためにローカル変数に代入
+                locked_until = user.locked_until
                 logger.warning(
                     "認証失敗: アカウントがロックされています",
                     email=email,
                     user_id=user.id,
-                    locked_until=user.locked_until.isoformat(),
+                    locked_until=locked_until.isoformat(),
                 )
-                lock_time = user.locked_until.strftime("%Y-%m-%d %H:%M:%S")
+                lock_time = locked_until.strftime("%Y-%m-%d %H:%M:%S")
                 raise AuthenticationError(f"アカウントがロックされています。{lock_time}以降に再試行してください")
 
             # パスワード検証
@@ -303,11 +307,11 @@ class SampleUserService:
 
     @cache_result(ttl=3600, key_prefix="user")
     @measure_performance
-    async def get_user(self, user_id: int) -> SampleUser | None:
+    async def get_user(self, user_id: uuid.UUID) -> SampleUser | None:
         """ユーザーIDでユーザー情報を取得します。
 
         Args:
-            user_id (int): 取得対象のユーザーID（主キー）
+            user_id (uuid.UUID): 取得対象のユーザーID（主キー）
 
         Returns:
             SampleUser | None: 該当するユーザーモデルインスタンス、存在しない場合はNone

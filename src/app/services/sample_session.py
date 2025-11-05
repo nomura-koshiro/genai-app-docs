@@ -5,11 +5,13 @@
 """
 
 import secrets
+import uuid
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.models.sample_session import SampleSession
@@ -34,9 +36,10 @@ class SampleSessionService:
         self.db = db
         self.repository = SampleSessionRepository(db)
 
+    @measure_performance
     async def list_sessions(
         self,
-        user_id: int | None = None,
+        user_id: uuid.UUID | None = None,
         skip: int = 0,
         limit: int = 100,
     ) -> tuple[list[SampleSession], int]:
@@ -87,6 +90,7 @@ class SampleSessionService:
 
         return sessions, total
 
+    @measure_performance
     async def get_session(self, session_id: str) -> SampleSession:
         """セッション情報と会話履歴を取得します。
 
@@ -116,9 +120,11 @@ class SampleSessionService:
 
         return session
 
+    @measure_performance
+    @transactional
     async def create_session(
         self,
-        user_id: int | None = None,
+        user_id: uuid.UUID | None = None,
         metadata: dict | None = None,
     ) -> SampleSession:
         """新しいセッションを作成します。
@@ -153,6 +159,8 @@ class SampleSessionService:
 
         return session
 
+    @measure_performance
+    @transactional
     async def update_session(
         self,
         session_id: str,
@@ -196,6 +204,8 @@ class SampleSessionService:
 
         return session
 
+    @measure_performance
+    @transactional
     async def delete_session(self, session_id: str) -> bool:
         """セッションと関連するメッセージを削除します。
 

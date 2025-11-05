@@ -125,7 +125,7 @@ app.include_router(files.router, prefix="/api/sample-files", tags=["files"])
 ```python
 from fastapi import APIRouter, status
 from app.api.decorators import handle_service_errors
-from app.api.core import UserServiceDep
+from app.api.core import SampleUserServiceDep
 from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 router = APIRouter()
@@ -134,7 +134,7 @@ router = APIRouter()
 @handle_service_errors  # エラーハンドリングデコレータ
 async def create_user(
     user_data: SampleUserCreate,
-    user_service: UserServiceDep,
+    user_service: SampleUserServiceDep,
 ) -> SampleUserResponse:
     """新しいユーザーを作成します。
 

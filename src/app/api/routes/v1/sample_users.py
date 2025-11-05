@@ -32,6 +32,8 @@
     >>> # レスポンス: {"access_token": "eyJ...", "token_type": "bearer"}
 """
 
+import uuid
+
 from fastapi import APIRouter, Request, status
 
 from app.api.core import (
@@ -121,7 +123,22 @@ async def create_user(
         ...     "updated_at": "2024-01-01T00:00:00Z"
         ... }
     """
+    logger.info(
+        "サンプルユーザー作成リクエスト",
+        email=user_data.email,
+        username=user_data.username,
+        action="sample_create_user",
+    )
+
     user = await user_service.create_user(user_data)
+
+    logger.info(
+        "サンプルユーザーを作成しました",
+        user_id=user.id,
+        email=user.email,
+        username=user.username,
+    )
+
     return SampleUserResponse.model_validate(user)
 
 
@@ -185,6 +202,13 @@ async def login(
     # クライアントIPアドレスを取得
     client_ip = request.client.host if request.client else None
 
+    logger.info(
+        "サンプルログインリクエスト",
+        email=user_credentials.email,
+        client_ip=client_ip,
+        action="sample_login",
+    )
+
     # ユーザー認証
     user = await user_service.authenticate(
         email=user_credentials.email,
@@ -195,6 +219,13 @@ async def login(
     # JWTトークンを生成
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
+
+    logger.info(
+        "サンプルログイン成功",
+        user_id=user.id,
+        email=user.email,
+        client_ip=client_ip,
+    )
 
     # リフレッシュトークンをハッシュ化してデータベースに保存
     from datetime import UTC, datetime, timedelta
@@ -253,6 +284,12 @@ async def get_current_user(
         ...     "updated_at": "2024-01-01T00:00:00Z"
         ... }
     """
+    logger.info(
+        "現在のサンプルユーザー情報取得",
+        user_id=current_user.id,
+        action="sample_get_current_user",
+    )
+
     return SampleUserResponse.model_validate(current_user)
 
 
@@ -268,14 +305,14 @@ async def get_current_user(
 )
 @handle_service_errors
 async def get_user(
-    user_id: int,
+    user_id: uuid.UUID,
     user_service: UserServiceDep,
     _superuser: CurrentSuperuserDep,
 ) -> SampleUserResponse:
     """特定のユーザー情報を取得します（管理者専用）。
 
     Args:
-        user_id (int): 取得するユーザーのID
+        user_id (uuid.UUID): 取得するユーザーのID
         user_service (UserService): ユーザーサービス（自動注入）
         _superuser (User): スーパーユーザー（権限チェック用、自動注入）
 
@@ -305,9 +342,23 @@ async def get_user(
         ...     "updated_at": "2024-01-01T00:00:00Z"
         ... }
     """
+    logger.info(
+        "特定サンプルユーザー取得リクエスト",
+        user_id=user_id,
+        requested_by=_superuser.id,
+        action="sample_get_user",
+    )
+
     user = await user_service.get_user(user_id)
     if not user:
         raise NotFoundError("ユーザーが見つかりません", details={"user_id": user_id})
+
+    logger.info(
+        "特定サンプルユーザーを取得しました",
+        user_id=user.id,
+        email=user.email,
+    )
+
     return SampleUserResponse.model_validate(user)
 
 
@@ -375,7 +426,21 @@ async def list_users(
         ...     }
         ... ]
     """
+    logger.info(
+        "サンプルユーザー一覧取得リクエスト",
+        skip=skip,
+        limit=limit,
+        requested_by=_superuser.id,
+        action="sample_list_users",
+    )
+
     users = await user_service.list_users(skip=skip, limit=limit)
+
+    logger.info(
+        "サンプルユーザー一覧を取得しました",
+        count=len(users),
+    )
+
     return [SampleUserResponse.model_validate(user) for user in users]
 
 
@@ -397,18 +462,36 @@ async def refresh_token(
 
     from app.core.security import create_access_token, decode_refresh_token, verify_password
 
+    logger.info(
+        "サンプルトークンリフレッシュリクエスト",
+        action="sample_refresh_token",
+    )
+
     # リフレッシュトークンをデコード
     payload = decode_refresh_token(request_data.refresh_token)
     if not payload:
+        logger.warning(
+            "無効なリフレッシュトークン",
+            action="sample_refresh_token_failed",
+        )
         raise AuthenticationError("無効なリフレッシュトークンです")
 
     user_id_str = payload.get("sub")
     if not user_id_str:
+        logger.warning(
+            "リフレッシュトークンにユーザーID不在",
+            action="sample_refresh_token_failed",
+        )
         raise AuthenticationError("トークンにユーザーIDが含まれていません")
 
-    user_id = int(user_id_str)
+    user_id = uuid.UUID(user_id_str)
     user = await user_service.get_user(user_id)
     if not user:
+        logger.warning(
+            "リフレッシュトークンのユーザー不明",
+            user_id=user_id,
+            action="sample_refresh_token_failed",
+        )
         raise AuthenticationError("ユーザーが見つかりません")
 
     # ハッシュ化されたリフレッシュトークンと照合
@@ -417,10 +500,21 @@ async def refresh_token(
 
     # 有効期限チェック
     if user.refresh_token_expires_at and user.refresh_token_expires_at < datetime.now(UTC):
+        logger.warning(
+            "リフレッシュトークン有効期限切れ",
+            user_id=user.id,
+            action="sample_refresh_token_failed",
+        )
         raise AuthenticationError("リフレッシュトークンの有効期限が切れています")
 
     # 新しいアクセストークンを生成
     access_token = create_access_token(data={"sub": str(user.id)})
+
+    logger.info(
+        "サンプルトークンリフレッシュ成功",
+        user_id=user.id,
+        action="sample_refresh_token_success",
+    )
 
     return SampleToken(access_token=access_token, token_type="bearer")
 

@@ -26,6 +26,7 @@ from pathlib import Path
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.config import settings
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
@@ -136,6 +137,9 @@ class ProjectFileService:
             filename = "unnamed_file"
         return filename
 
+    @measure_performance
+    @async_timeout(60.0)
+    @transactional
     async def upload_file(
         self, project_id: uuid.UUID, file: UploadFile, uploaded_by: uuid.UUID
     ) -> ProjectFile:
@@ -172,7 +176,7 @@ class ProjectFileService:
 
         # 権限チェック（MEMBER以上）
         await self._check_member_role(
-            project_id, uploaded_by, [ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.MEMBER]
+            project_id, uploaded_by, [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER]
         )
 
         # ファイル名の検証
@@ -241,6 +245,7 @@ class ProjectFileService:
 
         return file_metadata
 
+    @measure_performance
     async def get_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> ProjectFile:
         """ファイルメタデータを取得します。
 
@@ -263,11 +268,12 @@ class ProjectFileService:
         await self._check_member_role(
             file.project_id,
             requester_id,
-            [ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.MEMBER, ProjectRole.VIEWER],
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
         )
 
         return file
 
+    @measure_performance
     async def list_project_files(
         self, project_id: uuid.UUID, requester_id: uuid.UUID, skip: int = 0, limit: int = 100
     ) -> tuple[list[ProjectFile], int]:
@@ -291,7 +297,7 @@ class ProjectFileService:
         await self._check_member_role(
             project_id,
             requester_id,
-            [ProjectRole.OWNER, ProjectRole.ADMIN, ProjectRole.MEMBER, ProjectRole.VIEWER],
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
         )
 
         files = await self.repository.list_by_project(project_id, skip, limit)
@@ -301,6 +307,8 @@ class ProjectFileService:
 
         return files, total
 
+    @measure_performance
+    @async_timeout(30.0)
     async def download_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> Path:
         """ファイルをダウンロードします（ファイルパスを返却）。
 
@@ -332,6 +340,9 @@ class ProjectFileService:
 
         return filepath
 
+    @measure_performance
+    @async_timeout(30.0)
+    @transactional
     async def delete_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> bool:
         """ファイルを削除します。
 
@@ -367,7 +378,7 @@ class ProjectFileService:
             )
 
         # アップロード者本人、またはADMIN/OWNERのみ削除可能
-        if file.uploaded_by != requester_id and member.role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+        if file.uploaded_by != requester_id and member.role not in [ProjectRole.PROJECT_MANAGER]:
             raise AuthorizationError(
                 "Only the file uploader or project admin/owner can delete this file",
                 details={

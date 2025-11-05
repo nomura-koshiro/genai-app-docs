@@ -62,11 +62,25 @@ async def chat(
     """
     user_id = current_user.id if current_user else None
 
+    logger.info(
+        "サンプルチャットリクエスト",
+        session_id=request.session_id,
+        user_id=user_id,
+        message_length=len(request.message),
+        action="sample_chat",
+    )
+
     result = await agent_service.chat(
         message=request.message,
         session_id=request.session_id,
         user_id=user_id,
         context=request.context,
+    )
+
+    logger.info(
+        "サンプルチャット完了",
+        session_id=result.get("session_id"),
+        response_length=len(result.get("response", "")),
     )
 
     return SampleChatResponse(**result)
@@ -108,11 +122,24 @@ async def get_session(
             - 404: セッションが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルセッション取得リクエスト",
+        session_id=session_id,
+        user_id=current_user.id,
+        action="get_sample_session",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     session = await agent_service.get_session(session_id)
 
     # メッセージをSampleMessageResponseに変換
     messages = [SampleMessageResponse(role=msg.role, content=msg.content, timestamp=msg.created_at) for msg in session.messages]
+
+    logger.info(
+        "サンプルセッションを取得しました",
+        session_id=session_id,
+        message_count=len(messages),
+    )
 
     return SampleSessionResponse(
         session_id=session.session_id,
@@ -159,7 +186,19 @@ async def delete_session(
             - 404: セッションが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルセッション削除リクエスト",
+        session_id=session_id,
+        user_id=current_user.id,
+        action="delete_sample_session",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     await agent_service.delete_session(session_id)
+
+    logger.info(
+        "サンプルセッションを削除しました",
+        session_id=session_id,
+    )
 
     return SampleDeleteResponse(message=f"Session {session_id} deleted successfully")

@@ -5,9 +5,11 @@
 """
 
 import secrets
+import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.sample_session import SampleSession
@@ -35,11 +37,13 @@ class SampleAgentService:
         self.db = db
         self.repository = SampleSessionRepository(db)
 
+    @measure_performance
+    @async_timeout(300.0)
     async def chat(
         self,
         message: str,
         session_id: str | None = None,
-        user_id: int | None = None,
+        user_id: uuid.UUID | None = None,
         context: dict | None = None,
     ) -> dict:
         """AIエージェントとチャットします。
@@ -118,6 +122,7 @@ class SampleAgentService:
             "model": "echo-v1",
         }
 
+    @measure_performance
     async def get_session(self, session_id: str) -> SampleSession:
         """セッション情報と会話履歴を取得します。
 
@@ -147,6 +152,8 @@ class SampleAgentService:
 
         return session
 
+    @measure_performance
+    @transactional
     async def delete_session(self, session_id: str) -> bool:
         """セッションと関連するメッセージを削除します。
 

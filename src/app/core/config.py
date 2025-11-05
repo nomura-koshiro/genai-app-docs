@@ -58,15 +58,15 @@ Note:
     - settings オブジェクトはシングルトンとして扱われます
 """
 
-import logging
 import os
 from pathlib import Path
 from typing import Literal
 
+import structlog
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def get_env_file() -> tuple[str, ...]:

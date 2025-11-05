@@ -34,14 +34,14 @@ Note:
     - ログ形式はapp/core/logging.pyのstructlog設定に従います
 """
 
-import logging
 import time
 from collections.abc import Callable
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):

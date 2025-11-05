@@ -26,7 +26,19 @@ from app.api.middlewares import (
     SecurityHeadersMiddleware,
 )
 from app.api.routes.system import health, metrics, root
-from app.api.routes.v1 import project_files, project_members, projects, sample_agents, sample_files, sample_sessions, sample_users, users
+from app.api.routes.v1 import (
+    analysis,
+    driver_tree,
+    ppt_generator,
+    project_files,
+    project_members,
+    projects,
+    sample_agents,
+    sample_files,
+    sample_sessions,
+    sample_users,
+    users,
+)
 from app.core.config import settings
 from app.core.lifespan import lifespan
 
@@ -172,6 +184,27 @@ def create_app() -> FastAPI:
         project_files.router,
         prefix="/api/v1",
         tags=["project-files"],
+    )
+
+    # データ分析API
+    app.include_router(
+        analysis.router,
+        prefix="/api/v1/analysis",
+        tags=["analysis"],
+    )
+
+    # PPT Generator API
+    app.include_router(
+        ppt_generator.router,
+        prefix="/api/v1/ppt",
+        tags=["ppt-generator"],
+    )
+
+    # Driver Tree API
+    app.include_router(
+        driver_tree.router,
+        prefix="/api/v1/driver-tree",
+        tags=["driver-tree"],
     )
 
     # 基本エンドポイントを登録

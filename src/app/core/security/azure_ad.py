@@ -38,29 +38,42 @@
     - python-jose (JWT検証): https://github.com/mpdavis/python-jose
 """
 
+from typing import TYPE_CHECKING, Annotated, Any
+
 from fastapi import HTTPException, Security, status
 
 from app.core.config import settings
 
-# fastapi-azure-authが必要（本番モードのみ）
-try:
-    from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer  # type: ignore[import-not-found]
-    from fastapi_azure_auth.user import User as AzureUser  # type: ignore[import-not-found]
+# 型チェック時のインポート（Pylanceが型情報を取得するため）
+if TYPE_CHECKING:
+    from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
+    from fastapi_azure_auth.user import User as AzureUser
 
-    AZURE_AUTH_AVAILABLE = True
-except ImportError:
-    AZURE_AUTH_AVAILABLE = False
-    AzureUser = None  # type: ignore
+    AZURE_AUTH_AVAILABLE = True  # 型チェック時は常にTrue
+
+# 実行時のインポート（fastapi-azure-authが必要な場合のみ）
+else:
+    try:
+        from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer  # type: ignore[import-not-found]
+        from fastapi_azure_auth.user import User as AzureUser  # type: ignore[import-not-found]
+
+        AZURE_AUTH_AVAILABLE = True
+    except ImportError:
+        AZURE_AUTH_AVAILABLE = False
+        # 型チェック時は上で定義されているため、実行時のみダミー型を定義
+        SingleTenantAzureAuthorizationCodeBearer = Any  # type: ignore[misc,assignment]
+        AzureUser = Any  # type: ignore[misc,assignment]
 
 # Azure AD認証スキーム（本番モードのみ初期化）
-azure_scheme = None
+azure_scheme: SingleTenantAzureAuthorizationCodeBearer | None = None
 
 if settings.AUTH_MODE == "production":
     if not AZURE_AUTH_AVAILABLE:
-        raise ImportError(
-            "AUTH_MODE=productionの場合、fastapi-azure-authが必要です。\n"
-            "インストール: uv add fastapi-azure-auth"
-        )
+        raise ImportError("AUTH_MODE=productionの場合、fastapi-azure-authが必要です。\nインストール: uv add fastapi-azure-auth")
+
+    # 型安全性のための明示的なNoneチェック（configでも検証済みだが、型チェッカーのため）
+    if settings.AZURE_CLIENT_ID is None or settings.AZURE_TENANT_ID is None:
+        raise ValueError("AUTH_MODE=productionの場合、AZURE_CLIENT_IDとAZURE_TENANT_IDが必要です")
 
     azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
         app_client_id=settings.AZURE_CLIENT_ID,
@@ -72,8 +85,34 @@ if settings.AUTH_MODE == "production":
     )
 
 
+def get_azure_scheme_dependency() -> SingleTenantAzureAuthorizationCodeBearer:
+    """Azure AD認証スキームを取得します（依存性注入用）。
+
+    この関数は、依存性注入のために azure_scheme を関数でラップします。
+    Pylanceの型チェックエラー「型式では変数を使用できません」を回避するための
+    間接参照レイヤーです。
+
+    Returns:
+        SingleTenantAzureAuthorizationCodeBearer: Azure AD認証スキーム
+
+    Raises:
+        HTTPException: Azure AD認証が初期化されていない場合（500エラー）
+
+    Note:
+        この関数は実行時に呼び出され、azure_scheme インスタンスを返します。
+        返されたインスタンス自体が依存性として機能し、FastAPIがAzure AD
+        トークンの検証を自動的に実行します。
+    """
+    if azure_scheme is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Azure AD authentication is not initialized. Set AUTH_MODE=production.",
+        )
+    return azure_scheme
+
+
 async def get_current_azure_user(
-    user: AzureUser = Security(azure_scheme, scopes=["access_as_user"])
+    user: Annotated[AzureUser, Security(get_azure_scheme_dependency, scopes=["access_as_user"])],
 ) -> AzureUser:
     """Azure ADから認証済みユーザーを取得（本番モードのみ）。
 
@@ -124,9 +163,7 @@ async def get_current_azure_user(
         ...     }
     """
     if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Azure AD authentication failed"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Azure AD authentication failed")
     return user
 
 

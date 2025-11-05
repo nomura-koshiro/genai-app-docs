@@ -163,7 +163,7 @@ class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザーリポジトリ。"""
 
     def __init__(self, db: AsyncSession):
-        super().__init__(User, db)
+        super().__init__(SampleUser, db)
 
     async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを取得。"""

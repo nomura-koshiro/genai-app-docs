@@ -4,6 +4,8 @@
 セッション一覧、作成、取得、更新、削除の機能を含みます。
 """
 
+import uuid
+
 from fastapi import APIRouter, Query
 
 from app.api.core import CurrentUserDep, CurrentUserOptionalDep, SessionServiceDep
@@ -41,7 +43,7 @@ router = APIRouter()
 async def list_sessions(
     session_service: SessionServiceDep,
     current_user: CurrentUserOptionalDep = None,
-    user_id: int | None = Query(None, description="ユーザーID"),
+    user_id: uuid.UUID | None = Query(None, description="ユーザーID"),
     skip: int = Query(0, ge=0, description="スキップ数"),
     limit: int = Query(100, ge=1, le=1000, description="最大取得数"),
 ) -> SampleSessionListResponse:
@@ -57,6 +59,14 @@ async def list_sessions(
     Returns:
         SampleSessionListResponse: セッション一覧
     """
+    logger.info(
+        "サンプルセッション一覧取得リクエスト",
+        user_id=user_id,
+        skip=skip,
+        limit=limit,
+        action="sample_list_sessions",
+    )
+
     sessions, total = await session_service.list_sessions(
         user_id=user_id,
         skip=skip,
@@ -81,6 +91,12 @@ async def list_sessions(
         )
         for session in sessions
     ]
+
+    logger.info(
+        "サンプルセッション一覧を取得しました",
+        count=len(session_responses),
+        total=total,
+    )
 
     return SampleSessionListResponse(
         sessions=session_responses,
@@ -122,6 +138,13 @@ async def get_session(
             - 404: セッションが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルセッション詳細取得リクエスト",
+        session_id=session_id,
+        user_id=current_user.id,
+        action="sample_get_session",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     session = await session_service.get_session(session_id)
 
@@ -134,6 +157,12 @@ async def get_session(
         )
         for msg in session.messages
     ]
+
+    logger.info(
+        "サンプルセッション詳細を取得しました",
+        session_id=session_id,
+        message_count=len(messages),
+    )
 
     return SampleSessionResponse(
         session_id=session.session_id,
@@ -178,9 +207,21 @@ async def create_session(
     """
     user_id = current_user.id if current_user else None
 
+    logger.info(
+        "サンプルセッション作成リクエスト",
+        user_id=user_id,
+        has_metadata=request.metadata is not None,
+        action="sample_create_session",
+    )
+
     session = await session_service.create_session(
         user_id=user_id,
         metadata=request.metadata,
+    )
+
+    logger.info(
+        "サンプルセッションを作成しました",
+        session_id=session.session_id,
     )
 
     return SampleSessionResponse(
@@ -230,6 +271,14 @@ async def update_session(
             - 404: セッションが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルセッション更新リクエスト",
+        session_id=session_id,
+        user_id=current_user.id,
+        has_metadata=request.metadata is not None,
+        action="sample_update_session",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     session = await session_service.update_session(
         session_id=session_id,
@@ -245,6 +294,11 @@ async def update_session(
         )
         for msg in session.messages
     ]
+
+    logger.info(
+        "サンプルセッションを更新しました",
+        session_id=session_id,
+    )
 
     return SampleSessionResponse(
         session_id=session.session_id,
@@ -289,7 +343,19 @@ async def delete_session(
             - 404: セッションが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルセッション削除リクエスト",
+        session_id=session_id,
+        user_id=current_user.id,
+        action="sample_delete_session",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     await session_service.delete_session(session_id)
+
+    logger.info(
+        "サンプルセッションを削除しました",
+        session_id=session_id,
+    )
 
     return SampleDeleteResponse(message=f"Session {session_id} deleted successfully")

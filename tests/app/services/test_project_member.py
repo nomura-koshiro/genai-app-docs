@@ -135,31 +135,31 @@ async def test_add_member_insufficient_permission(db_session, test_project_with_
 
 @pytest.mark.asyncio
 async def test_add_owner_by_non_owner(db_session, test_project_with_owner, test_users):
-    """非OWNERによるOWNER追加テスト（AuthorizationError）。"""
+    """PROJECT_MODERATORによるPROJECT_MANAGER追加テスト（AuthorizationError）。"""
     # Arrange
     service = ProjectMemberService(db_session)
     project = test_project_with_owner
 
-    # test_users[1]をADMINとして追加
-    admin_member = ProjectMember(
+    # test_users[1]をPROJECT_MODERATORとして追加
+    moderator_member = ProjectMember(
         project_id=project.id,
         user_id=test_users[1].id,
-        role=ProjectRole.PROJECT_MANAGER,
+        role=ProjectRole.PROJECT_MODERATOR,
         added_by=test_users[0].id,
     )
-    db_session.add(admin_member)
+    db_session.add(moderator_member)
     await db_session.commit()
 
     member_data = ProjectMemberCreate(
         user_id=test_users[2].id,
-        role=ProjectRole.PROJECT_MANAGER,  # OWNER追加
+        role=ProjectRole.PROJECT_MANAGER,  # PROJECT_MANAGER追加
     )
 
-    # Act & Assert - ADMINはOWNER追加不可
+    # Act & Assert - PROJECT_MODERATORはPROJECT_MANAGER追加不可
     with pytest.raises(AuthorizationError) as exc_info:
         await service.add_member(project.id, member_data, test_users[1].id)
 
-    assert "OWNER" in str(exc_info.value.message)
+    assert "PROJECT_MANAGER" in str(exc_info.value.message)
 
 
 @pytest.mark.asyncio
@@ -194,25 +194,25 @@ async def test_update_member_role_success(db_session, test_project_with_owner, t
 
 @pytest.mark.asyncio
 async def test_update_last_owner_role(db_session, test_project_with_owner, test_users):
-    """最後のOWNER降格テスト（ValidationError）。"""
+    """最後のPROJECT_MANAGER降格テスト（ValidationError）。"""
     # Arrange
     service = ProjectMemberService(db_session)
     project = test_project_with_owner
 
-    # 現在のOWNERはtest_users[0]のみ
-    owner_member = await service.repository.get_by_project_and_user(
+    # 現在のPROJECT_MANAGERはtest_users[0]のみ
+    manager_member = await service.repository.get_by_project_and_user(
         project.id, test_users[0].id
     )
 
-    # Act & Assert - 最後のOWNERを降格しようとするとエラー
+    # Act & Assert - 最後のPROJECT_MANAGERを降格しようとするとエラー
     with pytest.raises(ValidationError) as exc_info:
         await service.update_member_role(
-            member_id=owner_member.id,
-            new_role=ProjectRole.PROJECT_MANAGER,
+            member_id=manager_member.id,
+            new_role=ProjectRole.MEMBER,  # MEMBERに降格
             requester_id=test_users[0].id,
         )
 
-    assert "最低1人のOWNER" in str(exc_info.value.message)
+    assert "最低1人のPROJECT_MANAGER" in str(exc_info.value.message)
 
 
 @pytest.mark.asyncio
@@ -343,21 +343,21 @@ async def test_leave_project_success(db_session, test_project_with_owner, test_u
 
 @pytest.mark.asyncio
 async def test_leave_project_last_owner(db_session, test_project_with_owner, test_users):
-    """最後のOWNERの退出テスト（ValidationError）。"""
+    """最後のPROJECT_MANAGERの退出テスト（ValidationError）。"""
     # Arrange
     service = ProjectMemberService(db_session)
     project = test_project_with_owner
 
-    # 現在のOWNERはtest_users[0]のみ
+    # 現在のPROJECT_MANAGERはtest_users[0]のみ
 
-    # Act & Assert - 最後のOWNERは退出不可
+    # Act & Assert - 最後のPROJECT_MANAGERは退出不可
     with pytest.raises(ValidationError) as exc_info:
         await service.leave_project(
             project_id=project.id,
             user_id=test_users[0].id,
         )
 
-    assert "最低1人のOWNER" in str(exc_info.value.message)
+    assert "最低1人のPROJECT_MANAGER" in str(exc_info.value.message)
 
 
 @pytest.mark.asyncio

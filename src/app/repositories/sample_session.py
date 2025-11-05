@@ -1,5 +1,7 @@
 """セッション関連のリポジトリ。"""
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -11,7 +13,7 @@ from app.repositories.base import BaseRepository
 logger = get_logger(__name__)
 
 
-class SampleSessionRepository(BaseRepository[SampleSession, int]):
+class SampleSessionRepository(BaseRepository[SampleSession, uuid.UUID]):
     """サンプル: セッションリポジトリ。
 
     セッションのCRUD操作を提供します。
@@ -39,7 +41,7 @@ class SampleSessionRepository(BaseRepository[SampleSession, int]):
         )
         return result.scalar_one_or_none()
 
-    async def create_session(self, session_id: str, user_id: int | None = None, metadata: dict | None = None) -> SampleSession:
+    async def create_session(self, session_id: str, user_id: uuid.UUID | None = None, metadata: dict | None = None) -> SampleSession:
         """新しいセッションを作成します。
 
         Args:
@@ -57,7 +59,7 @@ class SampleSessionRepository(BaseRepository[SampleSession, int]):
 
     async def add_message(
         self,
-        session_id: int,
+        session_id: uuid.UUID,
         role: str,
         content: str,
         tokens_used: int | None = None,
@@ -66,7 +68,7 @@ class SampleSessionRepository(BaseRepository[SampleSession, int]):
         """セッションにメッセージを追加します。
 
         Args:
-            session_id: セッションID（データベースID）
+            session_id: セッションID（データベースUUID主キー）
             role: メッセージの役割（user/assistant/system）
             content: メッセージの内容
             tokens_used: 使用されたトークン数（オプション）

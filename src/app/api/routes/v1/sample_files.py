@@ -64,7 +64,22 @@ async def upload_file(
     """
     user_id = current_user.id if current_user else None
 
+    logger.info(
+        "サンプルファイルアップロードリクエスト",
+        filename=file.filename,
+        content_type=file.content_type,
+        user_id=user_id,
+        action="sample_upload_file",
+    )
+
     uploaded_file = await file_service.upload_file(file, user_id=user_id)
+
+    logger.info(
+        "サンプルファイルをアップロードしました",
+        file_id=uploaded_file.file_id,
+        filename=uploaded_file.filename,
+        size=uploaded_file.size,
+    )
 
     return SampleFileUploadResponse(
         file_id=uploaded_file.file_id,
@@ -88,6 +103,7 @@ async def upload_file(
     """,
 )
 @handle_service_errors
+@async_timeout(30.0)  # 30秒タイムアウト（ファイルダウンロード）
 @validate_permissions("file", "download")
 async def download_file(
     file_id: str,
@@ -111,8 +127,22 @@ async def download_file(
             - 404: ファイルが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルファイルダウンロードリクエスト",
+        file_id=file_id,
+        user_id=current_user.id,
+        action="sample_download_file",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     file_metadata = await file_service.get_file(file_id)
+
+    logger.info(
+        "サンプルファイルをダウンロードしました",
+        file_id=file_id,
+        filename=file_metadata.filename,
+        size=file_metadata.size,
+    )
 
     return FileResponse(
         path=file_metadata.filepath,
@@ -155,8 +185,20 @@ async def delete_file(
             - 404: ファイルが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "サンプルファイル削除リクエスト",
+        file_id=file_id,
+        user_id=current_user.id,
+        action="sample_delete_file",
+    )
+
     # validate_permissionsデコレータで権限検証済み
     await file_service.delete_file(file_id)
+
+    logger.info(
+        "サンプルファイルを削除しました",
+        file_id=file_id,
+    )
 
     return SampleFileDeleteResponse(file_id=file_id, message=f"File {file_id} deleted successfully")
 
@@ -198,6 +240,14 @@ async def list_files(
     """
     user_id = current_user.id if current_user else None
 
+    logger.info(
+        "サンプルファイル一覧取得リクエスト",
+        user_id=user_id,
+        skip=skip,
+        limit=limit,
+        action="sample_list_files",
+    )
+
     files = await file_service.list_files(user_id=user_id, skip=skip, limit=limit)
 
     file_responses = [
@@ -210,5 +260,10 @@ async def list_files(
         )
         for f in files
     ]
+
+    logger.info(
+        "サンプルファイル一覧を取得しました",
+        count=len(file_responses),
+    )
 
     return SampleFileListResponse(files=file_responses, total=len(file_responses))

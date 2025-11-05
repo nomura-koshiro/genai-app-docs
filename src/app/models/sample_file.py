@@ -3,9 +3,10 @@
 アップロードされたファイルのメタデータを管理するモデル。
 """
 
+import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import UUID, DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, PrimaryKeyMixin
@@ -34,7 +35,12 @@ class SampleFile(Base, PrimaryKeyMixin):
     # created_atのみ（updated_atは不要なのでTimestampMixinは使用しない）
 
     file_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="SET NULL"), nullable=True, index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     filepath: Mapped[str] = mapped_column(String(500), nullable=False)
     size: Mapped[int] = mapped_column(Integer, nullable=False)

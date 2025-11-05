@@ -1,5 +1,6 @@
 """ビジネスロジックサービス。"""
 
+from app.services.driver_tree import DriverTreeService
 from app.services.project import ProjectService
 from app.services.project_file import ProjectFileService
 from app.services.project_member import ProjectMemberService
@@ -11,6 +12,7 @@ from app.services.sample_user import SampleUserService
 from app.services.user import UserService
 
 __all__ = [
+    "DriverTreeService",
     "ProjectService",
     "ProjectFileService",
     "ProjectMemberService",

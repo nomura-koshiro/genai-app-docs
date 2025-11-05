@@ -6,11 +6,13 @@
 import os
 import re
 import secrets
+import uuid
 from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.decorators import measure_performance, transactional
 from app.core.config import settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
@@ -53,7 +55,9 @@ class SampleFileService:
         self.upload_dir = Path(settings.LOCAL_STORAGE_PATH)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
-    async def upload_file(self, file: UploadFile, user_id: int | None = None) -> SampleFile:
+    @measure_performance
+    @transactional
+    async def upload_file(self, file: UploadFile, user_id: uuid.UUID | None = None) -> SampleFile:
         """ファイルをアップロードします。
 
         Args:
@@ -134,6 +138,7 @@ class SampleFileService:
 
         return file_metadata
 
+    @measure_performance
     async def get_file(self, file_id: str) -> SampleFile:
         """ファイルメタデータを取得します。
 
@@ -164,6 +169,8 @@ class SampleFileService:
 
         return file
 
+    @measure_performance
+    @transactional
     async def delete_file(self, file_id: str) -> bool:
         """ファイルを削除します。
 
@@ -203,7 +210,8 @@ class SampleFileService:
 
         return True
 
-    async def list_files(self, user_id: int | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
+    @measure_performance
+    async def list_files(self, user_id: uuid.UUID | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
         """ファイル一覧を取得します。
 
         Args:

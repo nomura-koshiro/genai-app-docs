@@ -1,5 +1,7 @@
 """ファイル関連のリポジトリ。"""
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -10,7 +12,7 @@ from app.repositories.base import BaseRepository
 logger = get_logger(__name__)
 
 
-class SampleFileRepository(BaseRepository[SampleFile, int]):
+class SampleFileRepository(BaseRepository[SampleFile, uuid.UUID]):
     """サンプル: ファイルリポジトリ。
 
     ファイルのCRUD操作を提供します。
@@ -43,7 +45,7 @@ class SampleFileRepository(BaseRepository[SampleFile, int]):
         filepath: str,
         size: int,
         content_type: str,
-        user_id: int | None = None,
+        user_id: uuid.UUID | None = None,
     ) -> SampleFile:
         """新しいファイルメタデータを作成します。
 
@@ -53,7 +55,7 @@ class SampleFileRepository(BaseRepository[SampleFile, int]):
             filepath: サーバー上のファイルパス
             size: ファイルサイズ（バイト）
             content_type: ファイルのMIMEタイプ
-            user_id: ユーザーID（オプション）
+            user_id: ユーザーID (UUID)（オプション）
 
         Returns:
             SampleFile: 作成されたファイルメタデータ
@@ -87,11 +89,11 @@ class SampleFileRepository(BaseRepository[SampleFile, int]):
         await self.db.flush()
         return True
 
-    async def list_files(self, user_id: int | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
+    async def list_files(self, user_id: uuid.UUID | None = None, skip: int = 0, limit: int = 100) -> list[SampleFile]:
         """ファイル一覧を取得します。
 
         Args:
-            user_id: ユーザーID（指定した場合、そのユーザーのファイルのみ）
+            user_id: ユーザーID (UUID)（指定した場合、そのユーザーのファイルのみ）
             skip: スキップするレコード数
             limit: 取得する最大レコード数
 

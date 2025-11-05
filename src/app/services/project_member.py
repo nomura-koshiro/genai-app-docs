@@ -585,7 +585,7 @@ class ProjectMemberService:
 
         Example:
             >>> updated = await member_service.update_member_role(
-            ...     member_id, ProjectRole.ADMIN, requester_id
+            ...     member_id, requester_id
             ... )
             >>> print(f"Updated role to: {updated.role}")
 

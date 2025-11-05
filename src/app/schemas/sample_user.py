@@ -33,7 +33,7 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class SampleUserBase(BaseModel):
@@ -72,7 +72,7 @@ class SampleUserCreate(SampleUserBase):
         username (str): ユーザー名（SampleUserBaseから継承）
         password (str): ユーザーパスワード
             - 最小8文字、最大100文字
-            - 強度チェックはサービス層で実施
+            - 数字と大文字を含む必要があります
 
     Example:
         >>> user = SampleUserCreate(
@@ -88,6 +88,30 @@ class SampleUserCreate(SampleUserBase):
     """
 
     password: str = Field(..., min_length=8, max_length=100, description="ユーザーパスワード")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """パスワード強度を検証します。
+
+        Args:
+            v (str): パスワード文字列
+
+        Returns:
+            str: 検証済みパスワード
+
+        Raises:
+            ValueError: パスワードが強度要件を満たさない場合
+
+        Note:
+            - 数字を最低1文字含む必要があります
+            - 大文字を最低1文字含む必要があります
+        """
+        if not any(c.isdigit() for c in v):
+            raise ValueError("パスワードには数字を含める必要があります")
+        if not any(c.isupper() for c in v):
+            raise ValueError("パスワードには大文字を含める必要があります")
+        return v
 
 
 class SampleUserLogin(BaseModel):

@@ -3,10 +3,11 @@
 AIエージェントとの会話セッションを管理するモデル。
 """
 
+import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, UUID, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, PrimaryKeyMixin, TimestampMixin
@@ -37,7 +38,12 @@ class SampleSession(Base, PrimaryKeyMixin, TimestampMixin):
     # TimestampMixinからcreated_at, updated_at継承
 
     session_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="CASCADE"), nullable=True, index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     session_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
     # リレーションシップ
@@ -69,7 +75,11 @@ class SampleMessage(Base, PrimaryKeyMixin):
     # PrimaryKeyMixinからid継承
     # created_atのみ（updated_atは不要なのでTimestampMixinは使用しない）
 
-    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sample_sessions.id", ondelete="CASCADE"), nullable=False)
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tokens_used: Mapped[int | None] = mapped_column(Integer, nullable=True)

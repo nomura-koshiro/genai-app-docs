@@ -11,6 +11,7 @@ BaseRepositoryを継承し、ユーザー固有のクエリメソッド（メー
     - 基本的なCRUD操作（BaseRepositoryから継承）
 
 使用例:
+    >>> import uuid
     >>> from sqlalchemy.ext.asyncio import AsyncSession
     >>> from app.repositories.sample_user import SampleUserRepository
     >>>
@@ -21,6 +22,8 @@ BaseRepositoryを継承し、ユーザー固有のクエリメソッド（メー
     ...         print(f"Found user: {user.username}")
 """
 
+import uuid
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,7 +31,7 @@ from app.models.sample_user import SampleUser
 from app.repositories.base import BaseRepository
 
 
-class SampleUserRepository(BaseRepository[SampleUser, int]):
+class SampleUserRepository(BaseRepository[SampleUser, uuid.UUID]):
     """サンプル: Userモデル用のリポジトリクラス。
 
     このリポジトリは、BaseRepositoryの共通CRUD操作に加えて、
