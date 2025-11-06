@@ -152,7 +152,7 @@ class UserService:
 
         try:
             # Azure OIDで検索
-            user = await self.repository.get_by_azure_oid(azure_oid)
+            user: User | None = await self.repository.get_by_azure_oid(azure_oid)
 
             if user:
                 # 既存ユーザーの情報を更新（メール/表示名が変わった場合）

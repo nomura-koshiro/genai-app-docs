@@ -58,6 +58,8 @@ Note:
     - settings オブジェクトはシングルトンとして扱われます
 """
 
+from __future__ import annotations
+
 import os
 from pathlib import Path
 from typing import Literal
@@ -346,8 +348,8 @@ class Settings(BaseSettings):
         description="Development mode mock user name",
     )
 
-    @model_validator(mode='after')
-    def validate_dev_auth_not_in_production(self) -> 'Settings':
+    @model_validator(mode="after")
+    def validate_dev_auth_not_in_production(self) -> Settings:
         """本番環境で開発モード認証が有効な場合にエラーを発生させます。
 
         セキュリティリスクを防ぐため、本番環境（ENVIRONMENT=production）で
@@ -365,8 +367,7 @@ class Settings(BaseSettings):
         """
         if self.ENVIRONMENT == "production" and self.AUTH_MODE == "development":
             raise ValueError(
-                "Development authentication cannot be enabled in production environment. "
-                "Set AUTH_MODE=production for production."
+                "Development authentication cannot be enabled in production environment. Set AUTH_MODE=production for production."
             )
         return self
 
