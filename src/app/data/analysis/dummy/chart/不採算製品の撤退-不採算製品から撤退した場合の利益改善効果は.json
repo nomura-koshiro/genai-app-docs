@@ -1,0 +1,535 @@
+{
+    "data": [
+        {
+            "hovertemplate": "売上（円）=%{x}\u003cbr\u003e利益率=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "",
+            "marker": {
+                "color": "#000001",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "",
+            "orientation": "v",
+            "showlegend": false,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADO19+kQQAAACo5TqZBAAAANmKjsEEAAADaC8msQQAAAArd9qlBAAAAYnlyo0EAAADgpByoQQAAALrEZKVBAAAAeCeNpEEAAAAonlu4QQAAAEDn0VxBAAAAYLWlgEEAAAD0EVOjQQAAAICx9WpBAAAAaFgShUEAAACAlmRiQQAAAIB7W01BAAAAACVFMkEAAADgBmxxQQAAAAAZO0BBAAAAABIoKEEAAAAAX5FsQQAAAMA51VdBAAAAABAwLkEAAACs5TWXQQAAAIAYokJBAAAAADh1C0EAAACoKFWCQQAAAAAAPO5AAAAAAAAAAAAAAAAAcPPzQAAAAADsSUVBAAAAAAC83EAAAABAO69dQQAAAMDIt1RBAAAAAJCvFUEAAACA4ANBQQAAAECka1dBAAAAAAAAAAAAAAAAAAAAAAAAAAAuGUFBAAAAgGcZQEEAAACAg7ZCQQAAAABu7zZBAAAAAAAAAAAAAAAAAAAAAAAAAACGwmNBAAAAcNfudUEAAAAAzvI0QQAAAOzOV6dBAAAAVyP5tEEAAABBLBrAQQAAABDAEK9BAAAAhfiStEEAAAB6UJarQQAAALJLB7FBAAAATWCjuEEAAAB0O7+mQQAAAFUFbsFBAAAAQMWWVkEAAAAAeDQAQQAAAAAAAAAAAAAAAOCW8kAAAAAAuHkUQQAAAAAAAAAAAAAAAAAAAAAAAAAAgHnlQAAAAACcHhZBAAAAAAAAAAAAAABQFvaDQQAAAABorGhBAAAAoPAcjUEAAADAfQJUQQAAACBezmZBAAAAaH2igUEAAABAvuR5QQAAAIAwRUVBAAAAAKTnNkEAAABABdVdQQAAALBmhH5BAAAAACBZkkEAAIC7Ho7HQQAAAOR0ipJBAAAAWH6CkEEAAAD6HSygQQAAANB2\u002f3RBAAAAETkju0EAAACgKqWEQQAAAHjMY5pBAAAAwDqMUEEAAAAgL2V9QQAAAAB6fiFBAAAA4J\u002frc0EAAADQBueSQQAAAMBNxF1BAAAAwJumfUEAAAAAySlgQQAAAMCwh3lBAAAAgDyoSUEAAAAAgNjiQAAAAECVEmBBAAAAwIsucEEAAADAytplQQAAADBwPXJBAAAAQPjHcUEAAACYmG+EQQAAAAD49A9BAAAAAN74NkEAAACguJ1hQQAAAAAAGM1AAAAAAICa3EAAAABAk99UQQAAAJCdBXFBAAAAAHDa8UAAAAAAAAB\u002fQAAAAIiP\u002fYBBAAAA4PFFbUEAAACMj8CiQQAAAABK+yNBAAAAEEVLckEAAAAAQHrVQAAAAABAVQBBAAAAU4+bt0EAAAAY07qGQQAAALxNCpxBAAAAALDKIUEAAAAAk\u002fEzQQAAAAAA5brAAAAAkB9GeUEAAAAA3qUuQQAAAAAAXPFAAAAAKAP9kUEAAACA6whVQQAAAB4hIqdBAAAAwI3+XkEAAABQrjN8QQAAAGBcS3NBAAAAMBxDckEAAAAAGJw2QQAAAID1AVBBAAAAALqMVkEAAAAASEFZQQAAABhRC41BAAAAgMEJWkEAAABAWaxkQQAAAABO6iFBAAAAYBUSaEEAAAAAvphDQQAAAEA0dWFBAAAAgMJpZUEAAABA1B95QQAAAMBbOFVBAAAAwGsdXUEAAACA5OpOQQAAAMBWL1tBAAAAAHD3PkEAAACA4wpCQQAAAFCbCn9BAAAAwH\u002faWkEAAAAAUCYWQQAAAECtD2hBAAAAQJYYYUEAAACQfQmUQQAAAEDkBmFBAAAAQI7fYEEAAAAAQJXdwAAAAAANEjNBAAAAAKDmOUEAAAAAon0iQQAAACAv9H1BAAAAgDt1YEEAAAAAgw4yQQAAAICjMkVBAAAAACG7P0EAAACAiJ1YQQAAACBt7WlBAAAAgAhHhUEAAABAtqNuQQAAAOB3ZmdBAAAAYPopd0EAAADy0liiQQAAAMyMeJVBAAAAoB8oc0EAAABAtkFmQQAAAIDAdGFBAAAAAMv+OEEAAAAAogBmQQAAAAAA4sjAAAAAAGRhH0EAAACwzCmOQQAAAIDd62VBAAAAwOTvZEEAAAAAAFB7QAAAAABWOSRBAAAAAFCc+EAAAACAiIVhQQAAAAAQzyNBAAAAACWjO0EAAAAAYWw1QQAAABA+2YJBAAAAAAC2uEAAAACwNP+eQQAAAMzySqRBAAAAAAAXzEAAAACAHhJNQQAAAABRyjhBAAAAAFTmKkEAAAAAUO+DQQAAAAB4eA5BAAAAgNIpSEEAAAAAW5wxQQAAAACYUwxBAAAAEJEYi0EAAAAAqTFoQQAAAMA2FWxBAAAAeHShhUEAAABgvPViQQAAAIB\u002f91dBAAAAgHUSeUEAAABACZFvQQAAAAAWbVBBAAAAIKkZZkEAAACANqpCQQAAAABOlypBAAAAQOmtU0EAAACAaqlKQQAAAAAVPTNBAAAAAIBVG0EAAADAhQhYQQAAAADHwzlBAAAAVM9Cq0EAAAAA7v4rQQAAAGxFx5BBAAAAAGCNAEEAAAAALAkkQQAAAAAATMZAAAAAYHMKgkEAAAAo1WavQQAAAECcXI1BAAAAgHxHd0EAAABgGTF4QQAAAACAgttAAAAAABCi8kAAAABwB0NyQQAAAMRX8atBAAAAKJZ1hEEAAACAdBxaQQ=="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB7FK5H4XrUPx+F61G4HtU\u002fUrgehetR2D97FK5H4XrUP3sUrkfhetQ\u002fw\u002fUoXI\u002fC1T9SuB6F61HYP8P1KFyPwtU\u002fuB6F61G4zj8fhetRuB7VPwAAAAAAAOA\u002fcT0K16Nw3T\u002fNzMzMzMzcP+F6FK5H4do\u002fUrgehetR4D9SuB6F61HgPylcj8L1KMw\u002fpHA9Ctej0D8pXI\u002fC9SjcPwAAAAAAAOA\u002fUrgehetRyD\u002fNzMzMzMzcP4XrUbgehds\u002fCtejcD0Ktz9xPQrXo3DdP3sUrkfhetQ\u002fuB6F61G4zj\u002fhehSuR+HaP+xRuB6F68E\u002fAAAAAAAAAABI4XoUrkfRPwAAAAAAANA\u002fCtejcD0Ktz+amZmZmZnJP7gehetRuN4\u002f7FG4HoXr0T\u002fNzMzMzMzcP1yPwvUoXN8\u002fAAAAAAAAAAAAAAAAAAAAAIXrUbgehds\u002f16NwPQrX0z+4HoXrUbiuP1K4HoXrUdg\u002fAAAAAAAAAAAAAAAAAAAAANejcD0K19M\u002fCtejcD0Kxz+kcD0K16PQP\u002fYoXI\u002fC9dg\u002fUrgehetR2D\u002f2KFyPwvXYP3sUrkfhetQ\u002f9ihcj8L12D8K16NwPQrXP1K4HoXrUdg\u002frkfhehSu1z\u002fD9Shcj8LVP4\u002fC9Shcj9I\u002fmpmZmZmZyT8pXI\u002fC9Si8PwAAAAAAAAAA16NwPQrX0z\u002fsUbgehevBPwAAAAAAAAAAAAAAAAAAAAB7FK5H4XqkPwrXo3A9Csc\u002fAAAAAAAAAABcj8L1KFzfP83MzMzMzNw\u002f9ihcj8L12D\u002fXo3A9CtfTPzMzMzMzM8M\u002fj8L1KFyP0j\u002fhehSuR+HaP+xRuB6F69E\u002fMzMzMzMzwz+F61G4HoXbP5qZmZmZmdk\u002fFK5H4XoU3j9xPQrXo3DdP2ZmZmZmZtY\u002fj8L1KFyP0j9SuB6F61HIP8P1KFyPwtU\u002fUrgehetR2D\u002fsUbgehevRPylcj8L1KNw\u002fw\u002fUoXI\u002fC5T9SuB6F61HYPwrXo3A9Ctc\u002f7FG4HoXr0T\u002fXo3A9CtfTPzMzMzMzM8M\u002f16NwPQrX0z9I4XoUrkfRP4\u002fC9Shcj9I\u002fH4XrUbge1T97FK5H4XqEP+F6FK5H4co\u002fmpmZmZmZyT\u002fsUbgehevRP5qZmZmZmck\u002fKVyPwvUozD8pXI\u002fC9SjMP3sUrkfherQ\u002fcT0K16NwzT\u002fsUbgehevRP3sUrkfhepQ\u002fSOF6FK5H0T8zMzMzMzPDP5qZmZmZmck\u002fSOF6FK5H0T+amZmZmZmpP+xRuB6F69E\u002fcT0K16NwzT8zMzMzMzPTP3sUrkfhesQ\u002f4XoUrkfh2j\u002fXo3A9CtfTP1K4HoXrUcg\u002fPQrXo3A92j+F61G4HoXbP1K4HoXrUdg\u002fmpmZmZmZ2T+PwvUoXI\u002fiP3sUrkfhepS\u002fpHA9Ctej0D+4HoXrUbjeP3sUrkfherQ\u002f7FG4HoXr0T8pXI\u002fC9SjcP+xRuB6F69E\u002f7FG4HoXr0T8AAAAAAADQP0jhehSuR9E\u002fUrgehetR2D8fhetRuB7VP1K4HoXrUdg\u002fuB6F61G4zj+PwvUoXI\u002fSP1K4HoXrUdg\u002fw\u002fUoXI\u002fCxT+F61G4HoXbP3sUrkfhesQ\u002f9ihcj8L14D\u002fhehSuR+HaP6RwPQrXo8A\u002fw\u002fUoXI\u002fCxT8pXI\u002fC9SjMPwrXo3A9Csc\u002fAAAAAAAA0D8zMzMzMzPDPwAAAAAAANA\u002f16NwPQrX0z8pXI\u002fC9SjMP1K4HoXrUdg\u002fCtejcD0K1z+4HoXrUbiuPwAAAAAAANA\u002fj8L1KFyP0j9mZmZmZmbWP0jhehSuR9E\u002fCtejcD0K1z89CtejcD3iv3sUrkfhetQ\u002fUrgehetR2D+kcD0K16PQP3E9CtejcN0\u002fexSuR+F61D+PwvUoXI\u002fSP+xRuB6F69E\u002fexSuR+F61D+amZmZmZnZP\u002fYoXI\u002fC9dg\u002fPQrXo3A92j9SuB6F61HYP1K4HoXrUdg\u002fPQrXo3A92j+PwvUoXI\u002fSP3sUrkfhetQ\u002fCtejcD0K1z8fhetRuB7VPzMzMzMzM9M\u002fmpmZmZmZuT\u002fhehSuR+HKPx+F61G4HtW\u002fuB6F61G4vj8pXI\u002fC9SjMP3sUrkfhesQ\u002fCtejcD0Kxz97FK5H4XqkP65H4XoUrtc\u002fMzMzMzMz0z\u002fD9Shcj8LVP7gehetRuM4\u002fPQrXo3A94j+uR+F6FK7XPx+F61G4HtU\u002fmpmZmZmZ2T\u002fD9Shcj8LVP83MzMzMzNw\u002fCtejcD0K1z\u002fD9Shcj8LVP6RwPQrXo9A\u002fpHA9Ctej4D89CtejcD3aP6RwPQrXo8A\u002fzczMzMzM5D8fhetRuB7VP1yPwvUoXN8\u002fPQrXo3A92j\u002f2KFyPwvXgP8P1KFyPwtU\u002fCtejcD0K1z8K16NwPQrXP+xRuB6F69E\u002f16NwPQrX0z8K16NwPQrXP1K4HoXrUcg\u002f16NwPQrX0z8zMzMzMzPTP2ZmZmZmZtY\u002fFK5H4XoU3j8UrkfhehTePx+F61G4HtU\u002fuB6F61G45j9SuB6F61HYP+xRuB6F69E\u002f7FG4HoXr0T8K16NwPQq3P6RwPQrXo9A\u002fuB6F61G4vj8AAAAAAADQP8P1KFyPwsU\u002fuB6F61G4zj97FK5H4XrUP4\u002fC9Shcj9I\u002fMzMzMzMz4z9SuB6F61HgPylcj8L1KLw\u002fexSuR+F6tD+amZmZmZnJP+xRuB6F69E\u002fAAAAAAAA0D97FK5H4XrUPw=="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        }
+    ],
+    "layout": {
+        "template": {
+            "data": {
+                "candlestick": [
+                    {
+                        "decreasing": {
+                            "line": {
+                                "color": "#000033"
+                            }
+                        },
+                        "increasing": {
+                            "line": {
+                                "color": "#000032"
+                            }
+                        },
+                        "type": "candlestick"
+                    }
+                ],
+                "contourcarpet": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "contourcarpet"
+                    }
+                ],
+                "contour": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "contour"
+                    }
+                ],
+                "heatmap": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "heatmap"
+                    }
+                ],
+                "histogram2d": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "histogram2d"
+                    }
+                ],
+                "icicle": [
+                    {
+                        "textfont": {
+                            "color": "white"
+                        },
+                        "type": "icicle"
+                    }
+                ],
+                "sankey": [
+                    {
+                        "textfont": {
+                            "color": "#000036"
+                        },
+                        "type": "sankey"
+                    }
+                ],
+                "scatter": [
+                    {
+                        "marker": {
+                            "line": {
+                                "width": 0
+                            }
+                        },
+                        "type": "scatter"
+                    }
+                ],
+                "table": [
+                    {
+                        "cells": {
+                            "fill": {
+                                "color": "#000038"
+                            },
+                            "font": {
+                                "color": "#000037"
+                            },
+                            "line": {
+                                "color": "#000039"
+                            }
+                        },
+                        "header": {
+                            "fill": {
+                                "color": "#000040"
+                            },
+                            "font": {
+                                "color": "#000036"
+                            },
+                            "line": {
+                                "color": "#000039"
+                            }
+                        },
+                        "type": "table"
+                    }
+                ],
+                "waterfall": [
+                    {
+                        "connector": {
+                            "line": {
+                                "color": "#000036",
+                                "width": 2
+                            }
+                        },
+                        "decreasing": {
+                            "marker": {
+                                "color": "#000033"
+                            }
+                        },
+                        "increasing": {
+                            "marker": {
+                                "color": "#000032"
+                            }
+                        },
+                        "totals": {
+                            "marker": {
+                                "color": "#000034"
+                            }
+                        },
+                        "type": "waterfall"
+                    }
+                ]
+            },
+            "layout": {
+                "coloraxis": {
+                    "colorscale": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ]
+                },
+                "colorscale": {
+                    "diverging": [
+                        [
+                            0.0,
+                            "#000021"
+                        ],
+                        [
+                            0.1,
+                            "#000022"
+                        ],
+                        [
+                            0.2,
+                            "#000023"
+                        ],
+                        [
+                            0.3,
+                            "#000024"
+                        ],
+                        [
+                            0.4,
+                            "#000025"
+                        ],
+                        [
+                            0.5,
+                            "#000026"
+                        ],
+                        [
+                            0.6,
+                            "#000027"
+                        ],
+                        [
+                            0.7,
+                            "#000028"
+                        ],
+                        [
+                            0.8,
+                            "#000029"
+                        ],
+                        [
+                            0.9,
+                            "#000030"
+                        ],
+                        [
+                            1.0,
+                            "#000031"
+                        ]
+                    ],
+                    "sequential": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ],
+                    "sequentialminus": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ]
+                },
+                "colorway": [
+                    "#000001",
+                    "#000002",
+                    "#000003",
+                    "#000004",
+                    "#000005",
+                    "#000006",
+                    "#000007",
+                    "#000008",
+                    "#000009",
+                    "#000010"
+                ]
+            }
+        },
+        "xaxis": {
+            "anchor": "y",
+            "domain": [
+                0.0,
+                1.0
+            ],
+            "title": {
+                "text": "売上（円）"
+            }
+        },
+        "yaxis": {
+            "anchor": "x",
+            "domain": [
+                0.0,
+                1.0
+            ],
+            "title": {
+                "text": "利益率"
+            }
+        },
+        "legend": {
+            "tracegroupgap": 0
+        },
+        "margin": {
+            "t": 60
+        },
+        "showlegend": false,
+        "width": 900,
+        "height": 400,
+        "autosize": false
+    }
+}

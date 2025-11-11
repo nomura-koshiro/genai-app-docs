@@ -32,6 +32,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.analysis_session import AnalysisSession
     from app.models.project_file import ProjectFile
     from app.models.project_member import ProjectMember
 
@@ -105,6 +106,12 @@ class Project(Base, TimestampMixin):
 
     files: Mapped[list["ProjectFile"]] = relationship(
         "ProjectFile",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
+    analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(
+        "AnalysisSession",
         back_populates="project",
         cascade="all, delete-orphan",
     )

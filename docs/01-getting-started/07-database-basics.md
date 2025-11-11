@@ -116,6 +116,23 @@ uv run alembic upgrade head
 cd ..
 ```
 
+#### 分析テンプレートデータのシード（オプション）
+
+分析機能を使用する場合、テンプレートデータ（validation.ymlとダミーチャート）をデータベースにインポートします：
+
+```powershell
+# テンプレートデータをシード
+uv run python scripts/seed_templates.py
+```
+
+このコマンドは以下を実行します：
+
+- `src/app/data/analysis/validation.yml` からテンプレートデータを読み込み
+- `src/app/data/analysis/dummy/chart/*.json` からチャートデータを読み込み
+- データベースにインポート（既存データは削除）
+
+**注意**: テストでは自動的にシードされるため、通常は手動実行不要です。
+
 ### マイグレーションファイルの作成
 
 モデルを変更した後、マイグレーションファイルを生成：
@@ -166,6 +183,7 @@ psql -U postgres -d camp_backend_db < backup_20250128.sql
 1. `camp_backend_db`を削除・再作成
 2. `camp_backend_db_test`を削除・再作成
 3. マイグレーション実行（`alembic upgrade head`）
+4. **分析テンプレートデータをシード**（自動）
 
 ### 手動でリセット
 

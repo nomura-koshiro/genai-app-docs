@@ -84,7 +84,7 @@ class SecurityService:
 ```python
 from app.api.decorators import measure_performance
 
-class UserService:
+class SampleUserService:
     @measure_performance
     async def create_user(self, user_data: UserCreate):
         """実行時間が自動的にINFOレベルでログに記録される。
@@ -160,7 +160,7 @@ async def create_user(
 ```python
 from app.api.decorators import transactional
 
-class UserService:
+class SampleUserService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.repository = UserRepository(db)
@@ -214,7 +214,7 @@ async def create_user(self, user_data: UserCreate):
 ```python
 from app.api.decorators import cache_result
 
-class UserService:
+class SampleUserService:
     @cache_result(ttl=3600, key_prefix="user")
     async def get_user(self, user_id: int):
         """ユーザー情報を1時間キャッシュ。
@@ -237,7 +237,7 @@ class UserService:
 ```python
 from app.core.cache import cache_manager
 
-class UserService:
+class SampleUserService:
     @cache_result(ttl=3600, key_prefix="user")
     async def get_user(self, user_id: int):
         return await self.repository.get(user_id)
@@ -312,7 +312,7 @@ class DatabaseService:
 #### 基本的な組み合わせ
 
 ```python
-class UserService:
+class SampleUserService:
     @measure_performance
     @transactional
     async def create_user(self, user_data: UserCreate):
@@ -395,7 +395,7 @@ async def complex_operation():
 #### 2. キャッシュとトランザクションの組み合わせ
 
 ```python
-class UserService:
+class SampleUserService:
     # ❌ 非推奨: キャッシュと書き込み操作
     @cache_result(ttl=3600)
     @transactional
@@ -436,7 +436,7 @@ class PaymentService:
 #### 4. ログレベルの使い分け
 
 ```python
-class UserService:
+class SampleUserService:
     # 本番環境: INFO
     @log_execution(level="info", include_args=False)
     async def create_user(self, user_data):

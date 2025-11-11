@@ -7,11 +7,13 @@ from app.api.routes.v1 import (
     project_files,
     project_members,
     projects,
+    users,
+)
+from app.api.routes.v1.sample import (
     sample_agents,
     sample_files,
     sample_sessions,
     sample_users,
-    users,
 )
 
 __all__ = [

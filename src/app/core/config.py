@@ -58,15 +58,17 @@ Note:
     - settings オブジェクトはシングルトンとして扱われます
 """
 
-import logging
+from __future__ import annotations
+
 import os
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
+import structlog
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def get_env_file() -> tuple[str, ...]:
@@ -299,6 +301,19 @@ class Settings(BaseSettings):
 
     # ファイルアップロード設定
     MAX_UPLOAD_SIZE: int = 10 * 1024 * 1024  # 10MBデフォルト
+    MAX_FILE_SIZE_MB: int = Field(
+        default=10,
+        description="ファイルアップロードの最大サイズ（MB）",
+    )
+
+    @property
+    def MAX_FILE_SIZE_BYTES(self) -> int:
+        """ファイルアップロードの最大サイズ（バイト）を取得します。
+
+        Returns:
+            int: 最大ファイルサイズ（バイト）
+        """
+        return self.MAX_FILE_SIZE_MB * 1024 * 1024
 
     # ================================================================================
     # Azure AD認証設定
@@ -346,8 +361,9 @@ class Settings(BaseSettings):
         description="Development mode mock user name",
     )
 
-    @model_validator(mode='after')
-    def validate_dev_auth_not_in_production(self) -> 'Settings':
+    @model_validator(mode="before")
+    @classmethod
+    def validate_dev_auth_not_in_production(cls, values: dict[str, Any]) -> dict[str, Any]:
         """本番環境で開発モード認証が有効な場合にエラーを発生させます。
 
         セキュリティリスクを防ぐため、本番環境（ENVIRONMENT=production）で
@@ -357,18 +373,17 @@ class Settings(BaseSettings):
             ValueError: 本番環境で開発モード認証が有効な場合
 
         Returns:
-            Settings: バリデーション済み設定オブジェクト
+            dict[str, Any]: バリデーション済み設定値
 
         Note:
             - ENVIRONMENT="production" かつ AUTH_MODE="development" の組み合わせは禁止
             - 他の環境（development, staging）では開発モード認証を許可
         """
-        if self.ENVIRONMENT == "production" and self.AUTH_MODE == "development":
+        if values.get("ENVIRONMENT") == "production" and values.get("AUTH_MODE") == "development":
             raise ValueError(
-                "Development authentication cannot be enabled in production environment. "
-                "Set AUTH_MODE=production for production."
+                "Development authentication cannot be enabled in production environment. Set AUTH_MODE=production for production."
             )
-        return self
+        return values
 
     def __init__(self, **kwargs):
         """設定を初期化し、環境に応じたバリデーションを実行します。
@@ -534,9 +549,9 @@ class Settings(BaseSettings):
             if not self.AZURE_CLIENT_ID:
                 raise ValueError("AUTH_MODE=productionの場合、AZURE_CLIENT_IDが必要です")
 
-            logger.info("✅ Azure AD認証が有効化されました（本番モード）")
+            logger.info("Azure AD authentication enabled (production mode)")
         else:
-            logger.info("⚠️  開発モード認証が有効化されました（モック認証）")
+            logger.info("Development mode authentication enabled (mock auth)")
 
 
 settings = Settings()

@@ -27,6 +27,9 @@ dependencies = [
     "aiofiles>=24.1.0",
     "azure-storage-blob>=12.23.0",
     "azure-identity>=1.19.0",
+    # Data Processing
+    "pandas>=2.2.0",
+    "python-pptx>=1.0.0",
     # Configuration & Utilities
     "pydantic-settings>=2.6.0",
     "pydantic[email]>=2.0.0",
@@ -50,6 +53,7 @@ camp-backend = "app.main:main"
 
 [dependency-groups]
 dev = [
+    "fastapi-azure-auth>=5.2.0",
     "mypy>=1.18.2",
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",

@@ -42,15 +42,15 @@ Note:
     - レスポンスの内容を変更せず、ヘッダーのみ追加します
 """
 
-import logging
 from collections.abc import Callable
 
+import structlog
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):

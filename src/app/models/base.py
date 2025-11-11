@@ -25,9 +25,10 @@ Note:
     - 本番環境ではAlembicマイグレーションを使用します
 """
 
+import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Integer
+from sqlalchemy import UUID, DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column
 
 
@@ -63,11 +64,11 @@ class Base(DeclarativeBase):
 class PrimaryKeyMixin:
     """主キー（id）を提供するミックスイン。
 
-    すべてのモデルで共通の整数型主キーを提供します。
-    自動インクリメント、インデックス付き。
+    すべてのモデルで共通のUUID型主キーを提供します。
+    UUID v4形式でランダム生成されます。
 
     Attributes:
-        id: 主キー（自動インクリメント整数、インデックス付き）
+        id: 主キー（UUID v4、インデックス付き）
 
     使用例:
         >>> class SampleUser(Base, PrimaryKeyMixin, TimestampMixin):
@@ -76,16 +77,21 @@ class PrimaryKeyMixin:
     """
 
     @declared_attr
-    def id(cls) -> Mapped[int]:
+    def id(cls) -> Mapped[uuid.UUID]:
         """主キーID。
 
-        自動インクリメント整数型の主キー。
+        UUID v4形式のランダム生成される主キー。
         すべてのテーブルで一貫した主キー定義を提供します。
 
         Returns:
-            Mapped[int]: 主キーカラム定義
+            Mapped[uuid.UUID]: 主キーカラム定義
         """
-        return mapped_column(Integer, primary_key=True, index=True)
+        return mapped_column(
+            UUID(as_uuid=True),
+            primary_key=True,
+            default=uuid.uuid4,
+            index=True,
+        )
 
 
 class TimestampMixin:

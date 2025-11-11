@@ -34,6 +34,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.analysis_session import AnalysisSession
     from app.models.project_member import ProjectMember
 
 
@@ -127,6 +128,12 @@ class User(Base, TimestampMixin):
         foreign_keys="[ProjectMember.user_id]",
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+
+    analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(
+        "AnalysisSession",
+        foreign_keys="[AnalysisSession.created_by]",
+        back_populates="creator",
     )
 
     # インデックス

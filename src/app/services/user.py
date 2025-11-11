@@ -152,7 +152,7 @@ class UserService:
 
         try:
             # Azure OIDで検索
-            user = await self.repository.get_by_azure_oid(azure_oid)
+            user: User | None = await self.repository.get_by_azure_oid(azure_oid)
 
             if user:
                 # 既存ユーザーの情報を更新（メール/表示名が変わった場合）
@@ -315,12 +315,18 @@ class UserService:
             await self.db.flush()
             await self.db.refresh(user)
 
+            # refreshの後、明示的に設定した値は必ず存在するはず
+            # ローカル変数に代入することでPylanceの型ナローイングを確実にする
+            last_login = user.last_login
+            if last_login is None:
+                raise RuntimeError("last_loginはNoneであってはならない")
+
             logger.info(
                 "最終ログイン情報を更新しました",
                 user_id=str(user.id),
                 email=user.email,
                 client_ip=client_ip,
-                last_login=user.last_login.isoformat(),
+                last_login=last_login.isoformat(),
             )
 
             return user

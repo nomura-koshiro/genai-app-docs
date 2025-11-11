@@ -42,13 +42,13 @@ query = select(SampleUser).offset(20).limit(10)  # 20件スキップして10件�
 ```python
 # 明示的JOIN
 query = (
-    select(User, Session)
-    .join(Session, SampleUser.id == SampleSession.user_id)
+    select(SampleUser, SampleSession)
+    .join(SampleSession, SampleUser.id == SampleSession.user_id)
     .where(SampleSession.created_at > datetime.now() - timedelta(days=7))
 )
 
 # リレーションシップを使用したJOIN
-query = select(SampleUser).join(User.sessions)
+query = select(SampleUser).join(SampleUser.sessions)
 ```
 
 ## 集計
@@ -88,14 +88,14 @@ N+1問題は、リレーションシップをロードする際に発生する�
 
 ```python
 # ❌ N+1問題が発生（悪い例）
-users = await db.execute(select(User).limit(10))
-users = users.scalars().all()
+sample_users = await db.execute(select(SampleUser).limit(10))
+sample_users = sample_users.scalars().all()
 
-for user in users:  # 10ユーザー
-    # project_membershipsアクセスごとに追加クエリが発行される
-    print(len(user.project_memberships))  # 1クエリ × 10 = 10クエリ
+for user in sample_users:  # 10ユーザー
+    # sessionsアクセスごとに追加クエリが発行される
+    print(len(user.sessions))  # 1クエリ × 10 = 10クエリ
 
-# 合計11クエリ: 1回（ユーザーリスト） + 10回（各ユーザーのメンバーシップ）
+# 合計11クエリ: 1回（ユーザーリスト） + 10回（各ユーザーのセッション）
 ```
 
 ### selectinload による解決
@@ -104,15 +104,15 @@ for user in users:  # 10ユーザー
 from sqlalchemy.orm import selectinload
 
 # ✅ N+1問題を解決（良い例）
-query = select(User).options(selectinload(User.project_memberships)).limit(10)
+query = select(SampleUser).options(selectinload(SampleUser.sessions)).limit(10)
 result = await db.execute(query)
-users = result.scalars().all()
+sample_users = result.scalars().all()
 
-for user in users:  # 10ユーザー
+for user in sample_users:  # 10ユーザー
     # 追加クエリなしでアクセス可能
-    print(len(user.project_memberships))
+    print(len(user.sessions))
 
-# 合計2クエリのみ: 1回（ユーザーリスト） + 1回（全メンバーシップを一括取得）
+# 合計2クエリのみ: 1回（ユーザーリスト） + 1回（全セッションを一括取得）
 ```
 
 ### selectinload vs joinedload
@@ -125,17 +125,17 @@ for user in users:  # 10ユーザー
 ### 実装例（UserRepositoryの実装）
 
 ```python
-# src/app/repositories/user.py
+# src/app/repositories/sample_user.py
 from sqlalchemy.orm import selectinload
 
-class UserRepository(BaseRepository[User, uuid.UUID]):
-    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+class SampleUserRepository(BaseRepository[SampleUser]):
+    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[SampleUser]:
         """アクティブユーザーの一覧を取得（N+1問題対策付き）。"""
         return await self.get_multi(
             skip=skip,
             limit=limit,
             is_active=True,
-            load_relations=["project_memberships"],  # N+1問題対策
+            load_relations=["sessions"],  # N+1問題対策
         )
 ```
 
@@ -203,8 +203,6 @@ class BaseRepository(Generic[ModelType, IDType]):
 
 4. **N+1検出ツール**
    - `nplusone`ライブラリでN+1問題を自動検出
-
-```
 
 ## 参考リンク
 

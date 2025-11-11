@@ -199,12 +199,12 @@ class ReportGenerator(ABC):
 # src/app/api/dependencies.py
 # 依存性注入を使用して抽象に依存
 
-def get_user_service(db: DatabaseDep) -> UserService:
-    """UserServiceを注入。具体的な実装は隠蔽。"""
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
+    """SampleUserServiceを注入。具体的な実装は隠蔽。"""
     return SampleUserService(db)
 
 
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
 
 
 # src/app/api/routes/sample_users.py
@@ -332,7 +332,7 @@ class SampleUserRepository(BaseRepository[SampleUser]):
     """データアクセスの抽象化。"""
 
     def __init__(self, db: AsyncSession):
-        super().__init__(User, db)
+        super().__init__(SampleUser, db)
 
     async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを検索。"""
@@ -485,11 +485,11 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 
 # サービスの依存性
-def get_user_service(db: DatabaseDep) -> UserService:
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
     return SampleUserService(db)
 
 
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
 
 
 # 認証の依存性
@@ -513,7 +513,7 @@ async def get_current_user(
     return user
 
 
-CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_user)]
 ```
 
 ### 使用例

@@ -90,7 +90,7 @@ from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class SampleUserService:
+class SampleSampleUserService:
     """ユーザーサービス。"""
 
     def __init__(self, db: AsyncSession):
@@ -305,7 +305,7 @@ def create_user(
 ### クラスのDocstring
 
 ```python
-class SampleUserService:
+class SampleSampleUserService:
     """ユーザー関連のビジネスロジックを提供するサービス。
 
     このクラスはユーザーの作成、更新、削除、認証などの
@@ -396,8 +396,8 @@ from app.services.sample_user import SampleUserService
 
 # ❌ 悪い例：相対インポート
 from ..models.user import User
-from ..repositories.user import UserRepository
-from .user import UserService
+from ..repositories.sample_user import SampleUserRepository
+from .sample_user import SampleUserService
 ```
 
 ### ワイルドカードインポートを避ける
@@ -694,7 +694,7 @@ from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 
-class SampleUserService:
+class SampleSampleUserService:
     """ユーザーサービス。"""
 
     async def create_user(self, user_data: SampleUserCreate) -> SampleUser:

@@ -92,7 +92,7 @@ from unittest.mock import AsyncMock
 from app.services.sample_user import SampleUserService
 from app.models.sample_user import SampleUser
 
-class TestUserService:
+class TestSampleUserService:
     """ユーザーサービスのユニットテスト（モック使用）"""
 
     @pytest.mark.asyncio
@@ -102,7 +102,7 @@ class TestUserService:
         mock_db = mocker.Mock()
 
         # クエリ結果をモック
-        mock_user = User(
+        mock_user = SampleUser(
             id=1,
             email="test@example.com",
             username="testuser",
@@ -115,7 +115,7 @@ class TestUserService:
         mock_db.execute = AsyncMock(return_value=mock_result)
 
         # サービスのテスト
-        service = UserService(mock_db)
+        service = SampleUserService(mock_db)
         user = await service.get_user(1)
 
         assert user.id == 1
@@ -130,7 +130,7 @@ class TestUserService:
         mock_db.commit = AsyncMock()
         mock_db.refresh = AsyncMock()
 
-        service = UserService(mock_db)
+        service = SampleUserService(mock_db)
 
         # ユーザーデータ
         user_data = {
@@ -141,7 +141,7 @@ class TestUserService:
 
         # パスワードハッシュ化をモック
         mocker.patch(
-            "app.core.security.hash_password",
+            "app.core.security.password.hash_password",
             return_value="hashed_password"
         )
 
@@ -412,7 +412,7 @@ def user_factory(db_session):
         }
         defaults.update(kwargs)
 
-        user = User(**defaults)
+        user = SampleUser(**defaults)
         db_session.add(user)
         await db_session.commit()
         await db_session.refresh(user)
@@ -445,7 +445,7 @@ async def test_with_user_factory(user_factory):
 @pytest.fixture
 async def test_user(db_session):
     """テストユーザーを作成"""
-    user = User(
+    user = SampleUser(
         email="test@example.com",
         username="testuser",
         hashed_password=hash_password("password123"),
@@ -469,7 +469,7 @@ def auth_headers(auth_token):
 @pytest.mark.asyncio
 async def test_with_dependencies(client, test_user, auth_headers):
     """依存関係のあるフィクスチャを使用"""
-    response = client.get("/api/sample-users/sample-me", headers=auth_headers)
+    response = client.get("/api/v1/sample-users/me", headers=auth_headers)
 
     assert response.status_code == 200
     data = response.json()
@@ -627,9 +627,9 @@ class UserBuilder:
 
     def build(self):
         from app.models.sample_user import SampleUser
-        from app.core.security import hash_password
+        from app.core.security.password import hash_password
 
-        return User(
+        return SampleUser(
             email=self._email,
             username=self._username,
             hashed_password=hash_password(self._password),
@@ -770,7 +770,7 @@ async def test_user_service(mocker):
     mock_db = mocker.Mock()
 
     # ビジネスロジックは実際のコード
-    service = UserService(mock_db)
+    service = SampleUserService(mock_db)
     # ...
 ```
 
@@ -810,6 +810,70 @@ def mock_azure_blob_client():
 - [pytest Fixtures](https://docs.pytest.org/en/stable/fixture.html)
 - [Effective Python Testing With Pytest](https://realpython.com/pytest-python-testing/)
 - [Mock Testing Best Practices](https://martinfowler.com/articles/mocksArentStubs.html)
+
+## データベースシードフィクスチャ
+
+### seeded_templates フィクスチャ
+
+分析テンプレートデータを自動的にシードするフィクスチャです。
+
+#### 使用方法
+
+```python
+# tests/app/repositories/test_analysis_template.py
+import pytest
+from app.repositories.analysis_template import AnalysisTemplateRepository
+
+@pytest.mark.asyncio
+async def test_template_query(db_session, seeded_templates):
+    """seeded_templatesフィクスチャの使用例"""
+    # seeded_templatesはシード結果の統計情報を含む
+    assert seeded_templates["templates_created"] > 0
+    assert seeded_templates["charts_created"] > 0
+
+    # テンプレートクエリをテスト
+    repo = AnalysisTemplateRepository(db_session)
+    templates = await repo.list_active()
+    assert len(templates) > 0
+```
+
+#### シード内容
+
+`seeded_templates`フィクスチャは以下のデータを自動的にロードします：
+
+- **テンプレートデータ**: `src/app/data/analysis/validation.yml` から読み込み
+  - 施策（policy）と課題（issue）の組み合わせ
+  - AIエージェント用プロンプト
+  - 初期軸設定、ダミー計算式など
+
+- **チャートデータ**: `src/app/data/analysis/dummy/chart/*.json` から読み込み
+  - Plotly形式のダミーチャートデータ
+  - 各テンプレートに紐づくチャート
+
+#### 返り値
+
+フィクスチャは以下の統計情報を返します：
+
+```python
+{
+    "templates_created": 15,  # 作成されたテンプレート数
+    "charts_created": 20      # 作成されたチャート数
+}
+```
+
+#### 実装場所
+
+フィクスチャの実装: `tests/conftest.py`
+
+```python
+@pytest.fixture(scope="function")
+async def seeded_templates(db_session):
+    """validation.ymlからテンプレートデータをシードします。"""
+    from app.utils.template_seeder import seed_templates
+
+    result = await seed_templates(db_session, clear_existing=True)
+    return result
+```
 
 ## 次のステップ
 

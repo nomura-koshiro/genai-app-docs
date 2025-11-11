@@ -153,7 +153,7 @@ class ProjectService:
             project_member = ProjectMember(
                 project_id=project.id,
                 user_id=creator_id,
-                role=ProjectRole.OWNER,
+                role=ProjectRole.PROJECT_MANAGER,
                 added_by=creator_id,
             )
             self.db.add(project_member)
@@ -428,7 +428,7 @@ class ProjectService:
         await self._check_user_role(
             project_id=project_id,
             user_id=user_id,
-            required_roles=[ProjectRole.OWNER, ProjectRole.ADMIN],
+            required_roles=[ProjectRole.PROJECT_MANAGER],
         )
 
         # プロジェクト情報を更新
@@ -504,12 +504,18 @@ class ProjectService:
                 details={"project_id": str(project_id)},
             )
 
-        # 権限チェック: OWNERのみが削除可能
-        await self._check_user_role(
-            project_id=project_id,
-            user_id=user_id,
-            required_roles=[ProjectRole.OWNER],
-        )
+        # 権限チェック: プロジェクト作成者のみが削除可能
+        if project.created_by != user_id:
+            logger.warning(
+                "プロジェクト削除権限がありません（作成者のみ削除可能）",
+                project_id=str(project_id),
+                user_id=str(user_id),
+                created_by=str(project.created_by),
+            )
+            raise AuthorizationError(
+                "プロジェクトを削除する権限がありません（作成者のみ削除可能）",
+                details={"project_id": str(project_id)},
+            )
 
         # 関連する物理ファイルを削除（エラーログは記録するが処理は継続）
         await self._delete_physical_files(project)

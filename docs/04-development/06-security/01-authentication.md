@@ -10,8 +10,8 @@ JWT、OAuth2、パスワードハッシュを使用した認証について説�
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI<br/>Router
-    participant US as UserService
-    participant UR as UserRepository
+    participant US as SampleUserService
+    participant UR as SampleUserRepository
     participant DB as PostgreSQL
     participant SEC as Security<br/>Module
 
@@ -20,7 +20,7 @@ sequenceDiagram
     C->>+API: POST /api/auth/login<br/>{email, password}
     API->>+US: authenticate(email, password)
     US->>+UR: get_by_email(email)
-    UR->>+DB: SELECT * FROM users<br/>WHERE email = ?
+    UR->>+DB: SELECT * FROM sample_users<br/>WHERE email = ?
     DB-->>-UR: SampleUser record
     UR-->>-US: SampleUser object
 
@@ -39,14 +39,14 @@ sequenceDiagram
 
     Note over C,SEC: 認証済みリクエストフロー
 
-    C->>+API: GET /api/sample-users/sample-me<br/>Header: Authorization: Bearer <token>
+    C->>+API: GET /api/v1/sample-users/me<br/>Header: Authorization: Bearer <token>
     API->>+SEC: decode_access_token(token)
     SEC-->>-API: {sub: user_id, exp: ...}
 
     alt トークン有効
         API->>+US: get_user(user_id)
         US->>+UR: get(user_id)
-        UR->>+DB: SELECT * FROM users<br/>WHERE id = ?
+        UR->>+DB: SELECT * FROM sample_users<br/>WHERE id = ?
         DB-->>-UR: SampleUser record
         UR-->>-US: SampleUser object
         US-->>-API: SampleUser object
@@ -224,7 +224,7 @@ async def get_current_user(
     return user
 
 
-CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_user)]
 
 
 # 使用例

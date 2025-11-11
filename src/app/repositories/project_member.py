@@ -76,7 +76,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
         ...
         ...     # ロール更新
         ...     updated = await member_repo.update_role(
-        ...         member_id, ProjectRole.ADMIN
+        ...         member_id
         ...     )
         ...     await db.commit()
 
@@ -281,7 +281,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
 
         Example:
             >>> updated = await member_repo.update_role(
-            ...     member_id, ProjectRole.ADMIN
+            ...     member_id
             ... )
             >>> if updated:
             ...     await db.commit()
@@ -370,7 +370,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
 
         Example:
             >>> owner_count = await member_repo.count_by_role(
-            ...     project_id, ProjectRole.OWNER
+            ...     project_id, ProjectRole.PROJECT_MANAGER
             ... )
             >>> if owner_count <= 1:
             ...     raise ValidationError("Cannot remove last owner")
@@ -401,7 +401,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
 
         Example:
             >>> role = await member_repo.get_user_role(project_id, user_id)
-            >>> if role == ProjectRole.OWNER:
+            >>> if role == ProjectRole.PROJECT_MANAGER:
             ...     print("User is owner")
             >>> elif role is None:
             ...     print("User is not a member")

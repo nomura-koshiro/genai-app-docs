@@ -188,7 +188,7 @@ async def get_current_user(
         user_service: ユーザーサービス（自動注入）
 
     Returns:
-        User: 認証済みユーザー
+        SampleUser: 認証済みユーザー
 
     Raises:
         HTTPException: 認証失敗時
@@ -223,7 +223,7 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Authentication failed") from e
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[SampleUser, Depends(get_current_user)]
 ) -> SampleUser:
     """現在のアクティブユーザーを取得する。
 
@@ -231,7 +231,7 @@ async def get_current_active_user(
         current_user: 現在のユーザー（自動注入）
 
     Returns:
-        User: アクティブユーザー
+        SampleUser: アクティブユーザー
 
     Raises:
         HTTPException: ユーザーが非アクティブの場合
@@ -241,7 +241,7 @@ async def get_current_active_user(
     return current_user
 
 async def get_current_superuser(
-    current_user: Annotated[User, Depends(get_current_active_user)]
+    current_user: Annotated[SampleUser, Depends(get_current_active_user)]
 ) -> SampleUser:
     """現在のスーパーユーザーを取得する。
 
@@ -249,7 +249,7 @@ async def get_current_superuser(
         current_user: 現在のアクティブユーザー（自動注入）
 
     Returns:
-        User: スーパーユーザー
+        SampleUser: スーパーユーザー
 
     Raises:
         HTTPException: スーパーユーザーでない場合
@@ -259,8 +259,8 @@ async def get_current_superuser(
     return current_user
 
 # 型エイリアス
-CurrentSampleUserDep = Annotated[User, Depends(get_current_active_user)]
-CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]
+CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_active_user)]
+CurrentSuperuserDep = Annotated[SampleUser, Depends(get_current_superuser)]
 ```
 
 ### 認証が必要なエンドポイント
@@ -319,7 +319,7 @@ async def get_current_user_optional(
     """現在のユーザーを取得する（認証なしでもOK）。
 
     Returns:
-        User | None: 認証済みの場合はユーザー、未認証の場合はNone
+        SampleUser | None: 認証済みの場合はユーザー、未認証の場合はNone
     """
     if not authorization:
         return None
@@ -329,7 +329,7 @@ async def get_current_user_optional(
     except HTTPException:
         return None
 
-CurrentUserOptionalDep = Annotated[User | None, Depends(get_current_user_optional)]
+CurrentUserOptionalDep = Annotated[SampleUser | None, Depends(get_current_user_optional)]
 ```
 
 使用例:
@@ -360,10 +360,10 @@ async def get_post(
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 # レベル2: サービス（データベースに依存）
-def get_user_service(db: DatabaseDep) -> UserService:
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
     return SampleUserService(db)
 
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
 
 # レベル3: 認証（サービスに依存）
 async def get_current_user(
@@ -373,11 +373,11 @@ async def get_current_user(
     # ...
     return user
 
-CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
+CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_user)]
 
 # レベル4: 認可（認証に依存）
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[SampleUser, Depends(get_current_user)]
 ) -> SampleUser:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
@@ -543,12 +543,12 @@ from fastapi import Depends
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 # サービス
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
-SampleFileServiceDep = Annotated[FileService, Depends(get_file_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
+SampleFileServiceDep = Annotated[SampleFileService, Depends(get_sample_file_service)]
 
 # 認証
-CurrentSampleUserDep = Annotated[User, Depends(get_current_active_user)]
-CurrentSuperuserDep = Annotated[User, Depends(get_current_superuser)]
+CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_active_user)]
+CurrentSuperuserDep = Annotated[SampleUser, Depends(get_current_superuser)]
 ```
 
 ### 3. 依存関数には型ヒントを付ける
@@ -579,7 +579,7 @@ async def get_current_user(
         user_service: ユーザーサービスインスタンス
 
     Returns:
-        User: 認証済みユーザー
+        SampleUser: 認証済みユーザー
 
     Raises:
         HTTPException: 認証に失敗した場合

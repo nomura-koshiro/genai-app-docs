@@ -88,12 +88,28 @@ async def list_files(
             - 403: アクセス権限なし
             - 500: 内部エラー
     """
+    logger.info(
+        "ファイル一覧取得リクエスト",
+        project_id=str(project_id),
+        user_id=str(current_user.id),
+        skip=skip,
+        limit=limit,
+        action="list_files",
+    )
+
     file_service = ProjectFileService(db)
     user_id = current_user.id
 
     files, total = await file_service.list_project_files(project_id, user_id, skip, limit)
 
     file_responses = [ProjectFileResponse.model_validate(f) for f in files]
+
+    logger.info(
+        "ファイル一覧を取得しました",
+        project_id=str(project_id),
+        count=len(files),
+        total=total,
+    )
 
     return ProjectFileListResponse(files=file_responses, total=total, project_id=project_id)
 
@@ -139,10 +155,24 @@ async def get_file(
             - 404: ファイルが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "ファイル情報取得リクエスト",
+        project_id=str(project_id),
+        file_id=str(file_id),
+        user_id=str(current_user.id),
+        action="get_file",
+    )
+
     file_service = ProjectFileService(db)
     user_id = current_user.id
 
     file = await file_service.get_file(file_id, user_id)
+
+    logger.info(
+        "ファイル情報を取得しました",
+        file_id=str(file.id),
+        filename=file.filename,
+    )
 
     return ProjectFileResponse.model_validate(file)
 
@@ -166,6 +196,7 @@ async def get_file(
     """,
 )
 @handle_service_errors
+@async_timeout(30.0)  # 30秒タイムアウト（ファイルダウンロード）
 async def download_file(
     project_id: uuid.UUID,
     file_id: uuid.UUID,
@@ -190,6 +221,14 @@ async def download_file(
             - 404: ファイルが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "ファイルダウンロードリクエスト",
+        project_id=str(project_id),
+        file_id=str(file_id),
+        user_id=str(current_user.id),
+        action="download_file",
+    )
+
     file_service = ProjectFileService(db)
     user_id = current_user.id
 
@@ -197,6 +236,13 @@ async def download_file(
 
     # ファイルメタデータを取得（ファイル名とMIMEタイプ用）
     file_metadata = await file_service.get_file(file_id, user_id)
+
+    logger.info(
+        "ファイルをダウンロードしました",
+        file_id=str(file_id),
+        filename=file_metadata.filename,
+        file_size=file_metadata.file_size,
+    )
 
     return FileResponse(
         path=str(filepath),
@@ -257,10 +303,26 @@ async def upload_file(
             - 422: ファイルが無効
             - 500: 内部エラー
     """
+    logger.info(
+        "ファイルアップロードリクエスト",
+        project_id=str(project_id),
+        filename=file.filename,
+        content_type=file.content_type,
+        user_id=str(current_user.id),
+        action="upload_file",
+    )
+
     file_service = ProjectFileService(db)
     user_id = current_user.id
 
     uploaded_file = await file_service.upload_file(project_id, file, uploaded_by=user_id)
+
+    logger.info(
+        "ファイルをアップロードしました",
+        file_id=str(uploaded_file.id),
+        filename=uploaded_file.filename,
+        file_size=uploaded_file.file_size,
+    )
 
     return ProjectFileUploadResponse(
         id=uploaded_file.id,
@@ -322,9 +384,22 @@ async def delete_file(
             - 404: ファイルが見つからない
             - 500: 内部エラー
     """
+    logger.info(
+        "ファイル削除リクエスト",
+        project_id=str(project_id),
+        file_id=str(file_id),
+        user_id=str(current_user.id),
+        action="delete_file",
+    )
+
     file_service = ProjectFileService(db)
     user_id = current_user.id
 
     await file_service.delete_file(file_id, user_id)
+
+    logger.info(
+        "ファイルを削除しました",
+        file_id=str(file_id),
+    )
 
     return ProjectFileDeleteResponse(file_id=file_id, message=f"File {file_id} deleted successfully")

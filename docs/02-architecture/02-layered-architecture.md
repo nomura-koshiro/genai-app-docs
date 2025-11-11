@@ -181,8 +181,8 @@ graph TB
 sequenceDiagram
     participant Client
     participant API as API Layer<br/>(routes/users.py)
-    participant Service as Service Layer<br/>(UserService)
-    participant Repo as Repository Layer<br/>(UserRepository)
+    participant Service as Service Layer<br/>(SampleUserService)
+    participant Repo as Repository Layer<br/>(SampleUserRepository)
     participant DB as PostgreSQL
 
     Client->>API: POST /api/sample-users<br/>{email, username, password}
@@ -194,19 +194,19 @@ sequenceDiagram
 
     Note over Service: ビジネスルール適用
     Service->>Repo: get_by_email(email)
-    Repo->>DB: SELECT * FROM users<br/>WHERE email=?
+    Repo->>DB: SELECT * FROM sample_users<br/>WHERE email=?
     DB-->>Repo: NULL (存在しない)
     Repo-->>Service: None
 
     Service->>Repo: get_by_username(username)
-    Repo->>DB: SELECT * FROM users<br/>WHERE username=?
+    Repo->>DB: SELECT * FROM sample_users<br/>WHERE username=?
     DB-->>Repo: NULL (存在しない)
     Repo-->>Service: None
 
     Service->>Service: hash_password()
 
     Service->>Repo: create(user_data)
-    Repo->>DB: INSERT INTO users
+    Repo->>DB: INSERT INTO sample_users
     DB-->>Repo: SampleUser(id=1)
     Repo-->>Service: SampleUser
 
@@ -456,7 +456,7 @@ class SampleUserRepository(BaseRepository[SampleUser]):
     """ユーザー専用のリポジトリ。"""
 
     def __init__(self, db: AsyncSession):
-        super().__init__(User, db)
+        super().__init__(SampleUser, db)
 
     async def get_by_email(self, email: str) -> SampleUser | None:
         """メールアドレスでユーザーを取得。"""
