@@ -151,8 +151,15 @@ async def test_get_project_members_success(
     assert "members" in data
     assert "total" in data
     assert "project_id" in data
-    assert data["total"] == 4  # OWNER + 3 MEMBER
+    # OWNER (PROJECT_MANAGER) + 3 MEMBER
+    assert data["total"] == 4
     assert len(data["members"]) == 4
+    # 各メンバーに必須フィールドがあることを確認
+    for member in data["members"]:
+        assert "id" in member
+        assert "user_id" in member
+        assert "role" in member
+        assert "user" in member
 
 
 @pytest.mark.asyncio
@@ -188,8 +195,17 @@ async def test_get_project_members_pagination(
     # Assert
     assert response.status_code == 200
     data = response.json()
+    assert "members" in data
+    assert "total" in data
     assert len(data["members"]) == 2
-    assert data["total"] == 5  # OWNER + 4 MEMBER
+    # OWNER (PROJECT_MANAGER) + 4 MEMBER = 5
+    assert data["total"] == 5
+    # 各メンバーに必須フィールドがあることを確認
+    for member in data["members"]:
+        assert "id" in member
+        assert "user_id" in member
+        assert "role" in member
+        assert "user" in member
 
 
 @pytest.mark.asyncio

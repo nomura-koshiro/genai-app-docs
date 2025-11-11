@@ -22,8 +22,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent / "src"
 sys.path.insert(0, str(project_root))
 
-from app.core.database import async_session_factory
-from app.models.driver_tree_category import DriverTreeCategory
+from sqlalchemy import text  # noqa: E402
+
+from app.core.database import AsyncSessionLocal  # noqa: E402
+from app.models.driver_tree_category import DriverTreeCategory  # noqa: E402
 
 # PKLファイルのパス
 CATEGORIES_PKL = Path("C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_tree_categories.pkl")
@@ -111,9 +113,9 @@ async def migrate_to_database(records: list[dict]):
     """
     print("\n💾 データベースに挿入しています...")
 
-    async with async_session_factory() as session:
+    async with AsyncSessionLocal() as session:
         # 既存のデータを削除（再実行時のため）
-        await session.execute("DELETE FROM driver_tree_categories")
+        await session.execute(text("DELETE FROM driver_tree_categories"))
         print("🗑️  既存データを削除しました")
 
         # 新しいデータを挿入

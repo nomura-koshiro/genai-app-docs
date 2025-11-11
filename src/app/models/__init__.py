@@ -4,6 +4,8 @@
 from app.models.analysis_file import AnalysisFile
 from app.models.analysis_session import AnalysisSession
 from app.models.analysis_step import AnalysisStep
+from app.models.analysis_template import AnalysisTemplate
+from app.models.analysis_template_chart import AnalysisTemplateChart
 
 # Base classes
 from app.models.base import Base, PrimaryKeyMixin, TimestampMixin
@@ -19,9 +21,9 @@ from app.models.project_file import ProjectFile
 from app.models.project_member import ProjectMember, ProjectRole
 
 # Sample models
-from app.models.sample_file import SampleFile
-from app.models.sample_session import SampleMessage, SampleSession
-from app.models.sample_user import SampleUser
+from app.models.sample.sample_file import SampleFile
+from app.models.sample.sample_session import SampleMessage, SampleSession
+from app.models.sample.sample_user import SampleUser
 
 # User models
 from app.models.user import SystemRole, User
@@ -48,6 +50,8 @@ __all__ = [
     "AnalysisFile",
     "AnalysisSession",
     "AnalysisStep",
+    "AnalysisTemplate",
+    "AnalysisTemplateChart",
     # Driver Tree models
     "DriverTree",
     "DriverTreeCategory",

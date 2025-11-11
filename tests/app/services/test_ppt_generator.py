@@ -5,7 +5,6 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pandas as pd
 import pytest
 
 from app.core.exceptions import NotFoundError, ValidationError
@@ -83,7 +82,7 @@ async def test_export_selected_slides_success(mock_storage_service, test_user, t
         mock_sldIdLst = []
         for i in range(5):
             mock_slide = MagicMock()
-            mock_slide.rId = f"rId{i+1}"
+            mock_slide.rId = f"rId{i + 1}"
             mock_sldIdLst.append(mock_slide)
 
         mock_slides._sldIdLst = mock_sldIdLst
@@ -103,7 +102,6 @@ async def test_export_selected_slides_success(mock_storage_service, test_user, t
         # Assert
         assert result is not None
         assert isinstance(result, bytes)
-
 
 
 @pytest.mark.asyncio
@@ -158,10 +156,12 @@ async def test_download_question_success(mock_storage_service, test_user, test_p
     with patch("pandas.read_excel") as mock_read_excel:
         import pandas as pd
 
-        mock_df = pd.DataFrame({
-            "question": ["Q1", "Q2", "Q3"],
-            "answer": ["A1", "A2", "A3"],
-        })
+        mock_df = pd.DataFrame(
+            {
+                "question": ["Q1", "Q2", "Q3"],
+                "answer": ["A1", "A2", "A3"],
+            }
+        )
         mock_read_excel.return_value = mock_df
 
         # Act - download_question returns tuple (content, filename)
@@ -220,8 +220,6 @@ async def test_upload_ppt_success(mock_storage_service, test_user, test_project)
 
     # ストレージサービスが呼ばれたことを確認
     mock_storage_service.upload.assert_called_once()
-
-
 
 
 @pytest.mark.asyncio

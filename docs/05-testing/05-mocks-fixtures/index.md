@@ -811,6 +811,70 @@ def mock_azure_blob_client():
 - [Effective Python Testing With Pytest](https://realpython.com/pytest-python-testing/)
 - [Mock Testing Best Practices](https://martinfowler.com/articles/mocksArentStubs.html)
 
+## データベースシードフィクスチャ
+
+### seeded_templates フィクスチャ
+
+分析テンプレートデータを自動的にシードするフィクスチャです。
+
+#### 使用方法
+
+```python
+# tests/app/repositories/test_analysis_template.py
+import pytest
+from app.repositories.analysis_template import AnalysisTemplateRepository
+
+@pytest.mark.asyncio
+async def test_template_query(db_session, seeded_templates):
+    """seeded_templatesフィクスチャの使用例"""
+    # seeded_templatesはシード結果の統計情報を含む
+    assert seeded_templates["templates_created"] > 0
+    assert seeded_templates["charts_created"] > 0
+
+    # テンプレートクエリをテスト
+    repo = AnalysisTemplateRepository(db_session)
+    templates = await repo.list_active()
+    assert len(templates) > 0
+```
+
+#### シード内容
+
+`seeded_templates`フィクスチャは以下のデータを自動的にロードします：
+
+- **テンプレートデータ**: `src/app/data/analysis/validation.yml` から読み込み
+  - 施策（policy）と課題（issue）の組み合わせ
+  - AIエージェント用プロンプト
+  - 初期軸設定、ダミー計算式など
+
+- **チャートデータ**: `src/app/data/analysis/dummy/chart/*.json` から読み込み
+  - Plotly形式のダミーチャートデータ
+  - 各テンプレートに紐づくチャート
+
+#### 返り値
+
+フィクスチャは以下の統計情報を返します：
+
+```python
+{
+    "templates_created": 15,  # 作成されたテンプレート数
+    "charts_created": 20      # 作成されたチャート数
+}
+```
+
+#### 実装場所
+
+フィクスチャの実装: `tests/conftest.py`
+
+```python
+@pytest.fixture(scope="function")
+async def seeded_templates(db_session):
+    """validation.ymlからテンプレートデータをシードします。"""
+    from app.utils.template_seeder import seed_templates
+
+    result = await seed_templates(db_session, clear_existing=True)
+    return result
+```
+
 ## 次のステップ
 
 - [ベストプラクティス](./06-best-practices.md) - より良いテストを書くために

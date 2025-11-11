@@ -28,6 +28,7 @@ from app.api.middlewares import (
 from app.api.routes.system import health, metrics, root
 from app.api.routes.v1 import (
     analysis,
+    analysis_templates,
     driver_tree,
     ppt_generator,
     project_files,
@@ -191,6 +192,13 @@ def create_app() -> FastAPI:
         analysis.router,
         prefix="/api/v1/analysis",
         tags=["analysis"],
+    )
+
+    # Analysis Templates API
+    app.include_router(
+        analysis_templates.router,
+        prefix="/api/v1/analysis/templates",
+        tags=["analysis-templates"],
     )
 
     # PPT Generator API

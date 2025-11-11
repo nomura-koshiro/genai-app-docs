@@ -7,7 +7,7 @@
 import inspect
 from collections.abc import Awaitable, Callable
 from functools import wraps
-from typing import Any
+from typing import Any, cast
 
 from fastapi import HTTPException
 
@@ -114,12 +114,13 @@ def validate_permissions(
             else:
                 # デフォルト: {resource_type}_id
                 resource_id_key = f"{resource_type}_id"
-                resource_id = kwargs.get(resource_id_key)  # type: ignore[assignment]
-                if not resource_id:
+                resource_id_value = kwargs.get(resource_id_key)
+                if not resource_id_value:
                     raise ValidationError(
                         f"リソースID（{resource_id_key}）が指定されていません",
                         details={"resource_type": resource_type},
                     )
+                resource_id = cast(str | int, resource_id_value)
 
             # リソースサービスを取得
             service_key = f"{resource_type}_service"

@@ -18,6 +18,7 @@
 """
 
 import uuid
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -44,7 +45,7 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
         """
         super().__init__(ProjectFile, db)
 
-    async def create(self, **file_data) -> ProjectFile:  # type: ignore[override]
+    async def create(self, **file_data: Any) -> ProjectFile:
         """ファイルメタデータを作成します。
 
         Args:

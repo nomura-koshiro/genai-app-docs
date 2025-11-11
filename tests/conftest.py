@@ -259,3 +259,33 @@ async def test_project(db_session, test_user):
     await db_session.refresh(project)
 
     return project
+
+
+@pytest.fixture(scope="function")
+async def seeded_templates(db_session):
+    """validation.ymlからテンプレートデータをシードします。
+
+    このフィクスチャを使用するテストは、自動的にテンプレートデータが
+    データベースにロードされた状態で開始されます。
+
+    使用例:
+        async def test_template_query(db_session, seeded_templates):
+            # seeded_templatesはシード結果の統計情報を含む
+            assert seeded_templates["templates_created"] > 0
+
+            # テンプレートクエリをテスト
+            template_repo = AnalysisTemplateRepository(db_session)
+            templates = await template_repo.list_active()
+            assert len(templates) > 0
+
+    Returns:
+        dict[str, int]: シード結果の統計
+            - templates_created: 作成されたテンプレート数
+            - charts_created: 作成されたチャート数
+    """
+    from app.utils.template_seeder import seed_templates
+
+    # テンプレートデータをシード
+    result = await seed_templates(db_session, clear_existing=True)
+
+    return result

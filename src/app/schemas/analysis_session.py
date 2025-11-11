@@ -48,6 +48,40 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 # ================================================================================
+# スナップショット関連スキーマ
+# ================================================================================
+
+
+class StepSnapshot(BaseModel):
+    """スナップショット内のステップデータ。
+
+    snapshot_historyに保存される個別ステップの情報を定義します。
+    結果データ（result_data, result_chart, result_formula）は含まれません。
+
+    Attributes:
+        name (str): ステップ名
+        type (str): ステップタイプ（filter/aggregation/transform/summary）
+        data (str): データソース（ファイルIDまたは前ステップID）
+        config (dict[str, Any]): ステップ設定
+
+    Example:
+        >>> snapshot = StepSnapshot(
+        ...     name="売上フィルタ",
+        ...     type="filter",
+        ...     data="file_abc123",
+        ...     config={"category": {"地域": ["東京", "大阪"]}}
+        ... )
+    """
+
+    model_config = ConfigDict(frozen=False)
+
+    name: str = Field(..., description="ステップ名")
+    type: str = Field(..., description="ステップタイプ")
+    data: str = Field(..., description="データソース")
+    config: dict[str, Any] = Field(default_factory=dict, description="ステップ設定")
+
+
+# ================================================================================
 # 分析セッションスキーマ
 # ================================================================================
 

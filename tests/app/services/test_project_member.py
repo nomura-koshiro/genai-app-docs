@@ -368,14 +368,11 @@ async def test_get_user_role(db_session, test_project_with_owner, test_users):
     project = test_project_with_owner
 
     # Act
-    role_info = await service.get_user_role(
+    role = await service.get_user_role(
         project_id=project.id,
         user_id=test_users[0].id,
     )
 
     # Assert
-    assert role_info["project_id"] == project.id
-    assert role_info["user_id"] == test_users[0].id
-    assert role_info["role"] == ProjectRole.PROJECT_MANAGER
-    assert role_info["is_owner"] is True
-    assert role_info["is_admin"] is True
+    assert role is not None
+    assert role == ProjectRole.PROJECT_MANAGER

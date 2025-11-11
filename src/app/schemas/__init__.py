@@ -36,17 +36,17 @@ from app.schemas.project_member import (
     ProjectMemberWithUser,
     UserRoleResponse,
 )
-from app.schemas.sample_agents import (
+from app.schemas.sample.sample_agents import (
     SampleChatRequest,
     SampleChatResponse,
 )
-from app.schemas.sample_file import (
+from app.schemas.sample.sample_file import (
     SampleFileDeleteResponse,
     SampleFileListResponse,
     SampleFileResponse,
     SampleFileUploadResponse,
 )
-from app.schemas.sample_sessions import (
+from app.schemas.sample.sample_sessions import (
     SampleDeleteResponse,
     SampleMessageResponse,
     SampleSessionCreateRequest,
@@ -54,7 +54,7 @@ from app.schemas.sample_sessions import (
     SampleSessionResponse,
     SampleSessionUpdateRequest,
 )
-from app.schemas.sample_user import (
+from app.schemas.sample.sample_user import (
     SampleToken,
     SampleUserCreate,
     SampleUserLogin,

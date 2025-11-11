@@ -14,8 +14,6 @@ import pandas as pd
 import pytest
 from httpx import AsyncClient
 
-from app.models.user import User
-
 
 @pytest.mark.asyncio
 async def test_create_session_endpoint_success(client: AsyncClient, override_auth, test_user, test_project):
@@ -38,7 +36,11 @@ async def test_create_session_endpoint_success(client: AsyncClient, override_aut
     assert "id" in data
     assert data["validation_config"]["policy"] == "市場拡大"
     assert data["chat_history"] == []
-    assert len(data["snapshot_history"]) >= 1  # Initial snapshot exists
+    # snapshot_historyは初期スナップショット（辞書形式）が1つ存在する
+    assert len(data["snapshot_history"]) >= 1
+    assert isinstance(data["snapshot_history"][0], dict)
+    assert data["snapshot_history"][0]["snapshot_id"] == 0
+
 
 @pytest.mark.asyncio
 async def test_get_session_endpoint_success(client: AsyncClient, override_auth, test_user, test_project):
@@ -59,6 +61,10 @@ async def test_get_session_endpoint_success(client: AsyncClient, override_auth, 
     data = response.json()
     assert data["id"] == session_id
     assert data["validation_config"]["policy"] == "テスト施策"
+    # snapshot_historyの存在を確認
+    assert "snapshot_history" in data
+    assert data["snapshot_history"] is not None
+
 
 @pytest.mark.asyncio
 async def test_list_user_sessions_endpoint(client: AsyncClient, override_auth, test_user, test_project):
@@ -82,6 +88,10 @@ async def test_list_user_sessions_endpoint(client: AsyncClient, override_auth, t
     data = response.json()
     assert isinstance(data, list)
     assert len(data) >= 2
+    # 各セッションにsnapshot_historyが含まれることを確認
+    for session in data:
+        assert "snapshot_history" in session
+
 
 @pytest.mark.asyncio
 async def test_upload_file_endpoint_success(client: AsyncClient, override_auth, test_user, test_project):
@@ -92,14 +102,17 @@ async def test_upload_file_endpoint_success(client: AsyncClient, override_auth, 
     # セッションを作成
     create_data = {"project_id": str(test_project.id), "policy": "テスト施策", "issue": "テスト課題"}
     create_response = await client.post("/api/v1/analysis/sessions", json=create_data)
+    assert create_response.status_code == 201
     session_id = create_response.json()["id"]
 
     # CSVデータを作成
-    df = pd.DataFrame({
-        "id": [1, 2, 3],
-        "name": ["Alice", "Bob", "Charlie"],
-        "age": [25, 30, 35],
-    })
+    df = pd.DataFrame(
+        {
+            "id": [1, 2, 3],
+            "name": ["Alice", "Bob", "Charlie"],
+            "age": [25, 30, 35],
+        }
+    )
     csv_content = df.to_csv(index=False)
     encoded_content = base64.b64encode(csv_content.encode()).decode()
 
@@ -112,9 +125,7 @@ async def test_upload_file_endpoint_success(client: AsyncClient, override_auth, 
     }
 
     # Act
-    response = await client.post(
-        f"/api/v1/analysis/sessions/{session_id}/files", json=file_data
-    )
+    response = await client.post(f"/api/v1/analysis/sessions/{session_id}/files", json=file_data)
 
     # Assert
     assert response.status_code == 201
@@ -123,6 +134,7 @@ async def test_upload_file_endpoint_success(client: AsyncClient, override_auth, 
     assert data["table_name"] == "test_data"
     assert "id" in data
     assert "storage_path" in data
+
 
 @pytest.mark.asyncio
 async def test_add_chat_message_endpoint_success(client: AsyncClient, override_auth, test_user, test_project):
@@ -133,6 +145,7 @@ async def test_add_chat_message_endpoint_success(client: AsyncClient, override_a
     # セッションを作成
     create_data = {"project_id": str(test_project.id), "policy": "テスト施策", "issue": "テスト課題"}
     create_response = await client.post("/api/v1/analysis/sessions", json=create_data)
+    assert create_response.status_code == 201
     session_id = create_response.json()["id"]
 
     chat_data = {
@@ -140,15 +153,14 @@ async def test_add_chat_message_endpoint_success(client: AsyncClient, override_a
     }
 
     # Act
-    response = await client.post(
-        f"/api/v1/analysis/sessions/{session_id}/chat", json=chat_data
-    )
+    response = await client.post(f"/api/v1/analysis/sessions/{session_id}/chat", json=chat_data)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert "message" in data
     assert "snapshot_id" in data
+
 
 @pytest.mark.skip(reason="Snapshot endpoint not implemented yet")
 @pytest.mark.asyncio
@@ -169,9 +181,7 @@ async def test_create_snapshot_endpoint_success(client: AsyncClient, override_au
     }
 
     # Act
-    response = await client.post(
-        f"/api/v1/analysis/sessions/{session_id}/snapshots", json=snapshot_data
-    )
+    response = await client.post(f"/api/v1/analysis/sessions/{session_id}/snapshots", json=snapshot_data)
 
     # Assert
     assert response.status_code == 201
@@ -179,6 +189,7 @@ async def test_create_snapshot_endpoint_success(client: AsyncClient, override_au
     assert data["success"] is True
     assert len(data["snapshot_history"]) == 1
     assert data["snapshot_history"][0]["name"] == "Test Snapshot"
+
 
 @pytest.mark.skip(reason="Validation config update endpoint not implemented yet")
 @pytest.mark.asyncio
@@ -198,15 +209,14 @@ async def test_update_validation_config_endpoint_success(client: AsyncClient, ov
     }
 
     # Act
-    response = await client.patch(
-        f"/api/v1/analysis/sessions/{session_id}/validation-config", json=new_config
-    )
+    response = await client.patch(f"/api/v1/analysis/sessions/{session_id}/validation-config", json=new_config)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert data["validation_config"]["policy"] == "市場拡大"
     # Removed: validation_config assertion
+
 
 @pytest.mark.skip(reason="Session delete endpoint not implemented yet")
 @pytest.mark.asyncio
@@ -230,6 +240,7 @@ async def test_delete_session_endpoint_success(client: AsyncClient, override_aut
     get_response = await client.get(f"/api/v1/analysis/sessions/{session_id}")
     assert get_response.status_code == 404
 
+
 @pytest.mark.asyncio
 async def test_list_sessions_with_pagination(client: AsyncClient, override_auth, test_user, test_project):
     """ページネーション付きセッション一覧取得のテスト。"""
@@ -238,9 +249,10 @@ async def test_list_sessions_with_pagination(client: AsyncClient, override_auth,
 
     # 5つのセッションを作成
     for i in range(5):
-        await client.post(
+        response = await client.post(
             "/api/v1/analysis/sessions", json={"project_id": str(test_project.id), "policy": f"施策{i}", "issue": f"課題{i}"}
         )
+        assert response.status_code == 201
 
     # Act - ページネーション付きで取得
     response = await client.get(f"/api/v1/analysis/sessions?project_id={test_project.id}&skip=0&limit=3")
@@ -251,12 +263,15 @@ async def test_list_sessions_with_pagination(client: AsyncClient, override_auth,
     assert isinstance(data, list)
     # 少なくとも3件は取得できる
     assert len(data) >= 3
+    # 各セッションにsnapshot_historyが含まれることを確認
+    for session in data:
+        assert "snapshot_history" in session
+
 
 @pytest.mark.asyncio
 async def test_unauthorized_access(client: AsyncClient):
     """認証なしでのアクセステスト。"""
     # Act - 認証なしでセッション作成を試みる
-    import uuid
     fake_project_id = str(uuid.uuid4())
     session_data = {"project_id": fake_project_id, "policy": "テスト施策", "issue": "テスト課題"}
     response = await client.post("/api/v1/analysis/sessions", json=session_data)

@@ -42,7 +42,14 @@ async def test_create_session_success(db_session: AsyncSession, test_user, test_
     assert session.created_by == user_id
     assert session.validation_config is not None
     assert session.chat_history == []
-    assert len(session.snapshot_history) == 1 and session.snapshot_history[0]["snapshot_id"] == 0
+    # スナップショット履歴は初期スナップショット（辞書形式）が1つ存在する
+    assert session.snapshot_history is not None
+    assert len(session.snapshot_history) == 1
+    # 初期スナップショットは辞書形式で、snapshot_id=0、空のsteps配列を持つ
+    assert isinstance(session.snapshot_history[0], dict)
+    assert session.snapshot_history[0]["snapshot_id"] == 0
+    assert session.snapshot_history[0]["steps"] == []
+    assert session.snapshot_history[0]["files"] == []
 
 
 @pytest.mark.asyncio
@@ -197,7 +204,7 @@ async def test_upload_data_file_invalid_csv(db_session: AsyncSession, test_user,
     )
 
     # Act & Assert
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(ValidationError):
         await service.upload_data_file(session.id, file_request, user_id)
 
     # ValidationErrorが発生することを確認（メッセージの内容は問わない）

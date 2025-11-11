@@ -77,7 +77,7 @@ def retry_on_error(
     def decorator(func: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
         @wraps(func)
         async def wrapper(*args: Any, **kwargs: Any) -> Any:
-            last_exception = None
+            last_exception: BaseException | None = None
             current_delay = delay
 
             for attempt in range(max_retries + 1):
@@ -107,7 +107,9 @@ def retry_on_error(
                             exc_info=True,
                         )
 
-            raise last_exception  # type: ignore
+            # 全てのリトライが失敗した場合、必ず例外が保存されている
+            assert last_exception is not None
+            raise last_exception
 
         return wrapper
 
