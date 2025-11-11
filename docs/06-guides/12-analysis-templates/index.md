@@ -36,7 +36,7 @@
 
 ### アーキテクチャ
 
-```text
+```
 validation.yml + dummy/chart/*.json
         ↓
 TemplateSeeder (データパース・インポート)
@@ -61,7 +61,6 @@ API層 (REST エンドポイント)
 **モデル定義**: `src/app/models/analysis_template.py`
 
 主要なフィールド：
-
 - `id` (UUID) - プライマリキー
 - `policy` (str) - 施策名（例: "市場拡大"）
 - `issue` (str) - 課題名（例: "新規参入"）
@@ -76,7 +75,6 @@ API層 (REST エンドポイント)
 - `display_order` (int) - 表示順序
 
 **制約:**
-
 - `(policy, issue)` の組み合わせはユニーク
 - インデックス: `policy`, `issue`, `(policy, issue)`
 
@@ -87,7 +85,6 @@ API層 (REST エンドポイント)
 **モデル定義**: `src/app/models/analysis_template_chart.py`
 
 主要なフィールド：
-
 - `id` (UUID) - プライマリキー
 - `template_id` (UUID) - テンプレートID（外部キー）
 - `chart_name` (str) - チャート名
@@ -96,7 +93,6 @@ API層 (REST エンドポイント)
 - `chart_type` (str) - チャートタイプ（scatter, bar等）
 
 **リレーション:**
-
 - `template_id` → `analysis_templates.id` (CASCADE DELETE)
 
 ### データソース
@@ -270,7 +266,7 @@ uv run python scripts/seed_templates.py --no-clear
 
 **出力例:**
 
-```text
+```
 ==========================================================
 分析テンプレートデータシード
 ==========================================================

@@ -182,7 +182,6 @@ agent/
 LangChainベースの対話型AIエージェント：
 
 **主要機能：**
-
 - Azure OpenAI GPT-4による自然言語理解
 - 14個のLangChainツールを統合
 - ConversationBufferMemoryによる会話履歴管理
@@ -190,7 +189,6 @@ LangChainベースの対話型AIエージェント：
 - ツール使用履歴の追跡とログ
 
 **使用例：**
-
 ```python
 from app.services.analysis.agent.core import AnalysisAgent
 
@@ -206,7 +204,6 @@ async with get_db() as db:
 分析ステップの実行管理：
 
 **主要機能：**
-
 - ステップの実行順序制御
 - データフローの管理（original → step_0 → step_1 → ...）
 - 結果のストレージ保存
@@ -214,7 +211,6 @@ async with get_db() as db:
 - エラーハンドリングとタイムアウト（10分）
 
 **使用例：**
-
 ```python
 executor = AnalysisStepExecutor(db_session)
 result = await executor.execute_step(
@@ -229,7 +225,6 @@ result = await executor.execute_step(
 分析状態を管理する専門クラス群：
 
 **AnalysisState（ファサード）：**
-
 ```python
 from app.services.analysis.agent.state import AnalysisState
 
@@ -240,7 +235,6 @@ overview = await state.get_data_overview()
 ```
 
 **専門マネージャー：**
-
 - **AnalysisDataManager**: ソースデータ管理
 - **AnalysisOverviewProvider**: データ/ステップ概要生成
 - **AnalysisStepManager**: ステップ追加、削除、取得
@@ -251,7 +245,6 @@ overview = await state.get_data_overview()
 AIエージェントが使用できるツール群：
 
 **共通ツール（5個）：**
-
 1. **GetDataOverviewTool**: データ概要取得
 2. **GetStepOverviewTool**: ステップ概要取得
 3. **AddStepTool**: 新規ステップ追加
@@ -269,7 +262,6 @@ AIエージェントが使用できるツール群：
 13. **SetSummaryTool**: Summaryステップ設定更新
 
 **ツール実装例：**
-
 ```python
 from langchain.tools import BaseTool
 
@@ -291,7 +283,6 @@ class GetDataOverviewTool(BaseTool):
 データを特定の条件で絞り込みます。
 
 **対応フィルタ（3種類）：**
-
 1. **category_filter**: カテゴリカル値のフィルタ
 2. **numeric_filter**: 数値範囲フィルタ
 3. **table_filter**: 他のステップの結果を参照
@@ -312,7 +303,6 @@ class GetDataOverviewTool(BaseTool):
 | その他 | 20以上のメソッド |
 
 **設定例：**
-
 ```python
 config = {
     "category_filter": {
@@ -341,8 +331,7 @@ config = {
 **データ構造：**
 
 Wide Format（採用）:
-
-```text
+```
 地域  | 売上 | 原価
 -----|------|-----
 東京 | 100  | 60
@@ -350,8 +339,7 @@ Wide Format（採用）:
 ```
 
 Long Format（camp-backend旧版）:
-
-```text
+```
 地域  | 科目 | 値
 -----|------|----
 東京 | 売上 | 100
@@ -359,7 +347,6 @@ Long Format（camp-backend旧版）:
 ```
 
 **集計メソッド：**
-
 - `sum`: 合計
 - `mean`: 平均
 - `count`: 件数
@@ -368,7 +355,6 @@ Long Format（camp-backend旧版）:
 - `+`, `-`, `*`, `/`: 四則演算（集計結果間）
 
 **設定例：**
-
 ```python
 config = {
     "axis": ["地域", "商品"],  # グループ化軸
@@ -385,27 +371,23 @@ config = {
 カラムや科目を追加・変更します。
 
 **操作タイプ：**
-
 - `add_axis`: 新しい列（軸）を追加
 - `modify_axis`: 既存列を変更
 - `add_subject`: 新しい科目を追加
 - `modify_subject`: 既存科目を変更
 
 **計算タイプ：**
-
 - `constant`: 定数値
 - `copy`: 他の列をコピー
 - `formula`: 数式計算
 - `mapping`: 値マッピング（辞書）
 
 **変換メソッド（12種類）：**
-
 - 列追加/変更: 4メソッド
 - 科目追加/変更: 4メソッド
 - 数式計算: 4演算子（+, -, *, /）
 
 **設定例：**
-
 ```python
 config = {
     "operations": [
@@ -435,18 +417,15 @@ config = {
 分析結果を要約・可視化します。
 
 **機能：**
-
 1. **数式計算**: 集計値の計算、四則演算
 2. **グラフ生成**: Plotlyを使用した11種類のグラフ
 
 **数式タイプ：**
-
 - `sum`, `mean`, `count`, `max`, `min`: 基本集計
 - `+`, `-`, `*`, `/`: 四則演算
 - `arithmetic`: 算術式（eval使用）
 
 **設定例：**
-
 ```python
 config = {
     "formula": [
@@ -517,7 +496,6 @@ class BaseGraph(ABC):
 ### グラフ使用例
 
 **棒グラフ（Bar）：**
-
 ```python
 from app.services.analysis.agent.steps.summary.graphs import BarGraph
 
@@ -533,7 +511,6 @@ chart_json = fig.to_dict()
 ```
 
 **折れ線グラフ（Line）：**
-
 ```python
 from app.services.analysis.agent.steps.summary.graphs import LineGraph
 
@@ -547,7 +524,6 @@ fig = line_graph.create(
 ```
 
 **ヒートマップ（Heatmap）：**
-
 ```python
 from app.services.analysis.agent.steps.summary.graphs import HeatmapGraph
 
@@ -876,7 +852,6 @@ print(f"Snapshot saved: {snapshot_id}")
 ### リクエスト/レスポンス例
 
 **セッション作成：**
-
 ```json
 // POST /api/v1/analysis/sessions
 {
@@ -899,7 +874,6 @@ print(f"Snapshot saved: {snapshot_id}")
 ```
 
 **ファイルアップロード：**
-
 ```json
 // POST /api/v1/analysis/sessions/{id}/files
 {
@@ -918,7 +892,6 @@ print(f"Snapshot saved: {snapshot_id}")
 ```
 
 **チャット実行：**
-
 ```json
 // POST /api/v1/analysis/sessions/{id}/chat
 {
@@ -1012,19 +985,16 @@ class AnalysisStep(Base, TimestampMixin):
 ```
 
 **step_type値：**
-
 - `filter`: フィルタ
 - `aggregate`: 集計
 - `transform`: 変換
 - `summary`: サマリー
 
 **data_source値：**
-
 - `original`: 元ファイル
 - `step_0`, `step_1`, ...: 前のステップの結果
 
 **status値：**
-
 - `pending`: 未実行
 - `running`: 実行中
 - `completed`: 完了
@@ -1112,14 +1082,12 @@ chat_history: list[dict[str, Any]] = [
 ### 1. サービス層の6ファイル分割
 
 **理由：**
-
 - **単一責任原則（SRP）**: 各サービスは1つの責任のみを持つ
 - **保守性向上**: 関連する機能が1ファイルにまとまっている
 - **テスト容易性**: 各サービスを独立してテスト可能
 - **後方互換性**: AnalysisServiceファサードが既存APIを維持
 
 **分割基準：**
-
 - `session.py`: セッションのCRUD
 - `file.py`: ファイル管理とストレージ統合
 - `chat.py`: AIエージェント統合
@@ -1130,14 +1098,12 @@ chat_history: list[dict[str, Any]] = [
 ### 2. Wide Format採用
 
 **理由：**
-
 1. **pandas標準**: pandasのデフォルトデータ構造
 2. **メモリ効率**: Long Formatより約30%メモリ削減
 3. **分析容易性**: 集計後の分析が直感的
 4. **複数科目処理**: 同時処理が簡単
 
 **トレードオフ：**
-
 - camp-backendとのデータ構造互換性を失う
 - 移行時に変換処理が必要
 - 利点がデメリットを大きく上回ると判断
@@ -1145,27 +1111,23 @@ chat_history: list[dict[str, Any]] = [
 ### 3. LangChain統合
 
 **理由：**
-
 1. **エコシステム**: 豊富なツールとインテグレーション
 2. **メモリ管理**: ConversationBufferMemoryによる会話履歴管理
 3. **ツール統合**: 14個のカスタムツールを簡単に統合
 4. **Azure OpenAI**: AzureChatOpenAIによる容易な接続
 
 **LangChain vs LangGraph：**
-
 - LangChain: 単純な対話型エージェント（採用）
 - LangGraph: 複雑な状態遷移グラフ（不要）
 
 ### 4. 非同期処理
 
 **理由：**
-
 1. **I/O待機効率化**: DB、ストレージ、LLM呼び出しを非同期化
 2. **スループット向上**: 複数リクエストの並行処理
 3. **FastAPI標準**: FastAPIの非同期エンドポイントと統合
 
 **実装パターン：**
-
 ```python
 # すべてのサービスメソッドは非同期
 async def execute_step(self, session_id: uuid.UUID, step: AnalysisStep) -> dict:
@@ -1199,13 +1161,11 @@ class AnalysisStorageService:
 ### 6. エラーハンドリング
 
 **3層のエラーハンドリング：**
-
 1. **バリデーション層**: `ValidationError` - 入力検証
 2. **ビジネスロジック層**: `NotFoundError` - リソース不在
 3. **インフラ層**: `Exception` - 予期しないエラー
 
 **リトライ機構：**
-
 ```python
 async def chat(self, user_input: str, max_retry: int = 3) -> str:
     for attempt in range(max_retry):

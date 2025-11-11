@@ -22,7 +22,6 @@ Driver Tree機能は、ビジネスドライバーを階層構造（木構造）
 各ノードは親子関係で結ばれ、論理演算子（AND/OR）によって関係性が定義されます。
 
 **主な機能:**
-
 - 階層的なドライバーツリーの作成・更新・削除
 - ノードの追加・編集・削除・並べ替え
 - 業種別カテゴリー管理
@@ -268,7 +267,6 @@ class DriverTreeCategory(Base):
 #### Phase 10の主な変更（2025-11-11）
 
 **設計変更:**
-
 - DAG構造（隣接リスト + エッジテーブル） → 親子関係ベースの木構造
 - `driver_tree_children` テーブル削除
 - ノードに `tree_id`, `parent_id`, `operator` 追加
@@ -309,7 +307,6 @@ class DriverTreeNode(Base):
 ```
 
 **メリット:**
-
 1. **シンプル**: エッジテーブル不要、親子関係が直感的
 2. **高速**: JOINが1回減少、クエリが単純化
 3. **保守性**: 木構造の標準的な実装パターン
@@ -456,7 +453,6 @@ async def _build_node_tree_recursive(
 ### Phase 8: データモデル・スキーマ実装（2025-11-09）
 
 **実装内容:**
-
 - ✅ `DriverTree` モデル作成（150行）
 - ✅ `DriverTreeNode` モデル作成（200行）
 - ✅ `DriverTreeCategory` モデル作成（100行）
@@ -464,14 +460,12 @@ async def _build_node_tree_recursive(
 - ✅ Alembicマイグレーション003作成
 
 **設計:**
-
 - DAG構造（`driver_tree_children` テーブル使用）
 - 3テーブル分割（Tree/Node/Category）
 
 ### Phase 9: Repository/Service/API実装（2025-11-10）
 
 **実装内容:**
-
 - ✅ Repository層実装（3ファイル、900行）
 - ✅ Service層実装（800行）
 - ✅ API層実装（450行）
@@ -479,7 +473,6 @@ async def _build_node_tree_recursive(
 - ✅ テスト作成（4ファイル、1,200行）
 
 **機能:**
-
 - ツリーCRUD操作
 - ノード追加・編集・削除・並べ替え
 - カテゴリー管理
@@ -488,7 +481,6 @@ async def _build_node_tree_recursive(
 ### Phase 10: 真の木構造へリファクタリング（2025-11-11）
 
 **実装内容:**
-
 - ✅ `driver_tree_children` テーブル削除
 - ✅ `DriverTreeNode` に `tree_id`, `parent_id`, `operator` 追加
 - ✅ Alembicマイグレーション004作成（データ移行含む）
@@ -497,14 +489,12 @@ async def _build_node_tree_recursive(
 - ✅ 依存関係追加（pandas, python-pptx）
 
 **設計変更:**
-
-```text
+```
 Before: Node + Children（エッジテーブル）
 After:  Node（parent_id含む）
 ```
 
 **影響範囲:**
-
 - Models: 3ファイル修正
 - Repositories: 3ファイル修正
 - Services: 1ファイル修正
@@ -513,7 +503,6 @@ After:  Node（parent_id含む）
 - Alembic: 新規マイグレーション
 
 **パフォーマンス改善:**
-
 - クエリ数: 3クエリ → 1クエリ（再帰CTE使用可能）
 - JOIN数: 2 JOIN → 1 JOIN
 - インデックス: 複合インデックス不要
@@ -554,7 +543,6 @@ After:  Node（parent_id含む）
 #### 主なメソッド
 
 **DriverTreeRepository (300行):**
-
 - `create(tree)`: ツリー作成
 - `get_by_id(tree_id)`: ツリー取得（root_node含む）
 - `get_by_category(category_id)`: カテゴリー別ツリー一覧
@@ -562,7 +550,6 @@ After:  Node（parent_id含む）
 - `delete(tree_id)`: ツリー削除（カスケード）
 
 **DriverTreeNodeRepository (400行):**
-
 - `create(node)`: ノード作成
 - `get_by_id(node_id)`: ノード取得（children含む）
 - `get_children(node_id)`: 子ノード一覧
@@ -572,7 +559,6 @@ After:  Node（parent_id含む）
 - `reorder_children(parent_id, order)`: 子ノード並べ替え
 
 **DriverTreeCategoryRepository (200行):**
-
 - `create(category)`: カテゴリー作成
 - `get_by_id(category_id)`: カテゴリー取得
 - `get_all()`: カテゴリー一覧
