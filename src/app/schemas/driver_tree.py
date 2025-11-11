@@ -4,18 +4,18 @@
 リクエスト/レスポンススキーマを定義します。
 
 主なスキーマ:
-    - NodeCreate: ノード作成リクエスト
-    - NodeUpdate: ノード更新リクエスト
-    - NodeResponse: ノードレスポンス（木構造）
-    - TreeResponse: ツリーレスポンス
-    - FormulaCreateRequest: 数式からツリー作成リクエスト
-    - CategoryResponse: カテゴリーレスポンス
+    - DriverTreeNodeCreate: ノード作成リクエスト
+    - DriverTreeNodeUpdate: ノード更新リクエスト
+    - DriverTreeNodeResponse: ノードレスポンス（木構造）
+    - DriverTreeResponse: ツリーレスポンス
+    - DriverTreeFormulaCreateRequest: 数式からツリー作成リクエスト
+    - DriverTreeCategoryResponse: カテゴリーレスポンス
 
 使用例:
-    >>> from app.schemas.driver_tree import NodeCreate
+    >>> from app.schemas.driver_tree import DriverTreeNodeCreate
     >>>
     >>> # ルートノード作成
-    >>> root = NodeCreate(
+    >>> root = DriverTreeNodeCreate(
     ...     tree_id=tree_id,
     ...     label="粗利",
     ...     x=0,
@@ -29,7 +29,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class NodeCreate(BaseModel):
+class DriverTreeNodeCreate(BaseModel):
     """ノード作成リクエスト。
 
     Attributes:
@@ -49,7 +49,7 @@ class NodeCreate(BaseModel):
     y: int | None = Field(None, ge=0, description="Y座標")
 
 
-class NodeUpdate(BaseModel):
+class DriverTreeNodeUpdate(BaseModel):
     """ノード更新リクエスト。"""
 
     label: str | None = Field(None, min_length=1, max_length=100, description="ノードのラベル")
@@ -59,7 +59,7 @@ class NodeUpdate(BaseModel):
     y: int | None = Field(None, ge=0, description="Y座標")
 
 
-class NodeResponse(BaseModel):
+class DriverTreeNodeResponse(BaseModel):
     """ノードレスポンス（木構造）。"""
 
     id: uuid.UUID = Field(..., description="ノードID")
@@ -69,32 +69,32 @@ class NodeResponse(BaseModel):
     operator: str | None = Field(None, description="演算子")
     x: int | None = Field(None, description="X座標")
     y: int | None = Field(None, description="Y座標")
-    children: list["NodeResponse"] = Field(default_factory=list, description="子ノードのリスト")
+    children: list["DriverTreeNodeResponse"] = Field(default_factory=list, description="子ノードのリスト")
 
     class Config:
         from_attributes = True
 
 
-class TreeResponse(BaseModel):
+class DriverTreeResponse(BaseModel):
     """ツリーレスポンス。"""
 
     id: uuid.UUID = Field(..., description="ツリーID")
     name: str | None = Field(None, description="ツリー名")
     root_node_id: uuid.UUID | None = Field(None, description="ルートノードID")
-    root_node: NodeResponse | None = Field(None, description="ルートノード（木構造全体を含む）")
+    root_node: DriverTreeNodeResponse | None = Field(None, description="ルートノード（木構造全体を含む）")
 
     class Config:
         from_attributes = True
 
 
-class FormulaCreateRequest(BaseModel):
+class DriverTreeFormulaCreateRequest(BaseModel):
     """数式からツリー作成リクエスト。"""
 
     name: str | None = Field(None, max_length=200, description="ツリー名")
     formulas: list[str] = Field(..., min_length=1, description="数式のリスト")
 
 
-class CategoryResponse(BaseModel):
+class DriverTreeCategoryResponse(BaseModel):
     """カテゴリーレスポンス。"""
 
     id: uuid.UUID = Field(..., description="カテゴリーID")
@@ -109,13 +109,13 @@ class CategoryResponse(BaseModel):
         from_attributes = True
 
 
-class KPIListResponse(BaseModel):
+class DriverTreeKPIListResponse(BaseModel):
     """KPI一覧レスポンス。"""
 
     kpis: list[str] = Field(..., description="KPI名のリスト")
 
 
-class FormulaResponse(BaseModel):
+class DriverTreeFormulaResponse(BaseModel):
     """数式レスポンス。"""
 
     formulas: list[str] = Field(..., description="数式のリスト")

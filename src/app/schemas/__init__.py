@@ -2,13 +2,13 @@
 
 from app.schemas.common import HealthResponse, MessageResponse, ProblemDetails
 from app.schemas.driver_tree import (
-    FormulaCreateRequest,
-    FormulaResponse,
-    KPIListResponse,
-    NodeCreate,
-    NodeResponse,
-    NodeUpdate,
-    TreeResponse,
+    DriverTreeFormulaCreateRequest,
+    DriverTreeFormulaResponse,
+    DriverTreeKPIListResponse,
+    DriverTreeNodeCreate,
+    DriverTreeNodeResponse,
+    DriverTreeNodeUpdate,
+    DriverTreeResponse,
 )
 from app.schemas.project import (
     ProjectCreate,
@@ -72,13 +72,13 @@ __all__ = [
     "HealthResponse",
     "MessageResponse",
     # Driver Treeスキーマ
-    "NodeCreate",
-    "NodeUpdate",
-    "NodeResponse",
-    "TreeResponse",
-    "FormulaCreateRequest",
-    "FormulaResponse",
-    "KPIListResponse",
+    "DriverTreeNodeCreate",
+    "DriverTreeNodeUpdate",
+    "DriverTreeNodeResponse",
+    "DriverTreeResponse",
+    "DriverTreeFormulaCreateRequest",
+    "DriverTreeFormulaResponse",
+    "DriverTreeKPIListResponse",
     # サンプルユーザースキーマ
     "SampleToken",
     "SampleUserCreate",

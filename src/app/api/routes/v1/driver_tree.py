@@ -12,13 +12,13 @@ from app.api.core.dependencies import CurrentUserAzureDep, get_db
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.driver_tree import (
-    FormulaCreateRequest,
-    FormulaResponse,
-    KPIListResponse,
-    NodeCreate,
-    NodeResponse,
-    NodeUpdate,
-    TreeResponse,
+    DriverTreeFormulaCreateRequest,
+    DriverTreeFormulaResponse,
+    DriverTreeKPIListResponse,
+    DriverTreeNodeCreate,
+    DriverTreeNodeResponse,
+    DriverTreeNodeUpdate,
+    DriverTreeResponse,
 )
 from app.services.driver_tree import DriverTreeService
 
@@ -39,13 +39,13 @@ def get_driver_tree_service(db: AsyncSession = Depends(get_db)) -> DriverTreeSer
     return DriverTreeService(db)
 
 
-@router.post("/nodes", response_model=NodeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/nodes", response_model=DriverTreeNodeResponse, status_code=status.HTTP_201_CREATED)
 @handle_service_errors
 async def create_node(
-    node_data: NodeCreate,
+    node_data: DriverTreeNodeCreate,
     current_user: CurrentUserAzureDep,
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> NodeResponse:
+) -> DriverTreeNodeResponse:
     """ノードを作成します。
 
     Args:
@@ -79,16 +79,16 @@ async def create_node(
         label=node.label,
     )
 
-    return NodeResponse.model_validate(node)
+    return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.get("/nodes/{node_id}", response_model=NodeResponse)
+@router.get("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
 @handle_service_errors
 async def get_node(
     node_id: uuid.UUID,
     current_user: CurrentUserAzureDep,
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> NodeResponse:
+) -> DriverTreeNodeResponse:
     """ノードを取得します。
 
     Args:
@@ -114,17 +114,17 @@ async def get_node(
         label=node.label,
     )
 
-    return NodeResponse.model_validate(node)
+    return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.put("/nodes/{node_id}", response_model=NodeResponse)
+@router.put("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
 @handle_service_errors
 async def update_node(
     node_id: uuid.UUID,
-    node_data: NodeUpdate,
+    node_data: DriverTreeNodeUpdate,
     current_user: CurrentUserAzureDep,
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> NodeResponse:
+) -> DriverTreeNodeResponse:
     """ノードを更新します。
 
     Args:
@@ -158,17 +158,17 @@ async def update_node(
         label=node.label,
     )
 
-    return NodeResponse.model_validate(node)
+    return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.post("/trees", response_model=TreeResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/trees", response_model=DriverTreeResponse, status_code=status.HTTP_201_CREATED)
 @handle_service_errors
 @async_timeout(60.0)
 async def create_tree_from_formulas(
-    formula_data: FormulaCreateRequest,
+    formula_data: DriverTreeFormulaCreateRequest,
     current_user: CurrentUserAzureDep,
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> TreeResponse:
+) -> DriverTreeResponse:
     """数式からツリーを作成します。
 
     Args:
@@ -201,13 +201,13 @@ async def create_tree_from_formulas(
     return await driver_tree_service.get_tree_response(tree.id)
 
 
-@router.get("/trees/{tree_id}", response_model=TreeResponse)
+@router.get("/trees/{tree_id}", response_model=DriverTreeResponse)
 @handle_service_errors
 async def get_tree(
     tree_id: uuid.UUID,
     current_user: CurrentUserAzureDep,
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> TreeResponse:
+) -> DriverTreeResponse:
     """ツリーを取得します。
 
     Args:
@@ -267,11 +267,11 @@ async def get_categories(
     return categories
 
 
-@router.get("/kpis", response_model=KPIListResponse)
+@router.get("/kpis", response_model=DriverTreeKPIListResponse)
 @handle_service_errors
 async def get_kpis(
     current_user: CurrentUserAzureDep,
-) -> KPIListResponse:
+) -> DriverTreeKPIListResponse:
     """KPI一覧を取得します。
 
     Args:
@@ -293,17 +293,17 @@ async def get_kpis(
         kpi_count=len(kpis),
     )
 
-    return KPIListResponse(kpis=kpis)
+    return DriverTreeKPIListResponse(kpis=kpis)
 
 
-@router.get("/formulas", response_model=FormulaResponse)
+@router.get("/formulas", response_model=DriverTreeFormulaResponse)
 @handle_service_errors
 async def get_formulas(
     current_user: CurrentUserAzureDep,
     tree_type: str = Query(..., description="ツリータイプ"),
     kpi: str = Query(..., description="KPI名"),
     driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> FormulaResponse:
+) -> DriverTreeFormulaResponse:
     """指定されたツリータイプとKPIの数式を取得します。
 
     Args:
@@ -332,4 +332,4 @@ async def get_formulas(
         formula_count=len(formulas),
     )
 
-    return FormulaResponse(formulas=formulas)
+    return DriverTreeFormulaResponse(formulas=formulas)

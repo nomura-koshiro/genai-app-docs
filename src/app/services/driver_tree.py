@@ -16,7 +16,7 @@ from app.models.driver_tree_node import DriverTreeNode
 from app.repositories.driver_tree import DriverTreeRepository
 from app.repositories.driver_tree_category import DriverTreeCategoryRepository
 from app.repositories.driver_tree_node import DriverTreeNodeRepository
-from app.schemas.driver_tree import NodeResponse, TreeResponse
+from app.schemas.driver_tree import DriverTreeNodeResponse, DriverTreeResponse
 
 logger = structlog.get_logger(__name__)
 
@@ -340,14 +340,14 @@ class DriverTreeService:
         return tree
 
     @measure_performance
-    async def get_tree_response(self, tree_id: uuid.UUID) -> TreeResponse:
+    async def get_tree_response(self, tree_id: uuid.UUID) -> DriverTreeResponse:
         """ツリーのレスポンスを取得します。
 
         Args:
             tree_id: ツリーID
 
         Returns:
-            TreeResponse: ツリーのレスポンス
+            DriverTreeResponse: ツリーのレスポンス
 
         Raises:
             NotFoundError: ツリーが見つからない場合
@@ -363,7 +363,7 @@ class DriverTreeService:
 
             logger.debug("tree_response_built", tree_id=str(tree_id), has_root=bool(tree.root_node))
 
-            return TreeResponse(
+            return DriverTreeResponse(
                 id=tree.id,
                 name=tree.name,
                 root_node_id=tree.root_node_id,
@@ -376,19 +376,19 @@ class DriverTreeService:
             logger.error("tree_response_get_failed", tree_id=str(tree_id), error=str(e), exc_info=True)
             raise
 
-    async def _build_node_response(self, node: DriverTreeNode) -> NodeResponse:
+    async def _build_node_response(self, node: DriverTreeNode) -> DriverTreeNodeResponse:
         """ノードのレスポンスを再帰的に構築します。
 
         Args:
             node: ノード
 
         Returns:
-            NodeResponse: ノードのレスポンス
+            DriverTreeNodeResponse: ノードのレスポンス
         """
         children = await self.node_repo.find_children(node.id)
         children_responses = [await self._build_node_response(child) for child in children]
 
-        return NodeResponse(
+        return DriverTreeNodeResponse(
             id=node.id,
             tree_id=node.tree_id,
             label=node.label,
