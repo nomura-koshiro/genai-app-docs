@@ -1,0 +1,2746 @@
+{
+    "data": [
+        {
+            "hovertemplate": "原材料=原材料 1\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 1",
+            "marker": {
+                "color": "rgb(152,229,142)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 1",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAM0A="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "bsvSYJzhUkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 10\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 10",
+            "marker": {
+                "color": "rgb(64,156,121)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 10",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "x54sN\u002f7yT0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 11\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 11",
+            "marker": {
+                "color": "rgb(238,70,152)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 11",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "rj7KeXHa\u002fj8="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 12\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 12",
+            "marker": {
+                "color": "rgb(171,124,252)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 12",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "I6uD2+4GPEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 13\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 13",
+            "marker": {
+                "color": "rgb(137,166,149)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 13",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "3CmqImKaM0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 14\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 14",
+            "marker": {
+                "color": "rgb(153,201,180)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 14",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "AztAC6cgLUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 15\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 15",
+            "marker": {
+                "color": "rgb(199,102,51)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 15",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "srnfPyeOVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 16\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 16",
+            "marker": {
+                "color": "rgb(137,207,87)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 16",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAHEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "4Mp+7p2bTUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 17\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 17",
+            "marker": {
+                "color": "rgb(179,241,237)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 17",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "ha1ULhtKQ0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 18\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 18",
+            "marker": {
+                "color": "rgb(70,210,253)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 18",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "6LX9ntL5U0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 19\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 19",
+            "marker": {
+                "color": "rgb(107,71,138)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 19",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAHEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "VLyQ+F00T0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 2\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 2",
+            "marker": {
+                "color": "rgb(98,108,219)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 2",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "HY9qyjsLREA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 20\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 20",
+            "marker": {
+                "color": "rgb(237,64,239)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 20",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "mZkbGEisSkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 21\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 21",
+            "marker": {
+                "color": "rgb(239,224,239)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 21",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "SrX479\u002f9SEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 22\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 22",
+            "marker": {
+                "color": "rgb(100,157,104)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 22",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Wu3MI4cLV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 23\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 23",
+            "marker": {
+                "color": "rgb(113,180,100)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 23",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "FkdC2yKkUEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 24\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 24",
+            "marker": {
+                "color": "rgb(184,70,122)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 24",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "2IxkrvP9NkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 25\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 25",
+            "marker": {
+                "color": "rgb(216,67,181)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 25",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "wxSkjEAUAUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 26\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 26",
+            "marker": {
+                "color": "rgb(138,109,63)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 26",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAHEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "gRezemUtUkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 27\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 27",
+            "marker": {
+                "color": "rgb(58,139,102)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 27",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "ovsWVZQCQkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 28\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 28",
+            "marker": {
+                "color": "rgb(179,133,141)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 28",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "MGQdJVuoUUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 29\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 29",
+            "marker": {
+                "color": "rgb(160,237,248)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 29",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "JiIzz+TLUUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 3\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 3",
+            "marker": {
+                "color": "rgb(221,57,224)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 3",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "u9B+1Uz5UEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 30\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 30",
+            "marker": {
+                "color": "rgb(84,255,130)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 30",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "RWikKH2HVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 31\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 31",
+            "marker": {
+                "color": "rgb(213,99,153)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 31",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Yh9zoXPZVUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 32\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 32",
+            "marker": {
+                "color": "rgb(181,51,183)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 32",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "T\u002fc7t+QGPUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 33\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 33",
+            "marker": {
+                "color": "rgb(103,155,53)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 33",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "1r65o1RlUEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 34\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 34",
+            "marker": {
+                "color": "rgb(103,240,195)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 34",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "7faQMzuGUUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 35\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 35",
+            "marker": {
+                "color": "rgb(93,211,251)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 35",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAA8D8="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "E\u002ffgHm6iSEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 36\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 36",
+            "marker": {
+                "color": "rgb(239,63,144)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 36",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "05p49AIXREA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 37\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 37",
+            "marker": {
+                "color": "rgb(97,64,249)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 37",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "ySYUKpAjV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 38\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 38",
+            "marker": {
+                "color": "rgb(255,239,89)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 38",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "wJyPNGp1LUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 39\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 39",
+            "marker": {
+                "color": "rgb(131,160,102)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 39",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "G\u002fOfbk3hPkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 4\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 4",
+            "marker": {
+                "color": "rgb(73,203,237)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 4",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "fEBLnTfBFkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 40\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 40",
+            "marker": {
+                "color": "rgb(173,90,206)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 40",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Q7yKNPrbSUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 41\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 41",
+            "marker": {
+                "color": "rgb(64,94,114)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 41",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "xuYI60hKWEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 42\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 42",
+            "marker": {
+                "color": "rgb(138,120,58)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 42",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAHEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "BcfLg+FfEUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 43\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 43",
+            "marker": {
+                "color": "rgb(137,178,185)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 43",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAFEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "vfvQUId3UUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 44\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 44",
+            "marker": {
+                "color": "rgb(112,188,130)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 44",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "2sqRUmuLWEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 45\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 45",
+            "marker": {
+                "color": "rgb(185,212,212)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 45",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "OKMQg2J4T0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 46\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 46",
+            "marker": {
+                "color": "rgb(82,172,54)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 46",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAFEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "fgC6p6+VVEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 47\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 47",
+            "marker": {
+                "color": "rgb(90,77,184)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 47",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAGEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "mKR9e3f+PkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 48\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 48",
+            "marker": {
+                "color": "rgb(250,121,61)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 48",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "zohw2O+SUEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 49\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 49",
+            "marker": {
+                "color": "rgb(211,82,97)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 49",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "s4odimGLV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 5\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 5",
+            "marker": {
+                "color": "rgb(200,111,86)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 5",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "+tGb0BgIR0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 50\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 50",
+            "marker": {
+                "color": "rgb(148,221,153)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 50",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAA8D8="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "JPcoWKDuLUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 51\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 51",
+            "marker": {
+                "color": "rgb(84,242,150)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 51",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "82Kh3m2yV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 52\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 52",
+            "marker": {
+                "color": "rgb(224,255,180)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 52",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "3d5Z4+ekQUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 53\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 53",
+            "marker": {
+                "color": "rgb(50,54,191)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 53",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "cBWpPfO7REA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 54\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 54",
+            "marker": {
+                "color": "rgb(152,76,186)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 54",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "dhS2SqAoM0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 55\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 55",
+            "marker": {
+                "color": "rgb(64,139,91)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 55",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAEEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "jkXC82CfV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 56\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 56",
+            "marker": {
+                "color": "rgb(173,254,228)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 56",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Q31H6X6xVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 57\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 57",
+            "marker": {
+                "color": "rgb(112,145,101)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 57",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAEEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "H4D76nwpFUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 58\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 58",
+            "marker": {
+                "color": "rgb(145,181,200)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 58",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "mv626965TUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 59\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 59",
+            "marker": {
+                "color": "rgb(192,220,78)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 59",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "rXj8XzNTMkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 6\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 6",
+            "marker": {
+                "color": "rgb(85,62,209)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 6",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "mVAcqaiBVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 60\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 60",
+            "marker": {
+                "color": "rgb(120,236,135)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 60",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAM0A="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Z7I7F+5\u002fMEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 61\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 61",
+            "marker": {
+                "color": "rgb(77,115,219)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 61",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAEEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "7iYBieJhTUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 62\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 62",
+            "marker": {
+                "color": "rgb(94,111,234)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 62",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "JXYetgP7MUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 63\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 63",
+            "marker": {
+                "color": "rgb(183,77,77)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 63",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAM0A="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "7Uzw74ScWEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 64\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 64",
+            "marker": {
+                "color": "rgb(157,93,133)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 64",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAEEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Aje8aJmoSEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 65\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 65",
+            "marker": {
+                "color": "rgb(79,239,124)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 65",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "sLelqhTQQkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 66\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 66",
+            "marker": {
+                "color": "rgb(177,141,239)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 66",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "raa8uJs8QUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 67\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 67",
+            "marker": {
+                "color": "rgb(178,170,76)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 67",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "4In28xQBVEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 68\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 68",
+            "marker": {
+                "color": "rgb(239,170,165)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 68",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "aFQcQFzKU0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 69\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 69",
+            "marker": {
+                "color": "rgb(254,52,152)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 69",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "5smZXjI1MkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 7\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 7",
+            "marker": {
+                "color": "rgb(247,249,204)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 7",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "x3Y7ebypSUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 70\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 70",
+            "marker": {
+                "color": "rgb(186,111,214)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 70",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "uNYr\u002f28TV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 71\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 71",
+            "marker": {
+                "color": "rgb(100,221,201)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 71",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "LMFWGVS0QEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 72\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 72",
+            "marker": {
+                "color": "rgb(108,167,209)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 72",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "0J5G7rQ+LkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 73\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 73",
+            "marker": {
+                "color": "rgb(145,229,162)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 73",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "E52hjbMEVUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 74\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 74",
+            "marker": {
+                "color": "rgb(111,235,101)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 74",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAA8D8="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "tiAUU38FV0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 75\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 75",
+            "marker": {
+                "color": "rgb(61,88,179)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 75",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "i5k68RWKSUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 76\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 76",
+            "marker": {
+                "color": "rgb(180,162,150)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 76",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAALEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "mpE7tBtQWEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 77\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 77",
+            "marker": {
+                "color": "rgb(162,233,130)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 77",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "jaz4G0mQTEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 78\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 78",
+            "marker": {
+                "color": "rgb(236,162,51)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 78",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIkA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "t4oJughNVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 79\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 79",
+            "marker": {
+                "color": "rgb(179,103,136)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 79",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "WEFILz1COkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 8\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 8",
+            "marker": {
+                "color": "rgb(178,196,175)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 8",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAJEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "vVGjW1X0OEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 80\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 80",
+            "marker": {
+                "color": "rgb(179,102,221)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 80",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAFEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "bcUQ6cZBJUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 81\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 81",
+            "marker": {
+                "color": "rgb(209,247,209)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 81",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "0o6Pk0FaUEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 82\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 82",
+            "marker": {
+                "color": "rgb(117,232,252)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 82",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAA8D8="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "gAcoz1gpUUA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 83\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 83",
+            "marker": {
+                "color": "rgb(233,172,194)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 83",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Rl4veGpRVEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 84\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 84",
+            "marker": {
+                "color": "rgb(87,73,118)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 84",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "kkfa+hg4TEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 85\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 85",
+            "marker": {
+                "color": "rgb(165,147,247)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 85",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "56XNcLBURkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 86\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 86",
+            "marker": {
+                "color": "rgb(188,193,146)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 86",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAIEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "drZBCEdvNEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 87\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 87",
+            "marker": {
+                "color": "rgb(250,173,236)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 87",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAGEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Vn\u002fwOSb0SEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 88\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 88",
+            "marker": {
+                "color": "rgb(119,142,52)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 88",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAEEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "F0yJFtMUH0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 89\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 89",
+            "marker": {
+                "color": "rgb(197,236,213)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 89",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "lFvCfYRxPEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 9\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 9",
+            "marker": {
+                "color": "rgb(196,139,244)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 9",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAGEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "Qp5c1rOXO0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 90\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 90",
+            "marker": {
+                "color": "rgb(196,197,145)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 90",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "E3WTPb1DT0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 91\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 91",
+            "marker": {
+                "color": "rgb(248,101,210)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 91",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAA8D8="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "anvk15yWR0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 92\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 92",
+            "marker": {
+                "color": "rgb(217,177,88)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 92",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAMUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "LIg59MEzMEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 93\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 93",
+            "marker": {
+                "color": "rgb(131,153,178)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 93",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "d6cfnF7zQ0A="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 94\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 94",
+            "marker": {
+                "color": "rgb(60,234,227)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 94",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAKEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "r2gZy0CBVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 95\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 95",
+            "marker": {
+                "color": "rgb(200,208,91)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 95",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAACEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "3AdYSKRFVkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 96\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 96",
+            "marker": {
+                "color": "rgb(148,56,193)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 96",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAANUA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "gAfljB5+WEA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        },
+        {
+            "hovertemplate": "原材料=原材料 97\u003cbr\u003e調達先=%{x}\u003cbr\u003e調達量=%{y}\u003cextra\u003e\u003c\u002fextra\u003e",
+            "legendgroup": "原材料 97",
+            "marker": {
+                "color": "rgb(139,161,109)",
+                "symbol": "circle"
+            },
+            "mode": "markers",
+            "name": "原材料 97",
+            "orientation": "v",
+            "showlegend": true,
+            "x": {
+                "dtype": "f8",
+                "bdata": "AAAAAAAAAEA="
+            },
+            "xaxis": "x",
+            "y": {
+                "dtype": "f8",
+                "bdata": "iAOaejY7BkA="
+            },
+            "yaxis": "y",
+            "type": "scatter"
+        }
+    ],
+    "layout": {
+        "template": {
+            "data": {
+                "candlestick": [
+                    {
+                        "decreasing": {
+                            "line": {
+                                "color": "#000033"
+                            }
+                        },
+                        "increasing": {
+                            "line": {
+                                "color": "#000032"
+                            }
+                        },
+                        "type": "candlestick"
+                    }
+                ],
+                "contourcarpet": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "contourcarpet"
+                    }
+                ],
+                "contour": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "contour"
+                    }
+                ],
+                "heatmap": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "heatmap"
+                    }
+                ],
+                "histogram2d": [
+                    {
+                        "colorscale": [
+                            [
+                                0.0,
+                                "#000011"
+                            ],
+                            [
+                                0.1111111111111111,
+                                "#000012"
+                            ],
+                            [
+                                0.2222222222222222,
+                                "#000013"
+                            ],
+                            [
+                                0.3333333333333333,
+                                "#000014"
+                            ],
+                            [
+                                0.4444444444444444,
+                                "#000015"
+                            ],
+                            [
+                                0.5555555555555556,
+                                "#000016"
+                            ],
+                            [
+                                0.6666666666666666,
+                                "#000017"
+                            ],
+                            [
+                                0.7777777777777778,
+                                "#000018"
+                            ],
+                            [
+                                0.8888888888888888,
+                                "#000019"
+                            ],
+                            [
+                                1.0,
+                                "#000020"
+                            ]
+                        ],
+                        "type": "histogram2d"
+                    }
+                ],
+                "icicle": [
+                    {
+                        "textfont": {
+                            "color": "white"
+                        },
+                        "type": "icicle"
+                    }
+                ],
+                "sankey": [
+                    {
+                        "textfont": {
+                            "color": "#000036"
+                        },
+                        "type": "sankey"
+                    }
+                ],
+                "scatter": [
+                    {
+                        "marker": {
+                            "line": {
+                                "width": 0
+                            }
+                        },
+                        "type": "scatter"
+                    }
+                ],
+                "table": [
+                    {
+                        "cells": {
+                            "fill": {
+                                "color": "#000038"
+                            },
+                            "font": {
+                                "color": "#000037"
+                            },
+                            "line": {
+                                "color": "#000039"
+                            }
+                        },
+                        "header": {
+                            "fill": {
+                                "color": "#000040"
+                            },
+                            "font": {
+                                "color": "#000036"
+                            },
+                            "line": {
+                                "color": "#000039"
+                            }
+                        },
+                        "type": "table"
+                    }
+                ],
+                "waterfall": [
+                    {
+                        "connector": {
+                            "line": {
+                                "color": "#000036",
+                                "width": 2
+                            }
+                        },
+                        "decreasing": {
+                            "marker": {
+                                "color": "#000033"
+                            }
+                        },
+                        "increasing": {
+                            "marker": {
+                                "color": "#000032"
+                            }
+                        },
+                        "totals": {
+                            "marker": {
+                                "color": "#000034"
+                            }
+                        },
+                        "type": "waterfall"
+                    }
+                ]
+            },
+            "layout": {
+                "coloraxis": {
+                    "colorscale": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ]
+                },
+                "colorscale": {
+                    "diverging": [
+                        [
+                            0.0,
+                            "#000021"
+                        ],
+                        [
+                            0.1,
+                            "#000022"
+                        ],
+                        [
+                            0.2,
+                            "#000023"
+                        ],
+                        [
+                            0.3,
+                            "#000024"
+                        ],
+                        [
+                            0.4,
+                            "#000025"
+                        ],
+                        [
+                            0.5,
+                            "#000026"
+                        ],
+                        [
+                            0.6,
+                            "#000027"
+                        ],
+                        [
+                            0.7,
+                            "#000028"
+                        ],
+                        [
+                            0.8,
+                            "#000029"
+                        ],
+                        [
+                            0.9,
+                            "#000030"
+                        ],
+                        [
+                            1.0,
+                            "#000031"
+                        ]
+                    ],
+                    "sequential": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ],
+                    "sequentialminus": [
+                        [
+                            0.0,
+                            "#000011"
+                        ],
+                        [
+                            0.1111111111111111,
+                            "#000012"
+                        ],
+                        [
+                            0.2222222222222222,
+                            "#000013"
+                        ],
+                        [
+                            0.3333333333333333,
+                            "#000014"
+                        ],
+                        [
+                            0.4444444444444444,
+                            "#000015"
+                        ],
+                        [
+                            0.5555555555555556,
+                            "#000016"
+                        ],
+                        [
+                            0.6666666666666666,
+                            "#000017"
+                        ],
+                        [
+                            0.7777777777777778,
+                            "#000018"
+                        ],
+                        [
+                            0.8888888888888888,
+                            "#000019"
+                        ],
+                        [
+                            1.0,
+                            "#000020"
+                        ]
+                    ]
+                },
+                "colorway": [
+                    "#000001",
+                    "#000002",
+                    "#000003",
+                    "#000004",
+                    "#000005",
+                    "#000006",
+                    "#000007",
+                    "#000008",
+                    "#000009",
+                    "#000010"
+                ]
+            }
+        },
+        "xaxis": {
+            "anchor": "y",
+            "domain": [
+                0.0,
+                1.0
+            ],
+            "title": {
+                "text": "調達先"
+            }
+        },
+        "yaxis": {
+            "anchor": "x",
+            "domain": [
+                0.0,
+                1.0
+            ],
+            "title": {
+                "text": "調達量"
+            }
+        },
+        "legend": {
+            "title": {
+                "text": "原材料"
+            },
+            "tracegroupgap": 0
+        },
+        "title": {
+            "text": "調達先ごとの調達量・調達先数の散布図"
+        },
+        "showlegend": true,
+        "width": 1000,
+        "height": 400,
+        "autosize": false
+    }
+}

@@ -29,11 +29,12 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Query, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.core import CurrentUserAzureDep, DatabaseDep
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
+from app.models.project_member import ProjectRole
 from app.schemas.project_member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkResponse,
@@ -227,19 +228,39 @@ async def get_my_role(
     )
 
     member_service = ProjectMemberService(db)
-    role_info = await member_service.get_user_role(
+    role = await member_service.get_user_role(
         project_id=project_id,
         user_id=current_user.id,
     )
+
+    # ロールが見つからない場合はプロジェクトメンバーでない
+    if role is None:
+        logger.warning(
+            "ユーザーはプロジェクトメンバーではありません",
+            project_id=str(project_id),
+            user_id=str(current_user.id),
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="プロジェクトメンバーシップが見つかりません",
+        )
 
     logger.debug(
         "ロール情報を取得しました",
         project_id=str(project_id),
         user_id=str(current_user.id),
-        role=role_info["role"].value,
+        role=role.value,
     )
 
-    return UserRoleResponse(**role_info)
+    # UserRoleResponseオブジェクトを構築
+    is_manager = role == ProjectRole.PROJECT_MANAGER
+    return UserRoleResponse(
+        project_id=project_id,
+        user_id=current_user.id,
+        role=role,
+        is_owner=is_manager,
+        is_admin=is_manager,
+    )
 
 
 # ================================================================================
@@ -670,8 +691,7 @@ async def update_members_bulk(
 
     member_service = ProjectMemberService(db)
     updated_members, failed_updates = await member_service.update_members_bulk(
-        project_id=project_id,
-        updates_data=bulk_update.updates,
+        updates=bulk_update.updates,
         requester_id=current_user.id,
     )
 

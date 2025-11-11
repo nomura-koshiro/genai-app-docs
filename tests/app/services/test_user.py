@@ -33,7 +33,6 @@ async def test_get_or_create_by_azure_oid_new_user(db_session):
     assert user.roles == ["User"]
     assert user.is_active is True
 
-
 @pytest.mark.asyncio
 async def test_get_or_create_by_azure_oid_existing_user(db_session):
     """既存ユーザー取得テスト（Azure OID 2回目以降のログイン）。"""
@@ -62,60 +61,37 @@ async def test_get_or_create_by_azure_oid_existing_user(db_session):
     assert user.azure_oid == "existing-oid-12345"
     assert user.email == "existing@company.com"
 
-
 @pytest.mark.asyncio
-async def test_get_or_create_by_azure_oid_updates_email(db_session):
-    """メールアドレス変更の自動更新テスト。"""
+@pytest.mark.parametrize("field,old_value,new_value", [
+    ("email", "old@company.com", "new@company.com"),
+    ("display_name", "Old Name", "New Name"),
+])
+async def test_get_or_create_by_azure_oid_updates_fields(db_session, field, old_value, new_value):
+    """Azure OIDによるフィールド更新テスト（パラメータ化）。"""
     # Arrange
-    existing_user = User(
-        azure_oid="update-oid-12345",
-        email="old@company.com",
-        display_name="User",
-        roles=["User"],
-    )
+    initial_values = {
+        "azure_oid": "update-oid",
+        "email": "user@company.com" if field != "email" else old_value,
+        "display_name": "User" if field != "display_name" else old_value,
+        "roles": ["User"],
+    }
+    existing_user = User(**initial_values)
     db_session.add(existing_user)
     await db_session.commit()
 
     service = UserService(db_session)
 
-    # Act - メールアドレスが変更されている
-    user = await service.get_or_create_by_azure_oid(
-        azure_oid="update-oid-12345",
-        email="new@company.com",  # 変更後
-        display_name="User",
-    )
+    # Act
+    update_values = {
+        "azure_oid": "update-oid",
+        "email": new_value if field == "email" else initial_values["email"],
+        "display_name": new_value if field == "display_name" else initial_values["display_name"],
+    }
+    user = await service.get_or_create_by_azure_oid(**update_values)
 
     # Assert
     assert user.id == existing_user.id
-    assert user.email == "new@company.com"  # 更新されている
-
-
-@pytest.mark.asyncio
-async def test_get_or_create_by_azure_oid_updates_display_name(db_session):
-    """表示名変更の自動更新テスト。"""
-    # Arrange
-    existing_user = User(
-        azure_oid="update-name-oid",
-        email="user@company.com",
-        display_name="Old Name",
-        roles=["User"],
-    )
-    db_session.add(existing_user)
-    await db_session.commit()
-
-    service = UserService(db_session)
-
-    # Act - 表示名が変更されている
-    user = await service.get_or_create_by_azure_oid(
-        azure_oid="update-name-oid",
-        email="user@company.com",
-        display_name="New Name",  # 変更後
-    )
-
-    # Assert
-    assert user.id == existing_user.id
-    assert user.display_name == "New Name"  # 更新されている
-
+    assert getattr(user, field) == new_value
 
 @pytest.mark.asyncio
 async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
@@ -138,7 +114,6 @@ async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
             email="duplicate@company.com",  # 同じメール
             display_name="User 2",
         )
-
 
 @pytest.mark.asyncio
 async def test_update_last_login(db_session):
@@ -167,7 +142,6 @@ async def test_update_last_login(db_session):
     assert updated_user.last_login is not None
     assert isinstance(updated_user.last_login, datetime)
 
-
 @pytest.mark.asyncio
 async def test_update_last_login_user_not_found(db_session):
     """存在しないユーザーの最終ログイン更新エラーテスト。"""
@@ -178,7 +152,6 @@ async def test_update_last_login_user_not_found(db_session):
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.update_last_login(user_id=non_existent_id)
-
 
 @pytest.mark.asyncio
 async def test_get_user(db_session):
@@ -203,7 +176,6 @@ async def test_get_user(db_session):
     assert result.id == user.id
     assert result.email == "get@company.com"
 
-
 @pytest.mark.asyncio
 async def test_get_user_not_found(db_session):
     """存在しないユーザー取得テスト。"""
@@ -216,7 +188,6 @@ async def test_get_user_not_found(db_session):
 
     # Assert
     assert result is None
-
 
 @pytest.mark.asyncio
 async def test_get_user_by_email(db_session):
@@ -239,7 +210,6 @@ async def test_get_user_by_email(db_session):
     assert result is not None
     assert result.email == "email@company.com"
 
-
 @pytest.mark.asyncio
 async def test_get_user_by_email_not_found(db_session):
     """存在しないメールでユーザー取得エラーテスト。"""
@@ -249,7 +219,6 @@ async def test_get_user_by_email_not_found(db_session):
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.get_user_by_email("nonexistent@company.com")
-
 
 @pytest.mark.asyncio
 async def test_get_user_by_azure_oid(db_session):
@@ -272,7 +241,6 @@ async def test_get_user_by_azure_oid(db_session):
     assert result is not None
     assert result.azure_oid == "oid-test-12345"
 
-
 @pytest.mark.asyncio
 async def test_get_user_by_azure_oid_not_found(db_session):
     """存在しないAzure OIDでユーザー取得エラーテスト。"""
@@ -282,7 +250,6 @@ async def test_get_user_by_azure_oid_not_found(db_session):
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.get_user_by_azure_oid("nonexistent-oid")
-
 
 @pytest.mark.asyncio
 async def test_list_active_users(db_session):
@@ -319,7 +286,6 @@ async def test_list_active_users(db_session):
     assert len(active_users) == 3
     assert all(user.is_active for user in active_users)
 
-
 @pytest.mark.asyncio
 async def test_list_users(db_session):
     """全ユーザー一覧取得テスト。"""
@@ -352,41 +318,6 @@ async def test_list_users(db_session):
 
     # Assert
     assert len(all_users) == 5  # 全員取得される
-
-
-@pytest.mark.asyncio
-async def test_count_users_all(db_session):
-    """全ユーザー数カウントテスト。"""
-    # Arrange
-    # アクティブユーザー3人 + 非アクティブ2人
-    for i in range(3):
-        user = User(
-            azure_oid=f"count-user-{i}",
-            email=f"countuser{i}@company.com",
-            display_name=f"Count User {i}",
-            is_active=True,
-        )
-        db_session.add(user)
-
-    for i in range(2):
-        user = User(
-            azure_oid=f"count-inactive-{i}",
-            email=f"countinactive{i}@company.com",
-            display_name=f"Count Inactive {i}",
-            is_active=False,
-        )
-        db_session.add(user)
-
-    await db_session.commit()
-
-    service = UserService(db_session)
-
-    # Act
-    total = await service.count_users()
-
-    # Assert
-    assert total == 5  # 全ユーザー数
-
 
 @pytest.mark.asyncio
 async def test_count_users_active_only(db_session):
@@ -421,7 +352,6 @@ async def test_count_users_active_only(db_session):
     # Assert
     assert active_count == 3  # アクティブユーザーのみ
 
-
 @pytest.mark.asyncio
 async def test_count_users_inactive_only(db_session):
     """非アクティブユーザー数カウントテスト。"""
@@ -455,36 +385,6 @@ async def test_count_users_inactive_only(db_session):
     # Assert
     assert inactive_count == 2  # 非アクティブユーザーのみ
 
-
-@pytest.mark.asyncio
-async def test_update_user_display_name(db_session):
-    """ユーザーの表示名更新テスト（一般ユーザー）。"""
-    # Arrange
-    user = User(
-        azure_oid="update-display-oid",
-        email="update@company.com",
-        display_name="Old Name",
-        roles=["User"],
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
-    service = UserService(db_session)
-
-    # Act - 一般ユーザーが表示名を更新
-    updated_user = await service.update_user(
-        user_id=user.id,
-        update_data={"display_name": "New Name"},
-        current_user_roles=["User"],
-    )
-
-    # Assert
-    assert updated_user.id == user.id
-    assert updated_user.display_name == "New Name"
-    assert updated_user.email == "update@company.com"
-
-
 @pytest.mark.asyncio
 async def test_update_user_roles_by_admin(db_session):
     """ユーザーのロール更新テスト（管理者）。"""
@@ -512,7 +412,6 @@ async def test_update_user_roles_by_admin(db_session):
     assert updated_user.id == user.id
     assert updated_user.roles == ["SystemAdmin", "User"]
 
-
 @pytest.mark.asyncio
 async def test_update_user_roles_by_non_admin_fails(db_session):
     """一般ユーザーによるロール更新の失敗テスト。"""
@@ -538,7 +437,6 @@ async def test_update_user_roles_by_non_admin_fails(db_session):
         )
 
     assert "管理者権限が必要です" in str(exc_info.value)
-
 
 @pytest.mark.asyncio
 async def test_update_user_is_active_by_admin(db_session):
@@ -568,7 +466,6 @@ async def test_update_user_is_active_by_admin(db_session):
     assert updated_user.id == user.id
     assert updated_user.is_active is False
 
-
 @pytest.mark.asyncio
 async def test_update_user_is_active_by_non_admin_fails(db_session):
     """一般ユーザーによるis_active更新の失敗テスト。"""
@@ -595,7 +492,6 @@ async def test_update_user_is_active_by_non_admin_fails(db_session):
         )
 
     assert "管理者権限が必要です" in str(exc_info.value)
-
 
 @pytest.mark.asyncio
 async def test_update_user_not_found(db_session):

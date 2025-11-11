@@ -111,12 +111,12 @@ DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 
 # サービス依存性
-def get_user_service(db: DatabaseDep) -> UserService:
-    """UserServiceインスタンスを取得。"""
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
+    """SampleUserServiceインスタンスを取得。"""
     return SampleUserService(db)
 
 
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
 
 
 # 認証依存性

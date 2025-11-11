@@ -202,7 +202,7 @@ from app.schemas.sample_user import SampleUserCreate
 @pytest.mark.asyncio
 async def test_create_user(db_session):
     """ユーザー作成のテスト。"""
-    service = UserService(db_session)
+    service = SampleUserService(db_session)
 
     user_data = SampleUserCreate(
         email="test@example.com",
@@ -219,7 +219,7 @@ async def test_create_user(db_session):
 @pytest.mark.asyncio
 async def test_duplicate_email(db_session):
     """重複メールアドレスのテスト。"""
-    service = UserService(db_session)
+    service = SampleUserService(db_session)
 
     user_data = SampleUserCreate(
         email="test@example.com",

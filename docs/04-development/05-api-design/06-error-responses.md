@@ -156,7 +156,7 @@ register_exception_handlers(app)
 from app.core.exceptions import NotFoundError, ValidationError
 
 
-class UserService:
+class SampleUserService:
     async def get_user(self, user_id: uuid.UUID) -> User:
         user = await self.repository.get(user_id)
         if not user:
@@ -270,7 +270,7 @@ def handle_service_errors[T](
 # src/app/api/routes/v1/sample_users.py
 from fastapi import APIRouter, status
 from app.api.decorators import handle_service_errors
-from app.api.core import UserServiceDep
+from app.api.core import SampleUserServiceDep
 from app.schemas.sample_user import SampleUserCreate, SampleUserResponse
 
 router = APIRouter()
@@ -279,7 +279,7 @@ router = APIRouter()
 @handle_service_errors  # デコレータを適用
 async def create_user(
     user_data: SampleUserCreate,
-    user_service: UserServiceDep,
+    user_service: SampleUserServiceDep,
 ) -> SampleUserResponse:
     """新しいユーザーアカウントを作成します。
 
@@ -304,7 +304,7 @@ async def create_user(
 
 ```python
 @router.post("/users")
-async def create_user(user_data: UserCreate, service: UserServiceDep):
+async def create_user(user_data: UserCreate, service: SampleUserServiceDep):
     try:
         user = await service.create_user(user_data)
         return UserResponse.model_validate(user)
@@ -324,7 +324,7 @@ async def create_user(user_data: UserCreate, service: UserServiceDep):
 ```python
 @router.post("/users")
 @handle_service_errors  # エラーハンドリングはデコレータが担当
-async def create_user(user_data: UserCreate, service: UserServiceDep):
+async def create_user(user_data: UserCreate, service: SampleUserServiceDep):
     user = await service.create_user(user_data)
     return UserResponse.model_validate(user)
 ```

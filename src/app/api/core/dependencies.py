@@ -39,13 +39,13 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
-from app.models.sample_user import SampleUser
+from app.models.sample.sample_user import SampleUser
 from app.models.user import User
 from app.services.project import ProjectService
-from app.services.sample_agent import SampleAgentService
-from app.services.sample_file import SampleFileService
-from app.services.sample_session import SampleSessionService
-from app.services.sample_user import SampleUserService
+from app.services.sample.sample_agent import SampleAgentService
+from app.services.sample.sample_file import SampleFileService
+from app.services.sample.sample_session import SampleSessionService
+from app.services.sample.sample_user import SampleUserService
 from app.services.user import UserService
 
 # ================================================================================

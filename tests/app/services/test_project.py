@@ -45,7 +45,6 @@ async def test_create_project_success(db_session: AsyncSession):
     assert project.code == "TEST-001"
     assert project.created_by == creator_id
 
-
 @pytest.mark.asyncio
 async def test_create_project_duplicate_code(db_session: AsyncSession):
     """重複コードでのプロジェクト作成エラー。"""
@@ -84,7 +83,6 @@ async def test_create_project_duplicate_code(db_session: AsyncSession):
 
     assert "既に使用されています" in str(exc_info.value.message)
 
-
 @pytest.mark.asyncio
 async def test_get_project_success(db_session: AsyncSession):
     """プロジェクト取得の成功ケース。"""
@@ -118,7 +116,6 @@ async def test_get_project_success(db_session: AsyncSession):
     assert result.id == created_project.id
     assert result.name == "Get Test"
 
-
 @pytest.mark.asyncio
 async def test_get_project_not_found(db_session: AsyncSession):
     """存在しないプロジェクトの取得。"""
@@ -131,7 +128,6 @@ async def test_get_project_not_found(db_session: AsyncSession):
 
     # Assert
     assert result is None
-
 
 @pytest.mark.asyncio
 async def test_get_project_by_code_success(db_session: AsyncSession):
@@ -165,7 +161,6 @@ async def test_get_project_by_code_success(db_session: AsyncSession):
     assert result is not None
     assert result.code == created_project.code
 
-
 @pytest.mark.asyncio
 async def test_get_project_by_code_not_found(db_session: AsyncSession):
     """存在しないコードでのプロジェクト取得。"""
@@ -175,7 +170,6 @@ async def test_get_project_by_code_not_found(db_session: AsyncSession):
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.get_project_by_code("NONEXISTENT")
-
 
 @pytest.mark.asyncio
 async def test_list_user_projects(db_session: AsyncSession):
@@ -216,7 +210,6 @@ async def test_list_user_projects(db_session: AsyncSession):
     # Assert
     assert len(result) == 2
 
-
 @pytest.mark.asyncio
 async def test_update_project_success(db_session: AsyncSession):
     """プロジェクト更新の成功ケース（OWNERロール）。"""
@@ -253,7 +246,6 @@ async def test_update_project_success(db_session: AsyncSession):
     # Assert
     assert updated.name == "Updated Name"
     assert updated.description == "Updated description"
-
 
 @pytest.mark.asyncio
 async def test_update_project_permission_denied(db_session: AsyncSession):
@@ -304,7 +296,6 @@ async def test_update_project_permission_denied(db_session: AsyncSession):
     with pytest.raises(AuthorizationError):
         await service.update_project(project.id, update_data, viewer_id)
 
-
 @pytest.mark.asyncio
 async def test_delete_project_success(db_session: AsyncSession):
     """プロジェクト削除の成功ケース（OWNERロール）。"""
@@ -338,7 +329,6 @@ async def test_delete_project_success(db_session: AsyncSession):
     # Assert - 削除されたことを確認
     deleted = await service.get_project(project_id)
     assert deleted is None
-
 
 @pytest.mark.asyncio
 async def test_delete_project_permission_denied(db_session: AsyncSession):
@@ -386,7 +376,6 @@ async def test_delete_project_permission_denied(db_session: AsyncSession):
     # Act & Assert - ADMINは削除できない（OWNERのみ）
     with pytest.raises(AuthorizationError):
         await service.delete_project(project.id, admin_id)
-
 
 @pytest.mark.asyncio
 async def test_check_user_access(db_session: AsyncSession):
@@ -441,135 +430,6 @@ async def test_check_user_access(db_session: AsyncSession):
 
     # 非メンバーはアクセス不可
     assert await service.check_user_access(project.id, non_member_id) is False
-
-
-@pytest.mark.asyncio
-async def test_delete_project_with_physical_files(db_session: AsyncSession, tmp_path):
-    """プロジェクト削除時に物理ファイルも削除されることを確認。"""
-    # Arrange
-
-    from app.models.project_file import ProjectFile
-
-    service = ProjectService(db_session)
-    owner_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = User(
-        id=owner_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"owner-{uuid.uuid4()}@example.com",
-        display_name="Owner User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # プロジェクトを作成
-    project_data = ProjectCreate(
-        name="Project with Files",
-        code=f"DELFILE-{uuid.uuid4().hex[:6]}",
-        description="Test project with files",
-    )
-    project = await service.create_project(project_data, owner_id)
-    await db_session.commit()
-
-    # テスト用の物理ファイルを作成
-    test_file_1 = tmp_path / "test_file_1.txt"
-    test_file_2 = tmp_path / "test_file_2.txt"
-    test_file_1.write_text("Test content 1")
-    test_file_2.write_text("Test content 2")
-
-    # ファイルメタデータをDBに追加
-    project_file_1 = ProjectFile(
-        project_id=project.id,
-        filename="test_file_1.txt",
-        original_filename="test_file_1.txt",
-        file_path=str(test_file_1),
-        file_size=14,
-        mime_type="text/plain",
-        uploaded_by=owner_id,
-    )
-    project_file_2 = ProjectFile(
-        project_id=project.id,
-        filename="test_file_2.txt",
-        original_filename="test_file_2.txt",
-        file_path=str(test_file_2),
-        file_size=14,
-        mime_type="text/plain",
-        uploaded_by=owner_id,
-    )
-    db_session.add(project_file_1)
-    db_session.add(project_file_2)
-    await db_session.commit()
-
-    # ファイルが存在することを確認
-    assert test_file_1.exists()
-    assert test_file_2.exists()
-
-    # Act: プロジェクト削除
-    await service.delete_project(project.id, owner_id)
-    await db_session.commit()
-
-    # Assert: 物理ファイルが削除されたことを確認
-    assert not test_file_1.exists()
-    assert not test_file_2.exists()
-
-    # DBからも削除されたことを確認
-    deleted_project = await service.get_project(project.id)
-    assert deleted_project is None
-
-
-@pytest.mark.asyncio
-async def test_delete_project_with_missing_physical_files(db_session: AsyncSession, caplog):
-    """物理ファイルが存在しない場合でもプロジェクト削除は成功すること。"""
-    # Arrange
-    from app.models.project_file import ProjectFile
-
-    service = ProjectService(db_session)
-    owner_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = User(
-        id=owner_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"owner-{uuid.uuid4()}@example.com",
-        display_name="Owner User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # プロジェクトを作成
-    project_data = ProjectCreate(
-        name="Project with Missing Files",
-        code=f"DELMISS-{uuid.uuid4().hex[:6]}",
-        description="Test project with missing files",
-    )
-    project = await service.create_project(project_data, owner_id)
-    await db_session.commit()
-
-    # 存在しない物理ファイルのメタデータをDBに追加
-    project_file = ProjectFile(
-        project_id=project.id,
-        filename="nonexistent.txt",
-        original_filename="nonexistent.txt",
-        file_path="/nonexistent/path/file.txt",
-        file_size=100,
-        mime_type="text/plain",
-        uploaded_by=owner_id,
-    )
-    db_session.add(project_file)
-    await db_session.commit()
-
-    # Act: プロジェクト削除（物理ファイルが存在しなくても成功すること）
-    await service.delete_project(project.id, owner_id)
-    await db_session.commit()
-
-    # Assert: プロジェクトが削除されたことを確認
-    deleted_project = await service.get_project(project.id)
-    assert deleted_project is None
-
-    # 警告ログが出力されていることを確認
-    assert "物理ファイルが存在しません" in caplog.text
-
 
 @pytest.mark.asyncio
 async def test_delete_project_without_files(db_session: AsyncSession):

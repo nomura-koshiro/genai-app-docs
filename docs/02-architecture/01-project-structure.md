@@ -220,6 +220,9 @@ api/
 │   │   ├── projects.py          # プロジェクト管理
 │   │   ├── project_members.py   # プロジェクトメンバー管理
 │   │   ├── project_files.py     # プロジェクトファイル管理
+│   │   ├── analysis.py          # データ分析セッション管理（Azure AD対応）
+│   │   ├── driver_tree.py       # ドライバーツリー（KPI分解ツリー）
+│   │   ├── ppt_generator.py     # PPTスライド生成・管理
 │   │   ├── sample_users.py      # サンプルユーザー管理（レガシー）
 │   │   ├── sample_agents.py     # AI Agent/チャット
 │   │   ├── sample_sessions.py   # セッション管理
@@ -377,10 +380,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
-def get_user_service(db: DatabaseDep) -> UserService:
+def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
     return SampleUserService(db)
 
-SampleUserServiceDep = Annotated[UserService, Depends(get_user_service)]
+SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
 ```
 
 ### models/ - データベースモデル
@@ -395,12 +398,18 @@ models/
 ├── project.py               # プロジェクトモデル
 ├── project_member.py        # プロジェクトメンバーモデル
 ├── project_file.py          # プロジェクトファイルモデル
+├── analysis_session.py      # 分析セッションモデル
+├── analysis_file.py         # 分析ファイルモデル
+├── analysis_step.py         # 分析ステップモデル
+├── driver_tree.py           # ドライバーツリーモデル
+├── driver_tree_node.py      # ドライバーツリーノードモデル
+├── driver_tree_category.py  # ドライバーツリーカテゴリー（業種別テンプレート）
 ├── sample_user.py           # サンプルユーザーモデル（レガシー）
 ├── sample_session.py        # セッションモデル
 └── sample_file.py           # ファイルモデル（レガシー）
 ```
 
-#### 例: `models/user.py`
+#### 例: `models/sample_user.py`
 
 ```python
 from sqlalchemy import String, Boolean, DateTime
@@ -433,6 +442,9 @@ schemas/
 ├── project.py               # プロジェクトスキーマ
 ├── project_member.py        # プロジェクトメンバースキーマ
 ├── project_file.py          # プロジェクトファイルスキーマ
+├── analysis_session.py      # 分析セッション/ステップスキーマ
+├── driver_tree.py           # ドライバーツリースキーマ
+├── ppt_generator.py         # PPT生成スキーマ
 ├── sample_user.py           # サンプルユーザースキーマ（レガシー）
 ├── sample_agents.py         # AI Agent/チャット関連スキーマ
 ├── sample_sessions.py       # セッション/メッセージスキーマ
@@ -441,7 +453,7 @@ schemas/
 
 **注**: Pydantic v2対応済み（`ConfigDict`使用）
 
-#### 例: `schemas/user.py`
+#### 例: `schemas/sample_user.py`
 
 ```python
 from pydantic import BaseModel, EmailStr
@@ -472,6 +484,12 @@ repositories/
 ├── project.py               # プロジェクトリポジトリ
 ├── project_member.py        # プロジェクトメンバーリポジトリ
 ├── project_file.py          # プロジェクトファイルリポジトリ
+├── analysis_session.py      # 分析セッションリポジトリ
+├── analysis_file.py         # 分析ファイルリポジトリ
+├── analysis_step.py         # 分析ステップリポジトリ
+├── driver_tree.py           # ドライバーツリーリポジトリ
+├── driver_tree_node.py      # ドライバーツリーノードリポジトリ
+├── driver_tree_category.py  # ドライバーツリーカテゴリーリポジトリ
 ├── sample_user.py           # サンプルユーザーリポジトリ（レガシー）
 ├── sample_session.py        # セッションリポジトリ
 └── sample_file.py           # ファイルリポジトリ（レガシー）
@@ -507,7 +525,7 @@ class BaseRepository(Generic[ModelType]):
         return db_obj
 ```
 
-#### `repositories/user.py` - ユーザーリポジトリ
+#### `repositories/sample_user.py` - サンプルユーザーリポジトリ
 
 ```python
 from app.repositories.base import BaseRepository
@@ -534,6 +552,11 @@ services/
 ├── project.py               # プロジェクトサービス
 ├── project_member.py        # プロジェクトメンバーサービス
 ├── project_file.py          # プロジェクトファイルサービス
+├── analysis.py              # データ分析サービス（セッション・ファイル・ステップ統合）
+├── analysis_storage.py      # 分析ファイルストレージサービス
+├── storage.py               # 汎用ストレージサービス（Azure Blob/ローカル）
+├── driver_tree.py           # ドライバーツリーサービス
+├── ppt_generator.py         # PPTスライド生成サービス
 ├── sample_user.py           # サンプルユーザーサービス（レガシー）
 ├── sample_agent.py          # AI Agentサービス
 ├── sample_session.py        # セッション管理サービス
@@ -541,7 +564,7 @@ services/
 └── sample_authorization.py  # 認可サービス
 ```
 
-#### 例: `services/user.py`
+#### 例: `services/sample_user.py`
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession

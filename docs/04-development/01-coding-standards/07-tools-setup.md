@@ -178,7 +178,7 @@ from app.schemas.sample_user import SampleUserCreate
 async def test_create_user(db_session):
     """ユーザー作成のテスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = SampleUserService(db_session)
     user_data = SampleUserCreate(
         email="test@example.com",
         username="testuser",
