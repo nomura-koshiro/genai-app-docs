@@ -20,7 +20,7 @@ from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import AnalysisFile
-from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository
+from app.repositories import AnalysisFileRepository, AnalysisSessionRepository
 from app.schemas import (
     AnalysisFileMetadata,
     AnalysisFileUploadRequest,

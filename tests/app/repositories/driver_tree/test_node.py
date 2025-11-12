@@ -9,7 +9,7 @@
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.driver_tree import (
+from app.repositories import (
     DriverTreeNodeRepository,
     DriverTreeRepository,
 )

@@ -8,7 +8,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import DriverTreeCategory
-from app.repositories.driver_tree import DriverTreeCategoryRepository
+from app.repositories import DriverTreeCategoryRepository
 
 
 @pytest.mark.asyncio

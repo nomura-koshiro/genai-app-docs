@@ -43,7 +43,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisFileRepository, AnalysisStepRepository
+from app.repositories import AnalysisFileRepository, AnalysisStepRepository
 from app.schemas.analysis import UploadFileData
 from app.services.analysis.agent.storage import AnalysisStorageService
 

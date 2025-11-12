@@ -52,7 +52,7 @@ from app.api.decorators import measure_performance
 from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisSessionRepository
+from app.repositories import AnalysisSessionRepository
 from app.schemas.analysis import AnalysisChatMessage, ToolUsage
 from app.services.analysis.agent.state import AnalysisState
 from app.services.analysis.agent.utils.tools import (

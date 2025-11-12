@@ -96,7 +96,7 @@ class GetAggregationTool(BaseTool):
                 return f"実行失敗: ステップインデックスは数値で指定してください。指定値: {step_index_str}"
 
             # ステップ一覧を取得
-            from app.repositories.analysis import AnalysisStepRepository
+            from app.repositories import AnalysisStepRepository
 
             step_repo = AnalysisStepRepository(self.db)
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
@@ -252,7 +252,7 @@ aggregation_jsonは以下の集計を設定できます:
                 return f"実行失敗: ステップインデックスは数値で指定してください。指定値: {parts[0].strip()}"
 
             # ステップ一覧を取得
-            from app.repositories.analysis import AnalysisStepRepository
+            from app.repositories import AnalysisStepRepository
 
             step_repo = AnalysisStepRepository(self.db)
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)

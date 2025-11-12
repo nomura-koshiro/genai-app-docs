@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisSessionRepository, AnalysisStepRepository
+from app.repositories import AnalysisSessionRepository, AnalysisStepRepository
 from app.schemas import AnalysisStepSnapshot
 
 logger = get_logger(__name__)

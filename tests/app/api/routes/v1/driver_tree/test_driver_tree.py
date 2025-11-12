@@ -14,7 +14,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import DriverTreeCategory
-from app.repositories.driver_tree import DriverTreeRepository
+from app.repositories import DriverTreeRepository
 
 
 @pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")

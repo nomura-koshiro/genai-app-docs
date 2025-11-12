@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models import DriverTree, DriverTreeNode
-from app.repositories.driver_tree import (
+from app.repositories import (
     DriverTreeCategoryRepository,
     DriverTreeNodeRepository,
     DriverTreeRepository,

@@ -20,7 +20,7 @@ from app.schemas import (
     DriverTreeNodeUpdate,
     DriverTreeResponse,
 )
-from app.services.driver_tree import DriverTreeService
+from app.services import DriverTreeService
 
 logger = get_logger(__name__)
 

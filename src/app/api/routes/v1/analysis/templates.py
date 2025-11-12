@@ -33,7 +33,7 @@ from app.api.decorators import handle_service_errors
 from app.core.database import get_db
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisTemplateRepository
+from app.repositories import AnalysisTemplateRepository
 from app.schemas import (
     AnalysisTemplateDetailResponse,
     AnalysisTemplateResponse,

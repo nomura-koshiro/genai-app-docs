@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.decorators import measure_performance
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisStepRepository
+from app.repositories import AnalysisStepRepository
 from app.services.analysis.agent.storage import AnalysisStorageService
 
 logger = get_logger(__name__)
