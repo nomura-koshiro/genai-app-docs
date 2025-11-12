@@ -25,7 +25,7 @@ sys.path.insert(0, str(project_root))
 from sqlalchemy import text  # noqa: E402
 
 from app.core.database import AsyncSessionLocal  # noqa: E402
-from app.models.driver_tree import DriverTreeCategory  # noqa: E402
+from app.models import DriverTreeCategory  # noqa: E402
 
 # PKLファイルのパス
 CATEGORIES_PKL = Path("C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_tree_categories.pkl")
