@@ -26,7 +26,7 @@ import urllib.parse
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from fastapi.responses import Response
 
-from app.api.core.dependencies import CurrentUserAzureDep
+from app.api.core import CurrentUserAzureDep
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger

@@ -36,7 +36,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # 認証のインポート（依存性ファイルから）
-from app.api.core.dependencies import CurrentUserAzureDep
+from app.api.core import CurrentUserAzureDep
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.database import get_db
 from app.core.exceptions import AuthorizationError, NotFoundError
@@ -53,8 +53,7 @@ from app.schemas import (
     DummyDataResponse,
     ValidationConfigResponse,
 )
-from app.services import ProjectService
-from app.services.analysis import AnalysisService
+from app.services import AnalysisService, ProjectService
 
 logger = get_logger(__name__)
 

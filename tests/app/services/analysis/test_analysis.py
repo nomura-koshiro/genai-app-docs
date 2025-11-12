@@ -15,7 +15,7 @@ from app.schemas import (
     AnalysisFileUploadRequest,
     AnalysisSessionCreate,
 )
-from app.services.analysis import AnalysisService
+from app.services import AnalysisService
 
 
 @pytest.mark.asyncio
