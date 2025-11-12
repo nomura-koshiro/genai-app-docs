@@ -30,7 +30,7 @@ from app.api.decorators import measure_performance
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisSessionRepository, AnalysisStepRepository
-from app.schemas.analysis.session import StepSnapshot
+from app.schemas.analysis.session import AnalysisStepSnapshot
 
 logger = get_logger(__name__)
 
@@ -110,7 +110,7 @@ class AnalysisSnapshotManager:
         このメソッドは以下の処理を実行します：
         1. セッションを取得
         2. 全ステップをDBから取得
-        3. 各ステップをStepSnapshotモデルに変換
+        3. 各ステップをAnalysisStepSnapshotモデルに変換
         4. スナップショット履歴を更新（追加または上書き）
         5. DBにフラッシュ
 
@@ -164,10 +164,10 @@ class AnalysisSnapshotManager:
                 self.session_id, is_active=True
             )
 
-            # ステップデータをStepSnapshotモデルに変換（結果データは含まない）
-            temp_all_steps: list[StepSnapshot] = []
+            # ステップデータをAnalysisStepSnapshotモデルに変換（結果データは含まない）
+            temp_all_steps: list[AnalysisStepSnapshot] = []
             for step in all_steps:
-                snapshot = StepSnapshot(
+                snapshot = AnalysisStepSnapshot(
                     name=step.step_name,
                     type=step.step_type,
                     data=step.data_source,
@@ -218,7 +218,7 @@ class AnalysisSnapshotManager:
         このメソッドは以下を実行します：
         1. セッションを取得
         2. スナップショットIDの範囲チェック
-        3. スナップショットをStepSnapshotモデルに変換
+        3. スナップショットをAnalysisStepSnapshotモデルに変換
         4. 既存の全ステップを削除
         5. スナップショットからステップを復元
         6. 各ステップの設定を復元（add_step + set_config）
@@ -228,7 +228,7 @@ class AnalysisSnapshotManager:
         処理フロー:
             1. セッションとスナップショット履歴を取得
             2. スナップショットIDの検証
-            3. スナップショットデータをStepSnapshotモデルに変換
+            3. スナップショットデータをAnalysisStepSnapshotモデルに変換
             4. 既存のすべてのステップを削除
             5. スナップショットからステップを順次復元
                 a. add_stepでステップ追加
@@ -289,10 +289,10 @@ class AnalysisSnapshotManager:
                     f"Valid range: 0-{len(session.snapshot_history) - 1}"
                 )
 
-            # スナップショットを取得してStepSnapshotモデルに変換
+            # スナップショットを取得してAnalysisStepSnapshotモデルに変換
             snapshot_step_dicts: list[dict[str, Any]] = session.snapshot_history[snapshot_id]
-            snapshot_steps: list[StepSnapshot] = [
-                StepSnapshot.model_validate(step_dict) for step_dict in snapshot_step_dicts
+            snapshot_steps: list[AnalysisStepSnapshot] = [
+                AnalysisStepSnapshot.model_validate(step_dict) for step_dict in snapshot_step_dicts
             ]
 
             # 既存のすべてのステップを削除

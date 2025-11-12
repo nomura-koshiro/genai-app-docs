@@ -29,7 +29,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 from app.core.logging import get_logger
-from app.schemas.analysis import ResultFormula
+from app.schemas.analysis import AnalysisResultFormula
 
 logger = get_logger(__name__)
 
@@ -46,17 +46,17 @@ class AnalysisStepResult(BaseModel):
         result_chart (dict[str, Any] | None): チャート情報（Plotly JSON）
             - summaryステップのみ使用
             - Plotlyのgo.Figure.to_dict()形式
-        result_formula (list[ResultFormula] | None): 計算式結果
+        result_formula (list[AnalysisResultFormula] | None): 計算式結果
             - summaryステップのみ使用
-            - ResultFormulaスキーマのリスト
+            - AnalysisResultFormulaスキーマのリスト
 
     Example:
-        >>> from app.schemas.analysis import ResultFormula
+        >>> from app.schemas.analysis import AnalysisResultFormula
         >>> result = AnalysisStepResult(
         ...     result_data=filtered_df,
         ...     result_chart=None,
         ...     result_formula=[
-        ...         ResultFormula(name="売上合計", formula="sum(売上)", result=1000000.0, unit="円")
+        ...         AnalysisResultFormula(name="売上合計", formula="sum(売上)", result=1000000.0, unit="円")
         ...     ]
         ... )
     """
@@ -71,7 +71,7 @@ class AnalysisStepResult(BaseModel):
         None,
         description="チャート情報（Plotly JSON形式、summaryのみ）"
     )
-    result_formula: list[ResultFormula] | None = Field(
+    result_formula: list[AnalysisResultFormula] | None = Field(
         None,
         description="計算式結果（summaryのみ）"
     )

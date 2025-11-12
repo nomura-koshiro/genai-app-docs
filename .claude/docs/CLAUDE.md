@@ -7,16 +7,19 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 ## 重要な設計原則
 
 ### アーキテクチャ
+
 - **Features-based Architecture**: 機能別モジュール分割 (`src/features/`)
 - **SOLID原則**: 単一責任、開放閉鎖、依存性逆転
 - **DRY/KISS**: コード重複排除・シンプル設計
 
 ### 状態管理戦略
+
 - **グローバル状態**: Zustand (認証、UI設定)
 - **サーバー状態**: TanStack Query (APIデータ、キャッシュ)
 - **ローカル状態**: React State (コンポーネント固有)
 
 ### コンポーネント設計
+
 - **UI Components** (`components/ui/`): CVAによるバリアント、forwardRef、型安全なProps
 - **Feature Components** (`features/*/components/`): ビジネスロジック統合
 - **Layout Components** (`components/layout/`): ページ構造
@@ -24,6 +27,7 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 ## 技術スタック
 
 ### Frontend (apps/frontend/)
+
 - Next.js 15 (App Router)
 - React 19 (Hooks, Suspense)
 - TypeScript (厳密な型安全性)
@@ -33,6 +37,7 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 - React Hook Form + Zod (フォーム・バリデーション)
 
 ### 品質管理ツール
+
 - ESLint + Prettier (コード品質)
 - Vitest (ユニット・統合テスト)
 - Playwright (E2Eテスト)
@@ -41,12 +46,14 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 ## 重要な規約
 
 ### 命名規則
+
 - **ファイル・フォルダ**: kebab-case (`user-profile/`, `use-local-storage.ts`)
 - **コンポーネント**: PascalCase (`UserProfile.tsx`)
 - **変数・関数**: camelCase (`userName`, `handleSubmit`)
 - **定数**: UPPER_SNAKE_CASE (`API_ENDPOINTS`)
 
 ### コンポーネント作成時のチェック
+
 - [ ] 単一責任の原則を満たしているか
 - [ ] Props インターフェースが明確で最小限か
 - [ ] forwardRef を適切に使用しているか
@@ -54,6 +61,7 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 - [ ] 適切なJSDocコメントがあるか
 
 ### 型安全性
+
 - `any` の使用を避ける
 - 厳密な型定義 (interfaces, types)
 - API レスポンスの型定義 (`src/types/api.ts`)
@@ -62,6 +70,7 @@ Training Tracker は、個人やチームのトレーニング記録を管理す
 ## 開発コマンド
 
 ### よく使用するコマンド
+
 ```bash
 # 開発サーバー起動
 cd apps/frontend && pnpm dev
@@ -81,6 +90,7 @@ pnpm generate feature user-management
 ## 現在の状況
 
 ### 完成済み
+
 - ✅ プロジェクト構造とモノレポ設定
 - ✅ ESLint/Prettier/TypeScript設定
 - ✅ 基本UIコンポーネント (Button, Label, Spinner)
@@ -89,6 +99,7 @@ pnpm generate feature user-management
 - ✅ Claude Code Agent設定
 
 ### 開発中・次のタスク
+
 - 🔄 ユーザー管理機能の実装
 - 🔄 トレーニングセッション機能
 - 🔄 ダッシュボード画面
@@ -97,12 +108,14 @@ pnpm generate feature user-management
 ## トラブルシューティング
 
 ### よくある問題
+
 - **ESLintエラー**: `pnpm lint:fix` で自動修正
 - **型エラー**: 厳密な型定義の確認、`src/types/api.ts` の活用
 - **ビルドエラー**: `.next` フォルダ削除後再ビルド
 - **依存関係エラー**: `pnpm install` で再インストール
 
 ### パフォーマンス最適化
+
 - React.memo は重いコンポーネントにのみ使用
 - useMemo/useCallback は適切な依存配列で
 - 不要な再レンダリングをReact DevToolsで確認
@@ -110,9 +123,11 @@ pnpm generate feature user-management
 ## Agent活用ガイド
 
 ### @frontend-developer
+
 新機能開発、リファクタリング、技術的実装に使用
 
-### @frontend-code-reviewer  
+### @frontend-code-reviewer
+
 コード品質チェック、SOLID原則確認、パフォーマンス最適化に使用
 
 ## 重要なファイル・ディレクトリ

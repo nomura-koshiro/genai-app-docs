@@ -11,6 +11,7 @@ tools: [Write, Edit, MultiEdit, Bash]
 ## SQLAlchemy モデル作成要件
 
 ### 1. ファイル構成
+
 ```
 apps/backend/app/
 ├── models/
@@ -28,6 +29,7 @@ apps/backend/app/
 ### 2. SQLAlchemy モデル実装 (`models/$ARGUMENTS.py`)
 
 #### 基本構造
+
 ```python
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
@@ -38,7 +40,7 @@ from app.db.base_class import Base
 class $ARGUMENTS(Base):
     """
     $ARGUMENTS モデル
-    
+
     Attributes:
         id: 主キー
         # その他属性の説明
@@ -47,24 +49,24 @@ class $ARGUMENTS(Base):
 
     # 主キー
     id = Column(Integer, primary_key=True, index=True)
-    
+
     # 必須フィールド
     name = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    
+
     # 状態管理
     is_active = Column(Boolean, default=True, nullable=False)
-    
+
     # タイムスタンプ
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
-    
+
     # 外部キー（必要に応じて）
     # user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
+
     # リレーションシップ（必要に応じて）
     # user = relationship("User", back_populates="$ARGUMENTS")
-    
+
     def __repr__(self) -> str:
         return f"<$ARGUMENTS(id={self.id}, name='{self.name}')>"
 ```
@@ -101,7 +103,7 @@ class $ARGUMENTSInDBBase($ARGUMENTSBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 # APIレスポンス用スキーマ
@@ -127,11 +129,11 @@ from app.schemas.$ARGUMENTS import $ARGUMENTSCreate, $ARGUMENTSUpdate
 
 class CRUD$ARGUMENTS(CRUDBase[$ARGUMENTS, $ARGUMENTSCreate, $ARGUMENTSUpdate]):
     """$ARGUMENTS のCRUD操作"""
-    
+
     def get_by_name(self, db: Session, *, name: str) -> Optional[$ARGUMENTS]:
         """名前による$ARGUMENTS取得"""
         return db.query(self.model).filter(self.model.name == name).first()
-    
+
     def get_active(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[$ARGUMENTS]:
         """アクティブな$ARGUMENTSの取得"""
         return (
@@ -141,7 +143,7 @@ class CRUD$ARGUMENTS(CRUDBase[$ARGUMENTS, $ARGUMENTSCreate, $ARGUMENTSUpdate]):
             .limit(limit)
             .all()
         )
-    
+
     def search_by_name(self, db: Session, *, query: str, skip: int = 0, limit: int = 100) -> List[$ARGUMENTS]:
         """名前による$ARGUMENTS検索"""
         return (
@@ -182,7 +184,7 @@ def test_create_$ARGUMENTS(db: Session) -> None:
     description = random_lower_string()
     $ARGUMENTS_in = $ARGUMENTSCreate(name=name, description=description)
     $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-    
+
     assert $ARGUMENTS_obj.name == name
     assert $ARGUMENTS_obj.description == description
     assert $ARGUMENTS_obj.is_active is True
@@ -192,7 +194,7 @@ def test_get_$ARGUMENTS(db: Session) -> None:
     name = random_lower_string()
     $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
     $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-    
+
     stored_$ARGUMENTS = $ARGUMENTS.get(db=db, id=$ARGUMENTS_obj.id)
     assert stored_$ARGUMENTS
     assert stored_$ARGUMENTS.id == $ARGUMENTS_obj.id
@@ -203,11 +205,11 @@ def test_update_$ARGUMENTS(db: Session) -> None:
     name = random_lower_string()
     $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
     $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-    
+
     new_name = random_lower_string()
     $ARGUMENTS_update = $ARGUMENTSUpdate(name=new_name)
     $ARGUMENTS_updated = $ARGUMENTS.update(db=db, db_obj=$ARGUMENTS_obj, obj_in=$ARGUMENTS_update)
-    
+
     assert $ARGUMENTS_updated.id == $ARGUMENTS_obj.id
     assert $ARGUMENTS_updated.name == new_name
 
@@ -216,28 +218,31 @@ def test_delete_$ARGUMENTS(db: Session) -> None:
     name = random_lower_string()
     $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
     $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-    
+
     $ARGUMENTS_deleted = $ARGUMENTS.remove(db=db, id=$ARGUMENTS_obj.id)
     $ARGUMENTS_get = $ARGUMENTS.get(db=db, id=$ARGUMENTS_obj.id)
-    
+
     assert $ARGUMENTS_get is None
 ```
 
 ### 7. 設計考慮事項
 
 #### データベース制約
+
 - [ ] 適切な NULL/NOT NULL 設定
 - [ ] ユニーク制約の設定
 - [ ] 外部キー制約の設定
 - [ ] チェック制約の設定
 
 #### インデックス最適化
+
 - [ ] 主キーインデックス
 - [ ] 頻繁に検索されるカラムのインデックス
 - [ ] 複合インデックスの検討
 - [ ] 部分インデックスの活用
 
 #### パフォーマンス
+
 - [ ] N+1問題の回避（eager loading）
 - [ ] クエリ最適化
 - [ ] バッチ処理対応

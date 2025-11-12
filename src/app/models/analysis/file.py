@@ -35,7 +35,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.session import AnalysisSession
-    from app.models.user import User
+    from app.models.user.user import User
 
 
 class AnalysisFile(Base, TimestampMixin):
@@ -135,7 +135,7 @@ class AnalysisFile(Base, TimestampMixin):
     file_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="File metadata (FileMetadata as dict)",
+        comment="File metadata (AnalysisFileMetadata as dict)",
     )
 
     is_active: Mapped[bool] = mapped_column(

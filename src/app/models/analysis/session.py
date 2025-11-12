@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from app.models.analysis.file import AnalysisFile
     from app.models.analysis.step import AnalysisStep
     from app.models.project.project import Project
-    from app.models.user import User
+    from app.models.user.user import User
 
 
 class AnalysisSession(Base, TimestampMixin):
@@ -54,8 +54,8 @@ class AnalysisSession(Base, TimestampMixin):
             - policy (str): 施策名
             - issue (str): 課題名
             - その他validation設定
-        chat_history (list[dict]): チャット履歴（論理型: list[ChatMessage]）
-            各メッセージは ChatMessage スキーマに対応
+        chat_history (list[dict]): チャット履歴（論理型: list[AnalysisChatMessage]）
+            各メッセージは AnalysisChatMessage スキーマに対応
             - role (str): "user" | "assistant"
             - content (str): メッセージ内容
             - timestamp (str): タイムスタンプ
@@ -121,7 +121,7 @@ class AnalysisSession(Base, TimestampMixin):
         JSONB,
         nullable=False,
         default=list,
-        comment="Chat history with AI agent (list[ChatMessage] as dict)",
+        comment="Chat history with AI agent (list[AnalysisChatMessage] as dict)",
     )
 
     snapshot_history: Mapped[list[list[dict[str, Any]]] | None] = mapped_column(

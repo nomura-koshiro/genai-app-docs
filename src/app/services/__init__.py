@@ -10,7 +10,7 @@ from app.services.sample import (
     SampleSessionService,
     SampleUserService,
 )
-from app.services.user import UserService
+from app.services.user.user import UserService
 
 __all__ = [
     "DriverTreeService",

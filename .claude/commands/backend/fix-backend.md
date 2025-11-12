@@ -13,6 +13,7 @@ tools: [Read, Edit, MultiEdit, Bash, Grep]
 ### 1. 問題分析フェーズ
 
 #### Python・FastAPI エラーの場合
+
 ```bash
 # 構文・型エラーチェック
 cd apps/backend && python -m py_compile app/main.py
@@ -26,6 +27,7 @@ cd apps/backend && uvicorn app.main:app --reload --log-level debug
 ```
 
 #### データベース関連エラー
+
 ```bash
 # データベース接続確認
 cd apps/backend && python -c "from app.db.session import engine; print('DB Connection OK')"
@@ -39,6 +41,7 @@ cd apps/backend && python -c "from app.db.base import Base; from app.db.session 
 ```
 
 #### テスト失敗の場合
+
 ```bash
 # 詳細なテスト実行
 cd apps/backend && python -m pytest -v -s --tb=long
@@ -50,17 +53,19 @@ cd apps/backend && python -m pytest tests/api/v1/test_users.py::test_create_user
 ### 2. 一般的な問題と修正方法
 
 #### ImportError / ModuleNotFoundError
+
 ```python
 # ❌ 問題のあるインポート
 from models.user import User  # 相対インポート問題
 from .schemas import UserCreate  # パッケージ構造問題
 
 # ✅ 修正後
-from app.models.user import User  # 絶対インポート
-from app.schemas.user import UserCreate  # 明確なパス
+from app.models.user.user import User  # 絶対インポート
+from app.schemas.user.schemas import UserCreate  # 明確なパス
 ```
 
 #### SQLAlchemy エラー
+
 ```python
 # ❌ よくある問題
 # 1. セッション管理エラー
@@ -83,6 +88,7 @@ def get_user_with_posts(db: Session, user_id: int):
 ```
 
 #### Pydantic バリデーションエラー
+
 ```python
 # ❌ 問題のあるスキーマ
 class UserCreate(BaseModel):
@@ -95,7 +101,7 @@ from pydantic import EmailStr, Field
 class UserCreate(BaseModel):
     email: EmailStr = Field(..., description="有効なメールアドレス")
     age: int = Field(..., ge=0, le=150, description="年齢（0-150）")
-    
+
     @field_validator('email')
     @classmethod
     def validate_email_not_empty(cls, v):
@@ -105,6 +111,7 @@ class UserCreate(BaseModel):
 ```
 
 #### FastAPI ルーティングエラー
+
 ```python
 # ❌ よくある問題
 @router.get("/users/{user_id}")
@@ -118,6 +125,7 @@ class UserCreate(BaseModel):
 ### 3. データベース問題の修正
 
 #### マイグレーションエラー
+
 ```bash
 # マイグレーション履歴の確認
 cd apps/backend && alembic history --verbose
@@ -133,6 +141,7 @@ cd apps/backend && alembic upgrade head
 ```
 
 #### 外部キー制約エラー
+
 ```python
 # ❌ 問題：外部キー制約違反
 def delete_user(db: Session, user_id: int):
@@ -145,10 +154,10 @@ def delete_user(db: Session, user_id: int):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # 関連データを先に削除またはnullに設定
     db.query(Post).filter(Post.user_id == user_id).delete()
-    
+
     db.delete(user)
     db.commit()
     return user
@@ -157,6 +166,7 @@ def delete_user(db: Session, user_id: int):
 ### 4. パフォーマンス問題の修正
 
 #### N+1クエリ問題
+
 ```python
 # ❌ N+1問題
 def get_users_with_posts():
@@ -173,6 +183,7 @@ def get_users_with_posts():
 ```
 
 #### 大量データ処理
+
 ```python
 # ❌ メモリ使用量が多い
 def process_all_users():
@@ -184,21 +195,22 @@ def process_all_users():
 def process_all_users():
     batch_size = 1000
     offset = 0
-    
+
     while True:
         users = db.query(User).offset(offset).limit(batch_size).all()
         if not users:
             break
-            
+
         for user in users:
             process_user(user)
-        
+
         offset += batch_size
 ```
 
 ### 5. 認証・セキュリティ問題の修正
 
 #### JWT トークンエラー
+
 ```python
 # ❌ 問題：トークンデコードエラー
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -212,7 +224,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -220,7 +232,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    
+
     user = get_user_by_username(db, username=username)
     if user is None:
         raise credentials_exception
@@ -228,6 +240,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 ```
 
 #### SQLインジェクション対策
+
 ```python
 # ❌ 危険：SQLインジェクション脆弱性
 def search_users(name: str):
@@ -247,6 +260,7 @@ def search_users_raw(name: str):
 ### 6. 環境・設定問題の修正
 
 #### 環境変数の問題
+
 ```python
 # ❌ 問題：環境変数が読み込まれない
 DATABASE_URL = os.getenv("DATABASE_URL")  # Noneの可能性
@@ -257,7 +271,7 @@ from pydantic import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "postgresql://localhost/training_tracker"
     secret_key: str
-    
+
     class Config:
         env_file = ".env"
 
@@ -265,6 +279,7 @@ settings = Settings()
 ```
 
 #### CORS設定エラー
+
 ```python
 # ❌ 問題：CORS エラー
 app = FastAPI()
@@ -286,6 +301,7 @@ app.add_middleware(
 ### 7. テスト関連問題の修正
 
 #### テストデータベース分離
+
 ```python
 # conftest.py での適切な設定
 import pytest
@@ -315,6 +331,7 @@ def db():
 ### 8. デプロイ・本番環境問題
 
 #### ログ設定
+
 ```python
 # ❌ 問題：適切でないログ設定
 print("User created")  # 本番で使うべきでない
@@ -328,7 +345,7 @@ def create_user(user_data: UserCreate):
     user = User(**user_data.dict())
     db.add(user)
     db.commit()
-    
+
     logger.info(
         "User created successfully",
         user_id=user.id,
@@ -341,6 +358,7 @@ def create_user(user_data: UserCreate):
 ### 9. 修正後の検証
 
 #### 自動テスト実行
+
 ```bash
 # 型チェック
 cd apps/backend && mypy app/
@@ -359,6 +377,7 @@ cd apps/backend && python -m pytest tests/ -k "performance"
 ```
 
 #### 手動確認
+
 ```bash
 # サーバー起動確認
 cd apps/backend && uvicorn app.main:app --reload

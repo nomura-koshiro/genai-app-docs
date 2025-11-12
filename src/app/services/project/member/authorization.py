@@ -29,10 +29,10 @@ from app.core.exceptions import AuthorizationError, NotFoundError, ValidationErr
 from app.core.logging import get_logger
 from app.models.project.member import ProjectMember, ProjectRole
 from app.models.project.project import Project
-from app.models.user import User
-from app.repositories.project.base import ProjectRepository
+from app.models.user.user import User
 from app.repositories.project.member import ProjectMemberRepository
-from app.repositories.user import UserRepository
+from app.repositories.project.project import ProjectRepository
+from app.repositories.user.user import UserRepository
 
 logger = get_logger(__name__)
 

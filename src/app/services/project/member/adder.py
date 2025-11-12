@@ -33,7 +33,7 @@ from app.core.exceptions import AuthorizationError, NotFoundError, ValidationErr
 from app.core.logging import get_logger
 from app.models.project.member import ProjectMember
 from app.repositories.project.member import ProjectMemberRepository
-from app.repositories.user import UserRepository
+from app.repositories.user.user import UserRepository
 from app.schemas.project.member import ProjectMemberBulkError, ProjectMemberCreate
 from app.services.project.member.authorization import (
     ProjectMemberAuthorizationChecker,

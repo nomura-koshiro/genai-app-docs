@@ -137,7 +137,7 @@ class AnalysisStep(Base, TimestampMixin):
     result_formula: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Result formulas (list[ResultFormula] as dict)",
+        comment="Result formulas (list[AnalysisResultFormula] as dict)",
     )
 
     is_active: Mapped[bool] = mapped_column(

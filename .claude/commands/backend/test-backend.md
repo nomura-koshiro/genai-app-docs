@@ -11,6 +11,7 @@ tools: [Write, Edit, MultiEdit, Read, Bash]
 ## FastAPI テスト戦略
 
 ### 1. テスト構成
+
 ```
 apps/backend/tests/
 ├── api/v1/
@@ -28,6 +29,7 @@ apps/backend/tests/
 ### 2. APIエンドポイントテスト (`tests/api/v1/test_$ARGUMENTS.py`)
 
 #### 基本構造
+
 ```python
 import pytest
 from fastapi.testclient import TestClient
@@ -39,10 +41,10 @@ from app.tests.utils.$ARGUMENTS import create_random_$ARGUMENTS
 
 class Test$ARGUMENTSEndpoints:
     """$ARGUMENTS APIエンドポイントテスト"""
-    
+
     def test_create_$ARGUMENTS_success(
-        self, 
-        client: TestClient, 
+        self,
+        client: TestClient,
         superuser_token_headers: dict[str, str]
     ) -> None:
         """正常系：$ARGUMENTS作成成功"""
@@ -56,7 +58,7 @@ class Test$ARGUMENTSEndpoints:
             headers=superuser_token_headers,
             json=data,
         )
-        
+
         assert response.status_code == 201
         content = response.json()
         assert content["name"] == data["name"]
@@ -81,7 +83,7 @@ class Test$ARGUMENTSEndpoints:
             headers=superuser_token_headers,
             json=data,
         )
-        
+
         assert response.status_code == 422
         errors = response.json()["detail"]
         assert any(error["loc"] == ["name"] for error in errors)
@@ -97,16 +99,16 @@ class Test$ARGUMENTSEndpoints:
         # テストデータ作成
         $ARGUMENTS_1 = create_random_$ARGUMENTS(db)
         $ARGUMENTS_2 = create_random_$ARGUMENTS(db)
-        
+
         response = client.get(
             f"{settings.API_V1_STR}/$ARGUMENTS/",
             headers=superuser_token_headers,
         )
-        
+
         assert response.status_code == 200
         content = response.json()
         assert len(content) >= 2
-        
+
         # 作成した$ARGUMENTSが含まれることを確認
         ids = [item["id"] for item in content]
         assert $ARGUMENTS_1.id in ids
@@ -120,12 +122,12 @@ class Test$ARGUMENTSEndpoints:
     ) -> None:
         """正常系：ID による$ARGUMENTS取得"""
         $ARGUMENTS_obj = create_random_$ARGUMENTS(db)
-        
+
         response = client.get(
             f"{settings.API_V1_STR}/$ARGUMENTS/{$ARGUMENTS_obj.id}",
             headers=superuser_token_headers,
         )
-        
+
         assert response.status_code == 200
         content = response.json()
         assert content["id"] == $ARGUMENTS_obj.id
@@ -141,7 +143,7 @@ class Test$ARGUMENTSEndpoints:
             f"{settings.API_V1_STR}/$ARGUMENTS/999999",
             headers=superuser_token_headers,
         )
-        
+
         assert response.status_code == 404
         assert "not found" in response.json()["detail"].lower()
 
@@ -153,19 +155,19 @@ class Test$ARGUMENTSEndpoints:
     ) -> None:
         """正常系：$ARGUMENTS更新成功"""
         $ARGUMENTS_obj = create_random_$ARGUMENTS(db)
-        
+
         update_data = {
             "name": random_lower_string(),
             "description": "Updated description",
             "is_active": False
         }
-        
+
         response = client.put(
             f"{settings.API_V1_STR}/$ARGUMENTS/{$ARGUMENTS_obj.id}",
             headers=superuser_token_headers,
             json=update_data,
         )
-        
+
         assert response.status_code == 200
         content = response.json()
         assert content["id"] == $ARGUMENTS_obj.id
@@ -181,15 +183,15 @@ class Test$ARGUMENTSEndpoints:
     ) -> None:
         """正常系：$ARGUMENTS削除成功"""
         $ARGUMENTS_obj = create_random_$ARGUMENTS(db)
-        
+
         response = client.delete(
             f"{settings.API_V1_STR}/$ARGUMENTS/{$ARGUMENTS_obj.id}",
             headers=superuser_token_headers,
         )
-        
+
         assert response.status_code == 200
         assert "deleted successfully" in response.json()["message"]
-        
+
         # 削除確認
         get_response = client.get(
             f"{settings.API_V1_STR}/$ARGUMENTS/{$ARGUMENTS_obj.id}",
@@ -215,7 +217,7 @@ from app.tests.utils.utils import random_lower_string
 
 class TestCRUD$ARGUMENTS:
     """$ARGUMENTS CRUD操作テスト"""
-    
+
     def test_create_$ARGUMENTS(self, db: Session) -> None:
         """$ARGUMENTS作成テスト"""
         name = random_lower_string()
@@ -225,9 +227,9 @@ class TestCRUD$ARGUMENTS:
             description=description,
             is_active=True
         )
-        
+
         $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         assert $ARGUMENTS_obj.name == name
         assert $ARGUMENTS_obj.description == description
         assert $ARGUMENTS_obj.is_active is True
@@ -238,9 +240,9 @@ class TestCRUD$ARGUMENTS:
         name = random_lower_string()
         $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
         $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         stored_$ARGUMENTS = $ARGUMENTS.get(db=db, id=$ARGUMENTS_obj.id)
-        
+
         assert stored_$ARGUMENTS
         assert stored_$ARGUMENTS.id == $ARGUMENTS_obj.id
         assert stored_$ARGUMENTS.name == name
@@ -250,9 +252,9 @@ class TestCRUD$ARGUMENTS:
         name = random_lower_string()
         $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
         $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         stored_$ARGUMENTS = $ARGUMENTS.get_by_name(db=db, name=name)
-        
+
         assert stored_$ARGUMENTS
         assert stored_$ARGUMENTS.id == $ARGUMENTS_obj.id
         assert stored_$ARGUMENTS.name == name
@@ -262,15 +264,15 @@ class TestCRUD$ARGUMENTS:
         name = random_lower_string()
         $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
         $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         new_name = random_lower_string()
         $ARGUMENTS_update = $ARGUMENTSUpdate(name=new_name, is_active=False)
         $ARGUMENTS_updated = $ARGUMENTS.update(
-            db=db, 
-            db_obj=$ARGUMENTS_obj, 
+            db=db,
+            db_obj=$ARGUMENTS_obj,
             obj_in=$ARGUMENTS_update
         )
-        
+
         assert $ARGUMENTS_updated.id == $ARGUMENTS_obj.id
         assert $ARGUMENTS_updated.name == new_name
         assert $ARGUMENTS_updated.is_active is False
@@ -280,10 +282,10 @@ class TestCRUD$ARGUMENTS:
         name = random_lower_string()
         $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
         $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         $ARGUMENTS_deleted = $ARGUMENTS.remove(db=db, id=$ARGUMENTS_obj.id)
         $ARGUMENTS_get = $ARGUMENTS.get(db=db, id=$ARGUMENTS_obj.id)
-        
+
         assert $ARGUMENTS_deleted == $ARGUMENTS_obj.id
         assert $ARGUMENTS_get is None
 
@@ -296,9 +298,9 @@ class TestCRUD$ARGUMENTS:
             $ARGUMENTS_in = $ARGUMENTSCreate(name=name)
             $ARGUMENTS_obj = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
             $ARGUMENTS_list.append($ARGUMENTS_obj)
-        
+
         stored_$ARGUMENTS = $ARGUMENTS.get_multi(db=db, skip=0, limit=10)
-        
+
         assert len(stored_$ARGUMENTS) >= 3
         stored_ids = [item.id for item in stored_$ARGUMENTS]
         for $ARGUMENTS_obj in $ARGUMENTS_list:
@@ -307,21 +309,21 @@ class TestCRUD$ARGUMENTS:
     def test_search_$ARGUMENTS_by_name(self, db: Session) -> None:
         """名前検索テスト"""
         search_term = "test_search"
-        
+
         # 検索対象の$ARGUMENTSを作成
         $ARGUMENTS_in = $ARGUMENTSCreate(name=f"{search_term}_item1")
         $ARGUMENTS_obj1 = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         $ARGUMENTS_in = $ARGUMENTSCreate(name=f"{search_term}_item2")
         $ARGUMENTS_obj2 = $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         # 検索対象外の$ARGUMENTSを作成
         $ARGUMENTS_in = $ARGUMENTSCreate(name="other_item")
         $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
-        
+
         # 検索実行
         search_results = $ARGUMENTS.search_by_name(db=db, query=search_term)
-        
+
         assert len(search_results) == 2
         result_ids = [item.id for item in search_results]
         assert $ARGUMENTS_obj1.id in result_ids
@@ -341,22 +343,22 @@ from app.tests.utils.utils import random_lower_string
 
 class Test$ARGUMENTSModel:
     """$ARGUMENTS モデルテスト"""
-    
+
     def test_$ARGUMENTS_model_creation(self, db: Session) -> None:
         """$ARGUMENTSモデル作成テスト"""
         name = random_lower_string()
         description = random_lower_string()
-        
+
         $ARGUMENTS_obj = $ARGUMENTS(
             name=name,
             description=description,
             is_active=True
         )
-        
+
         db.add($ARGUMENTS_obj)
         db.commit()
         db.refresh($ARGUMENTS_obj)
-        
+
         assert $ARGUMENTS_obj.id is not None
         assert $ARGUMENTS_obj.name == name
         assert $ARGUMENTS_obj.description == description
@@ -368,17 +370,17 @@ class Test$ARGUMENTSModel:
         """$ARGUMENTS __repr__ メソッドテスト"""
         name = random_lower_string()
         $ARGUMENTS_obj = $ARGUMENTS(name=name)
-        
+
         db.add($ARGUMENTS_obj)
         db.commit()
         db.refresh($ARGUMENTS_obj)
-        
+
         expected = f"<$ARGUMENTS(id={$ARGUMENTS_obj.id}, name='{name}')>"
         assert repr($ARGUMENTS_obj) == expected
 
 class Test$ARGUMENTSSchema:
     """$ARGUMENTS スキーマテスト"""
-    
+
     def test_$ARGUMENTS_create_schema_valid(self) -> None:
         """$ARGUMENTSCreate 正常バリデーション"""
         data = {
@@ -386,9 +388,9 @@ class Test$ARGUMENTSSchema:
             "description": "Test description",
             "is_active": True
         }
-        
+
         schema = $ARGUMENTSCreate(**data)
-        
+
         assert schema.name == data["name"]
         assert schema.description == data["description"]
         assert schema.is_active == data["is_active"]
@@ -399,10 +401,10 @@ class Test$ARGUMENTSSchema:
             "name": "",  # 空文字
             "description": "Test description"
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             $ARGUMENTSCreate(**data)
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("name",) for error in errors)
 
@@ -412,10 +414,10 @@ class Test$ARGUMENTSSchema:
             "name": "Test Name",
             "description": "a" * 1001  # 1000文字制限を超過
         }
-        
+
         with pytest.raises(ValidationError) as exc_info:
             $ARGUMENTSCreate(**data)
-        
+
         errors = exc_info.value.errors()
         assert any(error["loc"] == ("description",) for error in errors)
 
@@ -425,9 +427,9 @@ class Test$ARGUMENTSSchema:
             "name": "Updated name"
             # description と is_active は省略
         }
-        
+
         schema = $ARGUMENTSUpdate(**data)
-        
+
         assert schema.name == data["name"]
         assert schema.description is None
         assert schema.is_active is None
@@ -447,13 +449,13 @@ def create_random_$ARGUMENTS(db: Session) -> $ARGUMENTSModel:
     """ランダムな$ARGUMENTSを作成"""
     name = random_lower_string()
     description = random_lower_string()
-    
+
     $ARGUMENTS_in = $ARGUMENTSCreate(
         name=name,
         description=description,
         is_active=True
     )
-    
+
     return $ARGUMENTS.create(db=db, obj_in=$ARGUMENTS_in)
 
 def create_random_$ARGUMENTS_data() -> dict:
@@ -468,6 +470,7 @@ def create_random_$ARGUMENTS_data() -> dict:
 ### 6. テスト実行・検証
 
 #### テスト実行コマンド
+
 ```bash
 # 全テスト実行
 cd apps/backend && python -m pytest
@@ -483,8 +486,9 @@ cd apps/backend && python -m pytest -n auto
 ```
 
 #### カバレッジ目標
+
 - **ライン カバレッジ**: 90% 以上
-- **ブランチ カバレッジ**: 85% 以上  
+- **ブランチ カバレッジ**: 85% 以上
 - **重要機能**: 100% カバレッジ
 
 ### 7. パフォーマンステスト
@@ -495,7 +499,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 def test_$ARGUMENTS_list_performance(
-    client: TestClient, 
+    client: TestClient,
     superuser_token_headers: dict[str, str],
     db: Session
 ) -> None:
@@ -503,14 +507,14 @@ def test_$ARGUMENTS_list_performance(
     # 大量データ作成
     for _ in range(100):
         create_random_$ARGUMENTS(db)
-    
+
     start_time = time.time()
     response = client.get(
         f"{settings.API_V1_STR}/$ARGUMENTS/",
         headers=superuser_token_headers,
     )
     end_time = time.time()
-    
+
     assert response.status_code == 200
     assert end_time - start_time < 1.0  # 1秒以内でレスポンス
 ```
@@ -518,6 +522,7 @@ def test_$ARGUMENTS_list_performance(
 ### 8. テスト品質チェック
 
 #### 実行確認
+
 ```bash
 # テスト実行
 cd apps/backend && python -m pytest tests/ -v
@@ -531,6 +536,7 @@ cd apps/backend && python -m pytest tests/ -k "performance" -v
 ```
 
 #### 品質基準
+
 - [ ] 全テストが成功すること
 - [ ] カバレッジが目標値を満たすこと
 - [ ] パフォーマンステストが基準を満たすこと

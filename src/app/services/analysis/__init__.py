@@ -9,7 +9,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis import AnalysisFile, AnalysisSession, AnalysisStep
-from app.schemas.analysis import ChatMessage
+from app.schemas.analysis import AnalysisChatMessage
 from app.schemas.analysis.session import (
     AnalysisFileUploadRequest,
     AnalysisFileUploadResponse,
@@ -109,7 +109,7 @@ class AnalysisService:
         """分析エージェントとチャットします。"""
         return await self._chat_service.chat(session_id, user_id, message)
 
-    async def get_chat_history(self, session_id: uuid.UUID, user_id: uuid.UUID) -> list[ChatMessage]:
+    async def get_chat_history(self, session_id: uuid.UUID, user_id: uuid.UUID) -> list[AnalysisChatMessage]:
         """チャット履歴を取得します。"""
         return await self._chat_service.get_chat_history(session_id, user_id)
 

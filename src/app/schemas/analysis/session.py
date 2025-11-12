@@ -22,20 +22,20 @@
         - AnalysisFileResponse: ファイル情報レスポンス
 
     スナップショット:
-        - StepSnapshot: スナップショット内のステップデータ
-        - SnapshotHistoryItem: 1つのスナップショット（StepSnapshotのリスト）
+        - AnalysisStepSnapshot: スナップショット内のステップデータ
+        - SnapshotHistoryItem: 1つのスナップショット（AnalysisStepSnapshotのリスト）
         - SnapshotHistory: スナップショット履歴（SnapshotHistoryItemのリスト）
 
     チャット履歴:
-        - ChatMessage: チャット履歴のメッセージ
-        - ChatHistory: チャット履歴（ChatMessageのリスト）
+        - AnalysisChatMessage: チャット履歴のメッセージ
+        - ChatHistory: チャット履歴（AnalysisChatMessageのリスト）
 
     結果数式:
-        - ResultFormula: サマリーステップの計算結果
-        - ResultFormulaList: 結果数式のリスト
+        - AnalysisResultFormula: サマリーステップの計算結果
+        - AnalysisResultFormulaList: 結果数式のリスト
 
     ファイルメタデータ:
-        - FileMetadata: アップロードファイルのメタ情報
+        - AnalysisFileMetadata: アップロードファイルのメタ情報
 
     AIチャット:
         - ChatRequest: チャットリクエスト
@@ -68,7 +68,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # ================================================================================
 
 
-class StepSnapshot(BaseModel):
+class AnalysisStepSnapshot(BaseModel):
     """スナップショット内のステップデータ。
 
     snapshot_historyに保存される個別ステップの情報を定義します。
@@ -81,7 +81,7 @@ class StepSnapshot(BaseModel):
         config (dict[str, Any]): ステップ設定
 
     Example:
-        >>> snapshot = StepSnapshot(
+        >>> snapshot = AnalysisStepSnapshot(
         ...     name="売上フィルタ",
         ...     type="filter",
         ...     data="file_abc123",
@@ -103,12 +103,12 @@ class StepSnapshot(BaseModel):
 #
 # 注意: DB保存時は model_dump() で dict に変換されるため、
 # 実際のDB型は list[list[dict[str, Any]]] となります。
-# 使用時に StepSnapshot.model_validate() で型変換してください。
-SnapshotHistoryItem = list[StepSnapshot]
+# 使用時に AnalysisStepSnapshot.model_validate() で型変換してください。
+SnapshotHistoryItem = list[AnalysisStepSnapshot]
 SnapshotHistory = list[SnapshotHistoryItem]
 
 
-class ChatMessage(BaseModel):
+class AnalysisChatMessage(BaseModel):
     """チャット履歴のメッセージスキーマ。
 
     AIエージェントとのチャット履歴を構造化して保存します。
@@ -119,7 +119,7 @@ class ChatMessage(BaseModel):
         timestamp (str): タイムスタンプ（ISO8601形式推奨）
 
     Example:
-        >>> message = ChatMessage(
+        >>> message = AnalysisChatMessage(
         ...     role="user",
         ...     content="売上データを東京でフィルタリングしてください",
         ...     timestamp="2024-01-15T10:30:00Z"
@@ -134,10 +134,10 @@ class ChatMessage(BaseModel):
 
 
 # チャット履歴の型定義
-ChatHistory = list[ChatMessage]
+ChatHistory = list[AnalysisChatMessage]
 
 
-class ResultFormula(BaseModel):
+class AnalysisResultFormula(BaseModel):
     """結果数式スキーマ。
 
     サマリーステップの計算結果を表現します。
@@ -149,7 +149,7 @@ class ResultFormula(BaseModel):
         unit (str | None): 単位（例: "円", "%"）
 
     Example:
-        >>> formula = ResultFormula(
+        >>> formula = AnalysisResultFormula(
         ...     name="売上合計",
         ...     formula="sum(売上)",
         ...     result=1000000.0,
@@ -162,14 +162,14 @@ class ResultFormula(BaseModel):
     name: str = Field(..., description="数式名")
     formula: str = Field(..., description="計算式")
     result: float = Field(..., description="計算結果")
-    unit: str | None = Field(None, description="単位")
+    unit: str | None = Field(default=None, description="単位")
 
 
 # 結果数式の型定義
-ResultFormulaList = list[ResultFormula]
+AnalysisResultFormulaList = list[AnalysisResultFormula]
 
 
-class FileMetadata(BaseModel):
+class AnalysisFileMetadata(BaseModel):
     """ファイルメタデータスキーマ。
 
     アップロードされたファイルのメタ情報を保存します。
@@ -178,20 +178,23 @@ class FileMetadata(BaseModel):
         sheet_name (str | None): シート名（Excelファイルの場合）
         row_count (int): 行数
         column_count (int): 列数
+        columns (list[str] | None): カラム名のリスト
 
     Example:
-        >>> metadata = FileMetadata(
+        >>> metadata = AnalysisFileMetadata(
         ...     sheet_name="Sheet1",
         ...     row_count=1000,
-        ...     column_count=10
+        ...     column_count=10,
+        ...     columns=["ID", "名前", "売上"]
         ... )
     """
 
     model_config = ConfigDict(frozen=False)
 
-    sheet_name: str | None = Field(None, description="シート名（Excelファイルの場合）")
+    sheet_name: str | None = Field(default=None, description="シート名（Excelファイルの場合）")
     row_count: int = Field(..., ge=0, description="行数")
     column_count: int = Field(..., ge=0, description="列数")
+    columns: list[str] | None = Field(default=None, description="カラム名のリスト")
 
 
 # ================================================================================
@@ -209,7 +212,7 @@ class AnalysisSessionBase(BaseModel):
         validation_config (dict[str, Any]): validation設定
     """
 
-    session_name: str | None = Field(None, max_length=255, description="セッション名")
+    session_name: str | None = Field(default=None, max_length=255, description="セッション名")
     validation_config: dict[str, Any] = Field(default_factory=dict, description="分析設定（validation.ymlの内容）")
 
 
@@ -236,7 +239,7 @@ class AnalysisSessionCreate(BaseModel):
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     policy: str = Field(..., min_length=1, max_length=100, description="施策名")
     issue: str = Field(..., min_length=1, max_length=100, description="課題名")
-    session_name: str | None = Field(None, max_length=255, description="セッション名")
+    session_name: str | None = Field(default=None, max_length=255, description="セッション名")
 
 
 class AnalysisSessionUpdate(BaseModel):
@@ -259,8 +262,8 @@ class AnalysisSessionUpdate(BaseModel):
         - validation_configは変更できません
     """
 
-    session_name: str | None = Field(None, max_length=255, description="セッション名")
-    is_active: bool | None = Field(None, description="アクティブフラグ")
+    session_name: str | None = Field(default=None, max_length=255, description="セッション名")
+    is_active: bool | None = Field(default=None, description="アクティブフラグ")
 
 
 class AnalysisSessionResponse(BaseModel):
@@ -299,8 +302,8 @@ class AnalysisSessionResponse(BaseModel):
 
     id: uuid.UUID = Field(..., description="セッションID（UUID）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
-    created_by: uuid.UUID | None = Field(None, description="作成者のユーザーID")
-    session_name: str | None = Field(None, description="セッション名")
+    created_by: uuid.UUID | None = Field(default=None, description="作成者のユーザーID")
+    session_name: str | None = Field(default=None, description="セッション名")
     validation_config: dict[str, Any] = Field(..., description="validation設定")
     is_active: bool = Field(..., description="アクティブフラグ")
     created_at: datetime = Field(..., description="作成日時（UTC）")
@@ -319,9 +322,9 @@ class AnalysisSessionDetailResponse(AnalysisSessionResponse):
         session_name (str | None): セッション名（継承）
         validation_config (dict[str, Any]): validation設定（継承）
         chat_history (ChatHistory): チャット履歴
-            各メッセージは ChatMessage（DB保存時はdictに変換）
+            各メッセージは AnalysisChatMessage（DB保存時はdictに変換）
         snapshot_history (SnapshotHistory | None): スナップショット履歴
-            各スナップショットはStepSnapshotのリスト（list[list[StepSnapshot]]）
+            各スナップショットはAnalysisStepSnapshotのリスト（list[list[AnalysisStepSnapshot]]）
             DB保存時はdictに変換されます
         steps (list[AnalysisStepResponse]): 分析ステップリスト
         files (list[AnalysisFileResponse]): アップロードファイルリスト
@@ -331,7 +334,7 @@ class AnalysisSessionDetailResponse(AnalysisSessionResponse):
     """
 
     chat_history: list[dict[str, Any]] = Field(default_factory=list, description="チャット履歴")
-    snapshot_history: list[list[dict[str, Any]]] | None = Field(None, description="スナップショット履歴")
+    snapshot_history: list[list[dict[str, Any]]] | None = Field(default=None, description="スナップショット履歴")
     steps: list["AnalysisStepResponse"] = Field(default_factory=list, description="分析ステップリスト")
     files: list["AnalysisFileResponse"] = Field(default_factory=list, description="アップロードファイルリスト")
 
@@ -403,7 +406,7 @@ class AnalysisStepResponse(AnalysisStepBase):
         config (dict[str, Any]): ステップ設定（継承）
         result_data_path (str | None): 結果データのストレージパス
         result_chart (dict[str, Any] | None): 結果チャート（Plotly JSON）
-        result_formula (ResultFormulaList | None): 結果数式（各要素は ResultFormula）
+        result_formula (AnalysisResultFormulaList | None): 結果数式（各要素は AnalysisResultFormula）
         is_active (bool): アクティブフラグ
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
@@ -414,9 +417,9 @@ class AnalysisStepResponse(AnalysisStepBase):
     id: uuid.UUID = Field(..., description="ステップID")
     session_id: uuid.UUID = Field(..., description="セッションID")
     step_order: int = Field(..., description="ステップの順序（0から開始）")
-    result_data_path: str | None = Field(None, description="結果データのストレージパス")
-    result_chart: dict[str, Any] | None = Field(None, description="結果チャート（Plotly JSON）")
-    result_formula: list[dict[str, Any]] | None = Field(None, description="結果数式リスト（論理型: ResultFormulaList）")
+    result_data_path: str | None = Field(default=None, description="結果データのストレージパス")
+    result_chart: dict[str, Any] | None = Field(default=None, description="結果チャート（Plotly JSON）")
+    result_formula: list[dict[str, Any]] | None = Field(default=None, description="結果数式リスト（論理型: AnalysisResultFormulaList）")
     is_active: bool = Field(..., description="アクティブフラグ")
     created_at: datetime = Field(..., description="作成日時（UTC）")
     updated_at: datetime = Field(..., description="更新日時（UTC）")
@@ -440,7 +443,7 @@ class AnalysisFileBase(BaseModel):
 
     file_name: str = Field(..., min_length=1, max_length=255, description="ファイル名")
     table_name: str = Field(..., min_length=1, max_length=255, description="テーブル名")
-    table_axis: list[str] | None = Field(None, description="軸候補のリスト")
+    table_axis: list[str] | None = Field(default=None, description="軸候補のリスト")
 
 
 class AnalysisFileUploadRequest(AnalysisFileBase):
@@ -494,11 +497,11 @@ class AnalysisFileResponse(AnalysisFileBase):
 
     id: uuid.UUID = Field(..., description="ファイルID")
     session_id: uuid.UUID = Field(..., description="セッションID")
-    uploaded_by: uuid.UUID | None = Field(None, description="アップロード者のユーザーID")
+    uploaded_by: uuid.UUID | None = Field(default=None, description="アップロード者のユーザーID")
     storage_path: str = Field(..., description="ストレージパス")
     file_size: int = Field(..., description="ファイルサイズ（バイト）")
-    content_type: str | None = Field(None, description="MIMEタイプ")
-    file_metadata: FileMetadata | None = Field(None, description="ファイルメタデータ")
+    content_type: str | None = Field(default=None, description="MIMEタイプ")
+    file_metadata: AnalysisFileMetadata | None = Field(default=None, description="ファイルメタデータ")
     is_active: bool = Field(..., description="アクティブフラグ")
     created_at: datetime = Field(..., description="作成日時（UTC）")
     updated_at: datetime = Field(..., description="更新日時（UTC）")
@@ -531,9 +534,9 @@ class AnalysisFileUploadResponse(BaseModel):
     table_name: str = Field(..., description="テーブル名")
     storage_path: str = Field(..., description="ストレージパス")
     file_size: int = Field(..., description="ファイルサイズ（バイト）")
-    content_type: str | None = Field(None, description="MIMEタイプ")
-    table_axis: list[str] | None = Field(None, description="軸候補のリスト")
-    uploaded_by: uuid.UUID | None = Field(None, description="アップロード者のユーザーID")
+    content_type: str | None = Field(default=None, description="MIMEタイプ")
+    table_axis: list[str] | None = Field(default=None, description="軸候補のリスト")
+    uploaded_by: uuid.UUID | None = Field(default=None, description="アップロード者のユーザーID")
     created_at: datetime = Field(..., description="作成日時（UTC）")
     message: str = Field(..., description="成功メッセージ")
 
@@ -585,7 +588,7 @@ class ChatResponse(BaseModel):
     snapshot_id: int = Field(..., description="スナップショットID")
     steps_added: int = Field(default=0, description="追加されたステップ数")
     steps_modified: int = Field(default=0, description="変更されたステップ数")
-    analysis_result: dict[str, Any] | None = Field(None, description="分析結果")
+    analysis_result: dict[str, Any] | None = Field(default=None, description="分析結果")
 
 
 # ================================================================================

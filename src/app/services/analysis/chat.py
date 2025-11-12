@@ -18,7 +18,7 @@ from app.api.decorators import async_timeout, measure_performance
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisSessionRepository
-from app.schemas.analysis import ChatMessage
+from app.schemas.analysis import AnalysisChatMessage
 from app.schemas.analysis.session import ChatRequest, ChatResponse
 
 logger = get_logger(__name__)
@@ -116,7 +116,7 @@ class AnalysisChatService:
 
             # チャット履歴を更新
             snapshot_id = len(session.chat_history) // 2  # 仮のスナップショットID
-            chat_entry = ChatMessage(
+            chat_entry = AnalysisChatMessage(
                 role="assistant",
                 content=response_message,
                 timestamp=datetime.now(UTC).isoformat(),
@@ -283,7 +283,7 @@ class AnalysisChatService:
         self,
         session_id: uuid.UUID,
         user_id: uuid.UUID,
-    ) -> list[ChatMessage]:
+    ) -> list[AnalysisChatMessage]:
         """チャット履歴を取得。
 
         このメソッドは、指定されたセッションのチャット履歴を取得します。
@@ -295,8 +295,8 @@ class AnalysisChatService:
             user_id (uuid.UUID): ユーザーのUUID
 
         Returns:
-            list[ChatMessage]: チャット履歴のリスト
-                各要素は ChatMessage スキーマ:
+            list[AnalysisChatMessage]: チャット履歴のリスト
+                各要素は AnalysisChatMessage スキーマ:
                 - role: Literal["user", "assistant"] - メッセージの送信者
                 - content: str - メッセージ本文
                 - timestamp: str - タイムスタンプ（ISO 8601形式）
@@ -320,7 +320,7 @@ class AnalysisChatService:
         Note:
             - 履歴が空の場合は空リストを返します
             - @measure_performanceデコレータによりパフォーマンスが記録されます
-            - DB保存形式（dict）から ChatMessage スキーマに変換して返します
+            - DB保存形式（dict）から AnalysisChatMessage スキーマに変換して返します
         """
         logger.info(
             "チャット履歴を取得中",
@@ -357,9 +357,9 @@ class AnalysisChatService:
                 },
             )
 
-        # Return chat history (dict → ChatMessage変換)
+        # Return chat history (dict → AnalysisChatMessage変換)
         chat_history_dicts = session.chat_history or []
-        chat_history = [ChatMessage.model_validate(entry) for entry in chat_history_dicts]
+        chat_history = [AnalysisChatMessage.model_validate(entry) for entry in chat_history_dicts]
 
         logger.info(
             "チャット履歴を正常に取得しました",

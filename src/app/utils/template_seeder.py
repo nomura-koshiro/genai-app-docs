@@ -29,6 +29,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis import AnalysisTemplate, AnalysisTemplateChart
+from app.schemas.analysis.template import InitialAxisConfig, PlotlyChartData
 
 logger = structlog.get_logger(__name__)
 
@@ -246,13 +247,19 @@ class TemplateSeeder:
         """
         dummy = template_data.get("dummy", {})
 
+        # InitialAxisConfigスキーマを使用してバリデーション
+        initial_axis_validated = [
+            InitialAxisConfig.model_validate(axis).model_dump()
+            for axis in template_data["initial_axis"]
+        ]
+
         template = AnalysisTemplate(
             policy=template_data["policy"],
             issue=template_data["issue"],
             description=template_data["description"],
             agent_prompt=template_data["agent_prompt"],
             initial_msg=template_data["initial_msg"],
-            initial_axis=template_data["initial_axis"],
+            initial_axis=initial_axis_validated,
             dummy_formula=dummy.get("formula"),
             dummy_input=dummy.get("input"),
             dummy_hint=dummy.get("hint"),
@@ -283,15 +290,18 @@ class TemplateSeeder:
         Returns:
             AnalysisTemplateChart: 作成されたチャート
         """
+        # PlotlyChartDataスキーマを使用してバリデーション
+        chart_data_validated = PlotlyChartData.model_validate(chart_data).model_dump()
+
         # チャートタイプの推定（dataの最初の要素のtypeから取得）
         chart_type = None
-        if isinstance(chart_data.get("data"), list) and len(chart_data["data"]) > 0:
-            chart_type = chart_data["data"][0].get("type")
+        if isinstance(chart_data_validated.get("data"), list) and len(chart_data_validated["data"]) > 0:
+            chart_type = chart_data_validated["data"][0].get("type")
 
         chart = AnalysisTemplateChart(
             template_id=template_id,
             chart_name=chart_name,
-            chart_data=chart_data,
+            chart_data=chart_data_validated,
             chart_order=chart_order,
             chart_type=chart_type,
         )

@@ -11,20 +11,24 @@ tools: [Read, Edit, MultiEdit, Bash, Grep]
 ## パフォーマンス分析
 
 ### 1. 現状分析
+
 以下の観点で現在のパフォーマンス問題を特定してください：
 
 #### 再レンダリング問題
+
 - [ ] 不要な親コンポーネントの再レンダリング
 - [ ] Props の参照が変わることによる子コンポーネント再レンダリング
 - [ ] Context の過度な使用
 - [ ] インライン関数・オブジェクトの作成
 
 #### メモリ使用量
+
 - [ ] 大きなデータセットの処理
 - [ ] メモリリークの可能性
 - [ ] 不要なデータの保持
 
 #### バンドルサイズ
+
 - [ ] 未使用の依存関係
 - [ ] 重い依存関係の不必要な使用
 - [ ] Code Splitting の機会
@@ -32,6 +36,7 @@ tools: [Read, Edit, MultiEdit, Bash, Grep]
 ### 2. 最適化戦略
 
 #### React最適化
+
 ```typescript
 // React.memo の適切な使用
 const OptimizedComponent = React.memo(({ data, onAction }) => {
@@ -54,11 +59,13 @@ const handleAction = useCallback((id: string) => {
 ```
 
 #### 状態管理最適化
+
 - **Zustand**: セレクターによる細かい購読
 - **TanStack Query**: 適切なキャッシュ戦略
 - **React State**: 状態の適切な分離
 
 #### レンダリング最適化
+
 - **条件分岐**: Early Return の活用
 - **リスト**: 適切な key の設定
 - **仮想化**: 大量データ表示時の react-window/react-virtualized
@@ -66,18 +73,19 @@ const handleAction = useCallback((id: string) => {
 ### 3. 具体的な最適化実装
 
 #### メモ化の適用
+
 ```typescript
 // ✅ 最適化前
 const UserList = ({ users, filter, onUserClick }) => {
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.name.includes(filter)
   ) // 毎レンダリング時に実行
 
   return (
     <div>
       {filteredUsers.map(user => (
-        <UserCard 
-          key={user.id} 
+        <UserCard
+          key={user.id}
           user={user}
           onClick={() => onUserClick(user.id)} // 毎回新しい関数
         />
@@ -88,7 +96,7 @@ const UserList = ({ users, filter, onUserClick }) => {
 
 // ✅ 最適化後
 const UserList = React.memo(({ users, filter, onUserClick }) => {
-  const filteredUsers = useMemo(() => 
+  const filteredUsers = useMemo(() =>
     users.filter(user => user.name.includes(filter))
   , [users, filter])
 
@@ -99,8 +107,8 @@ const UserList = React.memo(({ users, filter, onUserClick }) => {
   return (
     <div>
       {filteredUsers.map(user => (
-        <UserCard 
-          key={user.id} 
+        <UserCard
+          key={user.id}
           user={user}
           onClick={handleUserClick}
         />
@@ -111,6 +119,7 @@ const UserList = React.memo(({ users, filter, onUserClick }) => {
 ```
 
 #### 遅延ローディングの実装
+
 ```typescript
 // 重いコンポーネントの遅延読み込み
 const HeavyChart = lazy(() => import('./HeavyChart'))
@@ -127,18 +136,21 @@ const Dashboard = () => {
 ### 4. パフォーマンス測定
 
 #### React DevTools Profiler
+
 ```bash
 # 開発モードでプロファイリング実行
 cd apps/frontend && pnpm dev
 ```
 
 #### Bundle Analyzer
+
 ```bash
 # バンドルサイズ分析
 cd apps/frontend && ANALYZE=true pnpm build
 ```
 
 #### Lighthouse / Web Vitals
+
 ```bash
 # パフォーマンス測定
 cd apps/frontend && pnpm build && pnpm start
@@ -148,11 +160,13 @@ cd apps/frontend && pnpm build && pnpm start
 ### 5. メトリクス目標
 
 #### Core Web Vitals
+
 - **LCP (Largest Contentful Paint)**: < 2.5秒
 - **FID (First Input Delay)**: < 100ms
 - **CLS (Cumulative Layout Shift)**: < 0.1
 
-#### React固有メトリクス  
+#### React固有メトリクス
+
 - **初回レンダリング時間**: < 16ms（60fps維持）
 - **再レンダリング回数**: 最小化
 - **メモリ使用量**: 安定した推移
@@ -160,6 +174,7 @@ cd apps/frontend && pnpm build && pnpm start
 ### 6. 最適化後の検証
 
 #### パフォーマンステスト
+
 ```bash
 # テスト実行（パフォーマンスリグレッション検出）
 cd apps/frontend && pnpm test
@@ -169,6 +184,7 @@ cd apps/frontend && pnpm test:e2e
 ```
 
 #### モニタリング
+
 - React DevTools でのレンダリング回数確認
 - Chrome DevTools でのメモリ使用量チェック
 - Network タブでのバンドルサイズ確認
@@ -176,6 +192,7 @@ cd apps/frontend && pnpm test:e2e
 ## 最適化ガイドライン
 
 ### やるべき最適化
+
 - [ ] 重いコンポーネントの React.memo 適用
 - [ ] 重い計算の useMemo 適用
 - [ ] コールバック関数の useCallback 適用
@@ -183,6 +200,7 @@ cd apps/frontend && pnpm test:e2e
 - [ ] 不要な依存関係の除去
 
 ### 避けるべき最適化
+
 - [ ] 軽量コンポーネントへの過度なメモ化
 - [ ] 全てのオブジェクト・関数のメモ化
 - [ ] プレマチュアな最適化

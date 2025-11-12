@@ -8,7 +8,7 @@
         - ProjectMemberCreate: メンバー追加リクエスト
         - ProjectMemberUpdate: ロール更新リクエスト
         - ProjectMemberResponse: メンバー情報レスポンス
-        - ProjectMemberWithUser: ユーザー情報付きメンバーレスポンス
+        - ProjectMemberDetailResponse: メンバー詳細レスポンス（ユーザー情報含む）
         - ProjectMemberListResponse: メンバー一覧レスポンス
 
 使用方法:
@@ -27,7 +27,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.project.member import ProjectRole
-from app.schemas.user import UserResponse
+from app.schemas.user.user import UserResponse
 
 # ================================================================================
 # プロジェクトメンバースキーマ
@@ -112,12 +112,12 @@ class ProjectMemberResponse(BaseModel):
     user_id: uuid.UUID = Field(..., description="ユーザーID")
     role: ProjectRole = Field(..., description="プロジェクトロール（project_manager/project_moderator/member/viewer）")
     joined_at: datetime = Field(..., description="参加日時")
-    added_by: uuid.UUID | None = Field(None, description="追加者のユーザーID")
+    added_by: uuid.UUID | None = Field(default=None, description="追加者のユーザーID")
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class ProjectMemberWithUser(ProjectMemberResponse):
+class ProjectMemberDetailResponse(ProjectMemberResponse):
     """ユーザー情報付きプロジェクトメンバーレスポンススキーマ。
 
     メンバー情報とユーザー情報を含むレスポンスに使用します。
@@ -132,7 +132,7 @@ class ProjectMemberWithUser(ProjectMemberResponse):
         user (UserResponse | None): ユーザー情報（ネストされたオブジェクト）
 
     Example:
-        >>> member = ProjectMemberWithUser(
+        >>> member = ProjectMemberDetailResponse(
         ...     id=uuid.uuid4(),
         ...     project_id=uuid.uuid4(),
         ...     user_id=uuid.uuid4(),
@@ -147,7 +147,7 @@ class ProjectMemberWithUser(ProjectMemberResponse):
         - selectinload を使用してユーザー情報を事前ロードしてください
     """
 
-    user: UserResponse | None = Field(None, description="ユーザー情報")
+    user: UserResponse | None = Field(default=None, description="ユーザー情報")
 
 
 class ProjectMemberListResponse(BaseModel):
@@ -156,7 +156,7 @@ class ProjectMemberListResponse(BaseModel):
     メンバー一覧APIのレスポンス形式を定義します。
 
     Attributes:
-        members (list[ProjectMemberWithUser]): メンバーリスト
+        members (list[ProjectMemberDetailResponse]): メンバーリスト
         total (int): 総件数
         project_id (uuid.UUID): プロジェクトID
 
@@ -172,7 +172,7 @@ class ProjectMemberListResponse(BaseModel):
         - total は全体の件数
     """
 
-    members: list[ProjectMemberWithUser] = Field(..., description="メンバーリスト")
+    members: list[ProjectMemberDetailResponse] = Field(..., description="メンバーリスト")
     total: int = Field(..., description="総件数")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
 
@@ -273,7 +273,7 @@ class ProjectMemberBulkResponse(BaseModel):
 
     Attributes:
         project_id (uuid.UUID): プロジェクトID
-        added (list[ProjectMemberWithUser]): 追加に成功したメンバーリスト
+        added (list[ProjectMemberDetailResponse]): 追加に成功したメンバーリスト
         failed (list[ProjectMemberBulkError]): 追加に失敗したメンバーリスト
         total_requested (int): リクエストされたメンバー数
         total_added (int): 追加に成功したメンバー数
@@ -295,7 +295,7 @@ class ProjectMemberBulkResponse(BaseModel):
     """
 
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
-    added: list[ProjectMemberWithUser] = Field(..., description="追加に成功したメンバーリスト")
+    added: list[ProjectMemberDetailResponse] = Field(..., description="追加に成功したメンバーリスト")
     failed: list[ProjectMemberBulkError] = Field(..., description="追加に失敗したメンバーリスト")
     total_requested: int = Field(..., description="リクエストされたメンバー数")
     total_added: int = Field(..., description="追加に成功したメンバー数")
@@ -327,7 +327,7 @@ class ProjectMemberRoleUpdate(BaseModel):
     role: ProjectRole = Field(..., description="新しいプロジェクトロール")
 
 
-class ProjectMemberBulkUpdateRequest(BaseModel):
+class ProjectMemberBulkUpdate(BaseModel):
     """プロジェクトメンバー複数人ロール更新リクエストスキーマ。
 
     プロジェクトの複数メンバーのロールを一括更新する際に使用します。
@@ -336,7 +336,7 @@ class ProjectMemberBulkUpdateRequest(BaseModel):
         updates (list[ProjectMemberRoleUpdate]): 更新するメンバーのリスト
 
     Example:
-        >>> bulk_update = ProjectMemberBulkUpdateRequest(
+        >>> bulk_update = ProjectMemberBulkUpdate(
         ...     updates=[
         ...         ProjectMemberRoleUpdate(member_id=uuid.uuid4(), role=ProjectRole.ADMIN),
         ...         ProjectMemberRoleUpdate(member_id=uuid.uuid4(), role=ProjectRole.MEMBER)
@@ -383,7 +383,7 @@ class ProjectMemberBulkUpdateResponse(BaseModel):
 
     Attributes:
         project_id (uuid.UUID): プロジェクトID
-        updated (list[ProjectMemberWithUser]): 更新に成功したメンバーリスト
+        updated (list[ProjectMemberDetailResponse]): 更新に成功したメンバーリスト
         failed (list[ProjectMemberBulkUpdateError]): 更新に失敗したメンバーリスト
         total_requested (int): リクエストされたメンバー数
         total_updated (int): 更新に成功したメンバー数
@@ -405,7 +405,7 @@ class ProjectMemberBulkUpdateResponse(BaseModel):
     """
 
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
-    updated: list[ProjectMemberWithUser] = Field(..., description="更新に成功したメンバーリスト")
+    updated: list[ProjectMemberDetailResponse] = Field(..., description="更新に成功したメンバーリスト")
     failed: list[ProjectMemberBulkUpdateError] = Field(..., description="更新に失敗したメンバーリスト")
     total_requested: int = Field(..., description="リクエストされたメンバー数")
     total_updated: int = Field(..., description="更新に成功したメンバー数")

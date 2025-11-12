@@ -470,7 +470,7 @@ sequenceDiagram
 
 ```python
 from app.core.security import get_current_user
-from app.models.user import User
+from app.models.user.user import User
 from fastapi import Depends
 
 @router.get("/projects")

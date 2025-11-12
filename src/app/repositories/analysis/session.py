@@ -31,7 +31,7 @@ from sqlalchemy.orm import selectinload
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisSession
 from app.repositories.base import BaseRepository
-from app.schemas.analysis import ChatMessage
+from app.schemas.analysis import AnalysisChatMessage
 
 logger = get_logger(__name__)
 
@@ -283,7 +283,7 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
-    async def update_chat_history(self, session_id: uuid.UUID, chat_entry: ChatMessage) -> AnalysisSession | None:
+    async def update_chat_history(self, session_id: uuid.UUID, chat_entry: AnalysisChatMessage) -> AnalysisSession | None:
         """セッションのチャット履歴に新しいエントリを追加します。
 
         このメソッドは、既存のchat_historyに新しいチャットエントリを追加します。
@@ -291,7 +291,7 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
 
         Args:
             session_id (uuid.UUID): セッションのUUID
-            chat_entry (ChatMessage): 追加するチャットエントリ
+            chat_entry (AnalysisChatMessage): 追加するチャットエントリ
                 - role (Literal["user", "assistant"]): メッセージの送信者
                 - content (str): メッセージ内容
                 - timestamp (str): タイムスタンプ（ISO 8601形式）
@@ -304,8 +304,8 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
 
         Example:
             >>> from datetime import datetime, UTC
-            >>> from app.schemas.analysis import ChatMessage
-            >>> chat_entry = ChatMessage(
+            >>> from app.schemas.analysis import AnalysisChatMessage
+            >>> chat_entry = AnalysisChatMessage(
             ...     role="user",
             ...     content="売上データを東京と大阪でフィルタリングしてください",
             ...     timestamp=datetime.now(UTC).isoformat()
@@ -317,7 +317,7 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
         Note:
             - flush()のみ実行し、commit()は呼び出し側の責任
             - chat_historyはJSONB配列として保存されます
-            - ChatMessageスキーマでバリデーション後、dictに変換してDB保存
+            - AnalysisChatMessageスキーマでバリデーション後、dictに変換してDB保存
         """
         session = await self.get(session_id)
         if not session:

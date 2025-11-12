@@ -514,7 +514,7 @@ class AnalysisStepExecutor:
                 columns=columns_count,
             )
 
-        # result_formulaをdictのリストに変換（ResultFormula → dict）
+        # result_formulaをdictのリストに変換（AnalysisResultFormula → dict）
         result_formula_dicts = None
         if result.result_formula:
             result_formula_dicts = [formula.model_dump() for formula in result.result_formula]

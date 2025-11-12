@@ -53,7 +53,7 @@ from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisSessionRepository
-from app.schemas.analysis import ChatMessage, ToolUsage
+from app.schemas.analysis import AnalysisChatMessage, ToolUsage
 from app.services.analysis.agent.state import AnalysisState
 from app.services.analysis.agent.utils.tools import (
     AddStepTool,
@@ -335,9 +335,9 @@ class AnalysisAgent:
             # Get session from DB
             session = await self.session_repository.get(self.session_id)
             if session and session.chat_history:
-                # Load into memory (dict → ChatMessage変換)
+                # Load into memory (dict → AnalysisChatMessage変換)
                 for message_dict in session.chat_history:
-                    message = ChatMessage.model_validate(message_dict)
+                    message = AnalysisChatMessage.model_validate(message_dict)
                     role = message.role
                     content = message.content
 
@@ -478,9 +478,9 @@ class AnalysisAgent:
                     raise ValidationError("セッションが見つかりません")
                 chat_history = session.chat_history or []
 
-                # ChatMessageスキーマを使用してuser入力を追加
+                # AnalysisChatMessageスキーマを使用してuser入力を追加
                 if user_input != "":
-                    user_msg = ChatMessage(
+                    user_msg = AnalysisChatMessage(
                         role="user",
                         content=user_input,
                         timestamp=datetime.now(UTC).isoformat(),
@@ -489,8 +489,8 @@ class AnalysisAgent:
 
                 response_to_store = output + tool_usage_text if tool_usage_text else output
 
-                # ChatMessageスキーマを使用してchat_historyに追加
-                chat_msg = ChatMessage(
+                # AnalysisChatMessageスキーマを使用してchat_historyに追加
+                chat_msg = AnalysisChatMessage(
                     role="assistant",
                     content=response_to_store,
                     timestamp=datetime.now(UTC).isoformat(),
@@ -525,8 +525,8 @@ class AnalysisAgent:
                         raise ValidationError("セッションが見つかりません") from None
                     error_chat_history = session.chat_history or []
 
-                    # ChatMessageスキーマを使用
-                    error_msg = ChatMessage(
+                    # AnalysisChatMessageスキーマを使用
+                    error_msg = AnalysisChatMessage(
                         role="assistant",
                         content=f"⚠️ 実行中にエラーが発生しました: {str(e)}。再開します。(試行 {attempt + 1}/{max_retry})",
                         timestamp=datetime.now(UTC).isoformat(),
@@ -549,16 +549,16 @@ class AnalysisAgent:
                         raise ValidationError("セッションが見つかりません") from None
                     error_chat_history = session.chat_history or []
 
-                    # ChatMessageスキーマを使用
+                    # AnalysisChatMessageスキーマを使用
                     if user_input != "":
-                        user_msg = ChatMessage(
+                        user_msg = AnalysisChatMessage(
                             role="user",
                             content=user_input,
                             timestamp=datetime.now(UTC).isoformat(),
                         )
                         error_chat_history.append(user_msg.model_dump())
 
-                    error_msg = ChatMessage(
+                    error_msg = AnalysisChatMessage(
                         role="assistant",
                         content=f"申し訳ありません。エラーが発生しました: {str(e)}",
                         timestamp=datetime.now(UTC).isoformat(),

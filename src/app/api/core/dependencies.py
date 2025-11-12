@@ -40,13 +40,13 @@ from app.core.database import get_db
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
 from app.models.sample.sample_user import SampleUser
-from app.models.user import User
-from app.services.project.service import ProjectService
+from app.models.user.user import User
+from app.services.project.project import ProjectService
 from app.services.sample.sample_agent import SampleAgentService
 from app.services.sample.sample_file import SampleFileService
 from app.services.sample.sample_session import SampleSessionService
 from app.services.sample.sample_user import SampleUserService
-from app.services.user import UserService
+from app.services.user.user import UserService
 
 # ================================================================================
 # Azure AD / 開発モード認証のインポート

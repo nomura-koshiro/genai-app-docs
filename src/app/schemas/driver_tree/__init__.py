@@ -1,6 +1,6 @@
 """Driver Tree schemas package."""
 
-from app.schemas.driver_tree.schemas import (
+from app.schemas.driver_tree.driver_tree import (
     DriverTreeFormulaCreateRequest,
     DriverTreeFormulaResponse,
     DriverTreeKPIListResponse,

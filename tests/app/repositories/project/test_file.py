@@ -10,7 +10,7 @@ import pytest
 
 from app.models.project.file import ProjectFile
 from app.models.project.project import Project
-from app.models.user import User
+from app.models.user.user import User
 from app.repositories.project.file import ProjectFileRepository
 
 

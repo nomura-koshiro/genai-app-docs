@@ -58,11 +58,13 @@ GitHub Issue #{issue_number} の作業を完了し、品質チェック後にコ
    - `training-tracker-issue-{issue_number}` → `main`
 
 2. **作業環境のクリーンアップ**
+
    ```bash
    /issue-clean 123
    ```
 
 3. **新しいissueで作業継続**
+
    ```bash
    /issue-start 456
    ```

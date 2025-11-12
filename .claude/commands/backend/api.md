@@ -11,6 +11,7 @@ tools: [Write, Edit, MultiEdit, Bash]
 ## FastAPI エンドポイント作成要件
 
 ### 1. ファイル構成
+
 ```
 apps/backend/app/
 ├── api/v1/endpoints/
@@ -28,6 +29,7 @@ apps/backend/app/
 ### 2. エンドポイント実装 (`api/v1/endpoints/$ARGUMENTS.py`)
 
 #### 基本構造
+
 ```python
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -127,6 +129,7 @@ def delete_$ARGUMENTS(
 ### 3. 必須実装項目
 
 #### Pydantic スキーマ (`schemas/$ARGUMENTS.py`)
+
 - [ ] Base スキーマ
 - [ ] Create スキーマ（バリデーション付き）
 - [ ] Update スキーマ
@@ -134,18 +137,21 @@ def delete_$ARGUMENTS(
 - [ ] 適切な型アノテーション
 
 #### SQLAlchemy モデル (`models/$ARGUMENTS.py`)
+
 - [ ] テーブル定義
 - [ ] リレーションシップ
 - [ ] インデックス設定
 - [ ] 制約設定
 
 #### CRUD操作 (`crud/crud_$ARGUMENTS.py`)
+
 - [ ] 基本CRUD操作（作成、取得、更新、削除）
 - [ ] 検索・フィルタリング
 - [ ] ページネーション
 - [ ] エラーハンドリング
 
 #### APIテスト (`tests/api/v1/test_$ARGUMENTS.py`)
+
 - [ ] 正常系テスト（CRUD操作）
 - [ ] 異常系テスト（バリデーション、権限）
 - [ ] エッジケーステスト
@@ -154,18 +160,21 @@ def delete_$ARGUMENTS(
 ### 4. 品質要件
 
 #### セキュリティ
+
 - [ ] 認証・認可の実装
 - [ ] 入力値検証
 - [ ] SQLインジェクション対策
 - [ ] Rate limiting検討
 
 #### パフォーマンス
+
 - [ ] データベースクエリ最適化
 - [ ] N+1問題の回避
 - [ ] 適切なインデックス
 - [ ] キャッシュ戦略
 
 #### ドキュメンテーション
+
 - [ ] OpenAPI/Swagger自動生成
 - [ ] 詳細なdocstring
 - [ ] 例外処理の文書化
@@ -180,7 +189,7 @@ cd apps/backend && python -m pytest tests/api/v1/test_$ARGUMENTS.py -v
 # 型チェック
 cd apps/backend && mypy app/api/v1/endpoints/$ARGUMENTS.py
 
-# リント実行  
+# リント実行
 cd apps/backend && ruff check app/api/v1/endpoints/$ARGUMENTS.py
 
 # 開発サーバー起動確認
@@ -197,4 +206,4 @@ from app.api.v1.endpoints import $ARGUMENTS
 api_router.include_router($ARGUMENTS.router, prefix="/$ARGUMENTS", tags=["$ARGUMENTS"])
 ```
 
-実装完了後、OpenAPIドキュメント（http://localhost:8000/docs）で動作確認してください。
+実装完了後、OpenAPIドキュメント（<http://localhost:8000/docs）で動作確認してください。>

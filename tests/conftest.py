@@ -220,7 +220,7 @@ def override_auth(request):
 @pytest.fixture
 async def test_user(db_session):
     """テスト用ユーザーを作成します。"""
-    from app.models.user import User
+    from app.models.user.user import User
 
     user = User(
         azure_oid="test-azure-oid",

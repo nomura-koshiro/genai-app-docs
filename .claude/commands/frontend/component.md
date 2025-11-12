@@ -9,11 +9,13 @@ tools: [Write, Edit, MultiEdit, Bash]
 新しいUIコンポーネント「$ARGUMENTS」を作成してください。
 
 ## 要件
+
 - **ディレクトリ**: `src/components/ui/$ARGUMENTS/`
 - **アーキテクチャ**: bulletproof-react features-based architecture に従う
 - **設計原則**: SOLID、DRY、KISS原則を適用
 
 ## 作成ファイル
+
 1. **メインコンポーネント** (`index.tsx`)
    - CVAを使ったバリアント対応
    - forwardRef実装
@@ -30,6 +32,7 @@ tools: [Write, Edit, MultiEdit, Bash]
    - イベントハンドリングテスト
 
 ## 技術仕様
+
 - **スタイリング**: Tailwind CSS + CVA
 - **アクセシビリティ**: WCAG 2.1準拠
 - **テスト**: Vitest + Testing Library
@@ -37,6 +40,7 @@ tools: [Write, Edit, MultiEdit, Bash]
 
 ## プロジェクトガイドラインの確認
 以下のドキュメントを参照してください：
+
 - `apps/frontend/docs/COMPONENT_GUIDELINES.md`
 - `apps/frontend/docs/ARCHITECTURE.md`
 

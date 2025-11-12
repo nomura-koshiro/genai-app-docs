@@ -1,6 +1,6 @@
 """PPT Generator schemas package."""
 
-from app.schemas.ppt_generator.schemas import (
+from app.schemas.ppt_generator.ppt_generator import (
     PPTDownloadRequest,
     PPTSlideExportRequest,
     PPTSlideImageRequest,

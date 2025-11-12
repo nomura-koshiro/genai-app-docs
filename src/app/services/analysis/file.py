@@ -21,7 +21,11 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisFile
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository
-from app.schemas.analysis.session import AnalysisFileUploadRequest, AnalysisFileUploadResponse
+from app.schemas.analysis.session import (
+    AnalysisFileMetadata,
+    AnalysisFileUploadRequest,
+    AnalysisFileUploadResponse,
+)
 from app.services.analysis.agent.storage import AnalysisStorageService
 
 logger = get_logger(__name__)
@@ -212,6 +216,13 @@ class AnalysisFileService:
             # メタデータの保存
             content_type = "text/csv" if file_extension == "csv" else "application/vnd.ms-excel"
 
+            # AnalysisFileMetadataスキーマを使用してメタデータを作成
+            file_metadata = AnalysisFileMetadata(
+                row_count=len(df),
+                column_count=len(df.columns),
+                columns=list(df.columns),
+            )
+
             analysis_file = await self.file_repository.create(
                 session_id=session_id,
                 uploaded_by=user_id,
@@ -221,11 +232,7 @@ class AnalysisFileService:
                 file_size=file_size,
                 content_type=content_type,
                 table_axis=table_axis,
-                metadata={
-                    "row_count": len(df),
-                    "column_count": len(df.columns),
-                    "columns": list(df.columns),
-                },
+                metadata=file_metadata.model_dump(),
                 is_active=True,
             )
 

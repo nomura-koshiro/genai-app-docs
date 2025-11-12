@@ -3,7 +3,6 @@
 このパッケージには、API v1のビジネスロジック用エンドポイントが含まれています。
 """
 
-from app.api.routes.v1 import users
 from app.api.routes.v1.project import (
     project_files_router,
     project_members_router,
@@ -15,6 +14,7 @@ from app.api.routes.v1.sample import (
     sample_sessions,
     sample_users,
 )
+from app.api.routes.v1.users import router as users
 
 __all__ = [
     "project_files_router",

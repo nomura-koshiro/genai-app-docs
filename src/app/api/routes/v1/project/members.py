@@ -38,12 +38,12 @@ from app.models.project.member import ProjectRole
 from app.schemas.project.member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkResponse,
-    ProjectMemberBulkUpdateRequest,
+    ProjectMemberBulkUpdate,
     ProjectMemberBulkUpdateResponse,
     ProjectMemberCreate,
+    ProjectMemberDetailResponse,
     ProjectMemberListResponse,
     ProjectMemberUpdate,
-    ProjectMemberWithUser,
     UserRoleResponse,
 )
 from app.services.project.member import ProjectMemberService
@@ -158,7 +158,7 @@ async def get_project_members(
     )
 
     return ProjectMemberListResponse(
-        members=[ProjectMemberWithUser.model_validate(m) for m in members],
+        members=[ProjectMemberDetailResponse.model_validate(m) for m in members],
         total=total,
         project_id=project_id,
     )
@@ -270,7 +270,7 @@ async def get_my_role(
 
 @router.post(
     "",
-    response_model=ProjectMemberWithUser,
+    response_model=ProjectMemberDetailResponse,
     status_code=status.HTTP_201_CREATED,
     summary="プロジェクトメンバー追加",
     description="""
@@ -291,7 +291,7 @@ async def add_project_member(
     member_data: ProjectMemberCreate,
     db: DatabaseDep,
     current_user: CurrentUserAzureDep,
-) -> ProjectMemberWithUser:
+) -> ProjectMemberDetailResponse:
     """プロジェクトにメンバーを追加します。
 
     Args:
@@ -301,7 +301,7 @@ async def add_project_member(
         current_user (User): 認証済みユーザー（自動注入）
 
     Returns:
-        ProjectMemberWithUser: 追加されたメンバー情報
+        ProjectMemberDetailResponse: 追加されたメンバー情報
 
     Raises:
         HTTPException:
@@ -364,7 +364,7 @@ async def add_project_member(
         role=member_data.role.value,
     )
 
-    return ProjectMemberWithUser.model_validate(member)
+    return ProjectMemberDetailResponse.model_validate(member)
 
 
 @router.post(
@@ -485,7 +485,7 @@ async def add_project_members_bulk(
 
     return ProjectMemberBulkResponse(
         project_id=project_id,
-        added=[ProjectMemberWithUser.model_validate(m) for m in added_members],
+        added=[ProjectMemberDetailResponse.model_validate(m) for m in added_members],
         failed=failed_members,
         total_requested=len(bulk_data.members),
         total_added=len(added_members),
@@ -500,7 +500,7 @@ async def add_project_members_bulk(
 
 @router.patch(
     "/{member_id}",
-    response_model=ProjectMemberWithUser,
+    response_model=ProjectMemberDetailResponse,
     summary="メンバーロール更新",
     description="""
     プロジェクトメンバーのロールを更新します。
@@ -520,7 +520,7 @@ async def update_member_role(
     update_data: ProjectMemberUpdate,
     db: DatabaseDep,
     current_user: CurrentUserAzureDep,
-) -> ProjectMemberWithUser:
+) -> ProjectMemberDetailResponse:
     """メンバーのロールを更新します。
 
     Args:
@@ -531,7 +531,7 @@ async def update_member_role(
         current_user (User): 認証済みユーザー（自動注入）
 
     Returns:
-        ProjectMemberWithUser: 更新されたメンバー情報
+        ProjectMemberDetailResponse: 更新されたメンバー情報
 
     Raises:
         HTTPException:
@@ -585,7 +585,7 @@ async def update_member_role(
         new_role=update_data.role.value,
     )
 
-    return ProjectMemberWithUser.model_validate(updated_member)
+    return ProjectMemberDetailResponse.model_validate(updated_member)
 
 
 @router.patch(
@@ -617,7 +617,7 @@ async def update_member_role(
 @handle_service_errors
 async def update_members_bulk(
     project_id: uuid.UUID,
-    bulk_update: ProjectMemberBulkUpdateRequest,
+    bulk_update: ProjectMemberBulkUpdate,
     db: DatabaseDep,
     current_user: CurrentUserAzureDep,
 ) -> ProjectMemberBulkUpdateResponse:
@@ -625,7 +625,7 @@ async def update_members_bulk(
 
     Args:
         project_id (uuid.UUID): プロジェクトのUUID
-        bulk_update (ProjectMemberBulkUpdateRequest): 一括更新データ
+        bulk_update (ProjectMemberBulkUpdate): 一括更新データ
         db (AsyncSession): データベースセッション（自動注入）
         current_user (User): 認証済みユーザー（自動注入）
 
@@ -705,7 +705,7 @@ async def update_members_bulk(
 
     return ProjectMemberBulkUpdateResponse(
         project_id=project_id,
-        updated=[ProjectMemberWithUser.model_validate(m) for m in updated_members],
+        updated=[ProjectMemberDetailResponse.model_validate(m) for m in updated_members],
         failed=failed_updates,
         total_requested=len(bulk_update.updates),
         total_updated=len(updated_members),

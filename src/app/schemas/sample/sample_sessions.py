@@ -24,7 +24,7 @@ class SampleSessionResponse(BaseModel):
     created_at: datetime = Field(..., description="セッション作成日時")
     updated_at: datetime = Field(..., description="最終更新日時")
     messages: list[SampleMessageResponse] = Field(..., description="メッセージのリスト")
-    metadata: dict | None = Field(None, description="セッションのメタデータ")
+    metadata: dict | None = Field(default=None, description="セッションのメタデータ")
 
 
 class SampleSessionListResponse(BaseModel):
@@ -37,13 +37,13 @@ class SampleSessionListResponse(BaseModel):
 class SampleSessionCreateRequest(BaseModel):
     """セッション作成リクエストスキーマ。"""
 
-    metadata: dict | None = Field(None, description="セッションのメタデータ")
+    metadata: dict | None = Field(default=None, description="セッションのメタデータ")
 
 
 class SampleSessionUpdateRequest(BaseModel):
     """セッション更新リクエストスキーマ。"""
 
-    metadata: dict | None = Field(None, description="更新するメタデータ")
+    metadata: dict | None = Field(default=None, description="更新するメタデータ")
 
 
 class SampleDeleteResponse(BaseModel):

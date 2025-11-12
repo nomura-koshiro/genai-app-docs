@@ -4,11 +4,11 @@
 
 モジュール:
     config: 分析ステップ設定スキーマ (FilterConfig, AggregateConfig等)
-    session: 分析セッション関連スキーマ (ChatMessage, ResultFormula等)
+    session: 分析セッション関連スキーマ (AnalysisChatMessage, ResultFormula等)
     template: 分析テンプレート関連スキーマ (InitialAxisConfig等)
 
 使用方法:
-    >>> from app.schemas.analysis import ChatMessage, FilterConfig
+    >>> from app.schemas.analysis import AnalysisChatMessage, FilterConfig
     >>> from app.schemas.analysis.session import AnalysisSessionCreate
     >>> from app.schemas.analysis.config import NumericFilterConfig
 """
@@ -35,9 +35,13 @@ from app.schemas.analysis.config import (
 # session.py からのエクスポート
 # ================================================================================
 from app.schemas.analysis.session import (
+    AnalysisChatMessage,
     AnalysisFileBase,
+    AnalysisFileMetadata,
     AnalysisFileResponse,
     AnalysisFileUploadRequest,
+    AnalysisResultFormula,
+    AnalysisResultFormulaList,
     AnalysisSessionBase,
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
@@ -46,16 +50,12 @@ from app.schemas.analysis.session import (
     AnalysisStepBase,
     AnalysisStepCreate,
     AnalysisStepResponse,
+    AnalysisStepSnapshot,
     ChatHistory,
-    ChatMessage,
     ChatRequest,
     ChatResponse,
-    FileMetadata,
-    ResultFormula,
-    ResultFormulaList,
     SnapshotHistory,
     SnapshotHistoryItem,
-    StepSnapshot,
 )
 
 # ================================================================================
@@ -88,14 +88,14 @@ __all__ = [
     "UploadFileData",
     "ToolUsage",
     # session
-    "StepSnapshot",
+    "AnalysisStepSnapshot",
     "SnapshotHistoryItem",
     "SnapshotHistory",
-    "ChatMessage",
+    "AnalysisChatMessage",
     "ChatHistory",
-    "ResultFormula",
-    "ResultFormulaList",
-    "FileMetadata",
+    "AnalysisResultFormula",
+    "AnalysisResultFormulaList",
+    "AnalysisFileMetadata",
     "AnalysisSessionBase",
     "AnalysisSessionCreate",
     "AnalysisSessionUpdate",

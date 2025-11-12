@@ -10,7 +10,7 @@ import pytest
 
 from app.models.project.member import ProjectMember, ProjectRole
 from app.models.project.project import Project
-from app.models.user import User
+from app.models.user.user import User
 from app.repositories.project.member import ProjectMemberRepository
 
 

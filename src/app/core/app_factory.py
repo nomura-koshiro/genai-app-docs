@@ -26,7 +26,6 @@ from app.api.middlewares import (
     SecurityHeadersMiddleware,
 )
 from app.api.routes.system import health, metrics, root
-from app.api.routes.v1 import users
 from app.api.routes.v1.analysis import (
     analysis_router,
     analysis_templates_router,
@@ -44,6 +43,7 @@ from app.api.routes.v1.sample import (
     sample_sessions,
     sample_users,
 )
+from app.api.routes.v1.users import router as users
 from app.core.config import settings
 from app.core.lifespan import lifespan
 
@@ -172,7 +172,7 @@ def create_app() -> FastAPI:
     app.include_router(sample_files.router, prefix="/api/v1/sample-files", tags=["sample-files"])
 
     # Azure AD認証用ユーザー管理API
-    app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
+    app.include_router(users, prefix="/api/v1/users", tags=["users"])
 
     # プロジェクト管理API
     app.include_router(projects_router, prefix="/api/v1/projects", tags=["projects"])

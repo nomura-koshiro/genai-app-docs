@@ -37,7 +37,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.project.project import Project
-    from app.models.user import User
+    from app.models.user.user import User
 
 
 class ProjectFile(Base):

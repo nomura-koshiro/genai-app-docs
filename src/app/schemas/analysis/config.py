@@ -82,14 +82,14 @@ class NumericFilterConfig(BaseModel):
 
     # Range フィルタ用
     enable_min: bool = Field(False, description="最小値フィルタを有効化")
-    min_value: float | None = Field(None, description="最小値")
+    min_value: float | None = Field(default=None, description="最小値")
     include_min: bool = Field(True, description="最小値を含むか")
     enable_max: bool = Field(False, description="最大値フィルタを有効化")
-    max_value: float | None = Field(None, description="最大値")
+    max_value: float | None = Field(default=None, description="最大値")
     include_max: bool = Field(True, description="最大値を含むか")
 
     # TopK フィルタ用
-    k_value: int | None = Field(None, ge=1, description="topkフィルタのk値")
+    k_value: int | None = Field(default=None, ge=1, description="topkフィルタのk値")
     ascending: bool = Field(False, description="topkフィルタの昇順/降順")
 
     # Percentage フィルタ用
@@ -147,7 +147,7 @@ class TableFilterConfig(BaseModel):
     model_config = ConfigDict(frozen=False)
 
     enable: bool = Field(False, description="テーブルフィルタを有効化")
-    table_df: str | None = Field(None, description="参照するテーブルのステップ識別子")
+    table_df: str | None = Field(default=None, description="参照するテーブルのステップ識別子")
     key_columns: list[str] = Field(default_factory=list, description="キーカラム名のリスト")
     exclude_mode: bool = Field(False, description="除外モード")
 
@@ -194,9 +194,9 @@ class FilterConfig(BaseModel):
 
     model_config = ConfigDict(frozen=False)
 
-    category_filter: CategoryFilterConfig | None = Field(None, description="カテゴリフィルタ設定")
-    numeric_filter: NumericFilterConfig | None = Field(None, description="数値フィルタ設定")
-    table_filter: TableFilterConfig | None = Field(None, description="テーブルフィルタ設定")
+    category_filter: CategoryFilterConfig | None = Field(default=None, description="カテゴリフィルタ設定")
+    numeric_filter: NumericFilterConfig | None = Field(default=None, description="数値フィルタ設定")
+    table_filter: TableFilterConfig | None = Field(default=None, description="テーブルフィルタ設定")
 
 
 # ================================================================================
@@ -332,12 +332,12 @@ class TransformCalculation(BaseModel):
     type: Literal["constant", "copy", "formula", "mapping"] = Field(..., description="計算タイプ")
 
     # 各タイプ専用フィールド
-    constant_value: Any | None = Field(None, description="定数値（type=constantの場合）")
-    copy_from: str | None = Field(None, description="コピー元列名（type=copyの場合）")
-    formula_type: str | None = Field(None, description="数式タイプ（type=formulaの場合）")
-    operands: list[str] | None = Field(None, description="オペランドリスト（type=formulaの場合）")
-    mapping_dict: dict[str, Any] | None = Field(None, description="マッピング辞書（type=mappingの場合）")
-    source_column: str | None = Field(None, description="マッピング元列名（type=mappingの場合）")
+    constant_value: Any | None = Field(default=None, description="定数値（type=constantの場合）")
+    copy_from: str | None = Field(default=None, description="コピー元列名（type=copyの場合）")
+    formula_type: str | None = Field(default=None, description="数式タイプ（type=formulaの場合）")
+    operands: list[str] | None = Field(default=None, description="オペランドリスト（type=formulaの場合）")
+    mapping_dict: dict[str, Any] | None = Field(default=None, description="マッピング辞書（type=mappingの場合）")
+    source_column: str | None = Field(default=None, description="マッピング元列名（type=mappingの場合）")
 
 
 class TransformOperation(BaseModel):
@@ -451,7 +451,7 @@ class ToolUsage(BaseModel):
 
     tool: str = Field(..., description="ツール名")
     input: str = Field(..., description="ツールへの入力")
-    output: str | None = Field(None, description="ツールからの出力")
+    output: str | None = Field(default=None, description="ツールからの出力")
 
 
 class FormulaItemConfig(BaseModel):
@@ -489,7 +489,7 @@ class FormulaItemConfig(BaseModel):
         ..., description="数式タイプ"
     )
     formula_text: str = Field(..., description="数式テキスト（表示用）")
-    unit: str | None = Field(None, description="単位")
+    unit: str | None = Field(default=None, description="単位")
     portion: float = Field(1.0, description="重み係数")
 
 
@@ -518,5 +518,32 @@ class SummaryConfig(BaseModel):
 
     model_config = ConfigDict(frozen=False)
 
-    formula: list[FormulaItemConfig] | None = Field(None, description="計算式リスト")
-    chart: dict[str, Any] | None = Field(None, description="グラフ設定")
+    formula: list[FormulaItemConfig] | None = Field(default=None, description="計算式リスト")
+    chart: dict[str, Any] | None = Field(default=None, description="グラフ設定")
+
+
+# ================================================================================
+# Validation設定スキーマ
+# ================================================================================
+
+
+class ValidationConfig(BaseModel):
+    """分析セッションのバリデーション設定スキーマ。
+
+    分析セッションで使用する施策と課題の設定を定義します。
+
+    Attributes:
+        policy (str): 施策名（例: "市場拡大"、"不採算製品の撤退"）
+        issue (str): 課題名（例: "新規参入"、"利益改善効果"）
+
+    Example:
+        >>> config = ValidationConfig(
+        ...     policy="市場拡大",
+        ...     issue="新規参入"
+        ... )
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    policy: str = Field(..., description="施策名", min_length=1)
+    issue: str = Field(..., description="課題名", min_length=1)

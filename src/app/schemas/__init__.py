@@ -1,7 +1,7 @@
 """APIリクエスト/レスポンス検証のためのPydanticスキーマ。"""
 
 from app.schemas.common import HealthResponse, MessageResponse, ProblemDetails
-from app.schemas.driver_tree.schemas import (
+from app.schemas.driver_tree.driver_tree import (
     DriverTreeFormulaCreateRequest,
     DriverTreeFormulaResponse,
     DriverTreeKPIListResponse,
@@ -20,18 +20,18 @@ from app.schemas.project.member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkError,
     ProjectMemberBulkResponse,
+    ProjectMemberBulkUpdate,
     ProjectMemberBulkUpdateError,
-    ProjectMemberBulkUpdateRequest,
     ProjectMemberBulkUpdateResponse,
     ProjectMemberCreate,
+    ProjectMemberDetailResponse,
     ProjectMemberListResponse,
     ProjectMemberResponse,
     ProjectMemberRoleUpdate,
     ProjectMemberUpdate,
-    ProjectMemberWithUser,
     UserRoleResponse,
 )
-from app.schemas.project.schemas import (
+from app.schemas.project.project import (
     ProjectCreate,
     ProjectResponse,
     ProjectUpdate,
@@ -60,7 +60,7 @@ from app.schemas.sample.sample_user import (
     SampleUserLogin,
     SampleUserResponse,
 )
-from app.schemas.user import (
+from app.schemas.user.user import (
     UserListResponse,
     UserResponse,
     UserUpdate,
@@ -112,13 +112,13 @@ __all__ = [
     "ProjectMemberCreate",
     "ProjectMemberUpdate",
     "ProjectMemberResponse",
-    "ProjectMemberWithUser",
+    "ProjectMemberDetailResponse",
     "ProjectMemberListResponse",
     "ProjectMemberBulkCreate",
     "ProjectMemberBulkResponse",
     "ProjectMemberBulkError",
     "ProjectMemberRoleUpdate",
-    "ProjectMemberBulkUpdateRequest",
+    "ProjectMemberBulkUpdate",
     "ProjectMemberBulkUpdateResponse",
     "ProjectMemberBulkUpdateError",
     "UserRoleResponse",

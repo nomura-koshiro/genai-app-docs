@@ -542,7 +542,7 @@ api/
 ```python
 from fastapi import APIRouter, Depends
 from app.api.core.dependencies import AzureUserServiceDep, CurrentUserAzureDep
-from app.schemas.user import UserResponse
+from app.schemas.user.schemas import UserResponse
 
 router = APIRouter()
 
@@ -583,7 +583,7 @@ async def get_current_user(
 **実装例（`services/user.py`）**:
 
 ```python
-from app.repositories.user import UserRepository
+from app.repositories.user.base import UserRepository
 
 class UserService:
     def __init__(self, db: AsyncSession):

@@ -75,6 +75,51 @@ InitialAxisList = list[InitialAxisConfig]
 
 
 # ================================================================================
+# Plotlyチャートデータスキーマ
+# ================================================================================
+
+
+class PlotlyChartData(BaseModel):
+    """Plotlyチャートデータの基本構造スキーマ。
+
+    Plotly形式のチャートデータ（data, layout, config）を定義します。
+    Plotlyの完全な型定義は複雑すぎるため、最低限の構造検証のみ行います。
+
+    Attributes:
+        data (list[dict[str, Any]]): チャート系列データ（必須）
+        layout (dict[str, Any] | None): レイアウト設定（タイトル、軸設定など）
+        config (dict[str, Any] | None): チャート設定（ツールバー表示など）
+
+    Example:
+        >>> chart = PlotlyChartData(
+        ...     data=[
+        ...         {
+        ...             "type": "bar",
+        ...             "x": ["A", "B", "C"],
+        ...             "y": [1, 2, 3],
+        ...             "name": "売上"
+        ...         }
+        ...     ],
+        ...     layout={
+        ...         "title": "売上推移",
+        ...         "xaxis": {"title": "カテゴリ"},
+        ...         "yaxis": {"title": "金額"}
+        ...     }
+        ... )
+
+    Note:
+        - `extra='allow'`により、Plotlyの拡張フィールドも許可
+        - 最低限 `data` フィールドが必須で、空でないことを保証
+    """
+
+    model_config = ConfigDict(extra="allow", frozen=False)
+
+    data: list[dict[str, Any]] = Field(..., description="チャート系列データ", min_length=1)
+    layout: dict[str, Any] | None = Field(default=None, description="レイアウト設定")
+    config: dict[str, Any] | None = Field(default=None, description="チャート設定")
+
+
+# ================================================================================
 # 分析テンプレートチャートスキーマ
 # ================================================================================
 
@@ -94,7 +139,7 @@ class AnalysisTemplateChartBase(BaseModel):
     chart_name: str = Field(..., max_length=500, description="チャート名（ファイル名由来）")
     chart_data: dict[str, Any] = Field(..., description="Plotly形式のチャートデータ")
     chart_order: int = Field(default=0, description="チャート表示順序")
-    chart_type: str | None = Field(None, max_length=50, description="チャートタイプ（bar, line, pie等）")
+    chart_type: str | None = Field(default=None, max_length=50, description="チャートタイプ（bar, line, pie等）")
 
 
 class AnalysisTemplateChartCreate(AnalysisTemplateChartBase):
@@ -179,9 +224,9 @@ class AnalysisTemplateBase(BaseModel):
     agent_prompt: str = Field(..., description="AIエージェント用のプロンプト")
     initial_msg: str = Field(..., description="初期メッセージ")
     initial_axis: list[dict[str, Any]] = Field(default_factory=list, description="初期軸設定（論理型: InitialAxisList）")
-    dummy_formula: list[dict[str, Any]] | None = Field(None, description="ダミー計算式")
-    dummy_input: list[str] | None = Field(None, description="ダミー入力データ")
-    dummy_hint: str | None = Field(None, description="ダミーヒント")
+    dummy_formula: list[dict[str, Any]] | None = Field(default=None, description="ダミー計算式")
+    dummy_input: list[str] | None = Field(default=None, description="ダミー入力データ")
+    dummy_hint: str | None = Field(default=None, description="ダミーヒント")
     is_active: bool = Field(default=True, description="アクティブフラグ")
     display_order: int = Field(default=0, description="表示順序")
 
@@ -220,17 +265,17 @@ class AnalysisTemplateUpdate(BaseModel):
         ... )
     """
 
-    policy: str | None = Field(None, max_length=200, description="施策名")
-    issue: str | None = Field(None, max_length=500, description="課題名")
-    description: str | None = Field(None, description="テンプレートの説明")
-    agent_prompt: str | None = Field(None, description="AIエージェント用のプロンプト")
-    initial_msg: str | None = Field(None, description="初期メッセージ")
-    initial_axis: list[dict[str, Any]] | None = Field(None, description="初期軸設定（論理型: InitialAxisList）")
-    dummy_formula: list[dict[str, Any]] | None = Field(None, description="ダミー計算式")
-    dummy_input: list[str] | None = Field(None, description="ダミー入力データ")
-    dummy_hint: str | None = Field(None, description="ダミーヒント")
-    is_active: bool | None = Field(None, description="アクティブフラグ")
-    display_order: int | None = Field(None, description="表示順序")
+    policy: str | None = Field(default=None, max_length=200, description="施策名")
+    issue: str | None = Field(default=None, max_length=500, description="課題名")
+    description: str | None = Field(default=None, description="テンプレートの説明")
+    agent_prompt: str | None = Field(default=None, description="AIエージェント用のプロンプト")
+    initial_msg: str | None = Field(default=None, description="初期メッセージ")
+    initial_axis: list[dict[str, Any]] | None = Field(default=None, description="初期軸設定（論理型: InitialAxisList）")
+    dummy_formula: list[dict[str, Any]] | None = Field(default=None, description="ダミー計算式")
+    dummy_input: list[str] | None = Field(default=None, description="ダミー入力データ")
+    dummy_hint: str | None = Field(default=None, description="ダミーヒント")
+    is_active: bool | None = Field(default=None, description="アクティブフラグ")
+    display_order: int | None = Field(default=None, description="表示順序")
 
 
 class AnalysisTemplateResponse(AnalysisTemplateBase):

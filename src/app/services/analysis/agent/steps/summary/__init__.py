@@ -33,7 +33,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas.analysis import FormulaItemConfig, ResultFormula, SummaryConfig
+from app.schemas.analysis import AnalysisResultFormula, FormulaItemConfig, SummaryConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
 logger = get_logger(__name__)
@@ -188,7 +188,7 @@ class SummaryStep(BaseAnalysisStep):
         self,
         source_data: pd.DataFrame,
         formulas: list[FormulaItemConfig],
-    ) -> list[ResultFormula]:
+    ) -> list[AnalysisResultFormula]:
         """数式計算を適用します。
 
         Args:
@@ -196,7 +196,7 @@ class SummaryStep(BaseAnalysisStep):
             formulas: 計算式設定のリスト
 
         Returns:
-            list[ResultFormula]: 計算結果のリスト
+            list[AnalysisResultFormula]: 計算結果のリスト
 
         Example:
             >>> formulas = [
@@ -319,7 +319,7 @@ class SummaryStep(BaseAnalysisStep):
                     ) from e
 
             results.append(
-                ResultFormula(
+                AnalysisResultFormula(
                     name=formula_text,
                     formula=formula_type,  # 計算式タイプ（sum, mean, +, - など）
                     result=final_result,

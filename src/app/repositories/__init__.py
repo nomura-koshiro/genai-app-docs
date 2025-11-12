@@ -15,7 +15,7 @@ from app.repositories.sample import (
     SampleSessionRepository,
     SampleUserRepository,
 )
-from app.repositories.user import UserRepository
+from app.repositories.user.user import UserRepository
 
 __all__ = [
     "DriverTreeRepository",

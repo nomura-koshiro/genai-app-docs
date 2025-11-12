@@ -25,7 +25,7 @@
 """
 
 import uuid
-from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,12 +34,13 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisSession
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository, AnalysisStepRepository
+from app.schemas.analysis.config import ValidationConfig
 from app.schemas.analysis.session import (
+    AnalysisFileMetadata,
     AnalysisFileResponse,
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisStepResponse,
-    FileMetadata,
 )
 
 logger = get_logger(__name__)
@@ -146,28 +147,22 @@ class AnalysisSessionService:
         )
 
         try:
-            # validation_configの構築
-            validation_config = {
-                "policy": session_data.policy,
-                "issue": session_data.issue,
-            }
+            # ValidationConfigスキーマを使用してバリデーション設定を作成
+            validation_config_obj = ValidationConfig(
+                policy=session_data.policy,
+                issue=session_data.issue,
+            )
 
-            # 初期スナップショットの作成
-            initial_snapshot = {
-                "snapshot_id": 0,
-                "timestamp": datetime.now(UTC).isoformat(),
-                "description": "初期状態",
-                "steps": [],
-                "files": [],
-            }
+            # 初期スナップショットの作成（空のステップ配列）
+            initial_snapshot: list[dict[str, Any]] = []
 
             # セッションを作成
             session = await self.session_repository.create(
                 project_id=session_data.project_id,
                 created_by=creator_id,
-                validation_config=validation_config,
+                validation_config=validation_config_obj.model_dump(),
                 chat_history=[],
-                snapshot_history=[initial_snapshot],
+                snapshot_history=[initial_snapshot],  # list[list[dict]] - 空のステップリストを1つ含む
                 session_name=None,  # 後で設定可能
                 is_active=True,
             )
@@ -415,7 +410,7 @@ class AnalysisSessionService:
                 file_size=file.file_size,
                 content_type=file.content_type,
                 table_axis=file.table_axis,
-                file_metadata=FileMetadata.model_validate(file.file_metadata) if file.file_metadata else None,
+                file_metadata=AnalysisFileMetadata.model_validate(file.file_metadata) if file.file_metadata else None,
                 is_active=file.is_active,
                 created_at=file.created_at,
                 updated_at=file.updated_at,
