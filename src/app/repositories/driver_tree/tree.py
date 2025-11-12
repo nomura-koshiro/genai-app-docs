@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.driver_tree import DriverTree
+from app.models import DriverTree
 from app.repositories.base import BaseRepository
 
 

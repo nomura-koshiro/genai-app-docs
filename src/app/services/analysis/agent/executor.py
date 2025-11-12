@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.analysis import AnalysisStep
+from app.models import AnalysisStep
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository, AnalysisStepRepository
 from app.schemas import FilterConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep

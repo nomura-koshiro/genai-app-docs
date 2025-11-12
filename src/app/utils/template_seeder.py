@@ -28,7 +28,7 @@ from sqlalchemy import delete
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis import AnalysisTemplate, AnalysisTemplateChart
+from app.models import AnalysisTemplate, AnalysisTemplateChart
 from app.schemas import InitialAxisConfig, PlotlyChartData
 
 logger = structlog.get_logger(__name__)

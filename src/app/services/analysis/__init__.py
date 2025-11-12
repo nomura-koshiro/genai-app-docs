@@ -8,7 +8,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis import AnalysisFile, AnalysisSession, AnalysisStep
+from app.models import AnalysisFile, AnalysisSession, AnalysisStep
 from app.schemas.analysis import AnalysisChatMessage
 from app.schemas.analysis.session import (
     AnalysisFileUploadRequest,

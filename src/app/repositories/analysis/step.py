@@ -28,7 +28,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.analysis import AnalysisStep
+from app.models import AnalysisStep
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)

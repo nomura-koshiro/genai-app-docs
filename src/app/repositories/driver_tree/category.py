@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.driver_tree import DriverTreeCategory
+from app.models import DriverTreeCategory
 from app.repositories.base import BaseRepository
 
 

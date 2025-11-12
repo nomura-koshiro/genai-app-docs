@@ -13,7 +13,7 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.driver_tree import DriverTreeCategory
+from app.models import DriverTreeCategory
 from app.repositories.driver_tree import DriverTreeRepository
 
 

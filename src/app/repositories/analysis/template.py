@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
-from app.models.analysis import AnalysisTemplate
+from app.models import AnalysisTemplate
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
