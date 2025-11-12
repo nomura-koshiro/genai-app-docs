@@ -55,6 +55,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 
 | ドキュメント | 内容 |
 |------------|------|
+| [セキュリティ概要](./03-core-concepts/03-security/index.md) | セキュリティ全体像 |
 | [認証・認可](./03-core-concepts/03-security/01-authentication.md) | JWT、bcrypt、パスワード強度検証 |
 | [リクエスト保護](./03-core-concepts/03-security/02-request-protection.md) | CORS、レート制限、バリデーション |
 | [データ保護](./03-core-concepts/03-security/03-data-protection.md) | DBセキュリティ、ファイルアップロード |
@@ -137,6 +138,8 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 | [ユニットテスト](./05-testing/02-unit-testing/index.md) | pytest基礎 |
 | [APIテスト](./05-testing/03-api-testing/index.md) | TestClient使用 |
 | [データベーステスト](./05-testing/04-database-testing/index.md) | テストDB設定とパターン |
+| [データベーステスト - セットアップ](./05-testing/04-database-testing/01-setup.md) | テストDB設定詳細 |
+| [データベーステスト - パターン](./05-testing/04-database-testing/02-patterns.md) | テストパターン実装 |
 | [モック・フィクスチャ](./05-testing/05-mocks-fixtures/index.md) | テストデータ管理 |
 | [ベストプラクティス](./05-testing/06-best-practices/index.md) | 効果的なテスト |
 
@@ -169,6 +172,58 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 | [環境変数](./07-reference/03-environment-variables.md) | 設定変数一覧 |
 | [ユーティリティ関数](./07-reference/04-utils.md) | 共通関数リファレンス |
 | [外部リソース](./07-reference/05-resources.md) | 学習リソース・公式ドキュメント |
+
+---
+
+### [08. 設計仕様書](./specifications/)
+
+> 詳細な設計仕様書（アーキテクチャ、データベース、セキュリティ、API、インフラ、運用）
+
+#### [アーキテクチャ仕様](./specifications/01-architecture/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [システム設計](./specifications/01-architecture/01-system-design.md) | 全体アーキテクチャ |
+| [コンポーネント設計](./specifications/01-architecture/02-component-design.md) | 各コンポーネントの詳細 |
+
+#### [データベース仕様](./specifications/02-database/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [データベース設計](./specifications/02-database/01-database-design.md) | DB設計詳細 |
+| [ER図](./specifications/02-database/02-er-diagram.md) | エンティティ関係図 |
+| [マイグレーション戦略](./specifications/02-database/03-migration-strategy.md) | マイグレーション管理 |
+
+#### [セキュリティ仕様](./specifications/03-security/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [RBAC設計](./specifications/03-security/01-rbac-design.md) | ロールベースアクセス制御 |
+| [認証設計](./specifications/03-security/02-authentication-design.md) | 認証システム設計 |
+| [セキュリティ実装](./specifications/03-security/03-security-implementation.md) | セキュリティ実装詳細 |
+
+#### [API仕様](./specifications/04-api/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [API設計](./specifications/04-api/01-api-design.md) | API設計詳細 |
+| [エンドポイント仕様](./specifications/04-api/02-endpoint-specifications.md) | 各エンドポイント詳細 |
+| [レスポンススキーマ](./specifications/04-api/03-response-schemas.md) | レスポンス定義 |
+
+#### [インフラストラクチャ仕様](./specifications/05-infrastructure/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [インフラ設計](./specifications/05-infrastructure/01-infrastructure-design.md) | インフラ構成 |
+| [環境設定](./specifications/05-infrastructure/02-environment-configuration.md) | 環境別設定 |
+
+#### [運用仕様](./specifications/06-operations/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [デプロイ設計](./specifications/06-operations/01-deployment-design.md) | デプロイ戦略 |
+| [モニタリング設計](./specifications/06-operations/02-monitoring-design.md) | 監視・ロギング |
+| [保守手順](./specifications/06-operations/03-maintenance-procedures.md) | 運用保守 |
 
 ---
 
@@ -208,6 +263,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 2. [セキュリティ](./03-core-concepts/03-security/) → セキュリティ強化
 3. [テスト戦略詳細](./05-testing/) → 包括的なテスト
 4. [デプロイメント](./06-guides/06-deployment/index.md) → 本番運用
+5. [設計仕様書](./specifications/) → 詳細な設計資料
 
 ---
 

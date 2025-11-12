@@ -186,7 +186,7 @@ cd ..
 | [🎓 プロジェクト概要](./docs/01-getting-started/06-project-overview.md) | 全体像の理解 |
 | [🏗️ プロジェクト構造](./docs/02-architecture/01-project-structure.md) | ディレクトリ構成 |
 | [💻 技術スタック](./docs/03-core-concepts/01-tech-stack/index.md) | 使用技術 |
-| [📝 コーディング規約](./docs/04-development/03-coding-standards/) | 規約とベストプラクティス |
+| [📝 コーディング規約](./docs/04-development/01-coding-standards/) | 規約とベストプラクティス |
 | [🧪 テスト戦略](./docs/05-testing/01-testing-strategy/index.md) | テストの書き方 |
 
 ## 🛠️ 技術スタック
