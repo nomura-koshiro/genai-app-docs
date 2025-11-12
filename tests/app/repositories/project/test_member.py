@@ -8,10 +8,8 @@
 
 import pytest
 
-from app.models.project.member import ProjectMember, ProjectRole
-from app.models.project.project import Project
-from app.models.user.user import User
-from app.repositories.project.member import ProjectMemberRepository
+from app.models import Project, ProjectMember, ProjectRole, User
+from app.repositories import ProjectMemberRepository
 
 
 @pytest.fixture

@@ -71,7 +71,7 @@ class SunburstGraph(BaseGraph):
                     parents=df[path[-2]] if len(path) > 1 else [""] * len(df),
                     values=df[values],
                     branchvalues="total",
-                    hovertemplate="<b>%{label}</b><br>" "値: %{value}<br>" "<extra></extra>",
+                    hovertemplate="<b>%{label}</b><br>値: %{value}<br><extra></extra>",
                 )
             ]
         )
@@ -107,7 +107,7 @@ class SunburstGraph(BaseGraph):
                         parents=parents,
                         values=values_list,
                         branchvalues="total",
-                        hovertemplate="<b>%{label}</b><br>" "値: %{value}<br>" "<extra></extra>",
+                        hovertemplate="<b>%{label}</b><br>値: %{value}<br><extra></extra>",
                     )
                 ]
             )

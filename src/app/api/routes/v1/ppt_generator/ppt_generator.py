@@ -30,8 +30,8 @@ from app.api.core.dependencies import CurrentUserAzureDep
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas.ppt_generator.ppt_generator import PPTUploadResponse
-from app.services.ppt_generator.ppt_generator import PPTGeneratorService
+from app.schemas import PPTUploadResponse
+from app.services import PPTGeneratorService
 
 logger = get_logger(__name__)
 

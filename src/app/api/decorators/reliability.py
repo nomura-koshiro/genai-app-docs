@@ -108,7 +108,9 @@ def retry_on_error(
                         )
 
             # 全てのリトライが失敗した場合、必ず例外が保存されている
-            assert last_exception is not None
+            if last_exception is None:
+                # これは理論上起こり得ないが、安全のため確認
+                raise RuntimeError(f"Unexpected error: no exception was raised after {max_retries} retries")
             raise last_exception
 
         return wrapper

@@ -110,13 +110,7 @@ class AnalysisTemplateRepository(BaseRepository[AnalysisTemplate, uuid.UUID]):
             ... )
             >>> print(f"Found {len(templates)} templates")
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.policy == policy)
-            .order_by(self.model.display_order)
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).where(self.model.policy == policy).order_by(self.model.display_order).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
 
@@ -167,11 +161,7 @@ class AnalysisTemplateRepository(BaseRepository[AnalysisTemplate, uuid.UUID]):
         Note:
             N+1問題を防ぐためselectinloadを使用しています。
         """
-        stmt = (
-            select(self.model)
-            .where(self.model.id == template_id)
-            .options(selectinload(self.model.charts))
-        )
+        stmt = select(self.model).where(self.model.id == template_id).options(selectinload(self.model.charts))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -227,12 +217,6 @@ class AnalysisTemplateRepository(BaseRepository[AnalysisTemplate, uuid.UUID]):
         Note:
             N+1問題を防ぐためselectinloadを使用しています。
         """
-        stmt = (
-            select(self.model)
-            .options(selectinload(self.model.charts))
-            .order_by(self.model.display_order)
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).options(selectinload(self.model.charts)).order_by(self.model.display_order).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
         return list(result.scalars().all())

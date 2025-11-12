@@ -30,8 +30,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import cache_result, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.user.user import User
-from app.repositories.user.user import UserRepository
+from app.models import User
+from app.repositories import UserRepository
 
 logger = get_logger(__name__)
 
@@ -663,7 +663,7 @@ class UserService:
         )
 
         # 権限チェック: roles または is_active の更新は管理者のみ
-        if ("roles" in update_data or "is_active" in update_data):
+        if "roles" in update_data or "is_active" in update_data:
             if "SystemAdmin" not in current_user_roles:
                 logger.warning(
                     "権限不足: rolesまたはis_activeの更新には管理者権限が必要です",

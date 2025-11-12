@@ -27,13 +27,13 @@ from fastapi.responses import FileResponse
 from app.api.core import CurrentUserAzureDep, DatabaseDep
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.logging import get_logger
-from app.schemas.project.file import (
+from app.schemas import (
     ProjectFileDeleteResponse,
     ProjectFileListResponse,
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
-from app.services.project.file import ProjectFileService
+from app.services import ProjectFileService
 
 logger = get_logger(__name__)
 

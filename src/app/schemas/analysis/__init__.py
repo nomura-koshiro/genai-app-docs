@@ -27,8 +27,11 @@ from app.schemas.analysis.config import (
     SummaryConfig,
     TableFilterConfig,
     ToolUsage,
+    TransformCalculation,
     TransformConfig,
+    TransformOperation,
     UploadFileData,
+    ValidationConfig,
 )
 
 # ================================================================================
@@ -40,6 +43,7 @@ from app.schemas.analysis.session import (
     AnalysisFileMetadata,
     AnalysisFileResponse,
     AnalysisFileUploadRequest,
+    AnalysisFileUploadResponse,
     AnalysisResultFormula,
     AnalysisResultFormulaList,
     AnalysisSessionBase,
@@ -54,8 +58,10 @@ from app.schemas.analysis.session import (
     ChatHistory,
     ChatRequest,
     ChatResponse,
+    DummyDataResponse,
     SnapshotHistory,
     SnapshotHistoryItem,
+    ValidationConfigResponse,
 )
 
 # ================================================================================
@@ -72,6 +78,7 @@ from app.schemas.analysis.template import (
     AnalysisTemplateUpdate,
     InitialAxisConfig,
     InitialAxisList,
+    PlotlyChartData,
 )
 
 __all__ = [
@@ -83,9 +90,12 @@ __all__ = [
     "AggregateConfig",
     "AggregationColumnConfig",
     "TransformConfig",
+    "TransformCalculation",
+    "TransformOperation",
     "SummaryConfig",
     "FormulaItemConfig",
     "UploadFileData",
+    "ValidationConfig",
     "ToolUsage",
     # session
     "AnalysisStepSnapshot",
@@ -106,12 +116,16 @@ __all__ = [
     "AnalysisStepResponse",
     "AnalysisFileBase",
     "AnalysisFileUploadRequest",
+    "AnalysisFileUploadResponse",
     "AnalysisFileResponse",
     "ChatRequest",
     "ChatResponse",
+    "DummyDataResponse",
+    "ValidationConfigResponse",
     # template
     "InitialAxisConfig",
     "InitialAxisList",
+    "PlotlyChartData",
     "AnalysisTemplateChartBase",
     "AnalysisTemplateChartCreate",
     "AnalysisTemplateChartResponse",

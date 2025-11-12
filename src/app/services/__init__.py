@@ -1,6 +1,7 @@
 """ビジネスロジックサービス。"""
 
 from app.services.driver_tree import DriverTreeService
+from app.services.ppt_generator import PPTGeneratorService
 from app.services.project import ProjectFileService, ProjectService
 from app.services.project.member import ProjectMemberService
 from app.services.sample import (
@@ -14,6 +15,7 @@ from app.services.user.user import UserService
 
 __all__ = [
     "DriverTreeService",
+    "PPTGeneratorService",
     "ProjectService",
     "ProjectFileService",
     "ProjectMemberService",

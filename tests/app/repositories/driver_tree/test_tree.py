@@ -70,12 +70,8 @@ async def test_get_with_nodes(db_session: AsyncSession):
     await db_session.commit()
 
     # 子ノードを作成
-    await node_repo.create(
-        tree_id=tree.id, label="売上", parent_id=root_node.id, operator="-", x=1, y=0
-    )
-    await node_repo.create(
-        tree_id=tree.id, label="原価", parent_id=root_node.id, operator="-", x=1, y=1
-    )
+    await node_repo.create(tree_id=tree.id, label="売上", parent_id=root_node.id, operator="-", x=1, y=0)
+    await node_repo.create(tree_id=tree.id, label="原価", parent_id=root_node.id, operator="-", x=1, y=1)
     await db_session.commit()
 
     # ツリーにルートノードを設定
@@ -136,18 +132,12 @@ async def test_get_with_tree_structure(db_session: AsyncSession):
     await db_session.commit()
 
     # 第1階層の子ノードを作成
-    child1 = await node_repo.create(
-        tree_id=tree.id, label="売上", parent_id=root.id, operator="-", x=1, y=0
-    )
-    await node_repo.create(
-        tree_id=tree.id, label="原価", parent_id=root.id, operator="-", x=1, y=1
-    )
+    child1 = await node_repo.create(tree_id=tree.id, label="売上", parent_id=root.id, operator="-", x=1, y=0)
+    await node_repo.create(tree_id=tree.id, label="原価", parent_id=root.id, operator="-", x=1, y=1)
     await db_session.commit()
 
     # 第2階層の子ノードを作成
-    await node_repo.create(
-        tree_id=tree.id, label="数量", parent_id=child1.id, operator="*", x=2, y=0
-    )
+    await node_repo.create(tree_id=tree.id, label="数量", parent_id=child1.id, operator="*", x=2, y=0)
     await db_session.commit()
 
     # ツリーにルートノードを設定

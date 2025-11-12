@@ -17,7 +17,7 @@
 """
 
 from app.core.exceptions import AuthorizationError
-from app.models.sample.sample_user import SampleUser
+from app.models import SampleUser
 
 
 class SampleAuthorizationService:

@@ -36,6 +36,7 @@ async def test_create_node_success(db_session: AsyncSession):
     assert node.x == 1
     assert node.y == 0
 
+
 @pytest.mark.asyncio
 async def test_create_node_without_coordinates(db_session: AsyncSession):
     """座標なしでのノード作成。"""
@@ -57,11 +58,15 @@ async def test_create_node_without_coordinates(db_session: AsyncSession):
     assert node.x is None
     assert node.y is None
 
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize("label,expected_error", [
-    ("", "ラベルは1～100文字で指定してください"),
-    ("a" * 101, "ラベルは1～100文字で指定してください"),
-])
+@pytest.mark.parametrize(
+    "label,expected_error",
+    [
+        ("", "ラベルは1～100文字で指定してください"),
+        ("a" * 101, "ラベルは1～100文字で指定してください"),
+    ],
+)
 async def test_create_node_validation_error(db_session: AsyncSession, label, expected_error):
     """ノード作成時のラベル検証エラーテスト（パラメータ化）。"""
     # Arrange
@@ -76,6 +81,7 @@ async def test_create_node_validation_error(db_session: AsyncSession, label, exp
         await service.create_node(tree_id=tree.id, label=label)
 
     assert expected_error in str(exc_info.value.message)
+
 
 @pytest.mark.asyncio
 async def test_get_node_success(db_session: AsyncSession):
@@ -97,6 +103,7 @@ async def test_get_node_success(db_session: AsyncSession):
     assert result.id == created_node.id
     assert result.label == "原価"
 
+
 @pytest.mark.asyncio
 async def test_get_node_not_found(db_session: AsyncSession):
     """存在しないノードの取得エラー。"""
@@ -109,6 +116,7 @@ async def test_get_node_not_found(db_session: AsyncSession):
         await service.get_node(nonexistent_id)
 
     assert "ノードが見つかりません" in str(exc_info.value.message)
+
 
 @pytest.mark.asyncio
 async def test_update_node_success(db_session: AsyncSession):
@@ -138,6 +146,7 @@ async def test_update_node_success(db_session: AsyncSession):
     assert updated_node.x == 1
     assert updated_node.y == 1
 
+
 @pytest.mark.asyncio
 async def test_update_node_partial_update(db_session: AsyncSession):
     """ノードの部分更新。"""
@@ -163,6 +172,7 @@ async def test_update_node_partial_update(db_session: AsyncSession):
     assert updated_node.x == 0  # 変更されていない
     assert updated_node.y == 0  # 変更されていない
 
+
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_simple(db_session: AsyncSession):
     """単純な数式からのツリー作成。
@@ -186,6 +196,7 @@ async def test_create_tree_from_formulas_simple(db_session: AsyncSession):
     tree_with_structure = await service.get_tree(tree.id)
     assert tree_with_structure.root_node is not None
     assert tree_with_structure.root_node.label == "粗利"
+
 
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_multiple(db_session: AsyncSession):
@@ -221,6 +232,7 @@ async def test_create_tree_from_formulas_multiple(db_session: AsyncSession):
     assert "売上" in child_labels
     assert "原価" in child_labels
 
+
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_with_name(db_session: AsyncSession):
     """名前付きでツリーを作成。"""
@@ -235,6 +247,7 @@ async def test_create_tree_from_formulas_with_name(db_session: AsyncSession):
     # Assert
     assert tree.name == "粗利分析"
     assert tree.root_node_id is not None
+
 
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_with_coordinates(db_session: AsyncSession):
@@ -263,6 +276,7 @@ async def test_create_tree_from_formulas_with_coordinates(db_session: AsyncSessi
         assert child.x is not None
         assert child.y is not None
 
+
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_empty_formulas(db_session: AsyncSession):
     """空の数式リストでのエラー。"""
@@ -275,6 +289,7 @@ async def test_create_tree_from_formulas_empty_formulas(db_session: AsyncSession
         await service.create_tree_from_formulas(formulas)
 
     assert "数式が指定されていません" in str(exc_info.value.message)
+
 
 @pytest.mark.asyncio
 async def test_create_tree_from_formulas_multiple_roots(db_session: AsyncSession):
@@ -293,6 +308,7 @@ async def test_create_tree_from_formulas_multiple_roots(db_session: AsyncSession
 
     assert "ルートノードが複数あります" in str(exc_info.value.message)
 
+
 @pytest.mark.asyncio
 async def test_get_tree_not_found(db_session: AsyncSession):
     """存在しないツリーの取得エラー。"""
@@ -305,6 +321,7 @@ async def test_get_tree_not_found(db_session: AsyncSession):
         await service.get_tree(nonexistent_id)
 
     assert "ツリーが見つかりません" in str(exc_info.value.message)
+
 
 @pytest.mark.asyncio
 async def test_get_tree_response_success(db_session: AsyncSession):
@@ -325,6 +342,7 @@ async def test_get_tree_response_success(db_session: AsyncSession):
     assert result.root_node is not None
     assert result.root_node.label == "粗利"
     assert result.root_node.children is not None
+
 
 @pytest.mark.asyncio
 async def test_get_categories_success(db_session: AsyncSession):
@@ -377,6 +395,7 @@ async def test_get_categories_success(db_session: AsyncSession):
     assert "生産_在庫管理型" in result["製造業"]["電子機器製造"]
     assert "サービス_稼働率型" in result["サービス業"]["ホテル業"]
 
+
 @pytest.mark.asyncio
 async def test_get_formulas_success(db_session: AsyncSession):
     """数式取得の成功ケース。"""
@@ -405,6 +424,7 @@ async def test_get_formulas_success(db_session: AsyncSession):
     assert len(result) == 2
     assert "粗利 = 売上 - 原価" in result
     assert "売上 = 数量 * 単価" in result
+
 
 @pytest.mark.asyncio
 async def test_get_formulas_not_found(db_session: AsyncSession):

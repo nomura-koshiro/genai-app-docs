@@ -99,11 +99,7 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         result = await self.db.execute(
             select(DriverTree)
             .where(DriverTree.id == id)
-            .options(
-                selectinload(DriverTree.root_node).selectinload(
-                    DriverTree.root_node.property.mapper.class_.children
-                )
-            )
+            .options(selectinload(DriverTree.root_node).selectinload(DriverTree.root_node.property.mapper.class_.children))
         )
         tree = result.scalar_one_or_none()
 
@@ -126,9 +122,7 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         for child in node.children:
             await self._load_children_recursive(child)
 
-    async def update_root_node(
-        self, tree_id: uuid.UUID, root_node_id: uuid.UUID
-    ) -> DriverTree | None:
+    async def update_root_node(self, tree_id: uuid.UUID, root_node_id: uuid.UUID) -> DriverTree | None:
         """ツリーのルートノードを更新します。
 
         Args:

@@ -31,7 +31,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
-from app.models.project.member import ProjectMember, ProjectRole
+from app.models import ProjectMember, ProjectRole
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
@@ -161,9 +161,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             - インデックスが設定されているため、検索は高速です
         """
         result = await self.db.execute(
-            select(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-            .where(ProjectMember.user_id == user_id)
+            select(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.user_id == user_id)
         )
         return result.scalar_one_or_none()
 
@@ -252,11 +250,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             - user_idにインデックスが設定されているため検索は高速です
         """
         query = (
-            select(ProjectMember)
-            .where(ProjectMember.user_id == user_id)
-            .order_by(ProjectMember.joined_at.desc())
-            .offset(skip)
-            .limit(limit)
+            select(ProjectMember).where(ProjectMember.user_id == user_id).order_by(ProjectMember.joined_at.desc()).offset(skip).limit(limit)
         )
 
         result = await self.db.execute(query)
@@ -345,11 +339,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             >>> total = await member_repo.count_by_project(project_id)
             >>> print(f"Project members: {total}")
         """
-        result = await self.db.execute(
-            select(func.count())
-            .select_from(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-        )
+        result = await self.db.execute(select(func.count()).select_from(ProjectMember).where(ProjectMember.project_id == project_id))
         return result.scalar_one()
 
     async def count_by_role(
@@ -376,10 +366,7 @@ class ProjectMemberRepository(BaseRepository[ProjectMember, uuid.UUID]):
             ...     raise ValidationError("Cannot remove last owner")
         """
         result = await self.db.execute(
-            select(func.count())
-            .select_from(ProjectMember)
-            .where(ProjectMember.project_id == project_id)
-            .where(ProjectMember.role == role)
+            select(func.count()).select_from(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.role == role)
         )
         return result.scalar_one()
 

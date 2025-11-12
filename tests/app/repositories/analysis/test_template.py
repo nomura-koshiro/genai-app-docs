@@ -7,7 +7,7 @@ validation.ymlから自動的にシードされたテストデータを使用し
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.repositories.analysis.template import AnalysisTemplateRepository
+from app.repositories import AnalysisTemplateRepository
 
 
 class TestAnalysisTemplateRepository:

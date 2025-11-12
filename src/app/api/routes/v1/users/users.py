@@ -40,7 +40,7 @@ from app.api.core import AzureUserServiceDep, CurrentUserAzureDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.schemas.user.user import UserListResponse, UserResponse, UserUpdate
+from app.schemas import UserListResponse, UserResponse, UserUpdate
 
 logger = get_logger(__name__)
 

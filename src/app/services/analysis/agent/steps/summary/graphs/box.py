@@ -78,12 +78,7 @@ class BoxGraph(BaseGraph):
                         x=subset[x_axis],
                         y=subset[y_axis],
                         name=str(category),
-                        hovertemplate=(
-                            f"<b>{category}</b><br>"
-                            f"{x_axis}: %{{x}}<br>"
-                            f"{y_axis}: %{{y}}<br>"
-                            "<extra></extra>"
-                        ),
+                        hovertemplate=(f"<b>{category}</b><br>{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>"),
                     )
                 )
         elif x_axis:
@@ -94,7 +89,7 @@ class BoxGraph(BaseGraph):
                     go.Box(
                         y=subset[y_axis],
                         name=str(category),
-                        hovertemplate=f"<b>{category}</b><br>" f"{y_axis}: %{{y}}<br>" "<extra></extra>",
+                        hovertemplate=f"<b>{category}</b><br>{y_axis}: %{{y}}<br><extra></extra>",
                     )
                 )
         else:
@@ -103,7 +98,7 @@ class BoxGraph(BaseGraph):
                 go.Box(
                     y=df[y_axis],
                     name=y_axis,
-                    hovertemplate=f"{y_axis}: %{{y}}<br>" "<extra></extra>",
+                    hovertemplate=f"{y_axis}: %{{y}}<br><extra></extra>",
                 )
             )
 

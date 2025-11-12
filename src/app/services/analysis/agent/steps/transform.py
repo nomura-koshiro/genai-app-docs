@@ -40,7 +40,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas.analysis.config import TransformCalculation, TransformConfig
+from app.schemas import TransformCalculation, TransformConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
 logger = get_logger(__name__)

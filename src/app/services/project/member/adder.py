@@ -31,10 +31,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.project.member import ProjectMember
-from app.repositories.project.member import ProjectMemberRepository
-from app.repositories.user.user import UserRepository
-from app.schemas.project.member import ProjectMemberBulkError, ProjectMemberCreate
+from app.models import ProjectMember
+from app.repositories import ProjectMemberRepository, UserRepository
+from app.schemas import ProjectMemberBulkError, ProjectMemberCreate
 from app.services.project.member.authorization import (
     ProjectMemberAuthorizationChecker,
 )
@@ -155,9 +154,7 @@ class ProjectMemberAdder:
             )
 
             # 重複チェック
-            existing_member = await self.repository.get_by_project_and_user(
-                project_id, member_data.user_id
-            )
+            existing_member = await self.repository.get_by_project_and_user(project_id, member_data.user_id)
             if existing_member:
                 logger.warning(
                     "メンバーは既に存在します",
@@ -321,9 +318,7 @@ class ProjectMemberAdder:
                         continue
 
                     # 重複チェック
-                    existing_member = await self.repository.get_by_project_and_user(
-                        project_id, member_data.user_id
-                    )
+                    existing_member = await self.repository.get_by_project_and_user(project_id, member_data.user_id)
                     if existing_member:
                         failed_members.append(
                             ProjectMemberBulkError(

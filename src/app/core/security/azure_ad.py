@@ -40,9 +40,12 @@
 
 from typing import TYPE_CHECKING, Annotated, Any
 
+import structlog
 from fastapi import HTTPException, Security, status
 
 from app.core.config import settings
+
+logger = structlog.get_logger(__name__)
 
 # 型チェック時のインポート（Pylanceが型情報を取得するため）
 if TYPE_CHECKING:
@@ -187,6 +190,6 @@ async def initialize_azure_scheme():
     """
     if settings.AUTH_MODE == "production" and azure_scheme:
         await azure_scheme.openid_config.load_config()
-        print("✅ Azure AD authentication initialized")
+        logger.info("Azure AD認証を初期化しました", auth_mode="production")
     else:
-        print("⚠️  Development authentication mode (Azure AD disabled)")
+        logger.info("開発モード認証", azure_ad_enabled=False)

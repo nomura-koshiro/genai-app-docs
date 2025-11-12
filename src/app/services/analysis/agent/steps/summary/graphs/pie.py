@@ -69,7 +69,7 @@ class PieGraph(BaseGraph):
                     labels=df[names],
                     values=df[values],
                     hole=hole,
-                    hovertemplate="<b>%{label}</b><br>" "%{value}<br>" "%{percent}<br>" "<extra></extra>",
+                    hovertemplate="<b>%{label}</b><br>%{value}<br>%{percent}<br><extra></extra>",
                 )
             ]
         )

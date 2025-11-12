@@ -68,7 +68,6 @@ class TestLogExecution:
             assert "Completed: test_func" in calls[1]
 
 
-
 class TestAsyncTimeout:
     """async_timeoutデコレータのテスト。"""
 
@@ -99,4 +98,3 @@ class TestAsyncTimeout:
         assert "タイムアウト" in exc_info.value.message
         assert exc_info.value.details["timeout_seconds"] == 0.1
         assert exc_info.value.details["function"] == "test_func"
-

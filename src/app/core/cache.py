@@ -555,6 +555,118 @@ class CacheManager:
             )
             return False
 
+    # ========================================================================
+    # Public API for advanced Redis operations (レート制限等で使用)
+    # ========================================================================
+
+    def is_redis_available(self) -> bool:
+        """Redis接続が利用可能かを確認します。
+
+        Returns:
+            bool: Redis接続が確立されている場合True、それ以外False
+        """
+        return self._redis is not None
+
+    async def zremrangebyscore(self, key: str, min_score: float, max_score: float) -> int:
+        """Sorted Setから指定スコア範囲の要素を削除します（レート制限用）。
+
+        Args:
+            key (str): Sorted Setのキー
+            min_score (float): 最小スコア
+            max_score (float): 最大スコア
+
+        Returns:
+            int: 削除された要素数（Redis未接続時は0）
+        """
+        if not self._redis:
+            return 0
+
+        full_key = self._make_key(key)
+        try:
+            return await self._redis.zremrangebyscore(full_key, min_score, max_score)
+        except Exception as e:
+            logger.exception(
+                "Sorted Set範囲削除エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
+            return 0
+
+    async def zcard(self, key: str) -> int:
+        """Sorted Setの要素数を取得します（レート制限用）。
+
+        Args:
+            key (str): Sorted Setのキー
+
+        Returns:
+            int: 要素数（Redis未接続時は0）
+        """
+        if not self._redis:
+            return 0
+
+        full_key = self._make_key(key)
+        try:
+            return await self._redis.zcard(full_key)
+        except Exception as e:
+            logger.exception(
+                "Sorted Setカウントエラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
+            return 0
+
+    async def zadd(self, key: str, mapping: dict[str | bytes, float]) -> int:
+        """Sorted Setに要素を追加します（レート制限用）。
+
+        Args:
+            key (str): Sorted Setのキー
+            mapping (dict[str, float]): {要素: スコア} の辞書
+
+        Returns:
+            int: 追加された要素数（Redis未接続時は0）
+        """
+        if not self._redis:
+            return 0
+
+        full_key = self._make_key(key)
+        try:
+            return await self._redis.zadd(full_key, mapping)
+        except Exception as e:
+            logger.exception(
+                "Sorted Set追加エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
+            return 0
+
+    async def expire_key(self, key: str, seconds: int) -> bool:
+        """キーにTTLを設定します（レート制限用）。
+
+        Args:
+            key (str): キー
+            seconds (int): TTL（秒）
+
+        Returns:
+            bool: 成功時True、失敗時False
+        """
+        if not self._redis:
+            return False
+
+        full_key = self._make_key(key)
+        try:
+            return await self._redis.expire(full_key, seconds)
+        except Exception as e:
+            logger.exception(
+                "TTL設定エラー",
+                cache_key=full_key,
+                error_type=type(e).__name__,
+                error_message=str(e),
+            )
+            return False
+
 
 # グローバルキャッシュマネージャーインスタンス
 cache_manager = CacheManager()

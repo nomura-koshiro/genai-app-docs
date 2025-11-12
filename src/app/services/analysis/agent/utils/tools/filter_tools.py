@@ -101,10 +101,7 @@ class GetFilterTool(BaseTool):
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "filter":
                 return (
@@ -358,10 +355,7 @@ filter_jsonは以下のフィルタを設定できます (3つのフィルタを
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "filter":
                 return (

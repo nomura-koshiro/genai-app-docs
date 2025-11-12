@@ -32,53 +32,78 @@ FastAPIフレームワークを使用し、LangGraph AIエージェント、フ�
         - OpenAPI JSON: http://localhost:8000/openapi.json
 """
 
+import sys
+
 from app.core.app_factory import create_app
 from app.core.config import settings
-from app.core.logging import setup_logging
+from app.core.logging import get_logger, setup_logging
 
 # ロギングを設定
 setup_logging()
+logger = get_logger(__name__)
 
 # FastAPIアプリケーションインスタンスを作成
 app = create_app()
 
 
-def main():
-    """コマンドライン（CLI）からアプリケーションを起動するエントリーポイント。
+def main() -> None:
+    """Uvicornサーバーを起動します。
 
-    Uvicornサーバーを使用してFastAPIアプリケーションを起動します。
-    開発環境では自動リロード（--reload）が有効になります。
+    開発環境では自動リロードが有効になります。
+    本番環境では複数ワーカーで実行されます（WORKERS設定による）。
 
-    起動設定（app.config.settingsから取得）:
+    起動設定:
         - host: バインドするホストアドレス（デフォルト: 0.0.0.0）
         - port: リスニングポート（デフォルト: 8000）
         - reload: DEBUGモードの場合、ファイル変更時に自動リロード
+        - workers: 本番環境でのワーカー数（開発環境では常に1）
 
     使用方法:
-        コマンドラインから実行:
-            $ python -m app.main
-            または
-            $ uv run python -m app.main
+        $ python -m app.main
+        $ uv run uvicorn app.main:app --reload
 
-        または、Uvicornを直接使用（推奨）:
-            $ uvicorn app.main:app --reload
-            $ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+    本番環境:
+        $ python -m app.main  # WORKERS設定が適用される
+        または
+        $ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
     Note:
-        - この関数は if __name__ == "__main__" ブロックから呼び出されます
-        - 本番環境では uvicorn コマンドを直接使用し、ワーカー数を指定してください:
-          $ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
-        - 開発中は `uvicorn app.main:app --reload` が便利です
-        - Dockerコンテナ内では --host 0.0.0.0 を指定してください（デフォルト設定済み）
+        - reloadモードとworkersは同時に使用できません
+        - 開発環境（DEBUG=True）では常にworkers=1で起動します
+
+    Raises:
+        SystemExit: サーバー起動に失敗した場合、終了コード1で終了します。
     """
     import uvicorn
 
-    uvicorn.run(
-        "app.main:app",
-        host=settings.HOST,
-        port=settings.PORT,
-        reload=settings.DEBUG,
-    )
+    try:
+        # ワーカー数の決定（reloadモードではworkers=1固定）
+        workers = 1 if settings.DEBUG else settings.WORKERS
+
+        logger.info(
+            "サーバー起動中",
+            host=settings.HOST,
+            port=settings.PORT,
+            environment=settings.ENVIRONMENT,
+            debug=settings.DEBUG,
+            workers=workers,
+        )
+        logger.info(f"ドキュメント: http://{settings.HOST}:{settings.PORT}/docs")
+
+        uvicorn.run(
+            "app.main:app",
+            host=settings.HOST,
+            port=settings.PORT,
+            reload=settings.DEBUG,
+            workers=workers,
+        )
+    except Exception as e:
+        logger.exception(
+            "アプリケーション起動エラー",
+            error_type=type(e).__name__,
+            error_message=str(e),
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

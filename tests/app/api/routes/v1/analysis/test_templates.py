@@ -143,9 +143,7 @@ async def test_search_template_success(client: AsyncClient, seeded_templates):
     issue = template["issue"]
 
     # Act
-    response = await client.get(
-        f"/api/v1/analysis/templates/search/by-policy-issue?policy={policy}&issue={issue}"
-    )
+    response = await client.get(f"/api/v1/analysis/templates/search/by-policy-issue?policy={policy}&issue={issue}")
 
     # Assert
     assert response.status_code == 200
@@ -160,9 +158,7 @@ async def test_search_template_success(client: AsyncClient, seeded_templates):
 async def test_search_template_not_found(client: AsyncClient, seeded_templates):
     """存在しない施策・課題での検索（404エラー）。"""
     # Act
-    response = await client.get(
-        "/api/v1/analysis/templates/search/by-policy-issue?policy=存在しない施策&issue=存在しない課題"
-    )
+    response = await client.get("/api/v1/analysis/templates/search/by-policy-issue?policy=存在しない施策&issue=存在しない課題")
 
     # Assert
     assert response.status_code == 404

@@ -80,7 +80,7 @@ class WaterfallGraph(BaseGraph):
                     text=df[y_axis],
                     textposition="outside",
                     connector={"line": {"color": "rgb(63, 63, 63)"}},
-                    hovertemplate=f"{x_axis}: %{{x}}<br>" f"{y_axis}: %{{y}}<br>" "<extra></extra>",
+                    hovertemplate=f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>",
                 )
             ]
         )

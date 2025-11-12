@@ -117,24 +117,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if not settings.DEBUG:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
-        # オプション: Content Security Policy (CSP)
-        # より厳密なセキュリティが必要な場合は以下のコメントを解除
-        # response.headers["Content-Security-Policy"] = (
-        #     "default-src 'self'; "
-        #     "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-        #     "style-src 'self' 'unsafe-inline'; "
-        #     "img-src 'self' data: https:; "
-        #     "font-src 'self' data:; "
-        #     "connect-src 'self'"
-        # )
-
-        logger.debug(
-            "セキュリティヘッダーを追加しました",
-            extra={
-                "path": request.url.path,
-                "method": request.method,
-                "hsts_enabled": not settings.DEBUG,
-            },
-        )
+        # Content Security Policy (CSP)
+        # XSS、データインジェクション攻撃を防止
+        if settings.ENABLE_CSP:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'"
+            )
 
         return response

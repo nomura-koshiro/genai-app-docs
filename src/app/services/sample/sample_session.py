@@ -14,8 +14,8 @@ from sqlalchemy.orm import selectinload
 from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
-from app.models.sample.sample_session import SampleSession
-from app.repositories.sample.sample_session import SampleSessionRepository
+from app.models import SampleSession
+from app.repositories import SampleSessionRepository
 
 logger = get_logger(__name__)
 

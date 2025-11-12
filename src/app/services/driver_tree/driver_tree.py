@@ -17,7 +17,7 @@ from app.repositories.driver_tree import (
     DriverTreeNodeRepository,
     DriverTreeRepository,
 )
-from app.schemas.driver_tree.driver_tree import DriverTreeNodeResponse, DriverTreeResponse
+from app.schemas import DriverTreeNodeResponse, DriverTreeResponse
 
 logger = structlog.get_logger(__name__)
 

@@ -93,7 +93,7 @@ class TreemapGraph(BaseGraph):
                     parents=parents,
                     values=values_list,
                     textinfo="label+value+percent parent",
-                    hovertemplate="<b>%{label}</b><br>" "値: %{value}<br>" "割合: %{percentParent}<br>" "<extra></extra>",
+                    hovertemplate="<b>%{label}</b><br>値: %{value}<br>割合: %{percentParent}<br><extra></extra>",
                 )
             ]
         )

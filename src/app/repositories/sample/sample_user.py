@@ -27,7 +27,7 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.sample.sample_user import SampleUser
+from app.models import SampleUser
 from app.repositories.base import BaseRepository
 
 

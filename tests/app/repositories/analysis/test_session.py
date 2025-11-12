@@ -11,10 +11,8 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.analysis.file import AnalysisFile
-from app.models.analysis.session import AnalysisSession
-from app.models.analysis.step import AnalysisStep
-from app.repositories.analysis.session import AnalysisSessionRepository
+from app.models import AnalysisFile, AnalysisSession, AnalysisStep
+from app.repositories import AnalysisSessionRepository
 
 
 @pytest.mark.asyncio
@@ -124,7 +122,8 @@ async def test_list_by_user(db_session: AsyncSession, test_user, test_project):
     project_id = test_project.id
 
     # ユーザー2を作成
-    from app.models.user.user import User
+    from app.models import User
+
     user2 = User(
         azure_oid="test-user2-oid",
         email="user2@example.com",
@@ -204,7 +203,6 @@ async def test_list_by_user_with_pagination(db_session: AsyncSession, test_user,
     assert len(result) == 2
 
 
-
 @pytest.mark.asyncio
 async def test_delete_with_cascade(db_session: AsyncSession, test_user, test_project):
     """カスケード削除のテスト。
@@ -265,12 +263,8 @@ async def test_delete_with_cascade(db_session: AsyncSession, test_user, test_pro
     # 関連データも削除されていることを確認
     from sqlalchemy import select
 
-    step_result = await db_session.execute(
-        select(AnalysisStep).where(AnalysisStep.session_id == session_id)
-    )
+    step_result = await db_session.execute(select(AnalysisStep).where(AnalysisStep.session_id == session_id))
     assert step_result.scalar_one_or_none() is None
 
-    file_result = await db_session.execute(
-        select(AnalysisFile).where(AnalysisFile.session_id == session_id)
-    )
+    file_result = await db_session.execute(select(AnalysisFile).where(AnalysisFile.session_id == session_id))
     assert file_result.scalar_one_or_none() is None

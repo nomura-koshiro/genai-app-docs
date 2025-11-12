@@ -83,12 +83,7 @@ class AreaGraph(BaseGraph):
                         mode="lines",
                         stackgroup=stackgroup,
                         fill="tonexty",
-                        hovertemplate=(
-                            f"<b>{category}</b><br>"
-                            f"{x_axis}: %{{x}}<br>"
-                            f"{y_axis}: %{{y}}<br>"
-                            "<extra></extra>"
-                        ),
+                        hovertemplate=(f"<b>{category}</b><br>{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>"),
                     )
                 )
         else:
@@ -99,7 +94,7 @@ class AreaGraph(BaseGraph):
                     y=df[y_axis],
                     mode="lines",
                     fill="tozeroy",
-                    hovertemplate=f"{x_axis}: %{{x}}<br>" f"{y_axis}: %{{y}}<br>" "<extra></extra>",
+                    hovertemplate=f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>",
                 )
             )
 

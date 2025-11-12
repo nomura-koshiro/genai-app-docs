@@ -25,7 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
-from app.models.project.file import ProjectFile
+from app.models import ProjectFile
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
@@ -99,9 +99,7 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
         )
         return result.scalar_one_or_none()
 
-    async def list_by_project(
-        self, project_id: uuid.UUID, skip: int = 0, limit: int = 100
-    ) -> list[ProjectFile]:
+    async def list_by_project(self, project_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[ProjectFile]:
         """プロジェクトのファイル一覧を取得します（uploader情報含む）。
 
         Args:
@@ -162,9 +160,7 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
             >>> count = await repo.count_by_project(project_id)
             >>> print(f"Total files: {count}")
         """
-        result = await self.db.execute(
-            select(func.count(ProjectFile.id)).where(ProjectFile.project_id == project_id)
-        )
+        result = await self.db.execute(select(func.count(ProjectFile.id)).where(ProjectFile.project_id == project_id))
         return result.scalar() or 0
 
     async def get_total_size_by_project(self, project_id: uuid.UUID) -> int:
@@ -180,7 +176,5 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
             >>> total_size = await repo.get_total_size_by_project(project_id)
             >>> print(f"Total size: {total_size / 1024 / 1024:.2f} MB")
         """
-        result = await self.db.execute(
-            select(func.sum(ProjectFile.file_size)).where(ProjectFile.project_id == project_id)
-        )
+        result = await self.db.execute(select(func.sum(ProjectFile.file_size)).where(ProjectFile.project_id == project_id))
         return result.scalar() or 0

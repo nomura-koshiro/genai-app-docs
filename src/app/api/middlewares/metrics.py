@@ -134,7 +134,7 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
         実行フロー:
             1. リクエストサイズ取得（Content-Lengthヘッダー）
             2. エンドポイントパスを正規化（/users/123 → /users/{id}）
-            3. リクエストサイズをHisto gramに記録
+            3. リクエストサイズをHistogramに記録
             4. 処理開始時刻を記録
             5. 次のミドルウェア/ハンドラーを呼び出し
             6. レスポンス取得後、処理時間とステータスコードを記録
@@ -180,6 +180,8 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
 
         # リクエスト処理時間を計測
         start_time = time.time()
+        response = None
+        status_code = 500  # デフォルトは500（エラー時）
 
         try:
             response = await call_next(request)
@@ -196,48 +198,60 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
             # リクエスト総数を記録
             http_requests_total.labels(method=method, endpoint=endpoint, status_code=status_code).inc()
 
-        # レスポンスサイズを記録
-        response_size = int(response.headers.get("content-length", 0))
-        http_response_size_bytes.labels(method=method, endpoint=endpoint).observe(response_size)
+        # レスポンスサイズを記録（エラー時はスキップ）
+        if response is not None:
+            response_size = int(response.headers.get("content-length", 0))
+            http_response_size_bytes.labels(method=method, endpoint=endpoint).observe(response_size)
 
         return response
 
     def _normalize_path(self, path: str) -> str:
         """パスパラメータを正規化してエンドポイントパスを取得します。
 
-        数値のパスセグメント（IDなど）を {id} に置換することで、
+        数値やUUID形式のパスセグメント（IDなど）を {id} に置換することで、
         異なるID値でも同じメトリクスラベルとして集約できます。
 
         Args:
             path (str): 元のリクエストパス
-                - 例: "/api/v1/users/123", "/api/v1/files/456/download"
+                - 例: "/api/v1/users/123", "/api/v1/files/abc-123-def/download"
 
         Returns:
             str: 正規化されたエンドポイントパス
-                - 数値セグメントは {id} に置換
+                - 数値セグメントとUUID/ハッシュは {id} に置換
                 - 例: "/api/v1/users/{id}", "/api/v1/files/{id}/download"
 
         Example:
             >>> self._normalize_path("/api/v1/users/123")
             "/api/v1/users/{id}"
             >>>
-            >>> self._normalize_path("/api/v1/files/456/download")
+            >>> self._normalize_path("/api/v1/files/abc-123-def-456/download")
             "/api/v1/files/{id}/download"
             >>>
             >>> self._normalize_path("/api/v1/health")
             "/api/v1/health"
 
         Note:
-            - 簡易的な実装（数値チェックのみ）
+            - UUID、数値、英数字ハッシュ（32文字以上）を {id} に正規化
             - 本番環境ではFastAPIのルーティング情報を使用することを推奨
-            - UUID等の非数値IDは正規化されません（TODO: 改善）
         """
-        # 簡易的な実装（本番環境ではルーティング情報を使用すべき）
+        import re
+
         parts = path.split("/")
         normalized_parts = []
 
         for part in parts:
-            if part and part.isdigit():
+            if not part:
+                normalized_parts.append(part)
+                continue
+
+            # 数値のみ
+            if part.isdigit():
+                normalized_parts.append("{id}")
+            # UUID形式 (例: 123e4567-e89b-12d3-a456-426614174000)
+            elif re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", part, re.IGNORECASE):
+                normalized_parts.append("{id}")
+            # 英数字ハッシュ (32文字以上)
+            elif re.match(r"^[a-zA-Z0-9_-]{32,}$", part):
                 normalized_parts.append("{id}")
             else:
                 normalized_parts.append(part)

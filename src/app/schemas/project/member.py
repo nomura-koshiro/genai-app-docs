@@ -238,9 +238,7 @@ class ProjectMemberBulkCreate(BaseModel):
         - 一部失敗しても成功したメンバーは追加されます
     """
 
-    members: list[ProjectMemberCreate] = Field(
-        ..., min_length=1, max_length=100, description="追加するメンバーのリスト（最大100件）"
-    )
+    members: list[ProjectMemberCreate] = Field(..., min_length=1, max_length=100, description="追加するメンバーのリスト（最大100件）")
 
 
 class ProjectMemberBulkError(BaseModel):
@@ -348,9 +346,7 @@ class ProjectMemberBulkUpdate(BaseModel):
         - 一部失敗しても成功したメンバーは更新されます
     """
 
-    updates: list[ProjectMemberRoleUpdate] = Field(
-        ..., min_length=1, max_length=100, description="更新するメンバーのリスト（最大100件）"
-    )
+    updates: list[ProjectMemberRoleUpdate] = Field(..., min_length=1, max_length=100, description="更新するメンバーのリスト（最大100件）")
 
 
 class ProjectMemberBulkUpdateError(BaseModel):

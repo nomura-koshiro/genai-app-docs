@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.sample.sample_file import SampleFile
+from app.models import SampleFile
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)

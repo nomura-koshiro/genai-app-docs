@@ -47,15 +47,15 @@ import hashlib
 import time
 from collections.abc import Callable
 
+import structlog
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.cache import cache_manager
 from app.core.config import settings
-from app.core.logging import get_logger
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -79,7 +79,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         - Redis障害時はグレースフルにスキップ
     """
 
-    def __init__(self, app, calls: int = 100, period: int = 60):
+    def __init__(self, app, calls: int = 100, period: int = 60, max_memory_entries: int = 10000):
         """レート制限を初期化します。
 
         Args:
@@ -91,6 +91,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             period (int): レート制限の期間（秒単位）
                 - デフォルト: 60
                 - 例: period=60で60秒間のウィンドウ
+            max_memory_entries (int): インメモリストアの最大エントリ数
+                - デフォルト: 10000
+                - メモリリーク防止のための上限
 
         Example:
             >>> # 厳しい制限: 10リクエスト/分
@@ -106,6 +109,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.calls = calls
         self.period = period
+        self.max_memory_entries = max_memory_entries
         # Redisが利用できない場合のインメモリフォールバック
         # 形式: {client_id: [timestamp1, timestamp2, ...]}
         self._memory_store: dict[str, list[float]] = {}
@@ -180,6 +184,60 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         return f"ip:{client_ip}"
 
+    def _create_rate_limit_response(self) -> JSONResponse:
+        """レート制限超過時のレスポンスを生成します。
+
+        Returns:
+            JSONResponse: HTTP 429レスポンス
+                - ステータス: 429 Too Many Requests
+                - ボディ: エラーメッセージと制限情報
+                - ヘッダー: Retry-After
+
+        Example:
+            >>> response = self._create_rate_limit_response()
+            >>> response.status_code
+            429
+            >>> response.headers["Retry-After"]
+            "60"
+        """
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "error": "Rate limit exceeded",
+                "details": {
+                    "limit": self.calls,
+                    "period": self.period,
+                    "retry_after": self.period,
+                },
+            },
+            headers={"Retry-After": str(self.period)},
+        )
+
+    def _cleanup_memory_store(self) -> None:
+        """メモリストアをクリーンアップしてメモリリークを防止します。
+
+        インメモリストアのエントリ数が上限を超えた場合、
+        最も古いエントリ（最後にアクセスされた時刻が最も古い）を削除します。
+
+        Note:
+            - LRU（Least Recently Used）戦略を使用
+            - max_memory_entriesを超えた場合のみ実行
+        """
+        if len(self._memory_store) > self.max_memory_entries:
+            # 最も古いエントリを削除（簡易LRU）
+            # 各クライアントの最新タイムスタンプでソート
+            sorted_clients = sorted(self._memory_store.items(), key=lambda x: max(x[1]) if x[1] else 0)
+            # 上限の80%まで削除（頻繁なクリーンアップを避ける）
+            target_size = int(self.max_memory_entries * 0.8)
+            to_remove = len(self._memory_store) - target_size
+            for client_id, _ in sorted_clients[:to_remove]:
+                del self._memory_store[client_id]
+            logger.warning(
+                "メモリストアクリーンアップ実行",
+                removed=to_remove,
+                remaining=len(self._memory_store),
+            )
+
     def _check_rate_limit_memory(self, client_identifier: str, current_time: float) -> tuple[bool, int]:
         """インメモリストアを使用してレート制限をチェックします。
 
@@ -200,6 +258,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 - True: 制限超過
                 - False: 制限内
         """
+        # メモリリーク防止のクリーンアップ
+        self._cleanup_memory_store()
+
         # 古いエントリをクリーンアップ
         window_start = current_time - self.period
         if client_identifier in self._memory_store:
@@ -283,22 +344,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             # Redisが利用できない場合はインメモリフォールバックを使用
-            if not cache_manager._redis:
+            if not cache_manager.is_redis_available():
                 logger.warning("Redisが利用できません。インメモリレート制限にフォールバックします")
                 is_limited, request_count = self._check_rate_limit_memory(client_identifier, current_time)
                 if is_limited:
-                    return JSONResponse(
-                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                        content={
-                            "error": "Rate limit exceeded",
-                            "details": {
-                                "limit": self.calls,
-                                "period": self.period,
-                                "retry_after": self.period,
-                            },
-                        },
-                        headers={"Retry-After": str(self.period)},
-                    )
+                    return self._create_rate_limit_response()
                 response = await call_next(request)
                 remaining = max(0, self.calls - request_count - 1)
                 response.headers["X-RateLimit-Limit"] = str(self.calls)
@@ -308,29 +358,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             # Redis Sorted Setを使用したスライディングウィンドウアルゴリズム
             # 古いエントリを削除
-            await cache_manager._redis.zremrangebyscore(cache_key, 0, window_start)
+            await cache_manager.zremrangebyscore(cache_key, 0, window_start)
 
             # 現在のリクエスト数をカウント
-            request_count = await cache_manager._redis.zcard(cache_key)
+            request_count = await cache_manager.zcard(cache_key)
 
             if request_count >= self.calls:
-                return JSONResponse(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    content={
-                        "error": "Rate limit exceeded",
-                        "details": {
-                            "limit": self.calls,
-                            "period": self.period,
-                            "retry_after": self.period,
-                        },
-                    },
-                    headers={"Retry-After": str(self.period)},
-                )
+                return self._create_rate_limit_response()
 
             # 現在のリクエストを追加
             request_id = f"{current_time}:{hashlib.sha256(str(time.time()).encode()).hexdigest()}"
-            await cache_manager._redis.zadd(cache_key, {request_id: current_time})
-            await cache_manager._redis.expire(cache_key, self.period)
+            await cache_manager.zadd(cache_key, {request_id: current_time})
+            await cache_manager.expire_key(cache_key, self.period)
 
             # リクエストを処理
             response = await call_next(request)
@@ -353,18 +392,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             logger.warning("Redisエラー、インメモリレート制限にフォールバックします")
             is_limited, request_count = self._check_rate_limit_memory(client_identifier, current_time)
             if is_limited:
-                return JSONResponse(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    content={
-                        "error": "Rate limit exceeded",
-                        "details": {
-                            "limit": self.calls,
-                            "period": self.period,
-                            "retry_after": self.period,
-                        },
-                    },
-                    headers={"Retry-After": str(self.period)},
-                )
+                return self._create_rate_limit_response()
             response = await call_next(request)
             remaining = max(0, self.calls - request_count - 1)
             response.headers["X-RateLimit-Limit"] = str(self.calls)

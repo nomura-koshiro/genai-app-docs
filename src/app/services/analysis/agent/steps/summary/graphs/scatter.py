@@ -98,9 +98,7 @@ class ScatterGraph(BaseGraph):
                         hovertemplate=(
                             f"<b>{category}</b><br>"
                             f"{x_axis}: %{{x}}<br>"
-                            f"{y_axis}: %{{y}}<br>"
-                            + (f"{size}: %{{marker.size}}<br>" if size else "")
-                            + "<extra></extra>"
+                            f"{y_axis}: %{{y}}<br>" + (f"{size}: %{{marker.size}}<br>" if size else "") + "<extra></extra>"
                         ),
                     )
                 )
@@ -120,10 +118,7 @@ class ScatterGraph(BaseGraph):
                     mode=mode,
                     marker=marker_dict,
                     hovertemplate=(
-                        f"{x_axis}: %{{x}}<br>"
-                        f"{y_axis}: %{{y}}<br>"
-                        + (f"{size}: %{{marker.size}}<br>" if size else "")
-                        + "<extra></extra>"
+                        f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br>" + (f"{size}: %{{marker.size}}<br>" if size else "") + "<extra></extra>"
                     ),
                 )
             )

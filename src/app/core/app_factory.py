@@ -19,7 +19,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.core import register_exception_handlers
 from app.api.middlewares import (
-    ErrorHandlerMiddleware,
     LoggingMiddleware,
     PrometheusMetricsMiddleware,
     RateLimitMiddleware,
@@ -63,11 +62,11 @@ def create_app() -> FastAPI:
             ↓
         [LoggingMiddleware] ← 構造化ログ記録
             ↓
-        [ErrorHandlerMiddleware] ← エラーハンドリング
-            ↓
         [PrometheusMetricsMiddleware] ← メトリクス収集
             ↓
         [Router] ← エンドポイント処理
+            ↓
+        [Exception Handlers (RFC 9457)] ← エラーハンドリング
             ↓
         レスポンス
 
@@ -138,12 +137,11 @@ def create_app() -> FastAPI:
         },
     )
 
-    # 例外ハンドラーを登録
+    # 例外ハンドラーを登録（RFC 9457準拠）
     register_exception_handlers(app)
 
     # カスタムミドルウェアを登録（実行順序は登録の逆順 - 後に追加されたものが先に実行される）
     app.add_middleware(PrometheusMetricsMiddleware)
-    app.add_middleware(ErrorHandlerMiddleware)
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(
         RateLimitMiddleware,

@@ -29,7 +29,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis import AnalysisTemplate, AnalysisTemplateChart
-from app.schemas.analysis.template import InitialAxisConfig, PlotlyChartData
+from app.schemas import InitialAxisConfig, PlotlyChartData
 
 logger = structlog.get_logger(__name__)
 
@@ -248,10 +248,7 @@ class TemplateSeeder:
         dummy = template_data.get("dummy", {})
 
         # InitialAxisConfigスキーマを使用してバリデーション
-        initial_axis_validated = [
-            InitialAxisConfig.model_validate(axis).model_dump()
-            for axis in template_data["initial_axis"]
-        ]
+        initial_axis_validated = [InitialAxisConfig.model_validate(axis).model_dump() for axis in template_data["initial_axis"]]
 
         template = AnalysisTemplate(
             policy=template_data["policy"],

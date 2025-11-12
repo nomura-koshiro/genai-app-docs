@@ -82,12 +82,7 @@ class LineGraph(BaseGraph):
                         y=subset[y_axis],
                         name=str(category),
                         mode=mode,
-                        hovertemplate=(
-                            f"<b>{category}</b><br>"
-                            f"{x_axis}: %{{x}}<br>"
-                            f"{y_axis}: %{{y}}<br>"
-                            "<extra></extra>"
-                        ),
+                        hovertemplate=(f"<b>{category}</b><br>{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>"),
                     )
                 )
         else:
@@ -97,7 +92,7 @@ class LineGraph(BaseGraph):
                     x=df[x_axis],
                     y=df[y_axis],
                     mode=mode,
-                    hovertemplate=f"{x_axis}: %{{x}}<br>" f"{y_axis}: %{{y}}<br>" "<extra></extra>",
+                    hovertemplate=f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>",
                 )
             )
 

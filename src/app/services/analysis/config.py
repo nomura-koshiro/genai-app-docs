@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import async_timeout, measure_performance
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.schemas.analysis.session import DummyDataResponse, ValidationConfigResponse
+from app.schemas import DummyDataResponse, ValidationConfigResponse
 
 logger = get_logger(__name__)
 

@@ -144,7 +144,4 @@ class DriverTreeNode(Base, TimestampMixin):
             <DriverTreeNode(label='粗利', operator='-', parent=None)>
         """
         parent_label = self.parent.label if self.parent else None
-        return (
-            f"<DriverTreeNode(label='{self.label}', "
-            f"operator='{self.operator}', parent={parent_label})>"
-        )
+        return f"<DriverTreeNode(label='{self.label}', operator='{self.operator}', parent={parent_label})>"

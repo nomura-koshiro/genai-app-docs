@@ -51,7 +51,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     処理時間を計測してX-Process-Timeヘッダーに追加します。
 
     ミドルウェアチェーン内での実行順序:
-        RateLimitMiddleware → LoggingMiddleware → ErrorHandlerMiddleware → ...
+        RateLimitMiddleware → LoggingMiddleware → PrometheusMetricsMiddleware → ...
 
     Note:
         - Starlette BaseHTTPMiddlewareを継承
@@ -117,12 +117,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # リクエストをログ記録
         logger.info(
             f"Request started: {request.method} {request.url.path}",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "query_params": str(request.query_params),
-                "client": request.client.host if request.client else None,
-            },
+            method=request.method,
+            path=request.url.path,
+            query_params=str(request.query_params),
+            client=request.client.host if request.client else None,
         )
 
         # リクエストを処理
@@ -134,12 +132,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         # レスポンスをログ記録
         logger.info(
             f"Request completed: {request.method} {request.url.path} - {response.status_code}",
-            extra={
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-                "duration": f"{duration:.3f}s",
-            },
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration=f"{duration:.3f}s",
         )
 
         # カスタムヘッダーを追加

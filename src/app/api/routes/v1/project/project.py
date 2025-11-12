@@ -35,7 +35,7 @@ from app.api.core import CurrentUserAzureDep, ProjectServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
-from app.schemas.project.project import ProjectCreate, ProjectResponse, ProjectUpdate
+from app.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
 
 logger = get_logger(__name__)
 

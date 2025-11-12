@@ -156,9 +156,7 @@ async def test_find_root_by_tree_id(db_session: AsyncSession):
     root = await node_repo.create(tree_id=tree.id, label="粗利", x=0, y=0)
     await db_session.commit()
 
-    await node_repo.create(
-        tree_id=tree.id, label="売上", parent_id=root.id, operator="-", x=1, y=0
-    )
+    await node_repo.create(tree_id=tree.id, label="売上", parent_id=root.id, operator="-", x=1, y=0)
     await db_session.commit()
 
     # Act
@@ -189,12 +187,8 @@ async def test_find_children(db_session: AsyncSession):
     await db_session.commit()
 
     # 複数の子ノードを作成
-    await node_repo.create(
-        tree_id=tree.id, label="売上", parent_id=parent.id, operator="-", x=1, y=0
-    )
-    await node_repo.create(
-        tree_id=tree.id, label="原価", parent_id=parent.id, operator="-", x=1, y=1
-    )
+    await node_repo.create(tree_id=tree.id, label="売上", parent_id=parent.id, operator="-", x=1, y=0)
+    await node_repo.create(tree_id=tree.id, label="原価", parent_id=parent.id, operator="-", x=1, y=1)
     await db_session.commit()
 
     # Act

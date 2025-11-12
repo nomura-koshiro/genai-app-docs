@@ -76,9 +76,7 @@ class DevUser:
         return f"<DevUser {self.email}>"
 
 
-async def get_current_dev_user(
-    credentials: HTTPAuthorizationCredentials = Security(security)
-) -> DevUser:
+async def get_current_dev_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> DevUser:
     """開発モード用の認証（トークンチェックのみ）。
 
     Authorizationヘッダーから受け取ったBearerトークンが

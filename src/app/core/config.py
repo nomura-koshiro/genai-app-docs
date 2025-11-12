@@ -217,6 +217,12 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
+    WORKERS: int = Field(
+        default=1,
+        ge=1,
+        le=32,
+        description="Uvicornワーカー数（本番環境用）。開発環境では常に1。",
+    )
     ALLOWED_ORIGINS: list[str] | None = None
 
     # 環境設定
@@ -230,10 +236,28 @@ class Settings(BaseSettings):
     )
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = Field(
+        default=7,
+        description="リフレッシュトークンの有効期限（日数）",
+    )
+
+    # パスワードハッシュ設定
+    BCRYPT_ROUNDS: int = Field(
+        default=12,
+        ge=10,
+        le=16,
+        description="bcryptコストファクター（10-16推奨、高いほど安全だが遅い）",
+    )
 
     # レート制限設定
     RATE_LIMIT_CALLS: int = 100
     RATE_LIMIT_PERIOD: int = 60  # 秒単位
+
+    # セキュリティヘッダー設定
+    ENABLE_CSP: bool = Field(
+        default=True,
+        description="Content Security Policy (CSP)ヘッダーを有効化",
+    )
 
     # セキュリティポリシー設定
     MAX_LOGIN_ATTEMPTS: int = Field(
@@ -476,7 +500,7 @@ class Settings(BaseSettings):
 
         # 開発環境でも警告
         if self.ENVIRONMENT == "development" and "dev-secret-key" in self.SECRET_KEY:
-            logger.warning("Using default SECRET_KEY. Set a custom key for better security even in development.")
+            logger.warning("デフォルトのSECRET_KEYを使用しています。開発環境でもカスタムキーの設定を推奨します。")
 
     def _validate_llm_config(self) -> None:
         """LLM設定のバリデーション。
@@ -549,9 +573,9 @@ class Settings(BaseSettings):
             if not self.AZURE_CLIENT_ID:
                 raise ValueError("AUTH_MODE=productionの場合、AZURE_CLIENT_IDが必要です")
 
-            logger.info("Azure AD authentication enabled (production mode)")
+            logger.info("Azure AD認証が有効です", mode="production")
         else:
-            logger.info("Development mode authentication enabled (mock auth)")
+            logger.info("開発モード認証が有効です", auth_type="mock")
 
 
 settings = Settings()

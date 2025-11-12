@@ -34,13 +34,13 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisSession
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository, AnalysisStepRepository
-from app.schemas.analysis.config import ValidationConfig
-from app.schemas.analysis.session import (
+from app.schemas import (
     AnalysisFileMetadata,
     AnalysisFileResponse,
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisStepResponse,
+    ValidationConfig,
 )
 
 logger = get_logger(__name__)
@@ -425,17 +425,19 @@ class AnalysisSessionService:
             files_count=len(files),
         )
 
-        return AnalysisSessionDetailResponse(
-            id=session.id,
-            project_id=session.project_id,
-            created_by=session.created_by,
-            session_name=session.session_name,
-            validation_config=session.validation_config,
-            steps=steps,
-            files=files,
-            chat_history=session.chat_history or [],
-            snapshot_history=session.snapshot_history,
-            is_active=session.is_active,
-            created_at=session.created_at,
-            updated_at=session.updated_at,
+        return AnalysisSessionDetailResponse.model_validate(
+            {
+                "id": session.id,
+                "project_id": session.project_id,
+                "created_by": session.created_by,
+                "session_name": session.session_name,
+                "validation_config": session.validation_config,
+                "steps": steps,
+                "files": files,
+                "chat_history": session.chat_history or [],
+                "snapshot_history": session.snapshot_history,
+                "is_active": session.is_active,
+                "created_at": session.created_at,
+                "updated_at": session.updated_at,
+            }
         )

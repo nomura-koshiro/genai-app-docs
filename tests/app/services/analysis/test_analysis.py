@@ -11,7 +11,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.schemas.analysis.session import (
+from app.schemas import (
     AnalysisFileUploadRequest,
     AnalysisSessionCreate,
 )

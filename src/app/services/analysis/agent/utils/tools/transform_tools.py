@@ -101,15 +101,11 @@ class GetTransformTool(BaseTool):
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "transform":
                 return (
-                    f"実行失敗: ステップ{step_index}は変換ステップではありません。"
-                    f"変換設定は'transform'タイプのステップでのみ利用可能です。"
+                    f"実行失敗: ステップ{step_index}は変換ステップではありません。変換設定は'transform'タイプのステップでのみ利用可能です。"
                 )
 
             state = AnalysisState(self.db, self.session_id)
@@ -269,15 +265,11 @@ transform_jsonは以下の変換操作を設定できます:
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "transform":
                 return (
-                    f"実行失敗: ステップ{step_index}は変換ステップではありません。"
-                    f"変換設定は'transform'タイプのステップでのみ利用可能です。"
+                    f"実行失敗: ステップ{step_index}は変換ステップではありません。変換設定は'transform'タイプのステップでのみ利用可能です。"
                 )
 
             try:

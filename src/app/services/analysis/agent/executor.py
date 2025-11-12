@@ -32,7 +32,7 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisStep
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository, AnalysisStepRepository
-from app.schemas.analysis.config import FilterConfig
+from app.schemas import FilterConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 from app.services.analysis.agent.storage import AnalysisStorageService
 
@@ -189,10 +189,7 @@ class AnalysisStepExecutor:
             if step.step_type == "filter":
                 try:
                     filter_config = FilterConfig.model_validate(step.config)
-                    if (
-                        filter_config.table_filter is not None
-                        and filter_config.table_filter.enable
-                    ):
+                    if filter_config.table_filter is not None and filter_config.table_filter.enable:
                         table_df_source = filter_config.table_filter.table_df
                         if table_df_source:
                             logger.debug(
@@ -203,9 +200,7 @@ class AnalysisStepExecutor:
                             )
 
                             # table_df_source（例: "step_1"）から参照DataFrameを取得
-                            table_filter_df = await self._load_source_data(
-                                session_id, table_df_source
-                            )
+                            table_filter_df = await self._load_source_data(session_id, table_df_source)
 
                             kwargs["table_filter_df"] = table_filter_df
 

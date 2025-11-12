@@ -8,11 +8,9 @@ from fastapi import APIRouter
 from app.api.core import AgentServiceDep, CurrentUserDep, CurrentUserOptionalDep, SessionServiceDep
 from app.api.decorators import async_timeout, handle_service_errors, validate_permissions
 from app.core.logging import get_logger
-from app.schemas.sample.sample_agents import (
+from app.schemas import (
     SampleChatRequest,
     SampleChatResponse,
-)
-from app.schemas.sample.sample_sessions import (
     SampleDeleteResponse,
     SampleMessageResponse,
     SampleSessionResponse,

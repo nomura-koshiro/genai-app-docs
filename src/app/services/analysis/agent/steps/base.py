@@ -63,18 +63,9 @@ class AnalysisStepResult(BaseModel):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    result_data: pd.DataFrame | None = Field(
-        None,
-        description="結果データフレーム（filter/aggregate/transform）"
-    )
-    result_chart: dict[str, Any] | None = Field(
-        None,
-        description="チャート情報（Plotly JSON形式、summaryのみ）"
-    )
-    result_formula: list[AnalysisResultFormula] | None = Field(
-        None,
-        description="計算式結果（summaryのみ）"
-    )
+    result_data: pd.DataFrame | None = Field(None, description="結果データフレーム（filter/aggregate/transform）")
+    result_chart: dict[str, Any] | None = Field(None, description="チャート情報（Plotly JSON形式、summaryのみ）")
+    result_formula: list[AnalysisResultFormula] | None = Field(None, description="計算式結果（summaryのみ）")
 
 
 class BaseAnalysisStep(ABC):

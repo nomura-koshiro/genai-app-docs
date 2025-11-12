@@ -95,28 +95,11 @@ class ProblemDetails(BaseModel):
         - 機密情報（パスワード、トークン等）を含めないでください
     """
 
-    type: str = Field(
-        default="about:blank",
-        description="問題タイプを識別するURI"
-    )
-    title: str = Field(
-        ...,
-        description="人間が読める短い要約"
-    )
-    status: int = Field(
-        ...,
-        ge=100,
-        le=599,
-        description="HTTPステータスコード"
-    )
-    detail: str | None = Field(
-        None,
-        description="この問題の具体的な説明"
-    )
-    instance: str | None = Field(
-        None,
-        description="この問題発生の特定のURIインスタンス"
-    )
+    type: str = Field(default="about:blank", description="問題タイプを識別するURI")
+    title: str = Field(..., description="人間が読める短い要約")
+    status: int = Field(..., ge=100, le=599, description="HTTPステータスコード")
+    detail: str | None = Field(None, description="この問題の具体的な説明")
+    instance: str | None = Field(None, description="この問題発生の特定のURIインスタンス")
 
     model_config = {"extra": "allow"}  # RFC 9457は追加フィールドを許可
 

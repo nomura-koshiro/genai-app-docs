@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.repositories.project.member import ProjectMemberRepository
+from app.repositories import ProjectMemberRepository
 from app.services.project.member.authorization import (
     ProjectMemberAuthorizationChecker,
 )
@@ -125,9 +125,7 @@ class ProjectMemberRemover:
                 )
 
             # リクエスタの権限確認（PROJECT_MANAGER/PROJECT_MODERATOR）
-            requester_role = await self.auth_checker.get_requester_role(
-                member.project_id, requester_id
-            )
+            requester_role = await self.auth_checker.get_requester_role(member.project_id, requester_id)
             await self.auth_checker.check_can_manage_members(requester_role)
 
             # PROJECT_MODERATOR制限チェック（PROJECT_MANAGERメンバーは削除できない）
@@ -150,9 +148,7 @@ class ProjectMemberRemover:
                 )
 
             # 最後のPROJECT_MANAGERの削除禁止
-            await self.auth_checker.check_last_manager_protection(
-                member.project_id, member
-            )
+            await self.auth_checker.check_last_manager_protection(member.project_id, member)
 
             # メンバーを削除
             await self.repository.delete(member_id)

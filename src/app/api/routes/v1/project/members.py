@@ -34,8 +34,8 @@ from fastapi import APIRouter, HTTPException, Query, status
 from app.api.core import CurrentUserAzureDep, DatabaseDep
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
-from app.models.project.member import ProjectRole
-from app.schemas.project.member import (
+from app.models import ProjectRole
+from app.schemas import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkResponse,
     ProjectMemberBulkUpdate,
@@ -46,7 +46,7 @@ from app.schemas.project.member import (
     ProjectMemberUpdate,
     UserRoleResponse,
 )
-from app.services.project.member import ProjectMemberService
+from app.services import ProjectMemberService
 
 logger = get_logger(__name__)
 

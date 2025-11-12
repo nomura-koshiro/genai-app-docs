@@ -31,9 +31,7 @@ def mock_ppt_service():
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_download_ppt_endpoint_success(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_download_ppt_endpoint_success(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """PPTダウンロードエンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -60,9 +58,7 @@ async def test_download_ppt_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_download_ppt_missing_parameters(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_download_ppt_missing_parameters(client: AsyncClient, override_auth, test_user):
     """必須パラメータが不足している場合のエラー。"""
     # Arrange
     override_auth(test_user)
@@ -82,9 +78,7 @@ async def test_download_ppt_missing_parameters(
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_export_selected_slides_endpoint_success(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_export_selected_slides_endpoint_success(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """選択されたスライドのエクスポートエンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -111,9 +105,7 @@ async def test_export_selected_slides_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_export_selected_slides_invalid_pattern(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_export_selected_slides_invalid_pattern(client: AsyncClient, override_auth, test_user):
     """無効なスライド番号パターンでのエラー。"""
     # Arrange
     override_auth(test_user)
@@ -135,9 +127,7 @@ async def test_export_selected_slides_invalid_pattern(
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_get_slide_image_endpoint_success(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_get_slide_image_endpoint_success(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """スライド画像取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -164,9 +154,7 @@ async def test_get_slide_image_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_get_slide_image_invalid_number(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_get_slide_image_invalid_number(client: AsyncClient, override_auth, test_user):
     """無効なスライド番号でのエラー。"""
     # Arrange
     override_auth(test_user)
@@ -188,9 +176,7 @@ async def test_get_slide_image_invalid_number(
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_download_question_endpoint_success(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_download_question_endpoint_success(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """質問データダウンロードエンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -219,9 +205,7 @@ async def test_download_question_endpoint_success(
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_upload_ppt_endpoint_success(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_upload_ppt_endpoint_success(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """PPTアップロードエンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -255,9 +239,7 @@ async def test_upload_ppt_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_upload_ppt_invalid_file_type(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_upload_ppt_invalid_file_type(client: AsyncClient, override_auth, test_user):
     """無効なファイルタイプでのアップロードエラー。"""
     # Arrange
     override_auth(test_user)
@@ -265,9 +247,7 @@ async def test_upload_ppt_invalid_file_type(
     # Act - PPTXではないファイル
     response = await client.post(
         "/api/v1/ppt/upload",
-        files={
-            "file": ("document.txt", b"text content", "text/plain")
-        },
+        files={"file": ("document.txt", b"text content", "text/plain")},
         data={
             "package": "market-analysis",
             "phase": "phase1",
@@ -298,9 +278,7 @@ async def test_unauthorized_access(client: AsyncClient):
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_download_ppt_with_special_characters(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_download_ppt_with_special_characters(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """特殊文字を含むパラメータでのPPTダウンロード。"""
     # Arrange
     override_auth(test_user)
@@ -325,9 +303,7 @@ async def test_download_ppt_with_special_characters(
 
 @pytest.mark.skip(reason="Mock/implementation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_export_slides_large_selection(
-    client: AsyncClient, override_auth, test_user, mock_ppt_service
-):
+async def test_export_slides_large_selection(client: AsyncClient, override_auth, test_user, mock_ppt_service):
     """大量のスライド選択でのエクスポート。"""
     # Arrange
     override_auth(test_user)

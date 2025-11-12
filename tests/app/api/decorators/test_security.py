@@ -33,17 +33,18 @@ class TestHandleServiceErrors:
 
     @pytest.mark.asyncio
     async def test_custom_error_conversion(self):
-        """カスタムエラーが適切なHTTPエラーに変換されることをテスト。"""
+        """カスタムエラーがログ出力後に再送出されることをテスト。"""
 
         @handle_service_errors
         async def test_func():
-            raise ValidationError("バリデーションエラー", details={"field": "email"})
+            raise ValidationError("Validation error", details={"field": "email"})
 
-        with pytest.raises(HTTPException) as exc_info:
+        # デコレータはエラーをそのまま再送出する（グローバルハンドラーで処理）
+        with pytest.raises(ValidationError) as exc_info:
             await test_func()
 
-        assert exc_info.value.status_code == 422
-        assert "バリデーションエラー" in str(exc_info.value.detail)
+        assert exc_info.value.message == "Validation error"
+        assert exc_info.value.details == {"field": "email"}
 
     @pytest.mark.asyncio
     async def test_http_exception_pass_through(self):

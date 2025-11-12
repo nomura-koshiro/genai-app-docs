@@ -9,9 +9,9 @@ from app.core.config import settings
 from app.core.exceptions import AuthenticationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.core.security import hash_password, verify_password
-from app.models.sample.sample_user import SampleUser
-from app.repositories.sample.sample_user import SampleUserRepository
-from app.schemas.sample.sample_user import SampleUserCreate
+from app.models import SampleUser
+from app.repositories import SampleUserRepository
+from app.schemas import SampleUserCreate
 
 logger = get_logger(__name__)
 

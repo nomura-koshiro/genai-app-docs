@@ -19,9 +19,7 @@ from app.repositories.driver_tree import DriverTreeRepository
 
 @pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
 @pytest.mark.asyncio
-async def test_create_node_endpoint_success(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_create_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """ノード作成エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -53,9 +51,7 @@ async def test_create_node_endpoint_success(
 
 @pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
 @pytest.mark.asyncio
-async def test_create_node_without_coordinates(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_create_node_without_coordinates(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """座標なしでのノード作成テスト。"""
     # Arrange
     override_auth(test_user)
@@ -82,9 +78,7 @@ async def test_create_node_without_coordinates(
 
 @pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
 @pytest.mark.asyncio
-async def test_get_node_endpoint_success(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_get_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """ノード取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -126,9 +120,7 @@ async def test_get_node_not_found(client: AsyncClient, override_auth, test_user)
 
 @pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
 @pytest.mark.asyncio
-async def test_update_node_endpoint_success(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_update_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """ノード更新エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -162,9 +154,7 @@ async def test_update_node_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_create_tree_from_formulas_endpoint_success(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_create_tree_from_formulas_endpoint_success(client: AsyncClient, override_auth, test_user):
     """数式からツリー作成エンドポイントの成功ケース。
 
     重要: create_tree_from_formulas は単一のツリーを返すようになった。
@@ -202,9 +192,7 @@ async def test_create_tree_from_formulas_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_create_tree_from_formulas_with_name(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_create_tree_from_formulas_with_name(client: AsyncClient, override_auth, test_user):
     """名前付きでツリーを作成。"""
     # Arrange
     override_auth(test_user)
@@ -225,9 +213,7 @@ async def test_create_tree_from_formulas_with_name(
 
 
 @pytest.mark.asyncio
-async def test_get_tree_endpoint_success(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_get_tree_endpoint_success(client: AsyncClient, override_auth, test_user):
     """ツリー取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -267,9 +253,7 @@ async def test_get_tree_not_found(client: AsyncClient, override_auth, test_user)
 
 
 @pytest.mark.asyncio
-async def test_get_categories_endpoint_success(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_get_categories_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """カテゴリー一覧取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -309,9 +293,7 @@ async def test_get_categories_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_get_kpis_endpoint_success(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_get_kpis_endpoint_success(client: AsyncClient, override_auth, test_user):
     """KPI一覧取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -332,9 +314,7 @@ async def test_get_kpis_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_get_formulas_endpoint_success(
-    client: AsyncClient, override_auth, test_user, db_session: AsyncSession
-):
+async def test_get_formulas_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
     """数式取得エンドポイントの成功ケース。"""
     # Arrange
     override_auth(test_user)
@@ -372,9 +352,7 @@ async def test_get_formulas_endpoint_success(
 
 
 @pytest.mark.asyncio
-async def test_get_formulas_not_found(
-    client: AsyncClient, override_auth, test_user
-):
+async def test_get_formulas_not_found(client: AsyncClient, override_auth, test_user):
     """存在しないツリータイプ/KPIの数式取得テスト。"""
     # Arrange
     override_auth(test_user)

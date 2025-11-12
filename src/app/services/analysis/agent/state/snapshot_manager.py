@@ -30,7 +30,7 @@ from app.api.decorators import measure_performance
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisSessionRepository, AnalysisStepRepository
-from app.schemas.analysis.session import AnalysisStepSnapshot
+from app.schemas import AnalysisStepSnapshot
 
 logger = get_logger(__name__)
 
@@ -160,9 +160,7 @@ class AnalysisSnapshotManager:
                 )
 
             # すべてのステップを取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             # ステップデータをAnalysisStepSnapshotモデルに変換（結果データは含まない）
             temp_all_steps: list[AnalysisStepSnapshot] = []
@@ -284,10 +282,7 @@ class AnalysisSnapshotManager:
                 raise ValueError("スナップショット履歴がありません")
 
             if snapshot_id < 0 or snapshot_id >= len(session.snapshot_history):
-                raise ValueError(
-                    f"Invalid snapshot_id: {snapshot_id}. "
-                    f"Valid range: 0-{len(session.snapshot_history) - 1}"
-                )
+                raise ValueError(f"Invalid snapshot_id: {snapshot_id}. Valid range: 0-{len(session.snapshot_history) - 1}")
 
             # スナップショットを取得してAnalysisStepSnapshotモデルに変換
             snapshot_step_dicts: list[dict[str, Any]] = session.snapshot_history[snapshot_id]
@@ -296,9 +291,7 @@ class AnalysisSnapshotManager:
             ]
 
             # 既存のすべてのステップを削除
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
             for step in all_steps:
                 await self.step_repository.delete(step.id)
 
@@ -329,11 +322,7 @@ class AnalysisSnapshotManager:
             session.snapshot_history = session.snapshot_history[: snapshot_id + 1]
 
             # チャット履歴を切り詰め
-            session.chat_history = [
-                entry
-                for entry in (session.chat_history or [])
-                if entry.get("snapshot_id", 0) <= snapshot_id
-            ]
+            session.chat_history = [entry for entry in (session.chat_history or []) if entry.get("snapshot_id", 0) <= snapshot_id]
 
             await self.db.flush()
 

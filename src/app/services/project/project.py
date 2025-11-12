@@ -31,10 +31,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.project.member import ProjectMember, ProjectRole
-from app.models.project.project import Project
-from app.repositories.project.project import ProjectRepository
-from app.schemas.project.project import ProjectCreate, ProjectUpdate
+from app.models import Project, ProjectMember, ProjectRole
+from app.repositories import ProjectRepository
+from app.schemas import ProjectCreate, ProjectUpdate
 
 logger = get_logger(__name__)
 
@@ -544,7 +543,7 @@ class ProjectService:
 
         from sqlalchemy import select
 
-        from app.models.project.file import ProjectFile
+        from app.models import ProjectFile
 
         # プロジェクトに関連するファイルを取得（リレーションシップを明示的にロード）
         result = await self.db.execute(select(ProjectFile).where(ProjectFile.project_id == project.id))

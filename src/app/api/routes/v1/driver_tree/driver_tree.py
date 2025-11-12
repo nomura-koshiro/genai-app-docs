@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.core.dependencies import CurrentUserAzureDep, get_db
 from app.api.decorators import async_timeout, handle_service_errors
 from app.core.logging import get_logger
-from app.schemas.driver_tree.driver_tree import (
+from app.schemas import (
     DriverTreeFormulaCreateRequest,
     DriverTreeFormulaResponse,
     DriverTreeKPIListResponse,

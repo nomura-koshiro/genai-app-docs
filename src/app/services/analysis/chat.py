@@ -18,8 +18,8 @@ from app.api.decorators import async_timeout, measure_performance
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisSessionRepository
+from app.schemas import ChatRequest, ChatResponse
 from app.schemas.analysis import AnalysisChatMessage
-from app.schemas.analysis.session import ChatRequest, ChatResponse
 
 logger = get_logger(__name__)
 

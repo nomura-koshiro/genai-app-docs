@@ -46,7 +46,7 @@ from app.api.decorators import handle_service_errors
 from app.core.exceptions import AuthenticationError, NotFoundError
 from app.core.logging import get_logger
 from app.core.security import create_access_token, create_refresh_token
-from app.schemas.sample.sample_user import (
+from app.schemas import (
     SampleAPIKeyResponse,
     SampleRefreshTokenRequest,
     SampleToken,

@@ -26,9 +26,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.project.member import ProjectMember, ProjectRole
-from app.repositories.project.member import ProjectMemberRepository
-from app.schemas.project.member import (
+from app.models import ProjectMember, ProjectRole
+from app.repositories import ProjectMemberRepository
+from app.schemas import (
     ProjectMemberBulkUpdateError,
     ProjectMemberRoleUpdate,
 )
@@ -134,9 +134,7 @@ class ProjectMemberUpdater:
                 )
 
             # リクエスタの権限確認（PROJECT_MANAGER/PROJECT_MODERATOR）
-            requester_role = await self.auth_checker.get_requester_role(
-                member.project_id, requester_id
-            )
+            requester_role = await self.auth_checker.get_requester_role(member.project_id, requester_id)
             await self.auth_checker.check_can_manage_members(requester_role)
 
             # PROJECT_MODERATOR制限チェック（現在のロールと新しいロール両方）
@@ -158,16 +156,12 @@ class ProjectMemberUpdater:
 
             # 最後のPROJECT_MANAGERの降格禁止（新しいロールがPROJECT_MANAGER以外の場合のみチェック）
             if new_role != ProjectRole.PROJECT_MANAGER:
-                await self.auth_checker.check_last_manager_protection(
-                    member.project_id, member
-                )
+                await self.auth_checker.check_last_manager_protection(member.project_id, member)
 
             # ロールを更新
             updated_member = await self.repository.update_role(member_id, new_role)
             if not updated_member:
-                raise NotFoundError(
-                    "メンバーが見つかりません", details={"member_id": str(member_id)}
-                )
+                raise NotFoundError("メンバーが見つかりません", details={"member_id": str(member_id)})
 
             await self.db.flush()
             await self.db.refresh(updated_member)
@@ -264,9 +258,7 @@ class ProjectMemberUpdater:
             await self.auth_checker.check_project_exists(project_id)
 
             # リクエスタの権限確認（PROJECT_MANAGER/PROJECT_MODERATOR）
-            requester_role = await self.auth_checker.get_requester_role(
-                project_id, requester_id
-            )
+            requester_role = await self.auth_checker.get_requester_role(project_id, requester_id)
             await self.auth_checker.check_can_manage_members(requester_role)
 
             # 各メンバーを更新
@@ -341,9 +333,7 @@ class ProjectMemberUpdater:
                     # 最後のPROJECT_MANAGERの降格禁止（新しいロールがPROJECT_MANAGER以外の場合のみチェック）
                     if update_data.role != ProjectRole.PROJECT_MANAGER:
                         try:
-                            await self.auth_checker.check_last_manager_protection(
-                                project_id, member
-                            )
+                            await self.auth_checker.check_last_manager_protection(project_id, member)
                         except ValidationError:
                             failed_updates.append(
                                 ProjectMemberBulkUpdateError(
@@ -359,9 +349,7 @@ class ProjectMemberUpdater:
                             continue
 
                     # ロールを更新
-                    updated_member = await self.repository.update_role(
-                        update_data.member_id, update_data.role
-                    )
+                    updated_member = await self.repository.update_role(update_data.member_id, update_data.role)
                     if not updated_member:
                         failed_updates.append(
                             ProjectMemberBulkUpdateError(

@@ -31,6 +31,8 @@
     ...     source_df = await data_manager.get_source_data(step_index=0)
 """
 
+from __future__ import annotations
+
 import uuid
 from typing import Any
 
@@ -276,9 +278,7 @@ class AnalysisDataManager:
             await self.db.flush()
 
             # original.csvの削除チェック
-            original_path = self.storage_service.generate_path(
-                self.session_id, "original.csv"
-            )
+            original_path = self.storage_service.generate_path(self.session_id, "original.csv")
             if file.storage_path == original_path:
                 logger.info(
                     "元データが削除されました",
@@ -415,15 +415,11 @@ class AnalysisDataManager:
 
         try:
             # ステップ一覧を取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             # original を取得
             if step_index is None or all_steps[step_index].data_source == "original":
-                original_path = self.storage_service.generate_path(
-                    self.session_id, "original.csv"
-                )
+                original_path = self.storage_service.generate_path(self.session_id, "original.csv")
                 df = await self.storage_service.load_dataframe(original_path)
 
                 logger.debug(

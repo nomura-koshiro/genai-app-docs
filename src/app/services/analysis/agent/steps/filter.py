@@ -29,7 +29,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas.analysis.config import (
+from app.schemas import (
     FilterConfig,
     NumericFilterConfig,
     TableFilterConfig,

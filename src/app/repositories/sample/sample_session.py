@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
-from app.models.sample.sample_session import SampleMessage, SampleSession
+from app.models import SampleMessage, SampleSession
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)

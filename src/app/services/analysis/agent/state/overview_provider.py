@@ -120,9 +120,7 @@ class AnalysisOverviewProvider:
 
             # original.csvから読み込み
             try:
-                original_path = self.storage_service.generate_path(
-                    self.session_id, "original.csv"
-                )
+                original_path = self.storage_service.generate_path(self.session_id, "original.csv")
                 original_df = await self.storage_service.load_dataframe(original_path)
 
                 overview += "\nデータセット original:\n"
@@ -140,9 +138,7 @@ class AnalysisOverviewProvider:
                 overview += "データ: なし\n"
 
             # すべてのステップの結果を取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             for i, step in enumerate(all_steps):
                 overview += f"\nデータセット step_{i}:\n"
@@ -152,9 +148,7 @@ class AnalysisOverviewProvider:
                     continue
 
                 try:
-                    result_df = await self.storage_service.load_dataframe(
-                        step.result_data_path
-                    )
+                    result_df = await self.storage_service.load_dataframe(step.result_data_path)
 
                     if result_df is None or result_df.empty:
                         overview += "データ: 空のデータ\n"
@@ -164,9 +158,7 @@ class AnalysisOverviewProvider:
                             if col == "値":
                                 continue
                             unique_values = result_df[col].unique()
-                            overview += (
-                                f"  {col}: {', '.join(map(str, unique_values))}\n"
-                            )
+                            overview += f"  {col}: {', '.join(map(str, unique_values))}\n"
                 except Exception as e:
                     overview += f"データ: 読み込みエラー ({str(e)})\n"
 
@@ -244,14 +236,10 @@ class AnalysisOverviewProvider:
             - フィルタステップの数値フィルタは3種類（range, topk, percentage）に対応
             - サマリステップの計算式は最大5個まで表示されます
         """
-        logger.debug(
-            "ステップ概要を取得中", session_id=str(self.session_id), index=index
-        )
+        logger.debug("ステップ概要を取得中", session_id=str(self.session_id), index=index)
 
         # すべてのステップを取得
-        all_steps = await self.step_repository.list_by_session(
-            self.session_id, is_active=True
-        )
+        all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
         if not all_steps:
             return "分析ステップは作成されていません"
@@ -290,23 +278,19 @@ class AnalysisOverviewProvider:
                     enable_max = numeric_filter.get("enable_max", False)
 
                     if enable_min and not enable_max:
-                        min_val = numeric_filter.get('min_value', 0)
-                        include_text = '含む' if numeric_filter.get('include_min') else '含まない'
+                        min_val = numeric_filter.get("min_value", 0)
+                        include_text = "含む" if numeric_filter.get("include_min") else "含まない"
                         overview += f"  - 数値フィルタ(範囲): 最小値 {min_val} ({include_text})\n"
                     elif not enable_min and enable_max:
-                        max_val = numeric_filter.get('max_value', 0)
-                        include_text = '含む' if numeric_filter.get('include_max') else '含まない'
+                        max_val = numeric_filter.get("max_value", 0)
+                        include_text = "含む" if numeric_filter.get("include_max") else "含まない"
                         overview += f"  - 数値フィルタ(範囲): 最大値 {max_val} ({include_text})\n"
                     elif enable_min and enable_max:
-                        min_val = numeric_filter.get('min_value', 0)
-                        max_val = numeric_filter.get('max_value', 0)
-                        min_text = '含む' if numeric_filter.get('include_min') else '含まない'
-                        max_text = '含む' if numeric_filter.get('include_max') else '含まない'
-                        overview += (
-                            f"  - 数値フィルタ(範囲): "
-                            f"最小値 {min_val} ({min_text}), "
-                            f"最大値 {max_val} ({max_text})\n"
-                        )
+                        min_val = numeric_filter.get("min_value", 0)
+                        max_val = numeric_filter.get("max_value", 0)
+                        min_text = "含む" if numeric_filter.get("include_min") else "含まない"
+                        max_text = "含む" if numeric_filter.get("include_max") else "含まない"
+                        overview += f"  - 数値フィルタ(範囲): 最小値 {min_val} ({min_text}), 最大値 {max_val} ({max_text})\n"
                     else:
                         overview += "  - 数値フィルタ(範囲): 設定なし\n"
 
@@ -329,8 +313,8 @@ class AnalysisOverviewProvider:
 
                 table_filter = config.get("table_filter", {})
                 if table_filter.get("enable"):
-                    key_cols = ', '.join(table_filter.get('key_columns', []))
-                    mode = '除外' if table_filter.get('exclude_mode') else '包含'
+                    key_cols = ", ".join(table_filter.get("key_columns", []))
+                    mode = "除外" if table_filter.get("exclude_mode") else "包含"
                     overview += f"  - テーブルフィルタ: キーカラム {key_cols}, モード: {mode}\n"
 
             # 集計ステップ
@@ -338,7 +322,7 @@ class AnalysisOverviewProvider:
                 group_by = config.get("axis", [])
                 agg_config = config.get("column", [])
                 overview += f"  - 集計: グループ化 {', '.join(group_by)}\n"
-                overview += f"  - 集計方法: {', '.join([f'{agg.get('subject')} ({agg.get('method')})' for agg in agg_config])}\n"
+                overview += f"  - 集計方法: {', '.join([f'{agg.get("subject")} ({agg.get("method")})' for agg in agg_config])}\n"
 
             # サマリステップ
             elif step_type == "summary":

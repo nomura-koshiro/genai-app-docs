@@ -30,10 +30,8 @@ from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.config import settings
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.project.file import ProjectFile
-from app.models.project.member import ProjectRole
-from app.repositories.project.file import ProjectFileRepository
-from app.repositories.project.member import ProjectMemberRepository
+from app.models import ProjectFile, ProjectRole
+from app.repositories import ProjectFileRepository, ProjectMemberRepository
 
 logger = get_logger(__name__)
 
@@ -78,9 +76,7 @@ class ProjectFileService:
         self.upload_dir = Path(settings.LOCAL_STORAGE_PATH)
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
-    async def _check_member_role(
-        self, project_id: uuid.UUID, user_id: uuid.UUID, required_roles: list[ProjectRole]
-    ) -> None:
+    async def _check_member_role(self, project_id: uuid.UUID, user_id: uuid.UUID, required_roles: list[ProjectRole]) -> None:
         """ユーザーのプロジェクトメンバーシップと権限をチェックします。
 
         Args:
@@ -140,9 +136,7 @@ class ProjectFileService:
     @measure_performance
     @async_timeout(60.0)
     @transactional
-    async def upload_file(
-        self, project_id: uuid.UUID, file: UploadFile, uploaded_by: uuid.UUID
-    ) -> ProjectFile:
+    async def upload_file(self, project_id: uuid.UUID, file: UploadFile, uploaded_by: uuid.UUID) -> ProjectFile:
         """プロジェクトにファイルをアップロードします。
 
         このメソッドは以下の処理を実行します：
@@ -175,9 +169,7 @@ class ProjectFileService:
         )
 
         # 権限チェック（MEMBER以上）
-        await self._check_member_role(
-            project_id, uploaded_by, [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER]
-        )
+        await self._check_member_role(project_id, uploaded_by, [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER])
 
         # ファイル名の検証
         if not file.filename:

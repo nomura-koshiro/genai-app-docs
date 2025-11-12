@@ -5,6 +5,7 @@
 """
 
 import asyncio
+import inspect
 import time
 from collections.abc import Awaitable, Callable
 from functools import wraps
@@ -82,8 +83,15 @@ def log_execution(
             }
 
             if include_args:
-                # self引数を除外（args[1:]）
-                extra_data["args"] = str(args[1:]) if len(args) > 1 else "()"
+                # メソッドの場合のみself引数を除外
+                sig = inspect.signature(func)
+                params = list(sig.parameters.keys())
+                is_method = len(params) > 0 and params[0] in ("self", "cls")
+
+                if is_method and len(args) > 0:
+                    extra_data["args"] = str(args[1:])  # self/cls を除外
+                else:
+                    extra_data["args"] = str(args)  # 通常の関数はそのまま
                 extra_data["kwargs"] = str(kwargs)
 
             log_func(f"Executing: {func.__name__}", extra=extra_data)

@@ -86,15 +86,9 @@ class BarGraph(BaseGraph):
                         name=str(category),
                         orientation=orientation,
                         hovertemplate=(
-                            f"<b>{category}</b><br>"
-                            f"{x_axis}: %{{x}}<br>"
-                            f"{y_axis}: %{{y}}<br>"
-                            "<extra></extra>"
+                            f"<b>{category}</b><br>{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>"
                             if orientation == "v"
-                            else f"<b>{category}</b><br>"
-                            f"{y_axis}: %{{x}}<br>"
-                            f"{x_axis}: %{{y}}<br>"
-                            "<extra></extra>"
+                            else f"<b>{category}</b><br>{y_axis}: %{{x}}<br>{x_axis}: %{{y}}<br><extra></extra>"
                         ),
                     )
                 )
@@ -106,9 +100,9 @@ class BarGraph(BaseGraph):
                     y=df[y_axis] if orientation == "v" else df[x_axis],
                     orientation=orientation,
                     hovertemplate=(
-                        f"{x_axis}: %{{x}}<br>" f"{y_axis}: %{{y}}<br>" "<extra></extra>"
+                        f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br><extra></extra>"
                         if orientation == "v"
-                        else f"{y_axis}: %{{x}}<br>" f"{x_axis}: %{{y}}<br>" "<extra></extra>"
+                        else f"{y_axis}: %{{x}}<br>{x_axis}: %{{y}}<br><extra></extra>"
                     ),
                 )
             )

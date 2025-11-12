@@ -142,9 +142,7 @@ class AnalysisStepManager:
 
         try:
             # すべてのステップを削除
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
             for step in all_steps:
                 await self.step_repository.delete(step.id)
 
@@ -264,24 +262,17 @@ class AnalysisStepManager:
             # データソースが 'original' 以外の場合、インデックスを確認
             if data != "original":
                 if not data.startswith("step_"):
-                    raise ValueError(
-                        f"Invalid data source format: {data}. "
-                        f"Expected 'original' or 'step_0', 'step_1', ..."
-                    )
+                    raise ValueError(f"Invalid data source format: {data}. Expected 'original' or 'step_0', 'step_1', ...")
 
                 data_index = int(data.split("_")[1])
-                all_steps = await self.step_repository.list_by_session(
-                    self.session_id, is_active=True
-                )
+                all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
                 if data_index < 0 or data_index >= len(all_steps):
                     raise ValueError(f"Invalid data source index: {data}")
 
                 # 結果データがあるか確認
                 if not all_steps[data_index].result_data_path:
-                    raise ValueError(
-                        f"Step {data_index} does not have result data yet"
-                    )
+                    raise ValueError(f"Step {data_index} does not have result data yet")
 
             # ステップタイプの検証と初期設定
             step_classes = {
@@ -292,10 +283,7 @@ class AnalysisStepManager:
             }
 
             if type not in step_classes:
-                raise ValueError(
-                    f"Unknown step type: {type}. "
-                    f"Valid types: {list(step_classes.keys())}"
-                )
+                raise ValueError(f"Unknown step type: {type}. Valid types: {list(step_classes.keys())}")
 
             # ステップクラスのインスタンスを作成して初期configを取得
             step_instance = step_classes[type]()
@@ -378,15 +366,10 @@ class AnalysisStepManager:
 
         try:
             # すべてのステップを取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                raise IndexError(
-                    f"Step index out of range: {step_index}. "
-                    f"Valid range: 0-{len(all_steps) - 1}"
-                )
+                raise IndexError(f"Step index out of range: {step_index}. Valid range: 0-{len(all_steps) - 1}")
 
             # ステップを削除
             target_step = all_steps[step_index]
@@ -465,15 +448,10 @@ class AnalysisStepManager:
 
         try:
             # すべてのステップを取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                raise IndexError(
-                    f"Step index out of range: {step_index}. "
-                    f"Valid range: 0-{len(all_steps) - 1}"
-                )
+                raise IndexError(f"Step index out of range: {step_index}. Valid range: 0-{len(all_steps) - 1}")
 
             step = all_steps[step_index]
 
@@ -541,9 +519,7 @@ class AnalysisStepManager:
             step_index=step_index,
         )
 
-        all_steps = await self.step_repository.list_by_session(
-            self.session_id, is_active=True
-        )
+        all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
         if step_index < 0 or step_index >= len(all_steps):
             raise IndexError(f"Step index out of range: {step_index}")
@@ -559,9 +535,7 @@ class AnalysisStepManager:
         return result
 
     @measure_performance
-    async def set_config(
-        self, step_index: int, config: dict[str, Any], source_data: pd.DataFrame
-    ) -> str:
+    async def set_config(self, step_index: int, config: dict[str, Any], source_data: pd.DataFrame) -> str:
         """指定したステップに設定を追加し、適用します。
 
         このメソッドは設定をセット後、自動的にapply()を呼び出します。
@@ -621,9 +595,7 @@ class AnalysisStepManager:
 
         try:
             # すべてのステップを取得
-            all_steps = await self.step_repository.list_by_session(
-                self.session_id, is_active=True
-            )
+            all_steps = await self.step_repository.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
                 raise IndexError(f"Step index out of range: {step_index}")

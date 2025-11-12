@@ -65,7 +65,6 @@ class TestCacheResult:
             assert set_call_args[0][2] == 300  # ttl
 
 
-
 class TestTransactional:
     """transactionalデコレータのテスト。"""
 
@@ -109,4 +108,3 @@ class TestTransactional:
 
         assert not mock_db.commit.called
         assert mock_db.rollback.called
-

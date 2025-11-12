@@ -21,7 +21,7 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.analysis import AnalysisFile
 from app.repositories.analysis import AnalysisFileRepository, AnalysisSessionRepository
-from app.schemas.analysis.session import (
+from app.schemas import (
     AnalysisFileMetadata,
     AnalysisFileUploadRequest,
     AnalysisFileUploadResponse,

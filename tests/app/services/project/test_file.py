@@ -7,10 +7,9 @@ import pytest
 from fastapi import UploadFile
 
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
-from app.models.project.member import ProjectMember, ProjectRole
-from app.models.project.project import Project
-from app.models.user.user import User
-from app.services.project.file import MAX_FILE_SIZE, ProjectFileService
+from app.models import Project, ProjectMember, ProjectRole, User
+from app.services import ProjectFileService
+from app.services.project.file import MAX_FILE_SIZE
 
 
 class TestProjectFileService:

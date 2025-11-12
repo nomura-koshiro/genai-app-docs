@@ -16,8 +16,8 @@ from app.api.decorators import measure_performance, transactional
 from app.core.config import settings
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models.sample.sample_file import SampleFile
-from app.repositories.sample.sample_file import SampleFileRepository
+from app.models import SampleFile
+from app.repositories import SampleFileRepository
 
 logger = get_logger(__name__)
 

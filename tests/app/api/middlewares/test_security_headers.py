@@ -44,6 +44,7 @@ async def test_hsts_header_present(client: AsyncClient):
     # 本番環境（DEBUG=False）でのみHSTSヘッダーが追加される
     # テスト環境ではDEBUG=Trueなので、HSTSヘッダーがないことを確認
     from app.core.config import settings
+
     if settings.DEBUG:
         # 開発/テスト環境: HSTSヘッダーなし
         assert "Strict-Transport-Security" not in response.headers

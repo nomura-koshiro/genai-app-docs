@@ -79,9 +79,7 @@ class HistogramGraph(BaseGraph):
                         name=str(category),
                         nbinsx=nbins,
                         histnorm=histnorm,
-                        hovertemplate=(
-                            f"<b>{category}</b><br>" f"{x_axis}: %{{x}}<br>" "件数: %{{y}}<br>" "<extra></extra>"
-                        ),
+                        hovertemplate=(f"<b>{category}</b><br>{x_axis}: %{{x}}<br>件数: %{{{{y}}}}<br><extra></extra>"),
                     )
                 )
         else:
@@ -91,7 +89,7 @@ class HistogramGraph(BaseGraph):
                     x=df[x_axis],
                     nbinsx=nbins,
                     histnorm=histnorm,
-                    hovertemplate=f"{x_axis}: %{{x}}<br>" "件数: %{{y}}<br>" "<extra></extra>",
+                    hovertemplate=f"{x_axis}: %{{x}}<br>件数: %{{{{y}}}}<br><extra></extra>",
                 )
             )
 

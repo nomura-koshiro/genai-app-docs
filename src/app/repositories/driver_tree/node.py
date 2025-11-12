@@ -101,9 +101,7 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
         Example:
             >>> nodes = await repo.find_by_tree_id(tree_id)
         """
-        result = await self.db.execute(
-            select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id)
-        )
+        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id))
         return list(result.scalars().all())
 
     async def find_root_by_tree_id(self, tree_id: uuid.UUID) -> DriverTreeNode | None:
@@ -119,9 +117,7 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
             >>> root = await repo.find_root_by_tree_id(tree_id)
         """
         result = await self.db.execute(
-            select(DriverTreeNode)
-            .where(DriverTreeNode.tree_id == tree_id)
-            .where(DriverTreeNode.parent_id.is_(None))
+            select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id).where(DriverTreeNode.parent_id.is_(None))
         )
         return result.scalar_one_or_none()
 
@@ -137,9 +133,7 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
         Example:
             >>> children = await repo.find_children(parent_id)
         """
-        result = await self.db.execute(
-            select(DriverTreeNode).where(DriverTreeNode.parent_id == parent_id)
-        )
+        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.parent_id == parent_id))
         return list(result.scalars().all())
 
     async def get_with_children(self, id: uuid.UUID) -> DriverTreeNode | None:
@@ -156,16 +150,10 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
             >>> for child in node.children:
             ...     print(child.label)
         """
-        result = await self.db.execute(
-            select(DriverTreeNode)
-            .where(DriverTreeNode.id == id)
-            .options(selectinload(DriverTreeNode.children))
-        )
+        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.id == id).options(selectinload(DriverTreeNode.children)))
         return result.scalar_one_or_none()
 
-    async def find_by_label_and_tree(
-        self, tree_id: uuid.UUID, label: str
-    ) -> DriverTreeNode | None:
+    async def find_by_label_and_tree(self, tree_id: uuid.UUID, label: str) -> DriverTreeNode | None:
         """ツリー内でラベルからノードを検索します。
 
         Args:
@@ -178,9 +166,5 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
         Example:
             >>> node = await repo.find_by_label_and_tree(tree_id, "粗利")
         """
-        result = await self.db.execute(
-            select(DriverTreeNode)
-            .where(DriverTreeNode.tree_id == tree_id)
-            .where(DriverTreeNode.label == label)
-        )
+        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id).where(DriverTreeNode.label == label))
         return result.scalar_one_or_none()

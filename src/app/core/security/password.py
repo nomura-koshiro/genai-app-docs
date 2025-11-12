@@ -36,10 +36,11 @@ import hashlib
 import re
 
 import bcrypt
+import structlog
 
-from app.core.logging import get_logger
+from app.core.config import settings
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -94,10 +95,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     password_hash = hashlib.sha256(plain_password.encode("utf-8")).hexdigest()
 
     # bcrypt.checkpw()は bytes を要求するため、エンコード
-    return bcrypt.checkpw(
-        password_hash.encode("utf-8"),
-        hashed_password.encode("utf-8")
-    )
+    return bcrypt.checkpw(password_hash.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def hash_password(password: str) -> str:
@@ -156,8 +154,8 @@ def hash_password(password: str) -> str:
     password_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
 
     # bcrypt.hashpw()は bytes を要求するため、エンコード
-    # gensalt()でランダムなsaltを生成（デフォルトコスト: 12ラウンド）
-    hashed = bcrypt.hashpw(password_hash.encode("utf-8"), bcrypt.gensalt())
+    # gensalt()でランダムなsaltを生成（コストファクター: settings.BCRYPT_ROUNDS）
+    hashed = bcrypt.hashpw(password_hash.encode("utf-8"), bcrypt.gensalt(rounds=settings.BCRYPT_ROUNDS))
 
     # 結果をstrに変換して返す
     return hashed.decode("utf-8")

@@ -106,6 +106,4 @@ class DriverTree(Base, TimestampMixin):
             >>> print(repr(tree))
             <DriverTree(name='粗利分析', nodes=5)>
         """
-        return (
-            f"<DriverTree(name='{self.name}', " f"nodes={len(self.nodes) if self.nodes else 0})>"
-        )
+        return f"<DriverTree(name='{self.name}', nodes={len(self.nodes) if self.nodes else 0})>"

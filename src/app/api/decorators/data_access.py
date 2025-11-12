@@ -68,10 +68,18 @@ def transactional[T](
     async def wrapper(*args: Any, **kwargs: Any) -> T:
         # 最初の引数がselfで、dbセッションを持っていると仮定
         instance = args[0] if args else None
-        db = getattr(instance, "db", None) or getattr(instance, "_db", None)
+        db = getattr(instance, "db", None)
+        if db is None:
+            db = getattr(instance, "_db", None)
 
         if db is None:
-            # dbがない場合は通常実行
+            # dbがない場合は通常実行（トランザクション管理なし）
+            logger.debug(
+                "transactional_decorator_skipped",
+                function=func.__name__,
+                reason="no_db_attribute",
+                hint="Instance should have 'db' or '_db' attribute for transaction management",
+            )
             return await func(*args, **kwargs)
 
         try:
@@ -136,7 +144,9 @@ def cache_result(ttl: int = 300, key_prefix: str = "func"):
         - Redis未接続時は通常の関数として動作（グレースフルデグラデーション）
         - 引数が変わると別のキャッシュキーが生成される
         - データ更新時は cache_manager.delete() で手動削除が必要
-        - キャッシュキーはSHA256ハッシュで生成（衝突回避）
+        - キャッシュキーはSHA256ハッシュの先頭16文字を使用
+          （衝突確率: 約 1/2^64 ≈ 5.4×10^-20、実用上問題なし）
+        - より高い安全性が必要な場合は、ハッシュ長を32文字に拡張可能
         - ログは structlog 形式で出力される
 
     Warning:

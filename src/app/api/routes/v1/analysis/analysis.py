@@ -41,7 +41,7 @@ from app.api.decorators import async_timeout, handle_service_errors
 from app.core.database import get_db
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
-from app.schemas.analysis.session import (
+from app.schemas import (
     AnalysisFileUploadRequest,
     AnalysisFileUploadResponse,
     AnalysisSessionCreate,
@@ -53,8 +53,8 @@ from app.schemas.analysis.session import (
     DummyDataResponse,
     ValidationConfigResponse,
 )
+from app.services import ProjectService
 from app.services.analysis import AnalysisService
-from app.services.project.project import ProjectService
 
 logger = get_logger(__name__)
 

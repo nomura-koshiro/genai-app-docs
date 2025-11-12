@@ -485,9 +485,7 @@ class FormulaItemConfig(BaseModel):
     model_config = ConfigDict(frozen=False)
 
     target_subject: str | list[str] = Field(..., description="対象科目名（単一または複数）")
-    type: Literal["sum", "mean", "count", "max", "min", "+", "-", "*", "/", "arithmetic"] = Field(
-        ..., description="数式タイプ"
-    )
+    type: Literal["sum", "mean", "count", "max", "min", "+", "-", "*", "/", "arithmetic"] = Field(..., description="数式タイプ")
     formula_text: str = Field(..., description="数式テキスト（表示用）")
     unit: str | None = Field(default=None, description="単位")
     portion: float = Field(1.0, description="重み係数")

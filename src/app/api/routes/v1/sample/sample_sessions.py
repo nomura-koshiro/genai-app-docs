@@ -11,7 +11,7 @@ from fastapi import APIRouter, Query
 from app.api.core import CurrentUserDep, CurrentUserOptionalDep, SessionServiceDep
 from app.api.decorators import handle_service_errors, validate_permissions
 from app.core.logging import get_logger
-from app.schemas.sample.sample_sessions import (
+from app.schemas import (
     SampleDeleteResponse,
     SampleMessageResponse,
     SampleSessionCreateRequest,

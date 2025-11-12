@@ -28,9 +28,43 @@
     ...     return {"email": current_user.email}
 """
 
-from typing import TYPE_CHECKING, Annotated, Any, NoReturn
+from typing import TYPE_CHECKING, Annotated, NoReturn
 
-__all__ = ["AuthUserType", "DatabaseDep", "UserServiceDep", "AzureUserServiceDep"]
+__all__ = [
+    # 型エイリアス
+    "AuthUserType",
+    # データベース依存性
+    "DatabaseDep",
+    "get_db",
+    # サービス依存性
+    "UserServiceDep",
+    "AzureUserServiceDep",
+    "AgentServiceDep",
+    "FileServiceDep",
+    "SessionServiceDep",
+    "ProjectServiceDep",
+    # サービスファクトリ関数
+    "get_user_service",
+    "get_azure_user_service",
+    "get_agent_service",
+    "get_file_service",
+    "get_session_service",
+    "get_project_service",
+    # 認証依存性（型アノテーション）
+    "CurrentUserDep",
+    "CurrentSuperuserDep",
+    "CurrentUserOptionalDep",
+    "CurrentUserAzureDep",
+    # 認証ファクトリ関数
+    "get_current_user",
+    "get_current_active_user",
+    "get_current_superuser",
+    "get_current_user_optional",
+    "get_authenticated_user_from_azure",
+    "get_current_active_user_azure",
+    # ヘルパー関数
+    "verify_active_user",
+]
 
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,14 +73,15 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
-from app.models.sample.sample_user import SampleUser
-from app.models.user.user import User
-from app.services.project.project import ProjectService
-from app.services.sample.sample_agent import SampleAgentService
-from app.services.sample.sample_file import SampleFileService
-from app.services.sample.sample_session import SampleSessionService
-from app.services.sample.sample_user import SampleUserService
-from app.services.user.user import UserService
+from app.models import SampleUser, User
+from app.services import (
+    ProjectService,
+    SampleAgentService,
+    SampleFileService,
+    SampleSessionService,
+    SampleUserService,
+    UserService,
+)
 
 # ================================================================================
 # Azure AD / 開発モード認証のインポート
@@ -69,6 +104,7 @@ else:
 
     def get_current_azure_user() -> NoReturn:
         raise NotImplementedError("Azure auth not available in development mode")
+
 
 # データベース依存性
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
@@ -185,7 +221,47 @@ ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
 """プロジェクトサービスの依存性型。"""
 
 
+# ================================================================================
+# ヘルパー関数
+# ================================================================================
+
+
+def verify_active_user[UserType: (SampleUser, User)](user: UserType) -> UserType:
+    """ユーザーのアクティブ状態を検証します（DRY原則）。
+
+    この関数は、SampleUserとUserの両方のモデルで使用できる汎用的な
+    アクティブ状態検証ロジックを提供します。
+
+    Args:
+        user: 検証対象のユーザー（SampleUser または User）
+
+    Returns:
+        アクティブなユーザー（同じ型）
+
+    Raises:
+        HTTPException: ユーザーが無効化されている場合（403エラー）
+
+    Example:
+        >>> user = await get_current_user(...)
+        >>> active_user = verify_active_user(user)
+
+    Note:
+        - is_active=Falseのユーザーはアクセスを拒否されます
+        - 403 Forbidden を返す（権限不足を示す）
+    """
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,  # Forbidden（権限不足/アカウント無効化）
+            detail="アカウントが無効化されています",
+        )
+    return user
+
+
+# ================================================================================
 # 認証依存性
+# ================================================================================
+
+
 async def get_current_user(
     user_service: UserServiceDep,
     authorization: str | None = Header(None),
@@ -225,34 +301,74 @@ async def get_current_user(
         - アクティブユーザーのみを許可する場合は get_current_active_user を使用してください
     """
     if not authorization:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(
+            status_code=401,
+            detail="認証ヘッダーが必要です",
+            headers={"WWW-Authenticate": 'Bearer realm="API"'},
+        )
 
     try:
         # "Bearer <token>"からトークンを抽出
         scheme, _, token = authorization.partition(" ")
         if scheme.lower() != "bearer":
-            raise HTTPException(status_code=401, detail="Invalid authentication scheme")
+            raise HTTPException(
+                status_code=401,
+                detail="Bearer認証スキームが必要です",
+                headers={"WWW-Authenticate": 'Bearer realm="API"'},
+            )
 
         # トークンをデコード
         payload = decode_access_token(token)
         if not payload:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(
+                status_code=401,
+                detail="トークンが無効です",
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            )
 
         # データベースからユーザーを取得
         user_id = payload.get("sub")
         if not user_id:
-            raise HTTPException(status_code=401, detail="Invalid token payload")
+            raise HTTPException(
+                status_code=401,
+                detail="トークンペイロードが不正です",
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            )
 
         user = await user_service.get_user(int(user_id))
         if not user:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(
+                status_code=401,
+                detail="ユーザーが見つかりません",
+                headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+            )
 
         return user
 
+    except HTTPException:
+        # すでに適切に処理されたHTTPExceptionは再度raiseする
+        raise
     except AuthenticationError as e:
-        raise HTTPException(status_code=401, detail=str(e)) from e
+        raise HTTPException(
+            status_code=401,
+            detail=f"認証エラー: {str(e)}",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        ) from e
+    except ValueError as e:
+        raise HTTPException(
+            status_code=401,
+            detail=f"トークン形式が不正です: {str(e)}",
+            headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
+        ) from e
     except Exception as e:
-        raise HTTPException(status_code=401, detail="Authentication failed") from e
+        from app.core.logging import get_logger
+
+        logger = get_logger(__name__)
+        logger.exception("予期しない認証エラー", error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail="認証処理中にエラーが発生しました",
+        ) from e
 
 
 async def get_current_active_user(
@@ -270,7 +386,7 @@ async def get_current_active_user(
         SampleUser: アクティブな認証済みユーザー
 
     Raises:
-        HTTPException: ユーザーが無効化されている場合（400エラー）
+        HTTPException: ユーザーが無効化されている場合（403エラー）
 
     Example:
         >>> @router.get("/active-only")
@@ -278,12 +394,10 @@ async def get_current_active_user(
         ...     return {"message": "Active user access granted"}
 
     Note:
-        - is_active=Falseのユーザーはアクセスを拒否されます
+        - is_active=Falseのユーザーはアクセスを拒否されます（403 Forbidden）
         - ほとんどのエンドポイントでこの依存性を使用することを推奨します
     """
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    return verify_active_user(current_user)
 
 
 async def get_current_superuser(
@@ -328,9 +442,7 @@ async def get_current_superuser(
 
 async def get_authenticated_user_from_azure(
     user_service: AzureUserServiceDep,
-    azure_user: Any = Depends(
-        get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user
-    ),
+    azure_user: AuthUserType = Depends(get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user),
 ) -> User:
     """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserモデルと紐付け。
 
@@ -393,16 +505,17 @@ async def get_current_active_user_azure(
         User: アクティブな認証済みユーザー（新しいAzure AD対応モデル）
 
     Raises:
-        HTTPException: ユーザーが無効化されている場合（400エラー）
+        HTTPException: ユーザーが無効化されている場合（403エラー）
 
     Example:
         >>> @router.get("/azure-protected")
         >>> async def azure_protected(user: CurrentUserAzureDep):
         ...     return {"message": f"Hello, {user.email}"}
+
+    Note:
+        - is_active=Falseのユーザーはアクセスを拒否されます（403 Forbidden）
     """
-    if not current_user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
-    return current_user
+    return verify_active_user(current_user)
 
 
 # オプション認証（認証あり/なし両対応のエンドポイント用）

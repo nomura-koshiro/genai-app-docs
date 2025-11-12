@@ -12,7 +12,7 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from app.models.user.user import User
+from app.models import User
 
 
 @pytest.fixture

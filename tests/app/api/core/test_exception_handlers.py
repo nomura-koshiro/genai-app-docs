@@ -37,14 +37,16 @@ class TestExceptionHandlers:
         from app.api.core.exception_handlers import app_exception_handler
 
         # モックリクエスト
-        request = Request({
-            "type": "http",
-            "method": "GET",
-            "url": "http://testserver/test",
-            "path": "/test",
-            "headers": [],
-            "query_string": b"",
-        })
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "url": "http://testserver/test",
+                "path": "/test",
+                "headers": [],
+                "query_string": b"",
+            }
+        )
 
         # ValidationErrorを発生
         exc = ValidationError("Invalid input", details={"field": "email"})
@@ -60,6 +62,7 @@ class TestExceptionHandlers:
         # レスポンスボディの検証（RFC 9457準拠）
         body = response.body.decode()
         import json
+
         data = json.loads(body)
         assert "type" in data
         assert "title" in data
@@ -76,14 +79,16 @@ class TestExceptionHandlers:
         """AuthenticationErrorがRFC 9457準拠の401レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
-        request = Request({
-            "type": "http",
-            "method": "GET",
-            "url": "http://testserver/test",
-            "path": "/test",
-            "headers": [],
-            "query_string": b"",
-        })
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "url": "http://testserver/test",
+                "path": "/test",
+                "headers": [],
+                "query_string": b"",
+            }
+        )
         exc = AuthenticationError("Unauthorized")
 
         response = await app_exception_handler(request, exc)
@@ -94,6 +99,7 @@ class TestExceptionHandlers:
 
         body = response.body.decode()
         import json
+
         data = json.loads(body)
         assert data["status"] == 401
         assert data["title"] == "Unauthorized"
@@ -104,14 +110,16 @@ class TestExceptionHandlers:
         """AuthorizationErrorがRFC 9457準拠の403レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
-        request = Request({
-            "type": "http",
-            "method": "GET",
-            "url": "http://testserver/test",
-            "path": "/test",
-            "headers": [],
-            "query_string": b"",
-        })
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "url": "http://testserver/test",
+                "path": "/test",
+                "headers": [],
+                "query_string": b"",
+            }
+        )
         exc = AuthorizationError("Forbidden")
 
         response = await app_exception_handler(request, exc)
@@ -122,6 +130,7 @@ class TestExceptionHandlers:
 
         body = response.body.decode()
         import json
+
         data = json.loads(body)
         assert data["status"] == 403
         assert data["title"] == "Forbidden"
@@ -132,14 +141,16 @@ class TestExceptionHandlers:
         """NotFoundErrorがRFC 9457準拠の404レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
-        request = Request({
-            "type": "http",
-            "method": "GET",
-            "url": "http://testserver/test",
-            "path": "/test",
-            "headers": [],
-            "query_string": b"",
-        })
+        request = Request(
+            {
+                "type": "http",
+                "method": "GET",
+                "url": "http://testserver/test",
+                "path": "/test",
+                "headers": [],
+                "query_string": b"",
+            }
+        )
         exc = NotFoundError("Resource not found")
 
         response = await app_exception_handler(request, exc)
@@ -150,6 +161,7 @@ class TestExceptionHandlers:
 
         body = response.body.decode()
         import json
+
         data = json.loads(body)
         assert data["status"] == 404
         assert data["title"] == "Not Found"

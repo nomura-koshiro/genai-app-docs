@@ -49,10 +49,7 @@ class GetDataOverviewTool(BaseTool):
     """
 
     name: str = "get_data_overview"
-    description: str = (
-        "現在のデータセットの概要を取得します。"
-        "データセットの数、各データセットの行数、列名などを含みます。"
-    )
+    description: str = "現在のデータセットの概要を取得します。データセットの数、各データセットの行数、列名などを含みます。"
 
     db: AsyncSession
     session_id: uuid.UUID
@@ -136,10 +133,7 @@ class GetStepOverviewTool(BaseTool):
     """
 
     name: str = "get_step_overview"
-    description: str = (
-        "現在の分析ステップの概要を取得します。"
-        "各ステップの設定、フィルタ条件、結果データの概要などを含みます。"
-    )
+    description: str = "現在の分析ステップの概要を取得します。各ステップの設定、フィルタ条件、結果データの概要などを含みます。"
 
     db: AsyncSession
     session_id: uuid.UUID
@@ -500,10 +494,7 @@ class DeleteStepTool(BaseTool):
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             # 削除前にステップ名を取得
             step_name = all_steps[step_index].step_name
@@ -513,9 +504,7 @@ class DeleteStepTool(BaseTool):
             await state.delete_step(step_index)
 
             # 残りステップ数を取得
-            remaining_steps = await step_repo.list_by_session(
-                self.session_id, is_active=True
-            )
+            remaining_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             logger.info(
                 "delete_step_tool_success",
@@ -565,7 +554,7 @@ class GetDataValueTool(BaseTool):
 
     name: str = "get_data_value"
     description: str = (
-        '指定したステップの入力データから特定の軸・科目の組み合わせに対応する値を取得します。'
+        "指定したステップの入力データから特定の軸・科目の組み合わせに対応する値を取得します。"
         '入力形式: \'step_index, filter_json\' (例: \'0, {{"科目": "利益", "地域": "日本", "製品": "自動車部品"}}\')'
     )
 
@@ -628,10 +617,7 @@ class GetDataValueTool(BaseTool):
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             try:
                 filter_json = json.loads(parts[1].strip())
@@ -664,10 +650,7 @@ class GetDataValueTool(BaseTool):
                 if not mask.any():
                     unique_values = filtered_data[column].unique()
                     available_values = ", ".join(map(str, unique_values))
-                    return (
-                        f"実行失敗: 指定された値 '{value}' が列 '{column}' に存在しません。"
-                        f"利用可能な値: {available_values}"
-                    )
+                    return f"実行失敗: 指定された値 '{value}' が列 '{column}' に存在しません。利用可能な値: {available_values}"
 
                 filtered_data = filtered_data[mask]
 
@@ -677,11 +660,7 @@ class GetDataValueTool(BaseTool):
 
             if len(filtered_data) == 1:
                 # 単一の値が見つかった場合
-                value = (
-                    filtered_data.iloc[0]["値"]
-                    if "値" in filtered_data.columns
-                    else "値列が見つかりません"
-                )
+                value = filtered_data.iloc[0]["値"] if "値" in filtered_data.columns else "値列が見つかりません"
                 condition_str = ", ".join([f"{k}='{v}'" for k, v in filter_json.items()])
                 return f"ステップ{step_index}の入力データで条件 ({condition_str}) に該当する値: {value}"
 
@@ -689,18 +668,13 @@ class GetDataValueTool(BaseTool):
                 # 複数の値が見つかった場合
                 if "値" in filtered_data.columns:
                     values = filtered_data["値"].tolist()
-                    condition_str = ", ".join(
-                        [f"{k}='{v}'" for k, v in filter_json.items()]
-                    )
+                    condition_str = ", ".join([f"{k}='{v}'" for k, v in filter_json.items()])
                     return (
                         f"ステップ{step_index}の入力データで条件 ({condition_str}) に該当する値が"
                         f"複数見つかりました: {values} (合計{len(values)}件)"
                     )
                 else:
-                    return (
-                        f"指定された条件に該当するデータが{len(filtered_data)}件見つかりましたが、"
-                        f"値列が存在しません。"
-                    )
+                    return f"指定された条件に該当するデータが{len(filtered_data)}件見つかりましたが、値列が存在しません。"
 
         except Exception as e:
             logger.error(

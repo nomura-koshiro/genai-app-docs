@@ -1,5 +1,11 @@
 """データアクセス層のリポジトリ。"""
 
+from app.repositories.analysis import (
+    AnalysisFileRepository,
+    AnalysisSessionRepository,
+    AnalysisStepRepository,
+    AnalysisTemplateRepository,
+)
 from app.repositories.driver_tree import (
     DriverTreeCategoryRepository,
     DriverTreeNodeRepository,
@@ -18,6 +24,10 @@ from app.repositories.sample import (
 from app.repositories.user.user import UserRepository
 
 __all__ = [
+    "AnalysisFileRepository",
+    "AnalysisSessionRepository",
+    "AnalysisStepRepository",
+    "AnalysisTemplateRepository",
     "DriverTreeRepository",
     "DriverTreeCategoryRepository",
     "DriverTreeNodeRepository",

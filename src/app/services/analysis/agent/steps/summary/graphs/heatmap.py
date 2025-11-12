@@ -81,7 +81,7 @@ class HeatmapGraph(BaseGraph):
                 x=pivot_df.columns.tolist(),
                 y=pivot_df.index.tolist(),
                 colorscale=colorscale,
-                hovertemplate=f"{x_axis}: %{{x}}<br>" f"{y_axis}: %{{y}}<br>" f"{z_axis}: %{{z}}<br>" "<extra></extra>",
+                hovertemplate=f"{x_axis}: %{{x}}<br>{y_axis}: %{{y}}<br>{z_axis}: %{{z}}<br><extra></extra>",
             )
         )
 

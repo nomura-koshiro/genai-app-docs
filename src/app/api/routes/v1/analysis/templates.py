@@ -34,7 +34,7 @@ from app.core.database import get_db
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.repositories.analysis import AnalysisTemplateRepository
-from app.schemas.analysis.template import (
+from app.schemas import (
     AnalysisTemplateDetailResponse,
     AnalysisTemplateResponse,
 )

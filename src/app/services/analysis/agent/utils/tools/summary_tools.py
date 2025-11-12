@@ -101,10 +101,7 @@ class GetSummaryTool(BaseTool):
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "summary":
                 return f"実行失敗: ステップ{step_index}はサマリステップではありません。"
@@ -121,7 +118,7 @@ class GetSummaryTool(BaseTool):
                     subject = formula.get("target_subject", "N/A")
                     calc_type = formula.get("type", "N/A")
                     unit = formula.get("unit", "N/A")
-                    result += f"  {i+1}. 科目: {subject}, 計算: {calc_type}, 単位: {unit}\n"
+                    result += f"  {i + 1}. 科目: {subject}, 計算: {calc_type}, 単位: {unit}\n"
             else:
                 result += "計算式: 設定なし\n"
 
@@ -133,10 +130,7 @@ class GetSummaryTool(BaseTool):
 
             # テーブル設定
             if summary.get("table"):
-                if (
-                    "show_source_data" in summary["table"].keys()
-                    and summary["table"]["show_source_data"]
-                ):
+                if "show_source_data" in summary["table"].keys() and summary["table"]["show_source_data"]:
                     result += f"テーブル設定: ステップの入力データを表記, 名称: {summary['table'].get('table_name', 'N/A')}\n"
                 else:
                     result += "テーブル設定: ステップの入力データをを表記しない\n"
@@ -281,10 +275,7 @@ summary_jsonは以下の設定を含みます:
             all_steps = await step_repo.list_by_session(self.session_id, is_active=True)
 
             if step_index < 0 or step_index >= len(all_steps):
-                return (
-                    f"実行失敗: ステップインデックスが範囲外です。"
-                    f"有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
-                )
+                return f"実行失敗: ステップインデックスが範囲外です。有効範囲: 0-{len(all_steps) - 1}, 指定値: {step_index}"
 
             if all_steps[step_index].step_type != "summary":
                 return f"実行失敗: ステップ{step_index}はサマリステップではありません。"
@@ -301,9 +292,7 @@ summary_jsonは以下の設定を含みます:
             chart_status = "あり" if summary_json.get("chart") else "なし"
             table_config = summary_json.get("table", {})
             table_status = (
-                f"{table_config.get('table_name', '名称未設定')} で表記"
-                if table_config.get("show_source_data", False)
-                else "表記しない"
+                f"{table_config.get('table_name', '名称未設定')} で表記" if table_config.get("show_source_data", False) else "表記しない"
             )
 
             logger.info(

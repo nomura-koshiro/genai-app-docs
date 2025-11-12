@@ -24,8 +24,9 @@
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
+import structlog
+
 from app.core.config import settings
-from app.core.logging import get_logger
 
 try:
     from jose import ExpiredSignatureError, JWTError, jwt
@@ -34,7 +35,7 @@ except ImportError:
     JWTError = Exception  # type: ignore
     ExpiredSignatureError = Exception  # type: ignore
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def create_access_token(
@@ -228,8 +229,8 @@ def create_refresh_token(data: dict[str, Any]) -> str:
         raise ImportError("python-jose is required for JWT token creation")
 
     to_encode = data.copy()
-    # リフレッシュトークンの有効期限: 7日間
-    expire = datetime.now(UTC) + timedelta(days=7)
+    # リフレッシュトークンの有効期限: 設定ファイルから取得
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
     to_encode.update(
         {
@@ -284,5 +285,9 @@ def decode_refresh_token(token: str) -> dict[str, Any] | None:
         logger.warning("リフレッシュトークンの有効期限が切れています")
         return None
     except JWTError as e:
-        logger.warning(f"リフレッシュトークンデコードエラー: {e}")
+        logger.warning(
+            "リフレッシュトークンデコードエラー",
+            error_type=type(e).__name__,
+            error_message=str(e),
+        )
         return None
