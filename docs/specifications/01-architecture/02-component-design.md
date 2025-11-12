@@ -217,7 +217,7 @@ async def health_check(db: DatabaseDep):
 ```python
 from fastapi import APIRouter, Depends, HTTPException
 from app.api.core.dependencies import CurrentUserAzureDep, ProjectServiceDep
-from app.schemas.project import ProjectCreate, ProjectResponse
+from app.schemas.project.schemas import ProjectCreate, ProjectResponse
 
 router = APIRouter()
 

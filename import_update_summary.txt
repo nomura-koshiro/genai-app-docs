@@ -1,0 +1,121 @@
+=============================================================
+サービスインポートパス 一括更新完了レポート
+=============================================================
+
+実施日時: $(date)
+
+-----------------------------------------------------------
+1. 更新内容
+-----------------------------------------------------------
+
+以下のインポートパスを新しいパスに更新しました：
+
+1. app.services.project.base
+   → app.services.project.service
+
+2. app.services.ppt_generator
+   → app.services.ppt_generator.service
+
+3. app.services.project.member.member_facade
+   → app.services.project.member.service
+
+4. app.services.project.member.member_adder
+   → app.services.project.member.adder
+
+5. app.services.project.member.member_updater
+   → app.services.project.member.updater
+
+6. app.services.project.member.member_remover
+   → app.services.project.member.remover
+
+7. app.services.project.member.authorization_checker
+   → app.services.project.member.authorization
+
+-----------------------------------------------------------
+2. 更新されたファイル数
+-----------------------------------------------------------
+
+合計: 11ファイル
+
+【サービス層】
+- src/app/services/project/member/adder.py
+- src/app/services/project/member/authorization.py
+- src/app/services/project/member/remover.py
+- src/app/services/project/member/service.py
+- src/app/services/project/member/updater.py
+- src/app/services/project/service.py
+
+【API層】
+- src/app/api/core/dependencies.py
+- src/app/api/routes/v1/analysis.py
+- src/app/api/routes/v1/ppt_generator.py
+
+【テスト】
+- tests/app/services/test_ppt_generator.py
+- tests/app/services/test_project.py
+
+-----------------------------------------------------------
+3. 更新内容の詳細
+-----------------------------------------------------------
+
+✅ docstring内のサンプルコード更新
+   - 使用例のインポートパスを新しいパスに更新
+
+✅ 実際のインポート文更新
+   - from文のモジュールパスを新しいパスに更新
+
+✅ 相対インポート更新
+   - ファサードサービス内の相対インポートも更新
+   - from .authorization_checker → from .authorization
+   - from .member_adder → from .adder
+   - from .member_updater → from .updater
+   - from .member_remover → from .remover
+
+✅ TYPE_CHECKINGブロック対応
+   - 型チェック用インポートも更新（該当なし）
+
+-----------------------------------------------------------
+4. 検証
+-----------------------------------------------------------
+
+変更箇所統計:
+- 73 files changed
+- 212 insertions(+)
+- 1414 deletions(-)
+
+更新方法:
+- sedコマンドによる一括置換
+- バックアップ作成後に更新
+- 差分検証済み
+
+-----------------------------------------------------------
+5. 注意事項
+-----------------------------------------------------------
+
+✅ __init__.pyでの再エクスポート
+   → 影響なし（相対インポートは変更不要）
+
+✅ from app.services.project import ProjectService
+   → 変更不要（__init__.pyで処理済み）
+
+✅ from app.services.ppt_generator import PPTGeneratorService  
+   → 変更不要（__init__.pyで処理済み）
+
+-----------------------------------------------------------
+6. 次のステップ
+-----------------------------------------------------------
+
+□ Pythonの構文チェック
+  $ cd src && python -m py_compile app/**/*.py
+
+□ インポートチェック
+  $ cd src && python -c "from app.services.project.service import ProjectService"
+
+□ テスト実行
+  $ pytest tests/ -v
+
+□ コミット
+  $ git add .
+  $ git commit -m "refactor: サービスインポートパスの統一化"
+
+=============================================================

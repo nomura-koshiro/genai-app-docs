@@ -35,7 +35,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.session import AnalysisSession
-    from app.models.project_member import ProjectMember
+    from app.models.project.member import ProjectMember
 
 
 class SystemRole(str, Enum):

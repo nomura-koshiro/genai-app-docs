@@ -1,7 +1,7 @@
 """APIリクエスト/レスポンス検証のためのPydanticスキーマ。"""
 
 from app.schemas.common import HealthResponse, MessageResponse, ProblemDetails
-from app.schemas.driver_tree import (
+from app.schemas.driver_tree.schemas import (
     DriverTreeFormulaCreateRequest,
     DriverTreeFormulaResponse,
     DriverTreeKPIListResponse,
@@ -10,18 +10,13 @@ from app.schemas.driver_tree import (
     DriverTreeNodeUpdate,
     DriverTreeResponse,
 )
-from app.schemas.project import (
-    ProjectCreate,
-    ProjectResponse,
-    ProjectUpdate,
-)
-from app.schemas.project_file import (
+from app.schemas.project.file import (
     ProjectFileDeleteResponse,
     ProjectFileListResponse,
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
-from app.schemas.project_member import (
+from app.schemas.project.member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkError,
     ProjectMemberBulkResponse,
@@ -35,6 +30,11 @@ from app.schemas.project_member import (
     ProjectMemberUpdate,
     ProjectMemberWithUser,
     UserRoleResponse,
+)
+from app.schemas.project.schemas import (
+    ProjectCreate,
+    ProjectResponse,
+    ProjectUpdate,
 )
 from app.schemas.sample.sample_agents import (
     SampleChatRequest,

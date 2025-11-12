@@ -238,7 +238,7 @@ async def test_user(db_session):
 async def test_project(db_session, test_user):
     """テスト用プロジェクトを作成します。"""
     from app.models.project import Project
-    from app.models.project_member import ProjectMember, ProjectRole
+    from app.models.project.member import ProjectMember, ProjectRole
 
     project = Project(
         name="テストプロジェクト",

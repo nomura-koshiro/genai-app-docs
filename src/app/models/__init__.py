@@ -13,19 +13,13 @@ from app.models.analysis import (
 from app.models.base import Base, PrimaryKeyMixin, TimestampMixin
 
 # Driver Tree models
-from app.models.driver_tree import DriverTree
-from app.models.driver_tree_category import DriverTreeCategory
-from app.models.driver_tree_node import DriverTreeNode
+from app.models.driver_tree import DriverTree, DriverTreeCategory, DriverTreeNode
 
 # Project models
-from app.models.project import Project
-from app.models.project_file import ProjectFile
-from app.models.project_member import ProjectMember, ProjectRole
+from app.models.project import Project, ProjectFile, ProjectMember, ProjectRole
 
 # Sample models
-from app.models.sample.sample_file import SampleFile
-from app.models.sample.sample_session import SampleMessage, SampleSession
-from app.models.sample.sample_user import SampleUser
+from app.models.sample import SampleFile, SampleMessage, SampleSession, SampleUser
 
 # User models
 from app.models.user import SystemRole, User

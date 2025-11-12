@@ -26,19 +26,23 @@ from app.api.middlewares import (
     SecurityHeadersMiddleware,
 )
 from app.api.routes.system import health, metrics, root
-from app.api.routes.v1 import (
-    analysis,
-    analysis_templates,
-    driver_tree,
-    ppt_generator,
-    project_files,
-    project_members,
-    projects,
+from app.api.routes.v1 import users
+from app.api.routes.v1.analysis import (
+    analysis_router,
+    analysis_templates_router,
+)
+from app.api.routes.v1.driver_tree import router as driver_tree_router
+from app.api.routes.v1.ppt_generator import router as ppt_generator_router
+from app.api.routes.v1.project import (
+    project_files_router,
+    project_members_router,
+    projects_router,
+)
+from app.api.routes.v1.sample import (
     sample_agents,
     sample_files,
     sample_sessions,
     sample_users,
-    users,
 )
 from app.core.config import settings
 from app.core.lifespan import lifespan
@@ -171,46 +175,46 @@ def create_app() -> FastAPI:
     app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
     # プロジェクト管理API
-    app.include_router(projects.router, prefix="/api/v1/projects", tags=["projects"])
+    app.include_router(projects_router, prefix="/api/v1/projects", tags=["projects"])
 
     # プロジェクトメンバー管理API
     app.include_router(
-        project_members.router,
+        project_members_router,
         prefix="/api/v1/projects/{project_id}/members",
         tags=["project-members"],
     )
 
     # プロジェクトファイル管理API
     app.include_router(
-        project_files.router,
+        project_files_router,
         prefix="/api/v1",
         tags=["project-files"],
     )
 
     # データ分析API
     app.include_router(
-        analysis.router,
+        analysis_router,
         prefix="/api/v1/analysis",
         tags=["analysis"],
     )
 
     # Analysis Templates API
     app.include_router(
-        analysis_templates.router,
+        analysis_templates_router,
         prefix="/api/v1/analysis/templates",
         tags=["analysis-templates"],
     )
 
     # PPT Generator API
     app.include_router(
-        ppt_generator.router,
+        ppt_generator_router,
         prefix="/api/v1/ppt",
         tags=["ppt-generator"],
     )
 
     # Driver Tree API
     app.include_router(
-        driver_tree.router,
+        driver_tree_router,
         prefix="/api/v1/driver-tree",
         tags=["driver-tree"],
     )

@@ -41,7 +41,7 @@ from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
 from app.models.sample.sample_user import SampleUser
 from app.models.user import User
-from app.services.project import ProjectService
+from app.services.project.service import ProjectService
 from app.services.sample.sample_agent import SampleAgentService
 from app.services.sample.sample_file import SampleFileService
 from app.services.sample.sample_session import SampleSessionService

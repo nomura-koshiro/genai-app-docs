@@ -11,8 +11,8 @@ import uuid
 import pytest
 from sqlalchemy import text
 
-from app.models.project import Project
-from app.models.project_member import ProjectMember, ProjectRole
+from app.models.project.member import ProjectMember, ProjectRole
+from app.models.project.project import Project
 from app.models.user import User
 from app.repositories.user import UserRepository
 

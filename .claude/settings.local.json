@@ -84,7 +84,8 @@
       "Bash(paste:*)",
       "Bash(handlers.ts.new)",
       "Bash(npm run type-check:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(timeout 60 uv run python -m pytest:*)"
     ],
     "deny": [],
     "ask": []

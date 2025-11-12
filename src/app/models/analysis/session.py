@@ -35,7 +35,7 @@ from app.models.base import Base, TimestampMixin
 if TYPE_CHECKING:
     from app.models.analysis.file import AnalysisFile
     from app.models.analysis.step import AnalysisStep
-    from app.models.project import Project
+    from app.models.project.project import Project
     from app.models.user import User
 
 
