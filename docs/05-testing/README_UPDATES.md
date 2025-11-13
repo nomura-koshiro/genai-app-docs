@@ -7,6 +7,7 @@
 ## 実際のプロジェクト構造
 
 ### 実装されているAPI機能
+
 1. **user_accounts** - ユーザーアカウント管理（Azure AD認証）
 2. **project** - プロジェクト管理（CRUD、ファイル、メンバー）
 3. **analysis** - 分析機能（テンプレート、セッション）
@@ -76,7 +77,7 @@ async def test_project(db_session, test_user):
     )
     db_session.add(project)
     await db_session.flush()
-    
+
     # プロジェクトマネージャーとして追加
     member = ProjectMember(
         project_id=project.id,
@@ -100,11 +101,11 @@ def override_auth(request):
     """認証依存性をオーバーライド"""
     from app.api.core.dependencies import get_current_active_user_azure
     from app.main import app
-    
+
     def _override(user):
         app.dependency_overrides[get_current_active_user_azure] = lambda: user
         return user
-    
+
     yield _override
     app.dependency_overrides.clear()
 ```
@@ -119,10 +120,10 @@ async def test_list_users_success(client: AsyncClient, override_auth, mock_admin
     """ユーザー一覧取得の正常系テスト（管理者権限）"""
     # Arrange
     override_auth(mock_admin_user)
-    
+
     # Act
     response = await client.get("/api/v1/users")
-    
+
     # Assert
     assert response.status_code == 200
     data = response.json()
@@ -138,16 +139,16 @@ async def test_create_project_endpoint_success(client: AsyncClient, override_aut
     """プロジェクト作成エンドポイントの成功ケース"""
     # Arrange
     override_auth(mock_current_user)
-    
+
     project_data = {
         "name": "Test Project",
         "code": f"TEST-{uuid.uuid4().hex[:6]}",
         "description": "Test description",
     }
-    
+
     # Act
     response = await client.post("/api/v1/projects", json=project_data)
-    
+
     # Assert
     assert response.status_code == 201
     data = response.json()
@@ -169,7 +170,7 @@ async def test_user_unique_azure_oid(db_session):
     )
     db_session.add(user1)
     await db_session.commit()
-    
+
     # Act & Assert - 同じAzure OIDで作成しようとするとエラー
     user2 = UserAccount(
         azure_oid="unique-oid-12345",  # 同じOID
@@ -177,7 +178,7 @@ async def test_user_unique_azure_oid(db_session):
         display_name="User 2",
     )
     db_session.add(user2)
-    
+
     with pytest.raises(IntegrityError):
         await db_session.commit()
 ```
@@ -185,20 +186,24 @@ async def test_user_unique_azure_oid(db_session):
 ## 推奨される修正内容
 
 ### 1. 01-testing-strategy/index.md
+
 - テストディレクトリ構造を実際の構造に更新
 - sample_* の例を user_accounts, project, analysis 等に変更
 - v1/ 配下のAPI説明を実際の機能に更新
 
 ### 2. 02-unit-testing/index.md
+
 - SampleUser を UserAccount に変更
 - 実際のモデル構造に基づく例に更新
 
 ### 3. 03-api-testing/index.md
+
 - sample-files, sample-users の例を実際のエンドポイントに変更
 - /api/v1/users, /api/v1/projects 等の実例を追加
 - 認証テストの例を override_auth フィクスチャを使用した例に更新
 
 ### 4. 05-mocks-fixtures/index.md
+
 - 実際の conftest.py のフィクスチャ例を追加
 - test_user, test_project, seeded_templates, override_auth の説明を追加
 

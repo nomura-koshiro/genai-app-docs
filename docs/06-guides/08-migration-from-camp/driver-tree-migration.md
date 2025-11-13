@@ -498,7 +498,7 @@ async def _build_node_tree_recursive(
 
 **設計変更:**
 
-```
+```text
 Before: Node + Children（エッジテーブル）
 After:  Node（parent_id含む）
 ```

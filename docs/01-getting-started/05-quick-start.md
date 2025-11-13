@@ -16,6 +16,7 @@
 これだけです！PostgreSQLが自動的に起動し、FastAPIサーバーが起動します。
 
 **仕組み:**
+
 - `.vscode/launch.json`の`preLaunchTask`でPostgreSQL起動タスクを実行
 - `scripts/dev.ps1 start-postgres`がPostgreSQLの状態を確認して起動
 - FastAPIアプリケーションが起動
