@@ -27,7 +27,7 @@
 
 ### 2.1 エンティティの定義
 
-`src/app/models/task.py`を作成：
+`src/app/models/task/task.py`を作成（まず`task/`ディレクトリと`__init__.py`を作成）：
 
 ```python
 """タスクモデル。"""
@@ -38,7 +38,7 @@ from enum import Enum
 from sqlalchemy import DateTime, Enum as SQLEnum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.models.base import Base
 
 
 class TaskStatus(str, Enum):
@@ -150,7 +150,7 @@ class Task(Base):
 
 ### 2.2 既存モデルの更新
 
-`src/app/models/sample_user.py`にリレーションシップを追加：
+`src/app/models/sample/user.py`にリレーションシップを追加：
 
 ```python
 # Relationships
@@ -163,10 +163,24 @@ tasks: Mapped[list["Task"]] = relationship(
 
 ### 2.3 モデルのインポート
 
-`src/app/models/__init__.py`を更新：
+**`src/app/models/task/__init__.py`を作成：**
 
 ```python
-from app.models.task import Task, TaskPriority, TaskStatus
+"""タスク機能のモデルパッケージ。"""
+
+from app.models.task.task import Task, TaskPriority, TaskStatus
+
+__all__ = [
+    "Task",
+    "TaskPriority",
+    "TaskStatus",
+]
+```
+
+**`src/app/models/__init__.py`を更新：**
+
+```python
+from app.models.task.task import Task, TaskPriority, TaskStatus
 
 __all__ = [
     # ...

@@ -35,9 +35,37 @@
 
 この例では、商品を管理するためのCRUDエンドポイントを追加します。
 
+**プロジェクト構造について:**
+
+このプロジェクトでは、機能ごとにサブディレクトリを作成して整理しています：
+
+```text
+src/app/
+├── schemas/
+│   └── product/           # 商品機能のスキーマ
+│       ├── __init__.py
+│       └── product.py
+├── models/
+│   └── product/           # 商品機能のモデル
+│       ├── __init__.py
+│       └── product.py
+├── repositories/
+│   └── product/           # 商品機能のリポジトリ
+│       ├── __init__.py
+│       └── product.py
+├── services/
+│   └── product/           # 商品機能のサービス
+│       ├── __init__.py
+│       └── product.py
+└── api/routes/v1/
+    └── product/           # 商品機能のエンドポイント
+        ├── __init__.py
+        └── products.py
+```
+
 ### ステップ 1: Pydanticスキーマの作成
 
-`src/app/schemas/product.py`を作成：
+`src/app/schemas/product/product.py`を作成（まず`product/`ディレクトリと`__init__.py`を作成）：
 
 ```python
 """商品関連のPydanticスキーマ。"""
@@ -96,7 +124,7 @@ class ProductListResponse(BaseModel):
 
 ### ステップ 2: サービスクラスの作成
 
-既にモデルとリポジトリがある場合、`src/app/services/product.py`を作成：
+既にモデルとリポジトリがある場合、`src/app/services/product/product.py`を作成：
 
 ```python
 """商品ビジネスロジック用サービス。"""
@@ -104,9 +132,9 @@ class ProductListResponse(BaseModel):
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.models.product import Product
-from app.repositories.product import ProductRepository
-from app.schemas.product import ProductCreate, ProductUpdate
+from app.models.product.product import Product
+from app.repositories.product.product import ProductRepository
+from app.schemas.product.product import ProductCreate, ProductUpdate
 
 
 class ProductService:
@@ -246,7 +274,7 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.services.product import ProductService
+from app.services.product.product import ProductService
 
 # 既存のコード...
 
@@ -277,7 +305,7 @@ ProductServiceDep = Annotated[ProductService, Depends(get_product_service)]
 
 ### ステップ 4: APIルートの作成
 
-`src/app/api/routes/products.py`を作成：
+`src/app/api/routes/v1/product/products.py`を作成：
 
 ```python
 """商品APIルート。"""
@@ -286,7 +314,7 @@ from fastapi import APIRouter, Query, status
 
 from app.api.core import ProductServiceDep
 from app.schemas.common import MessageResponse
-from app.schemas.product import (
+from app.schemas.product.product import (
     ProductCreate,
     ProductListResponse,
     ProductResponse,
@@ -436,18 +464,18 @@ async def delete_product(
 
 ### ステップ 5: ルーターの登録
 
-`src/app/main.py`を更新：
+`src/app/core/app_factory.py`を更新（または`src/app/main.py`）：
 
 ```python
-from app.api.routes import agents, files, products  # 追加
+from app.api.routes.v1.product import products  # 追加
 
 # 既存のコード...
 
-# Include routers
-app.include_router(agents.router, prefix="/api/sample-agents", tags=["agents"])
-app.include_router(files.router, prefix="/api/sample-files", tags=["files"])
-app.include_router(products.router, prefix="/api/products", tags=["products"])  # 追加
+# Include routers (in create_app function)
+app.include_router(products.router, prefix="/api/v1/products", tags=["products"])  # 追加
 ```
+
+**注**: プロジェクトではAPI v1エンドポイントは`/api/v1/`プレフィックスを使用します。
 
 **ポイント:**
 
@@ -456,7 +484,7 @@ app.include_router(products.router, prefix="/api/products", tags=["products"])  
 
 ### ステップ 6: テストの作成
 
-`tests/api/test_products.py`を作成：
+`tests/api/routes/v1/product/test_products.py`を作成（適切なディレクトリ構造を作成）：
 
 ```python
 """商品APIのテスト。"""
@@ -465,14 +493,14 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.product import Product
+from app.models.product.product import Product
 
 
 @pytest.mark.asyncio
 async def test_create_product(client: AsyncClient):
     """商品作成のテスト。"""
     response = await client.post(
-        "/api/products/",
+        "/api/v1/products/",
         json={
             "name": "Test Product",
             "description": "Test Description",
@@ -490,7 +518,7 @@ async def test_create_product(client: AsyncClient):
 async def test_get_product(client: AsyncClient, db: AsyncSession):
     """商品取得のテスト。"""
     # Create test product
-    from app.repositories.product import ProductRepository
+    from app.repositories.product.product import ProductRepository
 
     repo = ProductRepository(db)
     product = await repo.create(
@@ -502,7 +530,7 @@ async def test_get_product(client: AsyncClient, db: AsyncSession):
     await db.commit()
 
     # Get product
-    response = await client.get(f"/api/products/{product.id}")
+    response = await client.get(f"/api/v1/products/{product.id}")
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == product.id
@@ -512,7 +540,7 @@ async def test_get_product(client: AsyncClient, db: AsyncSession):
 @pytest.mark.asyncio
 async def test_list_products(client: AsyncClient):
     """商品リスト取得のテスト。"""
-    response = await client.get("/api/products/")
+    response = await client.get("/api/v1/products/")
     assert response.status_code == 200
     data = response.json()
     assert "products" in data
@@ -523,7 +551,7 @@ async def test_list_products(client: AsyncClient):
 async def test_update_product(client: AsyncClient, db: AsyncSession):
     """商品更新のテスト。"""
     # Create test product
-    from app.repositories.product import ProductRepository
+    from app.repositories.product.product import ProductRepository
 
     repo = ProductRepository(db)
     product = await repo.create(
@@ -535,7 +563,7 @@ async def test_update_product(client: AsyncClient, db: AsyncSession):
 
     # Update product
     response = await client.patch(
-        f"/api/products/{product.id}",
+        f"/api/v1/products/{product.id}",
         json={"price": 149.99},
     )
     assert response.status_code == 200
@@ -547,7 +575,7 @@ async def test_update_product(client: AsyncClient, db: AsyncSession):
 async def test_delete_product(client: AsyncClient, db: AsyncSession):
     """商品削除のテスト。"""
     # Create test product
-    from app.repositories.product import ProductRepository
+    from app.repositories.product.product import ProductRepository
 
     repo = ProductRepository(db)
     product = await repo.create(
@@ -558,11 +586,11 @@ async def test_delete_product(client: AsyncClient, db: AsyncSession):
     await db.commit()
 
     # Delete product
-    response = await client.delete(f"/api/products/{product.id}")
+    response = await client.delete(f"/api/v1/products/{product.id}")
     assert response.status_code == 200
 
     # Verify deletion
-    response = await client.get(f"/api/products/{product.id}")
+    response = await client.get(f"/api/v1/products/{product.id}")
     assert response.status_code == 404
 ```
 
@@ -660,13 +688,13 @@ async def get_product(product_id: int) -> ProductResponse:
 ### 1. RESTful API設計
 
 ```python
-# 良い命名規則
-POST   /api/products/          # 作成
-GET    /api/products/{id}      # 取得
-GET    /api/products/          # リスト
-PATCH  /api/products/{id}      # 部分更新
-PUT    /api/products/{id}      # 完全更新
-DELETE /api/products/{id}      # 削除
+# 良い命名規則（API v1の例）
+POST   /api/v1/products/          # 作成
+GET    /api/v1/products/{id}      # 取得
+GET    /api/v1/products/          # リスト
+PATCH  /api/v1/products/{id}      # 部分更新
+PUT    /api/v1/products/{id}      # 完全更新
+DELETE /api/v1/products/{id}      # 削除
 ```
 
 ### 2. 適切なステータスコード

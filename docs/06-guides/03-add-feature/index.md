@@ -16,13 +16,36 @@
 
 ```text
 タスク管理機能
-├── モデル層（models/task.py）
-├── リポジトリ層（repositories/task.py）
-├── サービス層（services/task.py）
-├── スキーマ層（schemas/task.py）
-├── API層（api/routes/tasks.py）
+├── モデル層（models/task/task.py）
+├── リポジトリ層（repositories/task/task.py）
+├── サービス層（services/task/task.py）
+├── スキーマ層（schemas/task/task.py）
+├── API層（api/routes/v1/task/tasks.py）
 ├── マイグレーション（alembic/versions/xxx_add_task_table.py）
-└── テスト（tests/）
+└── テスト（tests/api/routes/v1/task/test_tasks.py）
+```
+
+**プロジェクト構造について:**
+
+このプロジェクトでは、機能ごとにサブディレクトリを作成して整理しています。各機能は以下のような構造になります：
+
+```text
+src/app/
+├── models/task/           # タスク機能のモデル
+│   ├── __init__.py
+│   └── task.py
+├── repositories/task/     # タスク機能のリポジトリ
+│   ├── __init__.py
+│   └── task.py
+├── schemas/task/          # タスク機能のスキーマ
+│   ├── __init__.py
+│   └── task.py
+├── services/task/         # タスク機能のサービス
+│   ├── __init__.py
+│   └── task.py
+└── api/routes/v1/task/    # タスク機能のエンドポイント
+    ├── __init__.py
+    └── tasks.py
 ```
 
 ## 前提条件

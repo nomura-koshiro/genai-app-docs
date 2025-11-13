@@ -33,9 +33,13 @@
 
 ### 例: 商品（Product）モデルの追加
 
+**プロジェクト構造について:**
+
+このプロジェクトでは、モデルも機能ごとにサブディレクトリを作成して整理しています。
+
 ### ステップ 1: SQLAlchemyモデルの作成
 
-`src/app/models/product.py`を作成：
+`src/app/models/product/product.py`を作成（まず`product/`ディレクトリと`__init__.py`を作成）：
 
 ```python
 """商品モデル。"""
@@ -46,10 +50,10 @@ from typing import TYPE_CHECKING
 from sqlalchemy import DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from app.models.category import Category
+    from app.models.category.category import Category
 
 
 class Product(Base):
@@ -145,22 +149,30 @@ class Product(Base):
 ```python
 """モデルパッケージ。"""
 
-from app.models.sample_file import SampleFile
-from app.models.sample_message import SampleMessage
-from app.models.product import Product  # 追加
-from app.models.sample_session import SampleSession
-from app.models.sample_user import SampleUser
+from app.models.sample.file import SampleFile
+from app.models.sample.session import SampleSession
+from app.models.sample.user import SampleUser
+from app.models.product.product import Product  # 追加
 
 __all__ = [
-    "File",
-    "Message",
+    "SampleFile",
+    "SampleSession",
+    "SampleUser",
     "Product",  # 追加
-    "Session",
-    "User",
 ]
 ```
 
 **重要:** Alembicが自動的にモデルを検出できるように、`__init__.py`にインポートを追加します。
+
+**注**: `product/`サブディレクトリにも`__init__.py`を作成し、以下のように記述してください：
+
+```python
+"""商品機能のモデルパッケージ。"""
+
+from app.models.product.product import Product
+
+__all__ = ["Product"]
+```
 
 ### ステップ 3: Alembicマイグレーションの生成
 
@@ -277,7 +289,7 @@ alembic upgrade head
 
 ### ステップ 4: リポジトリクラスの作成
 
-`src/app/repositories/product.py`を作成：
+`src/app/repositories/product/product.py`を作成（まず`product/`ディレクトリと`__init__.py`を作成）：
 
 ```python
 """商品リポジトリ。"""
@@ -285,7 +297,7 @@ alembic upgrade head
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.product import Product
+from app.models.product.product import Product
 from app.repositories.base import BaseRepository
 
 

@@ -25,6 +25,7 @@
 camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100%移行完了**しました。
 
 **主要な成果:**
+
 - ✅ エージェント本体（7メソッド）
 - ✅ 状態管理（17メソッド、5ファイルに分割）
 - ✅ 4つの分析ステップ（Filter/Aggregation/Transform/Summary）
@@ -33,6 +34,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 - ✅ 新規ストレージ抽象化層
 
 **重要な設計変更:**
+
 - 📊 Wide Format採用（pandas標準、メモリ効率向上）
 - ⚡ 完全非同期化（FastAPI最適化）
 - 🔗 LangChain統合（ツール・コールバック）
@@ -78,6 +80,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 ### エージェント本体
 
 **ファイル移行:**
+
 ```
 移行元: app/agents/analysis/agent.py (226行)
    ↓
@@ -100,6 +103,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 | `clear_history()` | `clear_history()` | DB対応 |
 
 **主要な変更点:**
+
 - DB永続化対応（ファイル → PostgreSQL）
 - LangChain統合（13ツール初期化）
 - 非同期化・リトライ機構
@@ -112,6 +116,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 ### 状態管理
 
 **ファイル構成:**
+
 - `state.py` (592行) → 5ファイル (2,122行)
 
 **分割構成:**
@@ -143,6 +148,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 | テーブル | 他ステップとの組み合わせ（包含/除外） | ✅ |
 
 **設計変更:**
+
 - `init_category_filter` 関数削除（config経由で設定）
 - 同期 → 非同期変換
 
@@ -157,6 +163,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 | 理由 | - | pandas標準、メモリ効率、分析容易 |
 
 **camp-backend (Long Format):**
+
 ```
 地域  | 科目 | 値
 -----|------|----
@@ -165,6 +172,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 ```
 
 **genai-app-docs (Wide Format):**
+
 ```
 地域  | 売上 | 原価
 -----|------|-----
@@ -187,6 +195,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 #### Summary（サマリ）
 
 **数式計算:**
+
 - ✅ 基本集計: sum, mean, count, max, min
 - ✅ 四則演算: +, -, *, /
 - ✅ 算術式: eval-based計算
@@ -209,6 +218,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 | ツリーマップ | TreemapGraph | ~105行 | ✅ |
 
 **実装の特徴:**
+
 - BaseGraphクラス: 共通バリデーション、テーマ、フォーマット
 - Plotly完全統合: `fig.to_dict()` でJSON変換
 - 詳細なエラーハンドリング
@@ -216,6 +226,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 #### Base（ベース）
 
 **実装内容:**
+
 - ✅ `BaseAnalysisStep` - ABC（抽象基底クラス）化
 - ✅ 抽象メソッド: `validate_config`, `execute`
 - ✅ `AnalysisStepResult` - Pydanticモデル（新規）
@@ -244,6 +255,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 | 14 | ToolTrackingHandler | コールバック | ✅ |
 
 **アーキテクチャ変更:**
+
 - 同期 (`_run`) → 非同期 (`_arun`)
 - LangChain `BaseTool` インターフェース実装
 - Google-Style docstrings
@@ -254,12 +266,14 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 ### 新規機能: Storage
 
 **AnalysisStorageService (367行):**
+
 - ✅ ストレージ抽象化層
 - ✅ Azure Blob / Local 自動切替
 - ✅ DataFrame ↔ CSV変換
 - ✅ パス生成（session_id + filename + prefix）
 
 **主要メソッド:**
+
 ```python
 def generate_path(session_id, filename, prefix=None) -> str
 async def save_dataframe(session_id, filename, df, prefix=None) -> str
@@ -273,24 +287,28 @@ async def load_dataframe(path) -> pd.DataFrame
 ### Wide Format採用（Aggregation）
 
 **採用理由:**
+
 1. **pandas標準**: 列ベースの操作が高速
 2. **メモリ効率**: Long Formatより少ないメモリ
 3. **分析容易**: 複数科目の同時処理が簡単
 4. **可読性**: 表形式で直感的
 
 **影響:**
+
 - 既存のLong Formatデータは事前変換が必要
 - 機能的には100%互換（集計結果は同等）
 
 ### 非同期化
 
 **変更範囲:**
+
 - すべてのI/O操作
 - ステップ実行（`execute`メソッド）
 - ツール（`_run` → `_arun`）
 - ストレージアクセス
 
 **メリット:**
+
 - 大量ファイル処理の高速化
 - FastAPIの非同期機能活用
 - 並行処理による性能向上
@@ -298,11 +316,13 @@ async def load_dataframe(path) -> pd.DataFrame
 ### LangChain統合
 
 **統合内容:**
+
 - ✅ `BaseTool` インターフェース（14ツール）
 - ✅ `BaseCallbackHandler`（ToolTrackingHandler）
 - ✅ エージェント初期化（`initialize`メソッド）
 
 **メリット:**
+
 - LLMとの統合が容易
 - ツール実行の追跡・デバッグ
 - 標準的なエージェントフレームワーク活用
@@ -413,6 +433,7 @@ async def load_dataframe(path) -> pd.DataFrame
 | `filter/step.py` | ~150行 | `filter.py` | （同上） | 統合 |
 
 **主なメソッド**:
+
 - `filter_by_value()`: 値による絞り込み
 - `filter_by_range()`: 範囲による絞り込み
 - `filter_by_condition()`: 条件式による絞り込み
@@ -444,6 +465,7 @@ async def load_dataframe(path) -> pd.DataFrame
 ```
 
 **メリット**:
+
 - グラフ描画が容易（各カラムが独立した系列）
 - データの可視化が直感的
 - camp-backend仕様との互換性維持
@@ -456,6 +478,7 @@ async def load_dataframe(path) -> pd.DataFrame
 | `transform/step.py` | ~100行 | `transform.py` | （同上） | 統合 |
 
 **主なメソッド**:
+
 - `rename_column()`: カラム名変更
 - `add_column()`: カラム追加
 - `calculate()`: 計算式適用
@@ -483,6 +506,7 @@ async def load_dataframe(path) -> pd.DataFrame
 **合計**: 29関数（約2,072行）→ 11クラス + 1ベースクラス（約1,329行）
 
 **設計改善**:
+
 - 関数ベース → OOP（継承、ポリモーフィズム）
 - `BaseGraph`で共通処理を抽象化
 - 各グラフタイプがクラスとして独立
@@ -519,6 +543,7 @@ async def load_dataframe(path) -> pd.DataFrame
 | 14 | `ToolTrackingHandler` | `core.py` | ~95行 | ツール呼び出し追跡 |
 
 **分類ロジック**:
+
 - **共通ツール**: 全ステップで使用（データ操作、ステップ管理）
 - **ステップ別ツール**: 各ステップの設定管理（Get/Set）
 - **ハンドラー**: エージェント本体に統合
@@ -593,6 +618,7 @@ async def load_dataframe(path) -> pd.DataFrame
    - ✅ Ruffエラー完全解消
 
 **トレーサビリティ**:
+
 - すべての移行元ファイル・関数・メソッドの移行先を明記
 - 行数・ファイル数の変化とその理由を文書化
 - 設計変更の意図と効果を記録
