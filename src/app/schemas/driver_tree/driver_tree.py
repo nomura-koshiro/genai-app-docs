@@ -26,7 +26,7 @@
 import uuid
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DriverTreeNodeCreate(BaseModel):
@@ -71,8 +71,7 @@ class DriverTreeNodeResponse(BaseModel):
     y: int | None = Field(default=None, description="Y座標")
     children: list["DriverTreeNodeResponse"] = Field(default_factory=list, description="子ノードのリスト")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DriverTreeResponse(BaseModel):
@@ -83,8 +82,7 @@ class DriverTreeResponse(BaseModel):
     root_node_id: uuid.UUID | None = Field(default=None, description="ルートノードID")
     root_node: DriverTreeNodeResponse | None = Field(default=None, description="ルートノード（木構造全体を含む）")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DriverTreeFormulaCreateRequest(BaseModel):
@@ -105,8 +103,7 @@ class DriverTreeCategoryResponse(BaseModel):
     formulas: list[str] = Field(..., description="数式のリスト")
     category_metadata: dict[str, Any] = Field(default_factory=dict, description="メタデータ")
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class DriverTreeKPIListResponse(BaseModel):

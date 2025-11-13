@@ -16,7 +16,7 @@ from app.repositories import ProjectMemberRepository
 async def test_users(db_session):
     """テスト用ユーザーを作成。"""
     users = [
-        User(
+        UserAccount(
             azure_oid=f"test-oid-{i}",
             email=f"user{i}@company.com",
             display_name=f"User {i}",

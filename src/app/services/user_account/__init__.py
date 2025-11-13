@@ -6,8 +6,8 @@
     - UserService: ユーザー管理サービス（ユーザー作成、更新、認証、ロール管理）
 
 使用例:
-    >>> from app.services.user import UserService
-    >>> from app.schemas.user import UserUpdate
+    >>> from app.services.user_account import UserService
+    >>> from app.schemas.user_account import UserUpdate
     >>>
     >>> async with get_db() as db:
     ...     user_service = UserService(db)
@@ -18,6 +18,6 @@
     ...     )
 """
 
-from app.services.user.user import UserService
+from app.services.user_account.user_account import UserService
 
 __all__ = ["UserService"]

@@ -23,7 +23,7 @@ async def test_repository_get_by_azure_oid(db_session):
     認証フロー全体に影響するため、明示的にテストする。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="azure-oid-12345",
         email="test@company.com",
         display_name="Test User",
@@ -70,7 +70,7 @@ async def test_repository_get_active_users(db_session):
 
     # アクティブユーザーを3人作成
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"active-oid-{i}",
             email=f"active{i}@company.com",
             display_name=f"Active User {i}",
@@ -80,7 +80,7 @@ async def test_repository_get_active_users(db_session):
 
     # 非アクティブユーザーを2人作成
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"inactive-oid-{i}",
             email=f"inactive{i}@company.com",
             display_name=f"Inactive User {i}",
@@ -110,7 +110,7 @@ async def test_repository_count_all_users(db_session):
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count-active-{i}",
             email=f"countactive{i}@company.com",
             display_name=f"Count Active {i}",
@@ -119,7 +119,7 @@ async def test_repository_count_all_users(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count-inactive-{i}",
             email=f"countinactive{i}@company.com",
             display_name=f"Count Inactive {i}",
@@ -148,7 +148,7 @@ async def test_repository_count_active_users(db_session):
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"filter-active-{i}",
             email=f"filteractive{i}@company.com",
             display_name=f"Filter Active {i}",
@@ -157,7 +157,7 @@ async def test_repository_count_active_users(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"filter-inactive-{i}",
             email=f"filterinactive{i}@company.com",
             display_name=f"Filter Inactive {i}",
@@ -185,7 +185,7 @@ async def test_repository_count_inactive_users(db_session):
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"filter2-active-{i}",
             email=f"filter2active{i}@company.com",
             display_name=f"Filter2 Active {i}",
@@ -194,7 +194,7 @@ async def test_repository_count_inactive_users(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"filter2-inactive-{i}",
             email=f"filter2inactive{i}@company.com",
             display_name=f"Filter2 Inactive {i}",
@@ -227,7 +227,7 @@ async def test_repository_get_active_users_with_n_plus_one_prevention(db_session
     # アクティブユーザーを3人作成
     users = []
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"n-plus-one-active-{i}",
             email=f"nplus1active{i}@company.com",
             display_name=f"N+1 Active User {i}",
@@ -299,7 +299,7 @@ async def test_repository_get_active_users_eager_loading_verification(db_session
     repository = UserRepository(db_session)
 
     # ユーザーとプロジェクトメンバーシップを作成
-    user = User(
+    user = UserAccount(
         azure_oid="eager-loading-test",
         email="eagerload@company.com",
         display_name="Eager Loading Test User",

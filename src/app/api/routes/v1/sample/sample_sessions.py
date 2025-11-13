@@ -22,10 +22,10 @@ from app.schemas import (
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+sample_sessions_router = APIRouter()
 
 
-@router.get(
+@sample_sessions_router.get(
     "/sample-sessions",
     response_model=SampleSessionListResponse,
     summary="サンプルセッション一覧取得",
@@ -104,7 +104,7 @@ async def list_sessions(
     )
 
 
-@router.get(
+@sample_sessions_router.get(
     "/sample-sessions/{session_id}",
     response_model=SampleSessionResponse,
     summary="サンプルセッション詳細取得",
@@ -173,7 +173,7 @@ async def get_session(
     )
 
 
-@router.post(
+@sample_sessions_router.post(
     "/sample-sessions",
     response_model=SampleSessionResponse,
     summary="サンプルセッション作成",
@@ -233,7 +233,7 @@ async def create_session(
     )
 
 
-@router.patch(
+@sample_sessions_router.patch(
     "/sample-sessions/{session_id}",
     response_model=SampleSessionResponse,
     summary="サンプルセッション更新",
@@ -309,7 +309,7 @@ async def update_session(
     )
 
 
-@router.delete(
+@sample_sessions_router.delete(
     "/sample-sessions/{session_id}",
     response_model=SampleDeleteResponse,
     summary="サンプルセッション削除",

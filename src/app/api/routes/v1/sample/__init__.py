@@ -14,16 +14,14 @@ Note:
     プロジェクトの要件に合わせてカスタマイズしてください。
 """
 
-from app.api.routes.v1.sample import (
-    sample_agents,
-    sample_files,
-    sample_sessions,
-    sample_users,
-)
+from app.api.routes.v1.sample.sample_agents import sample_agents_router
+from app.api.routes.v1.sample.sample_files import sample_files_router
+from app.api.routes.v1.sample.sample_sessions import sample_sessions_router
+from app.api.routes.v1.sample.sample_users import sample_users_router
 
 __all__ = [
-    "sample_agents",
-    "sample_files",
-    "sample_sessions",
-    "sample_users",
+    "sample_agents_router",
+    "sample_files_router",
+    "sample_sessions_router",
+    "sample_users_router",
 ]

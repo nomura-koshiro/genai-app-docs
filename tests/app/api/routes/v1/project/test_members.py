@@ -18,7 +18,7 @@ async def api_test_users(db_session):
     """API テスト用ユーザーを作成。"""
     users = []
     for i in range(5):
-        user = User(
+        user = UserAccount(
             azure_oid=f"api-test-oid-{i}",
             email=f"apiuser{i}@company.com",
             display_name=f"API User {i}",

@@ -20,7 +20,7 @@ async def test_get_file_with_uploader(db_session):
     N+1問題を防ぐため、uploaderを同時に取得する重要な実装。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="get-file-oid",
         email="getfile@company.com",
         display_name="Get File User",
@@ -68,7 +68,7 @@ async def test_list_by_project(db_session):
     ファイル一覧画面で使用され、アップロード日時順に並べる。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="list-file-oid",
         email="listfile@company.com",
         display_name="List File User",
@@ -117,7 +117,7 @@ async def test_count_by_project(db_session):
     プロジェクトダッシュボードでのファイル統計表示に使用される。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="count-file-oid",
         email="countfile@company.com",
         display_name="Count File User",
@@ -162,7 +162,7 @@ async def test_get_total_size_by_project(db_session):
     ストレージ使用量の監視やクォータ管理で使用される重要な機能。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="size-file-oid",
         email="sizefile@company.com",
         display_name="Size File User",

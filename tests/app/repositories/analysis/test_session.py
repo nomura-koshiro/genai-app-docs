@@ -124,7 +124,7 @@ async def test_list_by_user(db_session: AsyncSession, test_user, test_project):
     # ユーザー2を作成
     from app.models import UserAccount
 
-    user2 = User(
+    user2 = UserAccount(
         azure_oid="test-user2-oid",
         email="user2@example.com",
         display_name="Test User 2",

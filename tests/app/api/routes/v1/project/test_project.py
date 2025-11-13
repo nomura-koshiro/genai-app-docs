@@ -18,7 +18,7 @@ from app.models import UserAccount
 @pytest.fixture
 async def mock_current_user(db_session):
     """モック認証ユーザー（DB保存済み）。"""
-    user = User(
+    user = UserAccount(
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email="test@example.com",
         display_name="Test User",

@@ -20,7 +20,7 @@ async def test_user_unique_azure_oid(db_session):
     これはAzure AD認証の整合性に関わる重要な制約です。
     """
     # Arrange
-    user1 = User(
+    user1 = UserAccount(
         azure_oid="unique-oid-12345",
         email="user1@company.com",
         display_name="User 1",
@@ -29,7 +29,7 @@ async def test_user_unique_azure_oid(db_session):
     await db_session.commit()
 
     # Act & Assert - 同じAzure OIDで作成しようとするとエラー
-    user2 = User(
+    user2 = UserAccount(
         azure_oid="unique-oid-12345",  # 同じOID
         email="user2@company.com",
         display_name="User 2",
@@ -48,7 +48,7 @@ async def test_user_unique_email(db_session):
     これはユーザー識別の整合性に関わる重要な制約です。
     """
     # Arrange
-    user1 = User(
+    user1 = UserAccount(
         azure_oid="oid-12345",
         email="duplicate@company.com",
         display_name="User 1",
@@ -57,7 +57,7 @@ async def test_user_unique_email(db_session):
     await db_session.commit()
 
     # Act & Assert - 同じメールで作成しようとするとエラー
-    user2 = User(
+    user2 = UserAccount(
         azure_oid="oid-67890",
         email="duplicate@company.com",  # 同じメール
         display_name="User 2",

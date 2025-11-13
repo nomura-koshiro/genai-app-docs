@@ -19,7 +19,7 @@ class TestProjectFileService:
     async def test_upload_file_success(self, db_session, tmp_path):
         """ファイルアップロード成功のテスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="upload-user-oid",
             email="uploaduser@company.com",
             display_name="Upload User",
@@ -67,7 +67,7 @@ class TestProjectFileService:
     async def test_upload_file_not_member(self, db_session):
         """非メンバーのアップロード失敗テスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="non-member-oid",
             email="nonmember@company.com",
             display_name="Non Member",
@@ -97,7 +97,7 @@ class TestProjectFileService:
     async def test_upload_file_viewer_no_permission(self, db_session):
         """VIEWERロールのアップロード失敗テスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="viewer-oid",
             email="viewer@company.com",
             display_name="Viewer User",
@@ -136,7 +136,7 @@ class TestProjectFileService:
     async def test_upload_file_invalid_mime_type(self, db_session):
         """無効なMIMEタイプのアップロード失敗テスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="mime-user-oid",
             email="mimeuser@company.com",
             display_name="MIME User",
@@ -174,7 +174,7 @@ class TestProjectFileService:
     async def test_upload_file_exceeds_size_limit(self, db_session):
         """ファイルサイズ超過のアップロード失敗テスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="size-user-oid",
             email="sizeuser@company.com",
             display_name="Size User",
@@ -215,7 +215,7 @@ class TestProjectFileService:
     async def test_get_file_success(self, db_session, tmp_path):
         """ファイル取得成功のテスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="get-user-oid",
             email="getuser@company.com",
             display_name="Get User",
@@ -269,7 +269,7 @@ class TestProjectFileService:
     async def test_get_file_not_found(self, db_session):
         """存在しないファイルの取得テスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="notfound-user-oid",
             email="notfounduser@company.com",
             display_name="Not Found User",
@@ -303,7 +303,7 @@ class TestProjectFileService:
     async def test_list_project_files(self, db_session, tmp_path):
         """プロジェクトファイル一覧取得のテスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="list-user-oid",
             email="listuser@company.com",
             display_name="List User",
@@ -351,7 +351,7 @@ class TestProjectFileService:
     async def test_delete_file_by_uploader(self, db_session, tmp_path):
         """アップロード者によるファイル削除のテスト。"""
         # Arrange
-        user = User(
+        user = UserAccount(
             azure_oid="delete-user-oid",
             email="deleteuser@company.com",
             display_name="Delete User",
@@ -397,12 +397,12 @@ class TestProjectFileService:
     async def test_delete_file_by_admin(self, db_session, tmp_path):
         """ADMIN による他人のファイル削除のテスト。"""
         # Arrange
-        uploader = User(
+        uploader = UserAccount(
             azure_oid="uploader-oid",
             email="uploader@company.com",
             display_name="Uploader",
         )
-        admin = User(
+        admin = UserAccount(
             azure_oid="admin-oid",
             email="admin@company.com",
             display_name="Admin",
@@ -458,12 +458,12 @@ class TestProjectFileService:
     async def test_delete_file_by_member_no_permission(self, db_session, tmp_path):
         """一般MEMBERによる他人のファイル削除失敗のテスト。"""
         # Arrange
-        uploader = User(
+        uploader = UserAccount(
             azure_oid="uploader2-oid",
             email="uploader2@company.com",
             display_name="Uploader2",
         )
-        other_member = User(
+        other_member = UserAccount(
             azure_oid="othermember-oid",
             email="othermember@company.com",
             display_name="Other Member",

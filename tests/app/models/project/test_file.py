@@ -23,7 +23,7 @@ async def test_project_file_cascade_delete_project(db_session):
     自動的に削除されることでデータ整合性を保証します。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="cascade-file-oid",
         email="filecascade@company.com",
         display_name="File Cascade User",
@@ -70,7 +70,7 @@ async def test_project_file_restrict_delete_user(db_session):
     これにより、ファイルの履歴情報の整合性を保証します。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="restrict-file-oid",
         email="filerestrict@company.com",
         display_name="File Restrict User",
@@ -112,7 +112,7 @@ async def test_project_file_required_fields(db_session):
     エラーが発生し、不完全なレコード作成を防止します。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="required-file-oid",
         email="filerequired@company.com",
         display_name="File Required User",
@@ -150,7 +150,7 @@ async def test_project_file_uploaded_at_auto_set(db_session):
     モデルのデフォルト値により自動的に現在時刻が設定されます。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="autoset-file-oid",
         email="fileautoset@company.com",
         display_name="File Auto Set User",

@@ -18,6 +18,6 @@
     >>> {"name": "売上高", "node_type": "kpi"}
 """
 
-from app.api.routes.v1.driver_tree.driver_tree import router
+from app.api.routes.v1.driver_tree.driver_tree import driver_tree_router
 
-__all__ = ["router"]
+__all__ = ["driver_tree_router"]

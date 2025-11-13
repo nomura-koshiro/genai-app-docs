@@ -20,10 +20,10 @@ from app.schemas import (
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+sample_files_router = APIRouter()
 
 
-@router.post(
+@sample_files_router.post(
     "/sample-upload",
     response_model=SampleFileUploadResponse,
     status_code=status.HTTP_200_OK,
@@ -90,7 +90,7 @@ async def upload_file(
     )
 
 
-@router.get(
+@sample_files_router.get(
     "/sample-download/{file_id}",
     response_class=FileResponse,
     summary="サンプルファイルダウンロード",
@@ -151,7 +151,7 @@ async def download_file(
     )
 
 
-@router.delete(
+@sample_files_router.delete(
     "/sample-files/{file_id}",
     response_model=SampleFileDeleteResponse,
     summary="サンプルファイル削除",
@@ -203,7 +203,7 @@ async def delete_file(
     return SampleFileDeleteResponse(file_id=file_id, message=f"File {file_id} deleted successfully")
 
 
-@router.get(
+@sample_files_router.get(
     "/sample-list",
     response_model=SampleFileListResponse,
     summary="サンプルファイル一覧取得",

@@ -18,10 +18,10 @@ from app.schemas import (
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+sample_agents_router = APIRouter()
 
 
-@router.post(
+@sample_agents_router.post(
     "/sample-chat",
     response_model=SampleChatResponse,
     summary="サンプルAIエージェントとチャット",
@@ -84,7 +84,7 @@ async def chat(
     return SampleChatResponse(**result)
 
 
-@router.get(
+@sample_agents_router.get(
     "/sample-sessions/{session_id}",
     response_model=SampleSessionResponse,
     summary="サンプルセッション情報取得",
@@ -148,7 +148,7 @@ async def get_session(
     )
 
 
-@router.delete(
+@sample_agents_router.delete(
     "/sample-sessions/{session_id}",
     response_model=SampleDeleteResponse,
     summary="サンプルセッション削除",

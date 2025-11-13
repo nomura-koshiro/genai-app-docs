@@ -19,6 +19,6 @@
     >>> {"project_id": "...", "slide_number": 1}
 """
 
-from app.api.routes.v1.ppt_generator.ppt_generator import router
+from app.api.routes.v1.ppt_generator.ppt_generator import ppt_generator_router
 
-__all__ = ["router"]
+__all__ = ["ppt_generator_router"]

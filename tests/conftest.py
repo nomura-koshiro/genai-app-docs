@@ -104,6 +104,8 @@ async def db_engine():
         await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres"))
         await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
 
+    # 接続のクリーンアップを待機してからdispose
+    await asyncio.sleep(0.1)
     await engine.dispose()
 
 
@@ -121,6 +123,8 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession]:
     async with async_session_maker() as session:
         yield session
         await session.rollback()
+        # 非同期操作の完了を待機
+        await asyncio.sleep(0)
 
 
 @pytest.fixture(scope="function")

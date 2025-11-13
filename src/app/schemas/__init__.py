@@ -104,7 +104,7 @@ from app.schemas.sample.sample_user import (
     SampleUserLogin,
     SampleUserResponse,
 )
-from app.schemas.user.user import (
+from app.schemas.user_account.user_account import (
     UserListResponse,
     UserResponse,
     UserUpdate,

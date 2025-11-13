@@ -8,11 +8,11 @@
     - UserListResponse: ユーザー一覧レスポンス
 
 使用例:
-    >>> from app.schemas.user import UserUpdate, UserResponse
+    >>> from app.schemas.user_account import UserUpdate, UserResponse
     >>> user_update = UserUpdate(full_name="新しい名前")
     >>> # API経由でユーザー情報を更新
 """
 
-from app.schemas.user.user import UserListResponse, UserResponse, UserUpdate
+from app.schemas.user_account.user_account import UserListResponse, UserResponse, UserUpdate
 
 __all__ = ["UserListResponse", "UserResponse", "UserUpdate"]

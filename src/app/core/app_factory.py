@@ -24,25 +24,21 @@ from app.api.middlewares import (
     RateLimitMiddleware,
     SecurityHeadersMiddleware,
 )
-from app.api.routes.system import health, metrics, root
-from app.api.routes.v1.analysis import (
+from app.api.routes.system import health_router, metrics_router, root_router
+from app.api.routes.v1 import (
     analysis_router,
     analysis_templates_router,
-)
-from app.api.routes.v1.driver_tree import router as driver_tree_router
-from app.api.routes.v1.ppt_generator import router as ppt_generator_router
-from app.api.routes.v1.project import (
+    driver_tree_router,
+    ppt_generator_router,
     project_files_router,
     project_members_router,
     projects_router,
+    sample_agents_router,
+    sample_files_router,
+    sample_sessions_router,
+    sample_users_router,
+    user_accounts_router,
 )
-from app.api.routes.v1.sample import (
-    sample_agents,
-    sample_files,
-    sample_sessions,
-    sample_users,
-)
-from app.api.routes.v1.users import router as users
 from app.core.config import settings
 from app.core.lifespan import lifespan
 
@@ -164,13 +160,13 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityHeadersMiddleware)
 
     # APIバージョニング付きルーターを登録
-    app.include_router(sample_users.router, prefix="/api/v1/sample-users", tags=["sample-users"])
-    app.include_router(sample_agents.router, prefix="/api/v1/sample-agents", tags=["sample-agents"])
-    app.include_router(sample_sessions.router, prefix="/api/v1/sample-sessions", tags=["sample-sessions"])
-    app.include_router(sample_files.router, prefix="/api/v1/sample-files", tags=["sample-files"])
+    app.include_router(sample_users_router, prefix="/api/v1/sample-users", tags=["sample-users"])
+    app.include_router(sample_agents_router, prefix="/api/v1/sample-agents", tags=["sample-agents"])
+    app.include_router(sample_sessions_router, prefix="/api/v1/sample-sessions", tags=["sample-sessions"])
+    app.include_router(sample_files_router, prefix="/api/v1/sample-files", tags=["sample-files"])
 
     # Azure AD認証用ユーザー管理API
-    app.include_router(users, prefix="/api/v1/users", tags=["users"])
+    app.include_router(user_accounts_router, prefix="/api/v1/users", tags=["users"])
 
     # プロジェクト管理API
     app.include_router(projects_router, prefix="/api/v1/projects", tags=["projects"])
@@ -218,8 +214,8 @@ def create_app() -> FastAPI:
     )
 
     # 基本エンドポイントを登録
-    app.include_router(root.router, tags=["root"])
-    app.include_router(health.router, tags=["health"])
-    app.include_router(metrics.router, tags=["metrics"])
+    app.include_router(root_router, tags=["root"])
+    app.include_router(health_router, tags=["health"])
+    app.include_router(metrics_router, tags=["metrics"])
 
     return app

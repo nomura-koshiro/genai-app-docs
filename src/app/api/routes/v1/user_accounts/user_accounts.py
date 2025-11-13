@@ -44,7 +44,7 @@ from app.schemas import UserListResponse, UserResponse, UserUpdate
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+user_accounts_router = APIRouter()
 
 
 # ================================================================================
@@ -52,7 +52,7 @@ router = APIRouter()
 # ================================================================================
 
 
-@router.get(
+@user_accounts_router.get(
     "",
     response_model=UserListResponse,
     summary="ユーザー一覧取得",
@@ -188,7 +188,7 @@ async def list_users(
     )
 
 
-@router.get(
+@user_accounts_router.get(
     "/me",
     response_model=UserResponse,
     summary="現在のユーザー情報取得",
@@ -273,7 +273,7 @@ async def get_current_user(
     return UserResponse.model_validate(updated_user)
 
 
-@router.get(
+@user_accounts_router.get(
     "/{user_id}",
     response_model=UserResponse,
     summary="特定ユーザー情報取得",
@@ -378,7 +378,7 @@ async def get_user(
 # ================================================================================
 
 
-@router.patch(
+@user_accounts_router.patch(
     "/me",
     response_model=UserResponse,
     summary="ユーザー情報更新",
@@ -482,7 +482,7 @@ async def update_current_user(
 # ================================================================================
 
 
-@router.delete(
+@user_accounts_router.delete(
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="ユーザー削除",

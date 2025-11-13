@@ -27,7 +27,7 @@ async def test_list_by_user(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     # ユーザーモデルを作成（ProjectMemberの外部キー制約のため）
-    user = User(
+    user = UserAccount(
         id=user_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"user-{uuid.uuid4()}@example.com",
@@ -86,7 +86,7 @@ async def test_list_by_user_with_active_filter(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     # ユーザーモデルを作成
-    user = User(
+    user = UserAccount(
         id=user_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"user-{uuid.uuid4()}@example.com",
@@ -185,7 +185,7 @@ async def test_count_by_user(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     # ユーザーモデルを作成
-    user = User(
+    user = UserAccount(
         id=user_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"user-{uuid.uuid4()}@example.com",

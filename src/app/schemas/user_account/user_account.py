@@ -11,7 +11,7 @@
         - UserListResponse: ユーザー一覧レスポンス
 
 使用方法:
-    >>> from app.schemas.user.user import UserResponse
+    >>> from app.schemas.user_account.user_account import UserResponse
     >>>
     >>> # ユーザー情報レスポンス
     >>> user = UserResponse(

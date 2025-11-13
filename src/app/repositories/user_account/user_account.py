@@ -12,7 +12,7 @@ BaseRepositoryを継承し、Azure OID検索、メール検索、アクティブ
 
 使用例:
     >>> from sqlalchemy.ext.asyncio import AsyncSession
-    >>> from app.repositories.user.user import UserRepository
+    >>> from app.repositories.user_account.user_account import UserRepository
     >>>
     >>> async with get_db() as db:
     ...     user_repo = UserRepository(db)

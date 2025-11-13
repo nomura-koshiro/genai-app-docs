@@ -58,10 +58,10 @@ from app.schemas import (
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+sample_users_router = APIRouter()
 
 
-@router.post(
+@sample_users_router.post(
     "",
     response_model=SampleUserResponse,
     status_code=status.HTTP_201_CREATED,
@@ -142,7 +142,7 @@ async def create_user(
     return SampleUserResponse.model_validate(user)
 
 
-@router.post(
+@sample_users_router.post(
     "/sample-login",
     response_model=SampleTokenWithRefresh,
     summary="サンプルユーザーログイン",
@@ -243,7 +243,7 @@ async def login(
     )
 
 
-@router.get(
+@sample_users_router.get(
     "/sample-me",
     response_model=SampleUserResponse,
     summary="現在のサンプルユーザー情報取得",
@@ -293,7 +293,7 @@ async def get_current_user(
     return SampleUserResponse.model_validate(current_user)
 
 
-@router.get(
+@sample_users_router.get(
     "/{user_id}",
     response_model=SampleUserResponse,
     summary="特定サンプルユーザー情報取得",
@@ -362,7 +362,7 @@ async def get_user(
     return SampleUserResponse.model_validate(user)
 
 
-@router.get(
+@sample_users_router.get(
     "",
     response_model=list[SampleUserResponse],
     summary="サンプルユーザー一覧取得",
@@ -444,7 +444,7 @@ async def list_users(
     return [SampleUserResponse.model_validate(user) for user in users]
 
 
-@router.post(
+@sample_users_router.post(
     "/sample-refresh",
     response_model=SampleToken,
     summary="サンプルトークンリフレッシュ",
@@ -519,7 +519,7 @@ async def refresh_token(
     return SampleToken(access_token=access_token, token_type="bearer")
 
 
-@router.post(
+@sample_users_router.post(
     "/sample-api-key",
     response_model=SampleAPIKeyResponse,
     summary="サンプルAPIキー生成",

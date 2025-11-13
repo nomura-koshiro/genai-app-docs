@@ -21,7 +21,7 @@ async def test_project_member_unique_constraint(db_session):
     これはデータ整合性に直結する制約です。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="unique-member-oid",
         email="unique@company.com",
         display_name="Unique User",
@@ -65,7 +65,7 @@ async def test_project_member_cascade_delete_project(db_session):
     自動的に削除されることでデータ整合性を保証します。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="cascade-oid",
         email="cascade@company.com",
         display_name="Cascade User",
@@ -108,7 +108,7 @@ async def test_project_member_cascade_delete_user(db_session):
     自動的に削除されることでデータ整合性を保証します。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="user-cascade-oid",
         email="user-cascade@company.com",
         display_name="User Cascade User",
@@ -151,12 +151,12 @@ async def test_project_member_added_by(db_session):
     監査ログとしての機能を提供します。
     """
     # Arrange
-    owner = User(
+    owner = UserAccount(
         azure_oid="owner-oid",
         email="owner@company.com",
         display_name="Owner User",
     )
-    member_user = User(
+    member_user = UserAccount(
         azure_oid="added-member-oid",
         email="added-member@company.com",
         display_name="Added Member User",
@@ -197,12 +197,12 @@ async def test_project_member_added_by_set_null(db_session):
     追加者情報を適切に処理します。
     """
     # Arrange
-    admin = User(
+    admin = UserAccount(
         azure_oid="admin-oid",
         email="admin@company.com",
         display_name="Admin User",
     )
-    member_user = User(
+    member_user = UserAccount(
         azure_oid="member-oid",
         email="member2@company.com",
         display_name="Member User",

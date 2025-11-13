@@ -13,7 +13,7 @@ async def test_users(db_session):
     """テスト用ユーザーを作成。"""
     users = []
     for i in range(5):
-        user = User(
+        user = UserAccount(
             azure_oid=f"service-test-oid-{i}",
             email=f"serviceuser{i}@company.com",
             display_name=f"Service User {i}",

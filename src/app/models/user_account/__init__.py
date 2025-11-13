@@ -7,7 +7,7 @@
     - SystemUserRole: システムロール（admin, user）
 
 使用例:
-    >>> from app.models.user import UserAccount, SystemUserRole
+    >>> from app.models.user_account import UserAccount, SystemUserRole
     >>> user = UserAccount(
     ...     email="user@example.com",
     ...     full_name="山田太郎",
@@ -15,6 +15,6 @@
     ... )
 """
 
-from app.models.user.user import SystemUserRole, UserAccount
+from app.models.user_account.user_account import SystemUserRole, UserAccount
 
 __all__ = ["SystemUserRole", "UserAccount"]

@@ -27,7 +27,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.project.member import ProjectRole
-from app.schemas.user.user import UserResponse
+from app.schemas.user_account.user_account import UserResponse
 
 # ================================================================================
 # プロジェクトメンバースキーマ

@@ -10,7 +10,7 @@
     - アクティブユーザーの一覧取得
 
 使用例:
-    >>> from app.services.user.user import UserService
+    >>> from app.services.user_account.user_account import UserService
     >>>
     >>> async with get_db() as db:
     ...     user_service = UserService(db)
@@ -47,7 +47,7 @@ class UserService:
 
     Example:
         >>> from sqlalchemy.ext.asyncio import AsyncSession
-        >>> from app.services.user.user import UserService
+        >>> from app.services.user_account.user_account import UserService
         >>>
         >>> async with get_db() as db:
         ...     user_service = UserService(db)

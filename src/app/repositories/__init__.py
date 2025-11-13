@@ -21,7 +21,7 @@ from app.repositories.sample import (
     SampleSessionRepository,
     SampleUserRepository,
 )
-from app.repositories.user.user import UserRepository
+from app.repositories.user_account.user_account import UserRepository
 
 __all__ = [
     "AnalysisFileRepository",

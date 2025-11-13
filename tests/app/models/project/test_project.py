@@ -51,7 +51,7 @@ async def test_project_member_unique_constraint(db_session):
     これはメンバーシップの整合性に関わる重要な制約です。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="unique-member-oid",
         email="unique@company.com",
         display_name="Unique User",
@@ -97,7 +97,7 @@ async def test_project_cascade_delete_members(db_session):
     これはCASCADE制約の動作確認であり、孤立レコードを防ぐ重要なテストです。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="cascade-oid",
         email="cascade@company.com",
         display_name="Cascade User",
@@ -142,7 +142,7 @@ async def test_project_cascade_delete_files(db_session):
     これはCASCADE制約の動作確認であり、孤立レコードを防ぐ重要なテストです。
     """
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="file-cascade-oid",
         email="filecascade@company.com",
         display_name="File Cascade User",

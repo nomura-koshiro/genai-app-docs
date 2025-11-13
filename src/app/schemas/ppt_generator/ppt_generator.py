@@ -19,7 +19,7 @@
     ... )
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PPTDownloadRequest(BaseModel):
@@ -62,16 +62,15 @@ class PPTDownloadRequest(BaseModel):
         examples=["template_a"],
     )
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "package": "market-analysis",
                 "phase": "phase1",
                 "template": "template_a",
             }
         }
+    )
 
 
 class PPTSlideExportRequest(BaseModel):
@@ -119,10 +118,8 @@ class PPTSlideExportRequest(BaseModel):
         examples=["1,3,5,7"],
     )
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "package": "market-analysis",
                 "phase": "phase1",
@@ -130,6 +127,7 @@ class PPTSlideExportRequest(BaseModel):
                 "slide_numbers": "1,3,5,7",
             }
         }
+    )
 
 
 class PPTSlideImageRequest(BaseModel):
@@ -178,10 +176,8 @@ class PPTSlideImageRequest(BaseModel):
         examples=[5],
     )
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "package": "market-analysis",
                 "phase": "phase1",
@@ -189,6 +185,7 @@ class PPTSlideImageRequest(BaseModel):
                 "slide_number": 5,
             }
         }
+    )
 
 
 class QuestionDownloadRequest(BaseModel):
@@ -237,10 +234,8 @@ class QuestionDownloadRequest(BaseModel):
         examples=["customer_survey"],
     )
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "package": "market-analysis",
                 "phase": "phase1",
@@ -248,6 +243,7 @@ class QuestionDownloadRequest(BaseModel):
                 "question_type": "customer_survey",
             }
         }
+    )
 
 
 class PPTUploadRequest(BaseModel):
@@ -296,10 +292,8 @@ class PPTUploadRequest(BaseModel):
         examples=["presentation.pptx"],
     )
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "package": "market-analysis",
                 "phase": "phase1",
@@ -307,6 +301,7 @@ class PPTUploadRequest(BaseModel):
                 "file_name": "presentation.pptx",
             }
         }
+    )
 
 
 class PPTUploadResponse(BaseModel):
@@ -331,13 +326,12 @@ class PPTUploadResponse(BaseModel):
     file_path: str = Field(..., description="ストレージパス")
     file_size: int = Field(..., ge=0, description="ファイルサイズ（バイト）")
 
-    class Config:
-        """Pydantic設定。"""
-
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "success": True,
                 "file_path": "market-analysis/phase1/template_a/presentation.pptx",
                 "file_size": 1024000,
             }
         }
+    )

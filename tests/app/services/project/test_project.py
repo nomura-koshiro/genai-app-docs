@@ -19,7 +19,7 @@ async def test_create_project_success(db_session: AsyncSession):
     creator_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=creator_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"creator-{uuid.uuid4()}@example.com",
@@ -53,7 +53,7 @@ async def test_create_project_duplicate_code(db_session: AsyncSession):
     creator_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=creator_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"creator-{uuid.uuid4()}@example.com",
@@ -92,7 +92,7 @@ async def test_get_project_success(db_session: AsyncSession):
     creator_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=creator_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"creator-{uuid.uuid4()}@example.com",
@@ -140,7 +140,7 @@ async def test_get_project_by_code_success(db_session: AsyncSession):
     creator_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=creator_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"creator-{uuid.uuid4()}@example.com",
@@ -184,7 +184,7 @@ async def test_list_user_projects(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=user_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"user-{uuid.uuid4()}@example.com",
@@ -224,7 +224,7 @@ async def test_update_project_success(db_session: AsyncSession):
     owner_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",
@@ -263,13 +263,13 @@ async def test_update_project_permission_denied(db_session: AsyncSession):
     viewer_id = uuid.uuid4()
 
     # ユーザーを作成
-    owner = User(
+    owner = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",
         display_name="Owner User",
     )
-    viewer = User(
+    viewer = UserAccount(
         id=viewer_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"viewer-{uuid.uuid4()}@example.com",
@@ -312,7 +312,7 @@ async def test_delete_project_success(db_session: AsyncSession):
     owner_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",
@@ -348,13 +348,13 @@ async def test_delete_project_permission_denied(db_session: AsyncSession):
     admin_id = uuid.uuid4()
 
     # ユーザーを作成
-    owner = User(
+    owner = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",
         display_name="Owner User",
     )
-    admin = User(
+    admin = UserAccount(
         id=admin_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"admin-{uuid.uuid4()}@example.com",
@@ -397,13 +397,13 @@ async def test_check_user_access(db_session: AsyncSession):
     non_member_id = uuid.uuid4()
 
     # ユーザーを作成
-    owner = User(
+    owner = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",
         display_name="Owner User",
     )
-    member = User(
+    member = UserAccount(
         id=member_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"member-{uuid.uuid4()}@example.com",
@@ -450,7 +450,7 @@ async def test_delete_project_without_files(db_session: AsyncSession):
     owner_id = uuid.uuid4()
 
     # ユーザーを作成
-    user = User(
+    user = UserAccount(
         id=owner_id,
         azure_oid=f"azure-oid-{uuid.uuid4()}",
         email=f"owner-{uuid.uuid4()}@example.com",

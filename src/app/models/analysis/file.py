@@ -35,7 +35,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.session import AnalysisSession
-    from app.models.user.user import UserAccount
+    from app.models.user_account.user_account import UserAccount
 
 
 class AnalysisFile(Base, TimestampMixin):

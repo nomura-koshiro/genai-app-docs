@@ -13,7 +13,7 @@
     - ユニーク制約: azure_oid, email
 
 使用例:
-    >>> from app.models.user.user import UserAccount
+    >>> from app.models.user_account.user_account import UserAccount
     >>> user = UserAccount(
     ...     azure_oid="azure-oid-12345",
     ...     email="user@company.com",

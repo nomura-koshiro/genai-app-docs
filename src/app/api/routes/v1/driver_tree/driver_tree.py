@@ -24,7 +24,7 @@ from app.services import DriverTreeService
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+driver_tree_router = APIRouter()
 
 
 def get_driver_tree_service(db: AsyncSession = Depends(get_db)) -> DriverTreeService:
@@ -39,7 +39,7 @@ def get_driver_tree_service(db: AsyncSession = Depends(get_db)) -> DriverTreeSer
     return DriverTreeService(db)
 
 
-@router.post("/nodes", response_model=DriverTreeNodeResponse, status_code=status.HTTP_201_CREATED)
+@driver_tree_router.post("/nodes", response_model=DriverTreeNodeResponse, status_code=status.HTTP_201_CREATED)
 @handle_service_errors
 async def create_node(
     node_data: DriverTreeNodeCreate,
@@ -82,7 +82,7 @@ async def create_node(
     return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.get("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
+@driver_tree_router.get("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
 @handle_service_errors
 async def get_node(
     node_id: uuid.UUID,
@@ -117,7 +117,7 @@ async def get_node(
     return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.put("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
+@driver_tree_router.put("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
 @handle_service_errors
 async def update_node(
     node_id: uuid.UUID,
@@ -161,7 +161,7 @@ async def update_node(
     return DriverTreeNodeResponse.model_validate(node)
 
 
-@router.post("/trees", response_model=DriverTreeResponse, status_code=status.HTTP_201_CREATED)
+@driver_tree_router.post("/trees", response_model=DriverTreeResponse, status_code=status.HTTP_201_CREATED)
 @handle_service_errors
 @async_timeout(60.0)
 async def create_tree_from_formulas(
@@ -201,7 +201,7 @@ async def create_tree_from_formulas(
     return await driver_tree_service.get_tree_response(tree.id)
 
 
-@router.get("/trees/{tree_id}", response_model=DriverTreeResponse)
+@driver_tree_router.get("/trees/{tree_id}", response_model=DriverTreeResponse)
 @handle_service_errors
 async def get_tree(
     tree_id: uuid.UUID,
@@ -236,7 +236,7 @@ async def get_tree(
     return response
 
 
-@router.get("/categories")
+@driver_tree_router.get("/categories")
 @handle_service_errors
 async def get_categories(
     current_user: CurrentUserAzureDep,
@@ -267,7 +267,7 @@ async def get_categories(
     return categories
 
 
-@router.get("/kpis", response_model=DriverTreeKPIListResponse)
+@driver_tree_router.get("/kpis", response_model=DriverTreeKPIListResponse)
 @handle_service_errors
 async def get_kpis(
     current_user: CurrentUserAzureDep,
@@ -296,7 +296,7 @@ async def get_kpis(
     return DriverTreeKPIListResponse(kpis=kpis)
 
 
-@router.get("/formulas", response_model=DriverTreeFormulaResponse)
+@driver_tree_router.get("/formulas", response_model=DriverTreeFormulaResponse)
 @handle_service_errors
 async def get_formulas(
     current_user: CurrentUserAzureDep,

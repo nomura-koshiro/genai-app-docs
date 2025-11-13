@@ -35,7 +35,7 @@ from app.services import PPTGeneratorService
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+ppt_generator_router = APIRouter()
 
 
 # ================================================================================
@@ -57,7 +57,7 @@ def get_ppt_generator_service() -> PPTGeneratorService:
 # ================================================================================
 
 
-@router.get(
+@ppt_generator_router.get(
     "/download",
     summary="PPTファイルダウンロード",
     description="""
@@ -145,7 +145,7 @@ async def download_ppt(
     )
 
 
-@router.get(
+@ppt_generator_router.get(
     "/export-slides",
     summary="選択スライドエクスポート",
     description="""
@@ -237,7 +237,7 @@ async def export_selected_slides(
     )
 
 
-@router.get(
+@ppt_generator_router.get(
     "/slide-image",
     summary="スライド画像取得",
     description="""
@@ -327,7 +327,7 @@ async def get_slide_image(
     )
 
 
-@router.get(
+@ppt_generator_router.get(
     "/questions",
     summary="質問データダウンロード",
     description="""
@@ -422,7 +422,7 @@ async def download_questions(
 # ================================================================================
 
 
-@router.post(
+@ppt_generator_router.post(
     "/upload",
     response_model=PPTUploadResponse,
     status_code=status.HTTP_201_CREATED,

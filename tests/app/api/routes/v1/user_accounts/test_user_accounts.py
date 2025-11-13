@@ -17,7 +17,7 @@ from app.models import UserAccount
 @pytest.fixture
 async def mock_admin_user(db_session):
     """モック管理者ユーザー（SystemAdminロール）。"""
-    user = User(
+    user = UserAccount(
         azure_oid=f"azure-admin-{uuid.uuid4()}",
         email="admin@example.com",
         display_name="Admin User",
@@ -73,7 +73,7 @@ async def test_list_users_total_count_accuracy(client: AsyncClient, override_aut
     # Arrange
     # 追加で10人のユーザーを作成
     for i in range(10):
-        user = User(
+        user = UserAccount(
             azure_oid=f"pagination-test-{i}",
             email=f"pagination{i}@example.com",
             display_name=f"Pagination User {i}",
@@ -102,7 +102,7 @@ async def test_list_users_pagination_second_page(client: AsyncClient, override_a
     # Arrange
     # 追加で10人のユーザーを作成
     for i in range(10):
-        user = User(
+        user = UserAccount(
             azure_oid=f"pagination2-test-{i}",
             email=f"pagination2{i}@example.com",
             display_name=f"Pagination2 User {i}",

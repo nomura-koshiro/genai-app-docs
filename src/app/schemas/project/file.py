@@ -23,7 +23,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.user.user import UserResponse
+from app.schemas.user_account.user_account import UserResponse
 
 
 class ProjectFileUploadResponse(BaseModel):
