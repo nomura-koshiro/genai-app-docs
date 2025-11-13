@@ -117,10 +117,10 @@ uv run pytest tests/ -v
 
 ### ステップ5: アプリケーション起動
 
-**VS Codeで起動（推奨）:**
+#### VS Codeで起動（推奨）
 
 1. VS Codeでプロジェクトを開く
-1. **F5キー**を押す
+2. **F5キー**を押す
 
 PostgreSQLが自動起動し、FastAPIアプリケーションが起動します。
 
@@ -138,7 +138,7 @@ Scoopは軽量なWindows用パッケージマネージャーです。
 
 1. **PowerShellを管理者として起動**
 
-1. **Scoopをインストール：**
+2. **Scoopをインストール：**
 
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
@@ -177,19 +177,19 @@ pg_ctl -D $env:USERPROFILE\scoop\apps\postgresql\current\data stop
 
 1. [PostgreSQL公式サイト](https://www.postgresql.org/download/windows/)からインストーラーをダウンロード
 
-1. インストーラーを実行：
+2. インストーラーを実行：
    - インストール先：デフォルト（`C:\Program Files\PostgreSQL\16`）
    - パスワード：開発用の簡単なパスワードを設定（例：`postgres`）
    - ポート：`5432`（デフォルト）
    - ロケール：`Japanese, Japan`または`C`
 
-1. インストール完了後、環境変数PATHに追加：
+3. インストール完了後、環境変数PATHに追加：
 
    ```text
    C:\Program Files\PostgreSQL\16\bin
    ```
 
-1. PostgreSQLサービスが自動起動するように設定されています
+4. PostgreSQLサービスが自動起動するように設定されています
 
 ### ステップ2: データベースの作成と確認
 
@@ -291,14 +291,14 @@ uv run pytest tests/ -v
 
 #### アプリケーションの起動
 
-**推奨: VS Codeで起動（PostgreSQL自動起動）**
+##### 推奨: VS Codeで起動（PostgreSQL自動起動）
 
 1. VS Codeでプロジェクトを開く
-1. **F5キー**を押す
+2. **F5キー**を押す
 
 PostgreSQLが自動的に起動し、FastAPIアプリケーションが起動します。
 
-**または: コマンドラインで起動**
+##### または: コマンドラインで起動
 
 ```powershell
 # PostgreSQLを起動（未起動の場合）
