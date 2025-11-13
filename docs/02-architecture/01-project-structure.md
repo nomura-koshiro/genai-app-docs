@@ -737,7 +737,9 @@ core/
     ├── __init__.py          # 統一インターフェース
     ├── password.py          # パスワードハッシュ化と検証
     ├── jwt.py               # JWT認証
-    └── api_key.py           # APIキー生成
+    ├── api_key.py           # APIキー生成
+    ├── azure_ad.py          # Azure AD認証（本番モード）
+    └── dev_auth.py          # 開発モック認証
 ```
 
 #### `core/app_factory.py` - アプリファクトリー
@@ -855,13 +857,15 @@ class ValidationError(AppException):
 
 #### `core/security/` - セキュリティパッケージ
 
-セキュリティ機能を責任ごとに分割したパッケージ。
+セキュリティ機能を責任ごとに分割したパッケージ。認証モード（開発/本番）に応じて適切な認証方式を使用します。
 
 ```python
 # core/security/__init__.py - 統一インターフェース
 from app.core.security.password import hash_password, verify_password, validate_password_strength
 from app.core.security.jwt import create_access_token, decode_access_token
 from app.core.security.api_key import generate_api_key
+from app.core.security.azure_ad import get_azure_ad_user, verify_azure_token
+from app.core.security.dev_auth import get_dev_mock_user, create_dev_mock_token
 
 # core/security/password.py - パスワード管理
 def hash_password(password: str) -> str:
@@ -890,6 +894,30 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
 def generate_api_key() -> str:
     """暗号学的に安全なAPIキーを生成"""
     return secrets.token_urlsafe(32)
+
+# core/security/azure_ad.py - Azure AD認証（本番モード）
+async def verify_azure_token(token: str) -> dict[str, Any]:
+    """Azure ADトークンを検証"""
+    # Azure AD JWKSを使用してトークンを検証
+    ...
+
+async def get_azure_ad_user(token: str) -> dict[str, Any]:
+    """Azure ADトークンからユーザー情報を取得"""
+    # トークンからユーザー情報（email, oid, name）を抽出
+    ...
+
+# core/security/dev_auth.py - 開発モック認証
+def create_dev_mock_token() -> str:
+    """開発モック用トークンを生成"""
+    return settings.DEV_MOCK_TOKEN
+
+def get_dev_mock_user() -> dict[str, Any]:
+    """開発モック用ユーザー情報を返す"""
+    return {
+        "email": settings.DEV_MOCK_USER_EMAIL,
+        "oid": settings.DEV_MOCK_USER_OID,
+        "name": settings.DEV_MOCK_USER_NAME,
+    }
 ```
 
 **役割**:
@@ -897,6 +925,13 @@ def generate_api_key() -> str:
 - `password.py`: bcryptによるパスワードハッシュ化、検証、強度チェック
 - `jwt.py`: JWTトークンの生成、検証、リフレッシュトークン管理
 - `api_key.py`: セキュアなAPIキー生成
+- `azure_ad.py`: Azure AD認証（本番モード）- トークン検証、ユーザー情報取得
+- `dev_auth.py`: 開発モック認証 - ローカル開発時の簡易認証
+
+**認証モード切り替え**:
+
+- `AUTH_MODE=development`: dev_auth.py による簡易認証（ローカル開発用）
+- `AUTH_MODE=production`: azure_ad.py による Azure AD 認証（本番環境用）
 
 ### data/ - データファイル・テンプレート
 
