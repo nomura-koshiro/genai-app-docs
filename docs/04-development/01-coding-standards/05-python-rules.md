@@ -205,15 +205,23 @@ def get_value(key: str) -> Union[str, int, float]:
 
 ### ジェネリック型
 
+本プロジェクトでは **Python 3.12+** の新しいジェネリック構文を使用します。
+
+#### Python 3.12+ の新しい構文（推奨）
+
+**必須要件**: Python 3.12以上
+
 ```python
-from typing import Generic, TypeVar, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
-ModelType = TypeVar("ModelType", bound=Base)
+# ✅ Python 3.12+: class定義でのジェネリック
+class BaseRepository[ModelType: Base]:
+    """ジェネリック型を使用した基底リポジトリ。
 
-
-class BaseRepository(Generic[ModelType]):
-    """ジェネリック型を使用した基底リポジトリ。"""
+    Note:
+        Python 3.12+の新しいジェネリック構文を使用しています。
+        TypeVarとGenericの明示的な使用が不要になりました。
+    """
 
     def __init__(self, model: type[ModelType], db: AsyncSession):
         self.model = model
@@ -232,10 +240,75 @@ class BaseRepository(Generic[ModelType]):
         return list(result.scalars().all())
 
 
+# ✅ Python 3.12+: 関数定義でのジェネリック
+def verify_active_user[UserType: (SampleUser, UserAccount)](
+    user: UserType
+) -> UserType:
+    """ユーザーのアクティブ状態を検証します。
+
+    この関数はSampleUserとUserAccountの両方で使用できます（DRY原則）。
+
+    Args:
+        user: 検証対象のユーザー（SampleUser または UserAccount）
+
+    Returns:
+        アクティブなユーザー（同じ型）
+
+    Raises:
+        HTTPException: ユーザーが無効化されている場合（403エラー）
+
+    Note:
+        Python 3.12+の新しいジェネリック構文を使用しています。
+        型制約はタプルで複数指定可能です。
+    """
+    if not user.is_active:
+        raise HTTPException(
+            status_code=403,
+            detail="アカウントが無効化されています",
+        )
+    return user
+
+
 # 具体的な型を指定
 class SampleUserRepository(BaseRepository[SampleUser]):
     pass
 ```
+
+**新しい構文の利点**:
+- `TypeVar`と`Generic`の明示的なインポートが不要
+- より簡潔で読みやすいコード
+- 関数でもジェネリックが使用可能
+- 複数の型制約をタプルで指定可能
+
+#### 従来の構文（Python 3.10/3.11互換）
+
+Python 3.12未満の環境では従来の構文を使用します：
+
+```python
+from typing import Generic, TypeVar, Any
+from sqlalchemy.ext.asyncio import AsyncSession
+
+# Python 3.10/3.11: TypeVarとGenericを明示的に使用
+ModelType = TypeVar("ModelType", bound=Base)
+
+
+class BaseRepository(Generic[ModelType]):
+    """ジェネリック型を使用した基底リポジトリ（従来構文）。"""
+
+    def __init__(self, model: type[ModelType], db: AsyncSession):
+        self.model = model
+        self.db = db
+
+    async def get(self, id: int) -> ModelType | None:
+        return await self.db.get(self.model, id)
+
+
+# 具体的な型を指定
+class SampleUserRepository(BaseRepository[SampleUser]):
+    pass
+```
+
+**本プロジェクトの方針**: Python 3.13を標準としているため、新しいコードでは**Python 3.12+構文を使用**してください。
 
 ### TypeAlias
 

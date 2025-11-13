@@ -267,13 +267,10 @@ api/
 │   │   │   └── files.py     # ファイル管理
 │   │   ├── sample/          # サンプル機能エンドポイント
 │   │   │   ├── __init__.py
-│   │   │   ├── agents.py    # AI Agent/チャット
-│   │   │   ├── files.py     # ファイル管理
-│   │   │   ├── sessions.py  # セッション管理
-│   │   │   └── users.py     # ユーザー管理
-│   │   ├── users/           # ユーザー管理エンドポイント（JWT認証用、非推奨）
-│   │   │   ├── __init__.py
-│   │   │   └── users.py     # JWT認証ユーザー管理
+│   │   │   ├── sample_agents.py    # AI Agent/チャット
+│   │   │   ├── sample_files.py     # ファイル管理
+│   │   │   ├── sample_sessions.py  # セッション管理
+│   │   │   └── sample_users.py     # ユーザー管理
 │   │   └── user_accounts/   # ユーザーアカウントエンドポイント
 │   │       ├── __init__.py
 │   │       └── user_accounts.py # Azure AD対応ユーザー管理
@@ -424,7 +421,7 @@ def register_exception_handlers(app: FastAPI):
     app.add_exception_handler(AppException, app_exception_handler)
 ```
 
-#### `api/dependencies.py` - 依存性注入
+#### `api/core/dependencies.py` - 依存性注入
 
 ```python
 from fastapi import Depends
@@ -486,7 +483,7 @@ models/
     └── user_account.py      # Azure AD対応ユーザーアカウントモデル
 ```
 
-#### 例: `models/sample/user.py`
+#### 例: `models/sample/sample_user.py`
 
 ```python
 from sqlalchemy import String, Boolean, DateTime
@@ -551,7 +548,7 @@ schemas/
 
 **注**: Pydantic v2対応済み（`ConfigDict`使用）
 
-#### 例: `schemas/sample/user.py`
+#### 例: `schemas/sample/sample_user.py`
 
 ```python
 from pydantic import BaseModel, EmailStr
@@ -637,11 +634,11 @@ class BaseRepository(Generic[ModelType]):
         return db_obj
 ```
 
-#### `repositories/sample/user.py` - サンプルユーザーリポジトリ
+#### `repositories/sample/sample_user.py` - サンプルユーザーリポジトリ
 
 ```python
 from app.repositories.base import BaseRepository
-from app.models.sample.user import SampleUser
+from app.models.sample.sample_user import SampleUser
 
 class SampleUserRepository(BaseRepository[SampleUser]):
     def __init__(self, db: AsyncSession):
@@ -725,11 +722,11 @@ services/
     └── user_account.py      # Azure AD対応ユーザーアカウントサービス
 ```
 
-#### 例: `services/sample/user.py`
+#### 例: `services/sample/sample_user.py`
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.sample.user import SampleUserRepository
+from app.repositories.sample.sample_user import SampleUserRepository
 from app.core.security import hash_password
 
 class SampleUserService:

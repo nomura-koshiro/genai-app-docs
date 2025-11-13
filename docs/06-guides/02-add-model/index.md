@@ -33,6 +33,15 @@
 
 ### 例: 商品（Product）モデルの追加
 
+> **注意**: この例では架空の`Product`モデルを使用していますが、実際のプロジェクトでは以下の実装を参考にしてください：
+>
+> - **Projectモデル**: `src/app/models/project/project.py`
+> - **AnalysisFileモデル**: `src/app/models/analysis/file.py`
+> - **DriverTreeNodeモデル**: `src/app/models/driver_tree/node.py`
+> - **UserAccountモデル**: `src/app/models/user_account/user_account.py`
+>
+> これらの実装は本ドキュメントで説明するパターンに従っており、実際のコードベースで使用されています。
+
 **プロジェクト構造について:**
 
 このプロジェクトでは、モデルも機能ごとにサブディレクトリを作成して整理しています。

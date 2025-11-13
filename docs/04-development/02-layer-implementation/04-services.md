@@ -203,7 +203,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 - `get_db()`はセッションの提供のみを担当
 - トランザクション境界（commit/rollback）はサービス層が定義
-- `@transactional`デコレータ（将来実装予定）または明示的なcommitで管理
+- `@transactional`デコレータ（実装済み）または明示的なcommitで管理
 
 ---
 

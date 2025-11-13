@@ -296,7 +296,7 @@ class SampleSession(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Session(id={self.id}, session_id={self.session_id})>"
+        return f"<SampleSession(id={self.id}, session_id={self.session_id})>"
 ```
 
 ### sample_messages テーブル
@@ -351,7 +351,7 @@ class SampleMessage(Base):
     session: Mapped["SampleSession"] = relationship("SampleSession", back_populates="messages")
 
     def __repr__(self) -> str:
-        return f"<Message(id={self.id}, role={self.role})>"
+        return f"<SampleMessage(id={self.id}, role={self.role})>"
 ```
 
 ### sample_files テーブル（非推奨）

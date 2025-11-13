@@ -33,6 +33,14 @@
 
 ### 例: 商品（Product）管理エンドポイントの追加
 
+> **注意**: この例では架空の`Product`エンティティを使用していますが、実際のプロジェクトでは以下の実装を参考にしてください：
+>
+> - **Project管理**: `src/app/api/routes/v1/project/project.py`
+> - **AnalysisFile管理**: `src/app/api/routes/v1/analysis/analysis.py`
+> - **DriverTree管理**: `src/app/api/routes/v1/driver_tree/driver_tree.py`
+>
+> これらの実装は本ドキュメントで説明するパターンに従っており、実際のコードベースで使用されています。
+
 この例では、商品を管理するためのCRUDエンドポイントを追加します。
 
 **プロジェクト構造について:**

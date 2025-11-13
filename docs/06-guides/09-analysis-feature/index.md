@@ -42,13 +42,13 @@
 │   ├── step.py - ステップ管理
 │   ├── snapshot.py - スナップショット管理
 │   ├── config.py - 検証設定管理
-│   └── agent/ - AIエージェント（42ファイル）
+│   └── agent/ - AIエージェント（複数ファイル構成）
 │       ├── core.py - LangChainエージェント統合
 │       ├── executor.py - ステップ実行ロジック
 │       ├── storage.py - ストレージ抽象化
-│       ├── state/ - 状態管理（5ファイル）
-│       ├── steps/ - 分析ステップ（4種類 + 11グラフ）
-│       └── utils/tools/ - LangChainツール（14クラス）
+│       ├── state/ - 状態管理
+│       ├── steps/ - 分析ステップ（Filter/Aggregation/Transform/Summary + グラフ生成）
+│       └── utils/tools/ - LangChainツール（データ操作・可視化）
 ├── スキーマ層（schemas/）
 │   └── analysis_session.py - リクエスト/レスポンス定義
 └── API層（api/routes/v1/）
@@ -72,8 +72,8 @@
 graph TB
     Client[クライアント<br/>React/Vue]
     API[API層<br/>FastAPI Router]
-    Service[サービス層<br/>AnalysisService<br/>6ファイル分割]
-    Agent[AIエージェント層<br/>LangChain統合<br/>42ファイル]
+    Service[サービス層<br/>AnalysisService<br/>機能別に分割]
+    Agent[AIエージェント層<br/>LangChain統合<br/>状態管理+ステップ実行]
     Repo[リポジトリ層<br/>AnalysisSessionRepository]
     DB[(PostgreSQL<br/>データベース)]
     Storage[ストレージ層<br/>Azure Blob / Local]

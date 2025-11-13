@@ -20,7 +20,7 @@
 │  データベース: PostgreSQL + Docker           │
 │  ORM: SQLAlchemy 2.0 (非同期)                │
 │  ドライバ: asyncpg                           │
-│  バリデーション: Pydantic 2.0                │
+│  バリデーション: Pydantic 2.0 / Settings 2.6│
 │  マイグレーション: Alembic                   │
 ├─────────────────────────────────────────────┤
 │  キャッシュ: Redis                           │
@@ -711,7 +711,7 @@ Ruffは、Rustで実装された超高速Pythonリンターとフォーマッタ
 ```toml
 # pyproject.toml
 [tool.ruff]
-line-length = 100
+line-length = 140
 target-version = "py313"
 
 [tool.ruff.lint]

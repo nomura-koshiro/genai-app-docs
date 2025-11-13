@@ -2,7 +2,99 @@
 
 このドキュメントは、実装されているAPIエンドポイントの仕様を詳述します。すべての仕様は実装から抽出されています。
 
-## エンドポイント一覧
+## API構造の全体像
+
+本APIは**バージョニング付きビジネスロジックAPI**と**システムルートレベルAPI**の2層構造です：
+
+### システムルート（バージョン無し）
+
+```text
+/                     # ウェルカムメッセージ・サーバー情報
+/health              # ヘルスチェック
+/metrics             # Prometheusメトリクス
+/docs                # Swagger UI（OpenAPI）
+/redoc               # ReDoc（OpenAPI）
+/openapi.json        # OpenAPI仕様（JSON）
+```
+
+### API v1 (/api/v1/*)
+
+```text
+/api/v1/
+├── sample-users/               # サンプルユーザー（レガシー）
+├── sample-sessions/            # サンプルセッション（レガシー）
+├── sample-files/               # サンプルファイル（レガシー）
+├── sample-agents/              # サンプルエージェント（レガシー）
+├── users/                      # ユーザーアカウント（Azure AD対応）
+├── projects/                   # プロジェクト管理
+│   ├── {project_id}/members/  # プロジェクトメンバー管理
+│   └── {project_id}/files/    # プロジェクトファイル管理
+├── analysis/                   # データ分析
+│   └── templates/             # 分析テンプレート
+├── driver-tree/               # ドライバーツリー（KPI分解）
+└── ppt/                       # PPTジェネレーター
+```
+
+**プレフィックス規則**:
+
+- `sample-*`: サンプル/レガシー機能（移行予定）
+- その他: 実際の機能（Azure AD認証対応）
+
+## システムルートエンドポイント
+
+### GET / - ウェルカムメッセージ
+
+**説明**: APIサーバーの基本情報を取得します。
+
+**認証**: 不要
+
+**レスポンス**:
+
+```json
+{
+  "message": "Welcome to AIエージェントアプリケーション API",
+  "version": "0.1.0",
+  "docs": "http://localhost:8000/docs"
+}
+```
+
+### GET /health - ヘルスチェック
+
+**説明**: APIサーバーの稼働状態を確認します。ロードバランサーや監視システムから使用されます。
+
+**認証**: 不要
+
+**レスポンス**:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-10-30T10:00:00Z"
+}
+```
+
+### GET /metrics - Prometheusメトリクス
+
+**説明**: Prometheus形式のメトリクスを取得します。
+
+**認証**: 不要（本番環境では要検討）
+
+**レスポンス**: Prometheusテキスト形式
+
+```text
+# HELP http_requests_total Total HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/api/v1/users"} 150.0
+http_requests_total{method="POST",path="/api/v1/projects"} 25.0
+
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{le="0.1",method="GET",path="/api/v1/users"} 145.0
+http_request_duration_seconds_bucket{le="0.5",method="GET",path="/api/v1/users"} 150.0
+...
+```
+
+## ビジネスロジックエンドポイント一覧
 
 ### ユーザー管理 (/api/v1/users)
 

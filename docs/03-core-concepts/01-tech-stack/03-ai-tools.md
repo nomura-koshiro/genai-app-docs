@@ -141,7 +141,7 @@ Ruffは、Rustで実装された超高速Pythonリンターとフォーマッタ
 ```toml
 # pyproject.toml
 [tool.ruff]
-line-length = 100
+line-length = 140
 target-version = "py313"
 
 [tool.ruff.lint]

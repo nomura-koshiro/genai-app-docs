@@ -177,53 +177,69 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 
 ### [08. 設計仕様書](./specifications/)
 
-> 詳細な設計仕様書（アーキテクチャ、データベース、セキュリティ、API、インフラ、運用）
+> リバースエンジニアリングによる詳細な設計仕様書（実装から逆算した設計ドキュメント）
 
 #### [アーキテクチャ仕様](./specifications/01-architecture/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [システム設計](./specifications/01-architecture/01-system-design.md) | 全体アーキテクチャ |
-| [コンポーネント設計](./specifications/01-architecture/02-component-design.md) | 各コンポーネントの詳細 |
+| [システムアーキテクチャ設計](./specifications/01-architecture/01-system-architecture.md) | 5層アーキテクチャ、技術スタック、設計パターン、データフロー |
 
 #### [データベース仕様](./specifications/02-database/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [データベース設計](./specifications/02-database/01-database-design.md) | DB設計詳細 |
-| [ER図](./specifications/02-database/02-er-diagram.md) | エンティティ関係図 |
-| [マイグレーション戦略](./specifications/02-database/03-migration-strategy.md) | マイグレーション管理 |
+| [データベース設計](./specifications/02-database/01-database-design.md) | 22テーブルのER図、カラム仕様、インデックス戦略、パフォーマンス最適化 |
 
 #### [セキュリティ仕様](./specifications/03-security/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [RBAC設計](./specifications/03-security/01-rbac-design.md) | ロールベースアクセス制御 |
-| [認証設計](./specifications/03-security/02-authentication-design.md) | 認証システム設計 |
-| [セキュリティ実装](./specifications/03-security/03-security-implementation.md) | セキュリティ実装詳細 |
+| [RBAC設計](./specifications/03-security/01-rbac-design.md) | 2層ロール構造（System/Project）、権限マトリックス |
+| [認証/認可設計](./specifications/03-security/02-authentication-design.md) | マルチモード認証、Azure AD JWT連携フロー |
+| [セキュリティ実装詳細](./specifications/03-security/03-security-implementation.md) | OWASP Top 10対策、多層防御モデル、セキュリティヘッダー |
 
 #### [API仕様](./specifications/04-api/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [API設計](./specifications/04-api/01-api-design.md) | API設計詳細 |
-| [エンドポイント仕様](./specifications/04-api/02-endpoint-specifications.md) | 各エンドポイント詳細 |
-| [レスポンススキーマ](./specifications/04-api/03-response-schemas.md) | レスポンス定義 |
+| [API仕様書](./specifications/04-api/01-api-specifications.md) | 全エンドポイント一覧、RFC 9457エラーレスポンス、認証フロー |
 
-#### [インフラストラクチャ仕様](./specifications/05-infrastructure/)
+#### [テスト仕様](./specifications/05-testing/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [インフラ設計](./specifications/05-infrastructure/01-infrastructure-design.md) | インフラ構成 |
-| [環境設定](./specifications/05-infrastructure/02-environment-configuration.md) | 環境別設定 |
+| [テスト戦略](./specifications/05-testing/01-test-strategy.md) | テストピラミッド（70/25/5）、46テストファイル、カバレッジ目標 |
 
-#### [運用仕様](./specifications/06-operations/)
+#### [ミドルウェア仕様](./specifications/06-middleware/)
 
 | ドキュメント | 内容 |
 |------------|------|
-| [デプロイ設計](./specifications/06-operations/01-deployment-design.md) | デプロイ戦略 |
-| [モニタリング設計](./specifications/06-operations/02-monitoring-design.md) | 監視・ロギング |
-| [保守手順](./specifications/06-operations/03-maintenance-procedures.md) | 運用保守 |
+| [ミドルウェア設計](./specifications/06-middleware/01-middleware-design.md) | 5層ミドルウェアスタック、実行順序、パフォーマンス影響 |
+
+#### [コンポーネント仕様](./specifications/07-components/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [コンポーネント設計](./specifications/07-components/01-component-design.md) | BaseRepository、10種類のデコレータ、StorageService、CacheManager |
+
+#### [AI/エージェント仕様](./specifications/08-ai-agent/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [AI/エージェント機能設計](./specifications/08-ai-agent/01-ai-agent-design.md) | LangChain AnalysisAgent、13ツール実装、状態管理 |
+
+#### [データフロー仕様](./specifications/09-dataflow/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [データフロー設計](./specifications/09-dataflow/01-dataflow-design.md) | リクエスト/レスポンスフロー、分析フロー、認証フロー |
+
+#### [環境設定仕様](./specifications/10-configuration/)
+
+| ドキュメント | 内容 |
+|------------|------|
+| [環境設定書](./specifications/10-configuration/01-environment-configuration.md) | 環境別設定管理（local/staging/production）、9カテゴリの設定項目、Pydantic検証 |
 
 ---
 
