@@ -204,36 +204,127 @@ cd ..
 
 ## テーブル構成
 
-主要なテーブル：
+このプロジェクトのデータベースは、**本番テーブル**と**レガシーサンプルテーブル**に分かれています。
 
-### sample_users
+### 本番テーブル（Azure AD認証対応）
 
-- `id` - 主キー
+#### users（ユーザーアカウント）
+
+- `id` (UUID) - 主キー
+- `azure_oid` - Azure AD Object ID（ユニーク）
+- `email` - メールアドレス（ユニーク）
+- `display_name` - 表示名
+- `roles` (JSON) - システムロール（例: ["system_admin", "user"]）
+- `is_active` - アクティブ状態
+- `last_login` - 最終ログイン日時
+- `created_at` / `updated_at` - タイムスタンプ
+
+**用途**: Azure AD認証によるユーザー管理
+
+#### projects（プロジェクト）
+
+- `id` (UUID) - 主キー
+- `name` - プロジェクト名
+- `code` - プロジェクトコード（ユニーク）
+- `description` - 説明
+- `is_active` - アクティブ状態
+- `created_by` (UUID) - 作成者ID
+- `created_at` / `updated_at` - タイムスタンプ
+
+#### project_members（プロジェクトメンバーシップ）
+
+- `id` (UUID) - 主キー
+- `project_id` (UUID) - プロジェクトID（外部キー）
+- `user_id` (UUID) - ユーザーID（外部キー）
+- `role` (Enum) - プロジェクトロール（project_manager/project_moderator/member/viewer）
+- `joined_at` - 参加日時
+- `added_by` (UUID) - 追加者ID
+- **ユニーク制約**: (project_id, user_id)
+
+#### analysis_sessions（分析セッション）
+
+- `id` (UUID) - 主キー
+- `project_id` (UUID) - プロジェクトID（外部キー）
+- `created_by` (UUID) - 作成者ID（外部キー）
+- `session_name` - セッション名
+- `validation_config` (JSONB) - 分析設定
+- `chat_history` (JSONB) - チャット履歴
+- `snapshot_history` (JSONB) - スナップショット履歴
+- `original_file_id` (UUID) - 選択中ファイルID
+- `is_active` - アクティブ状態
+- `created_at` / `updated_at` - タイムスタンプ
+
+#### analysis_steps（分析ステップ）
+
+- `id` (UUID) - 主キー
+- `session_id` (UUID) - セッションID（外部キー）
+- `step_order` (Integer) - ステップ順序
+- `chart_id` - チャートID
+- `chart_config` (JSONB) - チャート設定
+- `insight` (Text) - インサイト
+- `created_at` / `updated_at` - タイムスタンプ
+
+#### driver_trees（ドライバーツリー）
+
+- `id` (UUID) - 主キー
+- `name` - ツリー名
+- `root_node_id` (UUID) - ルートノードID（外部キー）
+- `created_at` / `updated_at` - タイムスタンプ
+
+#### driver_tree_nodes（ツリーノード）
+
+- `id` (UUID) - 主キー
+- `tree_id` (UUID) - ツリーID（外部キー）
+- `parent_id` (UUID) - 親ノードID（外部キー、NULL=ルート）
+- `label` - ノードラベル
+- `operator` - 演算子（+, -, *, /, %）
+- `order` (Integer) - 兄弟ノード間の順序
+- `created_at` / `updated_at` - タイムスタンプ
+
+### レガシーテーブル（JWT認証サンプル）
+
+#### sample_users（サンプルユーザー）
+
+- `id` (Integer) - 主キー（自動インクリメント）
 - `email` - メールアドレス（ユニーク）
 - `username` - ユーザー名（ユニーク）
 - `hashed_password` - パスワードハッシュ
 - `is_active` - アクティブ状態
+- `is_superuser` - スーパーユーザーフラグ
+- `last_login_at` - 最終ログイン日時
+- `failed_login_attempts` - ログイン失敗回数
 - `created_at` / `updated_at` - タイムスタンプ
 
-### sample_sessions
+**用途**: JWT認証のサンプル実装（開発・学習用）
 
-- `id` - 主キー
-- `user_id` - ユーザーID（外部キー）
+#### sample_sessions（サンプルセッション）
+
+- `id` (Integer) - 主キー
+- `user_id` (Integer) - ユーザーID（外部キー）
 - `session_id` - セッションID
 - `title` - タイトル
 - `created_at` / `updated_at` - タイムスタンプ
 
-### sample_files
+#### sample_files（サンプルファイル）
 
-- `id` - 主キー
-- `user_id` - ユーザーID（外部キー）
+- `id` (Integer) - 主キー
+- `user_id` (Integer) - ユーザーID（外部キー）
 - `filename` - ファイル名
 - `content_type` - MIMEタイプ
 - `size` - サイズ
 - `storage_path` - 保存パス
 - `created_at` - タイムスタンプ
 
-詳細は`src/app/models/`を参照してください。
+### テーブル使い分けガイドライン
+
+| 認証方式 | ユーザーテーブル | 主キー | 用途 |
+|---------|----------------|--------|------|
+| **Azure AD** | `users` | UUID | 本番環境、エンタープライズ認証 |
+| **JWT** | `sample_users` | Integer | 開発・学習・テスト用 |
+
+**重要**: 本番環境では`users`テーブル（UserAccountモデル）とAzure AD認証を使用してください。`sample_*`テーブルは学習目的のレガシーコードです。
+
+詳細なモデル定義は`src/app/models/`を参照してください。
 
 ## Redis管理（オプション）
 

@@ -95,55 +95,141 @@ RESTful原則に従います。
 
 ## 2. 依存性注入
 
-### 依存性の定義
+### 依存性の定義（2つの認証システムに対応）
+
+本プロジェクトは、**JWT認証（SampleUser）** と **Azure AD認証（UserAccount）** の2つの認証システムが共存しています。
 
 ```python
-# src/app/api/dependencies.py
+# src/app/api/core/dependencies.py
 from typing import Annotated
 from fastapi import Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.services.sample_user import SampleUserService
+from app.core.config import settings
+from app.services import SampleUserService, UserService
+from app.models import SampleUser, UserAccount
 
+# ================================================================================
 # データベース依存性
+# ================================================================================
+
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-# サービス依存性
-def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
-    """SampleUserServiceインスタンスを取得。"""
+# ================================================================================
+# サービス依存性（2つの認証システム用）
+# ================================================================================
+
+def get_user_service(db: DatabaseDep) -> SampleUserService:
+    """JWT認証用のSampleUserServiceインスタンスを取得（レガシー）。"""
     return SampleUserService(db)
 
 
-SampleUserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
+UserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
 
 
-# 認証依存性
+def get_azure_user_service(db: DatabaseDep) -> UserService:
+    """Azure AD認証用のUserServiceインスタンスを取得（本番）。"""
+    return UserService(db)
+
+
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+
+
+# ================================================================================
+# 認証依存性（JWT認証 - SampleUser用）
+# ================================================================================
+
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: SampleUserServiceDep = None,
+    user_service: UserServiceDep = None,
 ) -> SampleUser:
-    """現在の認証済みユーザーを取得。"""
+    """JWT認証で現在のユーザーを取得（SampleUser用、レガシー）。"""
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    # トークン検証
+    # "Bearer <token>" からトークンを抽出
     scheme, _, token = authorization.partition(" ")
     if scheme.lower() != "bearer":
         raise HTTPException(status_code=401, detail="Invalid scheme")
 
+    # JWTトークンをデコード
     payload = decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+    # ユーザー取得
     user_id = payload.get("sub")
     user = await user_service.get_user(int(user_id))
     return user
 
 
-CurrentSampleUserDep = Annotated[User, Depends(get_current_user)]
+async def get_current_active_user(
+    current_user: Annotated[SampleUser, Depends(get_current_user)],
+) -> SampleUser:
+    """アクティブなJWT認証ユーザーを取得（SampleUser用）。"""
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    return current_user
+
+
+CurrentUserDep = Annotated[SampleUser, Depends(get_current_active_user)]
+
+
+# ================================================================================
+# 認証依存性（Azure AD認証 - UserAccount用）
+# ================================================================================
+
+async def get_authenticated_user_from_azure(
+    user_service: AzureUserServiceDep,
+    azure_user: AuthUserType = Depends(
+        get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user
+    ),
+) -> UserAccount:
+    """Azure AD認証で現在のユーザーを取得（UserAccount用、本番）。
+
+    環境変数AUTH_MODEに応じて認証方式を切り替え:
+    - production: Azure ADトークン検証
+    - development: モックトークン検証
+    """
+    # Azure OIDでユーザーを検索（または作成）
+    user = await user_service.get_or_create_by_azure_oid(
+        azure_oid=azure_user.oid,
+        email=azure_user.email or azure_user.preferred_username,
+        display_name=getattr(azure_user, "name", None),
+        roles=getattr(azure_user, "roles", []),
+    )
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+
+async def get_current_active_user_azure(
+    current_user: Annotated[UserAccount, Depends(get_authenticated_user_from_azure)],
+) -> UserAccount:
+    """アクティブなAzure AD認証ユーザーを取得（UserAccount用）。"""
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="Inactive user")
+    return current_user
+
+
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]
 ```
+
+**2つの認証システムの使い分け**:
+
+| 認証方式 | 依存性型 | 対象モデル | 用途 | 実装ファイル |
+|---------|---------|-----------|------|------------|
+| **JWT認証** | `CurrentUserDep` | `SampleUser` | レガシー、開発用 | `src/app/core/security/jwt.py` |
+| **Azure AD認証** | `CurrentUserAzureDep` | `UserAccount` | 本番環境 | `src/app/core/security/azure_ad.py` |
+
+**AUTH_MODEによる切り替え**:
+
+- `AUTH_MODE=development`: 開発モード認証（モックトークン）
+- `AUTH_MODE=production`: Azure AD認証（本番トークン）
 
 ### 依存性の使用
 

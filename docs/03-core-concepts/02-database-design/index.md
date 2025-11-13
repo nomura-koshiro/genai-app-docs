@@ -7,8 +7,7 @@
 ### 使用技術
 
 - **ORM**: SQLAlchemy 2.0（非同期対応）
-- **開発環境**: SQLite
-- **本番環境**: PostgreSQL（推奨）
+- **データベース**: PostgreSQL 16（全環境共通）
 - **マイグレーション**: Alembic
 
 ### 設計原則
@@ -58,12 +57,75 @@ class Example(Base):
 
 ## テーブル設計
 
-### users テーブル
+### ユーザーモデル
 
-ユーザー情報を管理します。
+このプロジェクトには2つのユーザーモデルが存在します：
+
+1. **users テーブル（UserAccountモデル）**: Azure AD認証用、UUID主キー
+2. **sample_users テーブル（SampleUserモデル）**: レガシー JWT認証用、integer主キー
+
+#### users テーブル（Azure AD認証用）
+
+Azure AD認証に対応したユーザー管理モデルです。
 
 ```python
-# src/app/models/sample_user.py
+# src/app/models/user_account/user_account.py
+from sqlalchemy import String, Boolean, JSON
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+import uuid
+
+class UserAccount(Base, TimestampMixin):
+    """Azure AD認証用ユーザーモデル。
+
+    Attributes:
+        id: ユーザーID（UUID、主キー）
+        azure_oid: Azure AD Object ID（一意識別子）
+        email: メールアドレス（ユニーク、インデックス）
+        display_name: 表示名
+        roles: システムロール（例: ["system_admin", "user"]）
+        is_active: アクティブ状態
+        created_at: 作成日時（UTC）
+        updated_at: 更新日時（UTC）
+        last_login: 最終ログイン日時
+    """
+
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    azure_oid: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    roles: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+```
+
+**テーブル定義**:
+
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    azure_oid VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    display_name VARCHAR(255),
+    roles JSON NOT NULL DEFAULT '[]',
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    last_login TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX idx_users_azure_oid ON users(azure_oid);
+CREATE INDEX idx_users_email ON users(email);
+```
+
+#### sample_users テーブル（レガシー JWT認証用）
+
+レガシーなJWT認証用のユーザーモデルです（移行予定）。
+
+```python
+# src/app/models/sample/sample_user.py
 from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -140,16 +202,9 @@ class SampleUser(Base):
 
     # リレーションシップ
     sessions: Mapped[list["SampleSession"]] = relationship(
-        "Session",
+        "SampleSession",
         back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="selectin"
-    )
-    files: Mapped[list["SampleFile"]] = relationship(
-        "File",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="selectin"
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -175,12 +230,12 @@ CREATE INDEX ix_sample_users_email ON sample_users(email);
 CREATE INDEX ix_sample_users_username ON sample_users(username);
 ```
 
-### sessions テーブル
+### sample_sessions テーブル
 
 AI Agentのチャットセッションを管理します。
 
 ```python
-# src/app/models/sample_session.py
+# src/app/models/sample/sample_session.py
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -235,22 +290,21 @@ class SampleSession(Base):
     # リレーションシップ
     user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="sessions")
     messages: Mapped[list["SampleMessage"]] = relationship(
-        "Message",
+        "SampleMessage",
         back_populates="session",
-        cascade="all, delete-orphan",
-        order_by="SampleMessage.created_at"
+        cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
         return f"<Session(id={self.id}, session_id={self.session_id})>"
 ```
 
-### messages テーブル
+### sample_messages テーブル
 
 チャットメッセージの履歴を管理します。
 
 ```python
-# src/app/models/sample_message.py
+# src/app/models/sample/sample_session.py (SampleMessage)
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -294,18 +348,18 @@ class SampleMessage(Base):
     )
 
     # リレーションシップ
-    session: Mapped["Session"] = relationship("SampleSession", back_populates="messages")
+    session: Mapped["SampleSession"] = relationship("SampleSession", back_populates="messages")
 
     def __repr__(self) -> str:
         return f"<Message(id={self.id}, role={self.role})>"
 ```
 
-### files テーブル
+### sample_files テーブル（非推奨）
 
-アップロードされたファイルを管理します。
+アップロードされたファイルを管理します（現在は使用していません）。
 
 ```python
-# src/app/models/sample_file.py
+# src/app/models/sample/sample_file.py
 from datetime import datetime, timezone
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -361,7 +415,7 @@ class SampleFile(Base):
     )
 
     # リレーションシップ
-    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="files")
+    user: Mapped["SampleUser"] = relationship("SampleUser")
 
     def __repr__(self) -> str:
         return f"<File(id={self.id}, filename={self.filename})>"
@@ -372,10 +426,10 @@ class SampleFile(Base):
 ### 1対多リレーション
 
 ```python
-# User → Sessions（1対多）
+# SampleUser → SampleSessions（1対多）
 class SampleUser(Base):
     sessions: Mapped[list["SampleSession"]] = relationship(
-        "Session",
+        "SampleSession",
         back_populates="user",
         cascade="all, delete-orphan"  # ユーザー削除時にセッションも削除
     )
@@ -404,7 +458,7 @@ user_id: Mapped[int] = mapped_column(
 ```python
 # Lazy Loading の種類
 sessions: Mapped[list["SampleSession"]] = relationship(
-    "Session",
+    "SampleSession",
     lazy="select",      # デフォルト: 必要時に別クエリで取得
     # lazy="selectin",  # IN句で一括取得（N+1問題を回避）
     # lazy="joined",    # JOINで同時取得
@@ -476,7 +530,7 @@ async def get_user_with_sessions(db: AsyncSession, user_id: int) -> SampleUser |
 async def get_sessions_with_messages(
     db: AsyncSession,
     user_id: int
-) -> list[Session]:
+) -> list[SampleSession]:
     """セッションとメッセージを一緒に取得。"""
     query = (
         select(SampleSession)
@@ -496,15 +550,19 @@ async def get_sessions_with_messages(
 ```python
 from sqlalchemy import func
 
-async def count_user_files(db: AsyncSession, user_id: int) -> int:
-    """ユーザーのファイル数を取得。"""
-    query = select(func.count(SampleFile.id)).where(SampleFile.user_id == user_id)
+async def count_user_sessions(db: AsyncSession, user_id: int) -> int:
+    """ユーザーのセッション数を取得。"""
+    query = select(func.count(SampleSession.id)).where(SampleSession.user_id == user_id)
     result = await db.execute(query)
     return result.scalar_one()
 
-async def get_total_storage_size(db: AsyncSession, user_id: int) -> int:
-    """ユーザーの総ストレージサイズを取得。"""
-    query = select(func.sum(SampleFile.size)).where(SampleFile.user_id == user_id)
+async def count_user_messages(db: AsyncSession, user_id: int) -> int:
+    """ユーザーの総メッセージ数を取得。"""
+    query = (
+        select(func.count(SampleMessage.id))
+        .join(SampleSession)
+        .where(SampleSession.user_id == user_id)
+    )
     result = await db.execute(query)
     return result.scalar_one() or 0
 ```
@@ -512,18 +570,18 @@ async def get_total_storage_size(db: AsyncSession, user_id: int) -> int:
 ### トランザクション
 
 ```python
-async def transfer_files(
+async def transfer_sessions(
     db: AsyncSession,
     from_user_id: int,
     to_user_id: int,
 ) -> None:
-    """ファイルを別のユーザーに移動（トランザクション）。"""
+    """セッションを別のユーザーに移動（トランザクション）。"""
     try:
         # 複数の操作を1つのトランザクションで実行
-        files = await get_user_files(db, from_user_id)
+        sessions = await get_user_sessions(db, from_user_id)
 
-        for file in files:
-            file.user_id = to_user_id
+        for session in sessions:
+            session.user_id = to_user_id
 
         await db.flush()  # 変更をフラッシュ
 
@@ -663,7 +721,7 @@ created_at: Mapped[datetime] = mapped_column(
 ```python
 # 親レコード削除時に子レコードも削除
 sessions: Mapped[list["SampleSession"]] = relationship(
-    "Session",
+    "SampleSession",
     cascade="all, delete-orphan"
 )
 ```

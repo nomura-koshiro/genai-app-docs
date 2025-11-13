@@ -264,27 +264,57 @@ for user in users:
 
 ---
 
-## Azure AD統合用Userモデル
+## Azure AD統合用UserAccountモデル
 
-新しいAzure AD統合用のUserモデルの例です。
+新しいAzure AD統合用のUserAccountモデルの例です。
 
-### User モデル（Azure AD対応）
+### UserAccount モデル（Azure AD対応）
 
 ```python
-from datetime import UTC, datetime
-import uuid
+"""Azure AD認証用のユーザーモデル。
 
-from sqlalchemy import Boolean, DateTime, JSON, String
+ファイルパス: src/app/models/user_account/user_account.py
+"""
+
+import uuid
+from datetime import datetime
+from enum import Enum
+
+from sqlalchemy import JSON, Boolean, DateTime, Index, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.database import Base
+from app.models.base import Base, TimestampMixin
 
 
-class User(Base):
+class SystemUserRole(str, Enum):
+    """システムレベルのロール定義。
+
+    Attributes:
+        SYSTEM_ADMIN: システム管理者（全プロジェクトアクセス可能）
+        USER: 一般ユーザー（デフォルト）
+    """
+
+    SYSTEM_ADMIN = "system_admin"
+    USER = "user"
+
+
+class UserAccount(Base, TimestampMixin):
+    """Azure AD認証用ユーザーモデル。
+
+    Attributes:
+        id (UUID): プライマリキー（UUID型）
+        azure_oid (str): Azure AD Object ID（一意識別子）
+        email (str): メールアドレス（一意制約）
+        display_name (str | None): 表示名
+        roles (list): システムロール（例: ["system_admin", "user"]）
+        is_active (bool): アクティブフラグ
+        last_login (datetime | None): 最終ログイン日時
+    """
+
     __tablename__ = "users"
 
-    # プライマリキー（UUID）
+    # プライマリキー（UUID型）
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
@@ -300,57 +330,90 @@ class User(Base):
         comment="Azure AD Object ID",
     )
 
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    email: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True,
+        comment="Email address",
+    )
+
+    display_name: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Display name",
+    )
 
     # ロール（JSON配列）
     roles: Mapped[list[str]] = mapped_column(
         JSON,
         default=list,
         nullable=False,
-        comment="User roles from Azure AD",
+        comment="System-level roles (e.g., ['system_admin', 'user'])",
     )
 
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+    is_active: Mapped[bool] = mapped_column(
+        Boolean,
+        default=True,
         nullable=False,
+        comment="Active flag",
     )
-    updated_at: Mapped[datetime] = mapped_column(
+
+    last_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-        nullable=False,
+        nullable=True,
+        comment="Last login timestamp",
     )
 
     # リレーションシップ
     project_memberships: Mapped[list["ProjectMember"]] = relationship(
         "ProjectMember",
+        foreign_keys="[ProjectMember.user_id]",
         back_populates="user",
         cascade="all, delete-orphan",
     )
-    projects: Mapped[list["Project"]] = relationship(
-        "Project",
-        secondary="project_members",
-        back_populates="members",
-        viewonly=True,
+
+    analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(
+        "AnalysisSession",
+        foreign_keys="[AnalysisSession.created_by]",
+        back_populates="creator",
     )
+
+    # インデックス
+    __table_args__ = (
+        Index("idx_users_azure_oid", "azure_oid", unique=True),
+        Index("idx_users_email", "email", unique=True),
+    )
+
+    def has_system_role(self, role: SystemUserRole) -> bool:
+        """指定されたシステムロールを持っているかチェック。"""
+        return role.value in self.roles
+
+    def is_system_admin(self) -> bool:
+        """システム管理者かどうかをチェック。"""
+        return self.has_system_role(SystemUserRole.SYSTEM_ADMIN)
 ```
 
 **特徴**:
 
-- UUID主キー（従来のint型から変更）
-- Azure AD Object ID（azure_oid）で一意識別
-- パスワードなし（Azure AD認証のみ）
-- ロールをJSON配列で管理
-- プロジェクトメンバーシップのリレーション
+- **UUID主キー**: プライマリキーがUUID型（従来のint型から変更）
+- **Azure AD Object ID**: `azure_oid`フィールドで一意識別
+- **パスワードなし**: Azure AD認証のみ（パスワードフィールド不要）
+- **システムロール**: JSON配列でロール管理（`system_admin`, `user`等）
+- **プロジェクトメンバーシップ**: プロジェクト単位のアクセス制御
+- **ファイルパス**: `src/app/models/user_account/user_account.py`
 
-**User vs SampleUserの使い分け**:
+**UserAccount vs SampleUserの使い分け**:
 
-- **User**: 新規開発、Azure AD統合機能
-- **SampleUser**: レガシー、段階的移行中のサンプルコード
+| モデル名 | 用途 | 認証方式 | プライマリキー型 | ファイルパス |
+|---------|------|---------|----------------|------------|
+| **UserAccount** | 本番環境・Azure AD統合 | Azure AD認証 | UUID | `src/app/models/user_account/user_account.py` |
+| **SampleUser** | 開発・サンプルコード | JWT認証（パスワード） | int | `src/app/models/sample_user.py` |
+
+**選択基準**:
+
+- **UserAccount**: Azure AD認証を使用する本番機能の実装時
+- **SampleUser**: レガシーシステムとの互換性維持、または開発・テスト用途
 
 ---
 ---

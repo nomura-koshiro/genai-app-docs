@@ -74,9 +74,14 @@
 
 2. **models/** - データベースモデル
    - 推奨読み順:
-     1. `models/sample_user.py` - ユーザーモデル
-     2. `models/sample_session.py` - セッションとメッセージモデル
-     3. `models/sample_file.py` - ファイルメタデータモデル
+     1. `models/user_account/user_account.py` - ユーザーアカウントモデル（Azure AD対応）
+     2. `models/sample/sample_user.py` - サンプルユーザーモデル（JWT認証用、非推奨）
+     3. `models/sample/sample_session.py` - セッションとメッセージモデル
+     4. `models/sample/sample_file.py` - ファイルメタデータモデル
+     5. `models/project/project.py` - プロジェクトモデル
+     6. `models/project/member.py` - プロジェクトメンバーモデル
+     7. `models/analysis/session.py` - 分析セッションモデル
+     8. `models/analysis/step.py` - 分析ステップモデル
    - 重要ポイント:
      - SQLAlchemy 2.0の新しい型ヒント構文（Mapped）
      - リレーションシップの定義（one-to-many, many-to-one）
@@ -89,25 +94,35 @@ APIエンドポイントから実装を読むことで、ユーザーインタ�
 
 1. **api/routes/v1/** - ビジネスロジックAPI
    - 推奨読み順:
-     1. `agents.py` - AIエージェント機能
-        - チャットエンドポイント
-        - セッション管理
-     2. `files.py` - ファイル管理
-        - アップロード/ダウンロード/削除
-        - ファイル一覧取得
-     3. `users.py` - ユーザー管理
-        - 登録、ログイン、プロフィール管理
+     1. `user_accounts/user_accounts.py` - ユーザーアカウント管理（Azure AD対応）
+        - ユーザー一覧取得（管理者専用）
+        - 現在のユーザー情報取得
+        - ユーザー情報更新
+     2. `analysis/analysis.py` - 分析機能統合API
+        - セッション作成・管理
+        - ファイルアップロード
+        - AIチャット実行
+        - 分析ステップ管理
+     3. `sample/sample_agents.py` - サンプルAIエージェント（非推奨）
+     4. `sample/sample_files.py` - サンプルファイル管理（非推奨）
+     5. `sample/sample_users.py` - サンプルユーザー管理（JWT認証用、非推奨）
 
 2. **api/routes/system/** - システムエンドポイント
    - `health.py` - ヘルスチェック（DB、Redis接続確認）
    - `metrics.py` - Prometheusメトリクス
    - `root.py` - ルートエンドポイント
 
-3. **api/dependencies.py** - 依存性注入
+3. **api/core/dependencies.py** - 依存性注入
    - 重要ポイント:
      - `DatabaseDep` - データベースセッション
-     - サービス依存性（`SampleUserServiceDep`, `AgentServiceDep`, `SampleFileServiceDep`）
-     - 認証依存性（`CurrentSampleUserDep`, `CurrentUserOptionalDep`）
+     - サービス依存性:
+       - `AzureUserServiceDep` - Azure AD対応ユーザーサービス（推奨）
+       - `UserServiceDep` - JWT認証ユーザーサービス（非推奨）
+       - `AgentServiceDep`, `FileServiceDep`, `SessionServiceDep`
+     - 認証依存性:
+       - `CurrentUserAzureDep` - Azure AD認証ユーザー（推奨）
+       - `CurrentUserDep` - JWT認証ユーザー（非推奨）
+       - `CurrentUserOptionalDep` - オプション認証
 
 ### ステップ5: サービス層のビジネスロジック
 
@@ -115,16 +130,23 @@ APIエンドポイントから実装を読むことで、ユーザーインタ�
 
 1. **services/** - ビジネスロジック層
    - 推奨読み順:
-     1. `services/agent.py` - エージェントサービス
-        - 現在: エコーバック機能
-        - 将来: LangChain/LangGraph統合
-     2. `services/file.py` - ファイルサービス
-        - ファイルアップロード/ダウンロード/削除
-        - MIME型バリデーション
-        - サイズ制限チェック
-     3. `services/sample_user.py` - ユーザーサービス
+     1. `services/user_account/user_account.py` - ユーザーアカウントサービス（Azure AD対応）
+        - Azure OIDによるユーザー取得・作成
+        - 最終ログイン情報更新
+        - ユーザー一覧・詳細取得
+     2. `services/analysis/` - 分析機能サービス
+        - `analysis.py` - 分析セッション統合サービス
+        - `chat.py` - AIチャットサービス
+        - `file.py` - ファイル管理サービス
+        - `agent/` - LangGraphエージェントサブシステム（完全実装済み）
+          - `executor.py` - LangGraphエージェント実行エンジン
+          - `steps/` - エージェントステップ（filter, aggregation, transform, summary）
+     3. `services/sample/sample_user.py` - サンプルユーザーサービス（JWT認証用、非推奨）
         - ユーザー作成、認証
         - パスワードハッシュ化
+     4. `services/sample/sample_file.py` - サンプルファイルサービス（非推奨）
+        - ファイルアップロード/ダウンロード/削除
+        - MIME型バリデーション
 
 ### ステップ6: リポジトリ層のデータアクセス
 
@@ -137,9 +159,12 @@ APIエンドポイントから実装を読むことで、ユーザーインタ�
      - 型安全なクエリ実装
 
 2. **repositories/** - 各リポジトリ
-   - `sample_user.py` - ユーザーリポジトリ
-   - `sample_session.py` - セッションリポジトリ
-   - `sample_file.py` - ファイルリポジトリ
+   - `user_account/user_account.py` - ユーザーアカウントリポジトリ（Azure AD対応）
+   - `sample/sample_user.py` - サンプルユーザーリポジトリ（JWT認証用、非推奨）
+   - `sample/sample_session.py` - セッションリポジトリ
+   - `sample/sample_file.py` - ファイルリポジトリ
+   - `analysis/session.py` - 分析セッションリポジトリ
+   - `analysis/step.py` - 分析ステップリポジトリ
 
 ### ステップ7: コア機能とユーティリティ
 
@@ -196,27 +221,34 @@ main.py
       └─ 例外ハンドラー登録
 ```
 
-### 2. リクエスト処理フロー（例: チャット）
+### 2. リクエスト処理フロー（例: 分析チャット）
 
 ```text
 1. クライアント
-   ↓ POST /api/v1/agents/chat
+   ↓ POST /api/v1/analysis/sessions/{session_id}/chat
 2. ミドルウェア（順次実行）
+   - SecurityHeadersMiddleware
+   - CORSMiddleware
+   - RateLimitMiddleware
+   - LoggingMiddleware
    ↓
-3. API Layer (api/routes/v1/agents.py)
-   - リクエストバリデーション（ChatRequest）
-   - 依存性注入（AgentServiceDep）
+3. API Layer (api/routes/v1/analysis/analysis.py)
+   - リクエストバリデーション（AnalysisChatRequest）
+   - 依存性注入（AnalysisService, CurrentUserAzureDep）
+   - Azure AD認証（AUTH_MODE=productionの場合）
    ↓
-4. Service Layer (services/agent.py)
-   - セッション取得/作成
+4. Service Layer (services/analysis/chat.py)
+   - セッション取得/検証
+   - エージェント実行 (services/analysis/agent/executor.py)
+     - LangGraphワークフロー実行
+     - ステップ処理（filter/aggregation/transform/summary）
+     - Plotlyグラフ生成
    - メッセージ保存
-   - AIレスポンス生成（現在: エコーバック）
-   - アシスタントメッセージ保存
    ↓
-5. Repository Layer (repositories/sample_session.py)
-   - データベースクエリ（SELECT, INSERT）
+5. Repository Layer (repositories/analysis/session.py, step.py)
+   - データベースクエリ（SELECT, INSERT, UPDATE）
    ↓
-6. Model Layer (models/sample_session.py, models/sample_message.py)
+6. Model Layer (models/analysis/session.py, step.py)
    - SQLAlchemyモデル
    ↓
 7. Database (PostgreSQL)
@@ -454,9 +486,31 @@ class ResourceRepository(BaseRepository[Resource]):
 
 ### Q4: AI機能の実装はどこですか？
 
-**A**: 現在、`src/app/services/sample_agent.py` にシンプルなエコーバック機能があります。将来的にLangChain/LangGraphを統合予定です。
+**A**: LangGraphエージェント機能は完全に実装済みです:
 
-### Q5: テストコードはどこにありますか？
+- `src/app/services/analysis/agent/executor.py` - LangGraphエージェント実行エンジン
+- `src/app/services/analysis/agent/steps/` - エージェントステップ（filter, aggregation, transform, summary）
+- `src/app/services/analysis/agent/state/` - 状態管理（データ管理、スナップショット管理）
+- `src/app/services/analysis/agent/utils/tools/` - ツール群（フィルタ、集計、変換、サマリー）
+
+サンプル機能の `src/app/services/sample/sample_agent.py` はエコーバック機能のみで、非推奨です。
+
+### Q5: 認証システムはどうなっていますか？
+
+**A**: 2つの認証方式があります:
+
+1. **JWT認証（非推奨）**:
+   - モデル: `models/sample/sample_user.py`
+   - サービス: `services/sample/sample_user.py`
+   - エンドポイント: `api/routes/v1/sample/sample_users.py`
+
+2. **Azure AD認証（推奨）**:
+   - モデル: `models/user_account/user_account.py`
+   - サービス: `services/user_account/user_account.py`
+   - エンドポイント: `api/routes/v1/user_accounts/user_accounts.py`
+   - 環境変数 `AUTH_MODE` で本番（Azure AD）/開発（モック）を切り替え
+
+### Q6: テストコードはどこにありますか？
 
 **A**: `tests/` ディレクトリに、レイヤーごとのテストがあります:
 

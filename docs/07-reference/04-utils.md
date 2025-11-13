@@ -20,13 +20,15 @@
 ```text
 src/app/
 ├── core/
-│   ├── security.py       # セキュリティ関連
+│   ├── security/         # セキュリティ関連
+│   │   ├── __init__.py   # エクスポート
+│   │   ├── password.py   # パスワードハッシュ化・検証
+│   │   ├── jwt.py        # JWT認証
+│   │   ├── api_key.py    # APIキー生成
+│   │   ├── azure_ad.py   # Azure AD認証
+│   │   └── dev_auth.py   # 開発モック認証
 │   ├── logging.py        # ロギング設定
 │   └── exceptions.py     # カスタム例外
-└── storage/
-    ├── base.py           # ストレージ基底クラス
-    ├── local.py          # ローカルストレージ
-    └── azure_blob.py     # Azureストレージ
 ```
 
 ---
@@ -35,7 +37,15 @@ src/app/
 
 `app/core/security/`
 
-認証・認可のためのセキュリティ関連関数（password.py, jwt.py, api_key.py）。
+認証・認可のためのセキュリティ関連関数。
+
+### モジュール構成
+
+- `password.py`: パスワードハッシュ化・検証・強度チェック
+- `jwt.py`: JWT アクセストークン・リフレッシュトークンの生成とデコード
+- `api_key.py`: APIキー生成
+- `azure_ad.py`: Azure AD認証（本番環境）
+- `dev_auth.py`: 開発モック認証（開発環境）
 
 ### パスワードハッシュ化
 
@@ -103,6 +113,62 @@ if is_valid:
     print("認証成功")
 else:
     print("認証失敗")
+```
+
+---
+
+#### validate_password_strength()
+
+パスワードの強度を検証します。
+
+##### シグネチャ
+
+```python
+def validate_password_strength(password: str) -> tuple[bool, str]
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| password | str | 検証するパスワード |
+
+##### 戻り値
+
+- `tuple[bool, str]`: (検証結果, エラーメッセージ) のタプル
+
+##### パスワード要件
+
+必須:
+- 最小8文字
+- 大文字を1つ以上含む（A-Z）
+- 小文字を1つ以上含む（a-z）
+- 数字を1つ以上含む（0-9）
+
+推奨:
+- 特殊文字を1つ以上含む（!@#$%^&*(),.?":{}|<>）
+
+##### 使用例
+
+```python
+from app.core.security import validate_password_strength
+
+# 弱いパスワード
+is_valid, error = validate_password_strength("password")
+print(f"Valid: {is_valid}, Error: {error}")
+# Valid: False, Error: パスワードには大文字を含めてください
+
+# 強いパスワード
+is_valid, error = validate_password_strength("SecurePass123!")
+print(f"Valid: {is_valid}")
+# Valid: True
+
+# ユーザー登録時の使用例
+password = request.password
+is_valid, error_msg = validate_password_strength(password)
+if not is_valid:
+    raise ValidationError(error_msg)
+hashed = hash_password(password)
 ```
 
 ---
@@ -189,6 +255,75 @@ if payload:
     print(f"ユーザー: {user_email}")
 else:
     print("無効なトークン")
+```
+
+---
+
+#### create_refresh_token()
+
+JWTリフレッシュトークンを作成します。
+
+##### シグネチャ
+
+```python
+def create_refresh_token(data: dict[str, Any]) -> str
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| data | dict[str, Any] | トークンにエンコードするデータ |
+
+##### 戻り値
+
+- `str`: エンコードされたリフレッシュトークン
+
+##### 使用例
+
+```python
+from app.core.security import create_refresh_token
+
+# リフレッシュトークン作成
+refresh_token = create_refresh_token({"sub": "1"})
+print(refresh_token[:20])
+# eyJ0eXAiOiJKV1QiLCJh...
+```
+
+---
+
+#### decode_refresh_token()
+
+JWTリフレッシュトークンをデコードします。
+
+##### シグネチャ
+
+```python
+def decode_refresh_token(token: str) -> dict[str, Any] | None
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| token | str | デコードするリフレッシュトークン |
+
+##### 戻り値
+
+- `dict[str, Any] | None`: デコードされたペイロード、無効な場合はNone
+
+##### 使用例
+
+```python
+from app.core.security import decode_refresh_token
+
+# リフレッシュトークンデコード
+payload = decode_refresh_token(refresh_token)
+if payload:
+    user_id = payload.get("sub")
+    print(f"ユーザーID: {user_id}")
+else:
+    print("無効なリフレッシュトークン")
 ```
 
 ---
@@ -540,216 +675,6 @@ except httpx.HTTPError as e:
         message="Failed to fetch data from external API",
         details={"service": "example.com", "error": str(e)}
     )
-```
-
----
-
-## ストレージバックエンド
-
-`app/storage/`
-
-ファイルストレージの抽象化レイヤー。
-
-### StorageBackend（基底クラス）
-
-`app/storage/base.py`
-
-すべてのストレージバックエンドの基底クラス。
-
-#### メソッド
-
-| メソッド | 説明 |
-|---------|------|
-| upload() | ファイルをアップロード |
-| download() | ファイルをダウンロード |
-| delete() | ファイルを削除 |
-| exists() | ファイルの存在確認 |
-| list_files() | ファイル一覧取得 |
-
----
-
-#### upload()
-
-ファイルをアップロードします。
-
-##### シグネチャ
-
-```python
-async def upload(self, file_path: Path, content: bytes) -> str
-```
-
-##### パラメータ
-
-| 名前 | 型 | 説明 |
-|-----|---|------|
-| file_path | Path | ファイルパス |
-| content | bytes | ファイル内容 |
-
-##### 戻り値
-
-- `str`: ファイル識別子
-
----
-
-#### download()
-
-ファイルをダウンロードします。
-
-##### シグネチャ
-
-```python
-async def download(self, file_id: str) -> bytes
-```
-
-##### パラメータ
-
-| 名前 | 型 | 説明 |
-|-----|---|------|
-| file_id | str | ファイル識別子 |
-
-##### 戻り値
-
-- `bytes`: ファイル内容
-
-##### 例外
-
-- `FileNotFoundError`: ファイルが存在しない場合
-
----
-
-#### delete()
-
-ファイルを削除します。
-
-##### シグネチャ
-
-```python
-async def delete(self, file_id: str) -> None
-```
-
-##### パラメータ
-
-| 名前 | 型 | 説明 |
-|-----|---|------|
-| file_id | str | ファイル識別子 |
-
-##### 例外
-
-- `FileNotFoundError`: ファイルが存在しない場合
-
----
-
-#### exists()
-
-ファイルの存在を確認します。
-
-##### シグネチャ
-
-```python
-async def exists(self, file_id: str) -> bool
-```
-
-##### パラメータ
-
-| 名前 | 型 | 説明 |
-|-----|---|------|
-| file_id | str | ファイル識別子 |
-
-##### 戻り値
-
-- `bool`: ファイルが存在する場合True
-
----
-
-#### list_files()
-
-すべてのファイルを一覧表示します。
-
-##### シグネチャ
-
-```python
-async def list_files(self) -> list[dict[str, str]]
-```
-
-##### 戻り値
-
-- `list[dict[str, str]]`: ファイル情報のリスト
-
----
-
-### LocalStorageBackend
-
-`app/storage/local.py`
-
-ローカルファイルシステムストレージの実装。
-
-#### 使用例
-
-```python
-from pathlib import Path
-from app.storage.local import LocalStorageBackend
-
-# 初期化
-storage = LocalStorageBackend(base_path="./uploads")
-
-# ファイルアップロード
-file_path = Path("documents/report.pdf")
-content = b"PDF content here..."
-file_id = await storage.upload(file_path, content)
-
-# ファイルダウンロード
-content = await storage.download(file_id)
-
-# ファイル存在確認
-exists = await storage.exists(file_id)
-
-# ファイル削除
-await storage.delete(file_id)
-
-# ファイル一覧
-files = await storage.list_files()
-for file_info in files:
-    print(f"{file_info['filename']}: {file_info['size']} bytes")
-```
-
----
-
-### AzureBlobStorageBackend
-
-`app/storage/azure_blob.py`
-
-Azure Blob Storageの実装。
-
-#### 使用例
-
-```python
-from app.storage.azure_blob import AzureBlobStorageBackend
-
-# 接続文字列で初期化
-storage = AzureBlobStorageBackend(
-    connection_string="DefaultEndpointsProtocol=https;...",
-    container_name="uploads"
-)
-
-# または Managed Identity で初期化
-storage = AzureBlobStorageBackend(
-    connection_string=None,  # DefaultAzureCredentialを使用
-    container_name="uploads"
-)
-
-# ファイルアップロード
-file_path = Path("documents/report.pdf")
-content = b"PDF content here..."
-file_id = await storage.upload(file_path, content)
-
-# ファイルダウンロード
-content = await storage.download(file_id)
-
-# ファイル削除
-await storage.delete(file_id)
-
-# ファイル一覧
-files = await storage.list_files()
 ```
 
 ---

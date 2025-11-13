@@ -34,12 +34,31 @@
 
 ```text
 src/app/
-├── api/              # APIレイヤー（エンドポイント、ミドルウェア、デコレータ）
-├── models/           # データベースモデル（テーブル定義）
-├── schemas/          # Pydanticスキーマ（バリデーション）
-├── repositories/     # データアクセス層
-├── services/         # ビジネスロジック層
-└── core/             # コア機能（設定・セキュリティ・例外・ログ）
+├── api/                      # APIレイヤー
+│   ├── routes/               # エンドポイント定義
+│   │   ├── v1/               # APIバージョン1
+│   │   │   ├── user_accounts/  # ユーザーアカウント管理（Azure AD）
+│   │   │   ├── project/        # プロジェクト管理
+│   │   │   ├── analysis/       # 分析機能（LangGraph）
+│   │   │   ├── driver_tree/    # ドライバーツリー
+│   │   │   ├── ppt_generator/  # PPT生成
+│   │   │   └── sample/         # サンプル機能（JWT認証）
+│   │   └── system/           # システムAPI（ヘルスチェック等）
+│   ├── middlewares/          # ミドルウェア
+│   ├── decorators/           # デコレータ
+│   └── core/                 # API共通機能
+├── models/                   # データベースモデル（テーブル定義）
+│   ├── user_account/         # ユーザーアカウントモデル
+│   ├── project/              # プロジェクト関連モデル
+│   ├── analysis/             # 分析関連モデル
+│   ├── driver_tree/          # ドライバーツリーモデル
+│   └── sample/               # サンプルモデル
+├── schemas/                  # Pydanticスキーマ（バリデーション）
+├── repositories/             # データアクセス層
+├── services/                 # ビジネスロジック層
+├── utils/                    # ユーティリティ
+├── data/                     # データファイル（YML、JSON等）
+└── core/                     # コア機能（設定・セキュリティ・例外・ログ）
 ```
 
 ---
@@ -71,24 +90,48 @@ src/app/
 
 ## データフロー例
 
-ユーザー登録のリクエストがどのように処理されるか:
+### 例1: プロジェクト作成（本番機能、Azure AD認証）
+
+```text
+1. クライアント → POST /api/v1/projects
+   - Authorizationヘッダー: Bearer <Azure AD token>
+                   ↓
+2. API層 (routes/v1/project/project.py)
+   - Azure ADトークン検証（認証ミドルウェア）
+   - リクエストボディをバリデーション (Pydanticスキーマ)
+                   ↓
+3. サービス層 (services/project_service.py)
+   - プロジェクトコード重複チェック
+   - トランザクション管理
+   - プロジェクトメンバーシップ作成（作成者をPROJECT_MANAGERとして追加）
+                   ↓
+4. リポジトリ層 (repositories/project_repository.py)
+   - データベースにINSERT
+                   ↓
+5. モデル層 (models/project/project.py, models/project/member.py)
+   - projectsテーブルとproject_membersテーブルに保存
+                   ↓
+6. レスポンス ← 201 Created + プロジェクト情報
+```
+
+### 例2: ユーザー登録（レガシー機能、JWT認証）
 
 ```text
 1. クライアント → POST /api/v1/sample-users/register
                    ↓
-2. API層 (routes/v1/sample_users.py)
+2. API層 (routes/v1/sample/sample_users.py)
    - リクエストボディをバリデーション (Pydanticスキーマ)
                    ↓
-3. サービス層 (services/sample_user.py)
+3. サービス層 (services/sample_user_service.py)
    - パスワード強度チェック
    - パスワードをbcryptでハッシュ化
    - メールアドレス重複チェック
                    ↓
-4. リポジトリ層 (repositories/sample_user.py)
+4. リポジトリ層 (repositories/sample_user_repository.py)
    - データベースにINSERT
                    ↓
-5. モデル層 (models/sample_user.py)
-   - SampleUserテーブルに保存
+5. モデル層 (models/sample/sample_user.py)
+   - sample_usersテーブルに保存
                    ↓
 6. レスポンス ← 201 Created + ユーザー情報（パスワード除く）
 ```
@@ -97,42 +140,81 @@ src/app/
 
 ## 主要な機能モジュール
 
-### 1. ユーザー認証 (`sample_users`)
+このプロジェクトは、**本番機能**と**レガシーサンプル機能**に分かれています。
 
-- ユーザー登録・ログイン
-- JWT トークン発行・検証
-- パスワード強度検証
-- リフレッシュトークン
-- APIキー生成
+### 本番機能（Azure AD認証対応）
 
-### 2. AIエージェント (`sample_agents`)
+#### 1. ユーザーアカウント管理 (`user_accounts`)
 
-- エージェント作成・管理
-- LangGraph ワークフロー実行
-- プロンプト管理
+- Azure AD Object IDによるユーザー識別
+- システムレベルのロール管理（SystemAdmin/User）
+- プロジェクトメンバーシップとの関連
+- テーブル: `users`（UUID主キー）
 
-### 3. セッション管理 (`sample_sessions`)
+#### 2. プロジェクト管理 (`project`)
 
-- 対話セッション作成
-- メッセージ履歴保存
-- セッション一覧・検索
+- プロジェクト作成・管理
+- プロジェクトメンバーシップ管理
+- プロジェクトレベルのロール（ProjectManager/ProjectModerator/Member/Viewer）
+- ファイルアップロード・管理
+- テーブル: `projects`, `project_members`, `project_files`
 
-### 4. ファイル管理 (`sample_files`)
+#### 3. 分析機能 (`analysis`)
 
+- LangGraphエージェントによるデータ分析
+- 分析セッション管理
+- 分析ステップとチャート管理
+- validation設定管理
+- チャット履歴・スナップショット履歴
+- テーブル: `analysis_sessions`, `analysis_steps`, `analysis_files`, `analysis_templates`, `analysis_template_charts`
+
+#### 4. ドライバーツリー (`driver_tree`)
+
+- KPI分解ツリーの管理
+- ノード間の親子関係管理
+- 数式演算子の定義
+- カテゴリ管理
+- テーブル: `driver_trees`, `driver_tree_nodes`, `driver_tree_categories`
+
+#### 5. PPT生成 (`ppt_generator`)
+
+- PowerPointファイル生成
+- テンプレートベースのスライド作成
+
+### レガシー機能（JWT認証サンプル）
+
+#### 6. サンプルユーザー認証 (`sample`)
+
+- ユーザー登録・ログイン（JWT）
+- パスワードハッシュ化（bcrypt）
+- リフレッシュトークン・APIキー生成
+- セッション管理
 - ファイルアップロード
-- Azure Blob Storage連携
-- ファイル一覧・削除
+- テーブル: `sample_users`, `sample_sessions`, `sample_files`（integer主キー）
+
+**注意**: `sample`機能は開発・学習用のレガシーコードです。本番環境では`user_accounts`とAzure AD認証を使用してください。
 
 ---
 
 ## セキュリティ機能
 
-- **パスワードハッシュ化**: bcrypt（コスト12ラウンド）
-- **JWT認証**: HS256署名、有効期限管理
-- **CORS設定**: オリジン制限
-- **レート制限**: Redisベース
+### 本番環境（Azure AD認証）
+
+- **Azure AD認証**: Microsoft IDプラットフォームによる統合認証
+- **トークン検証**: JWTベアラートークン検証
+- **RBAC**: システムレベル（SystemAdmin/User）とプロジェクトレベル（ProjectManager/ProjectModerator/Member/Viewer）のロール管理
+- **CORS設定**: オリジン制限、認証情報の許可
 - **入力バリデーション**: Pydantic自動検証
 - **SQLインジェクション対策**: SQLAlchemy ORM使用
+- **セキュリティヘッダー**: X-Content-Type-Options、X-Frame-Options等
+
+### レガシー環境（JWT認証）
+
+- **パスワードハッシュ化**: bcrypt（コスト12ラウンド）
+- **JWT認証**: HS256署名、有効期限管理
+- **リフレッシュトークン**: トークン更新機能
+- **アカウントロック**: ログイン失敗回数制限
+- **レート制限**: Redisベース（オプション）
 
 ---
 

@@ -234,11 +234,41 @@ async def get_me(current_user: CurrentSampleUserDep) -> SampleUserResponse:
     return SampleUserResponse.model_validate(current_user)
 ```
 
-## Azure AD認証（本番環境）
+## 2つの認証システムの共存
+
+本プロジェクトは、**JWT認証（レガシー）** と **Azure AD認証（本番）** の2つの認証システムが共存しています。
+
+### 認証システムの比較
+
+| 項目 | JWT認証 | Azure AD認証 |
+|------|---------|-------------|
+| **用途** | レガシー・開発環境 | 本番環境 |
+| **対象モデル** | `SampleUser` (int型ID) | `UserAccount` (UUID型ID) |
+| **トークン発行** | 自前実装（python-jose） | Azure AD（Microsoft Entra ID） |
+| **認証方式** | パスワード認証 + JWTトークン | Azure ADトークン |
+| **実装ファイル** | `src/app/core/security/jwt.py` | `src/app/core/security/azure_ad.py` |
+| **依存性型** | `CurrentUserDep` | `CurrentUserAzureDep` |
+
+### AUTH_MODEによる切り替えメカニズム
+
+環境変数`AUTH_MODE`で認証方式を切り替えます：
+
+```bash
+# 開発モード（モックトークン検証）
+AUTH_MODE=development
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+
+# 本番モード（Azure AD認証）
+AUTH_MODE=production
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-client-id
+```
+
+### Azure AD認証（本番環境）
 
 本番環境では、Azure AD（Microsoft Entra ID）を使用したBearerトークン認証を使用します。
 
-### トークン検証の仕組み
+#### トークン検証の仕組み
 
 ```python
 # src/app/core/security/azure_ad.py
@@ -246,26 +276,65 @@ from fastapi import Security
 from fastapi_azure_auth import SingleTenantAzureAuthorizationCodeBearer
 from fastapi_azure_auth.user import User as AzureUser
 
-# Azure AD認証スキーム
-azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
-    app_client_id=settings.AZURE_CLIENT_ID,
-    tenant_id=settings.AZURE_TENANT_ID,
-    scopes={
-        f'api://{settings.AZURE_CLIENT_ID}/access_as_user': 'Access API as user',
-    },
-    allow_guest_users=False,
-)
+# Azure AD認証スキーム（本番モードのみ初期化）
+if settings.AUTH_MODE == "production":
+    azure_scheme = SingleTenantAzureAuthorizationCodeBearer(
+        app_client_id=settings.AZURE_CLIENT_ID,
+        tenant_id=settings.AZURE_TENANT_ID,
+        scopes={
+            f'api://{settings.AZURE_CLIENT_ID}/access_as_user': 'Access API as user',
+        },
+        allow_guest_users=False,
+    )
+
 
 async def get_current_azure_user(
-    user: AzureUser = Security(azure_scheme, scopes=['access_as_user'])
+    user: AzureUser = Security(get_azure_scheme_dependency, scopes=['access_as_user'])
 ) -> AzureUser:
-    """Azure ADから認証済みユーザーを取得。"""
+    """Azure ADから認証済みユーザーを取得（本番モード）。"""
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Azure AD authentication failed"
         )
     return user
+```
+
+### 開発モード認証（開発環境）
+
+開発環境では、モックトークンによる簡易認証を使用します。
+
+```python
+# src/app/core/security/dev_auth.py
+from fastapi import Security, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+
+security = HTTPBearer()
+
+
+class DevUser:
+    """開発モード用のモックユーザー（Azure AD Userと互換）。"""
+
+    def __init__(self):
+        self.oid = settings.DEV_MOCK_USER_OID
+        self.email = settings.DEV_MOCK_USER_EMAIL
+        self.name = settings.DEV_MOCK_USER_NAME
+        self.roles = []
+
+
+async def get_current_dev_user(
+    credentials: HTTPAuthorizationCredentials = Security(security)
+) -> DevUser:
+    """開発モード用の認証（トークンチェックのみ）。"""
+    token = credentials.credentials
+
+    if token != settings.DEV_MOCK_TOKEN:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid development token"
+        )
+
+    return DevUser()
 ```
 
 ### 自動的に実行される検証
@@ -315,13 +384,27 @@ fastapi-azure-authライブラリは、以下のセキュリティチェック�
 }
 ```
 
-### 認証モードの切り替え
+### 実装ファイル一覧
+
+認証関連の実装ファイルは以下の通りです：
+
+| ファイルパス | 説明 | 認証方式 |
+|------------|------|---------|
+| `src/app/core/security/jwt.py` | JWT認証（SampleUser用） | JWT（レガシー） |
+| `src/app/core/security/azure_ad.py` | Azure AD認証（UserAccount用） | Azure AD（本番） |
+| `src/app/core/security/dev_auth.py` | 開発モード認証（モック） | モックトークン（開発） |
+| `src/app/api/core/dependencies.py` | 依存性注入定義 | 全認証方式 |
+
+### 認証モードの切り替え（既存のまま維持）
 
 環境変数`AUTH_MODE`で認証方式を切り替えます：
 
 ```bash
-# 開発モード（JWT認証）
+# 開発モード（モックトークン認証）
 AUTH_MODE=development
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+DEV_MOCK_USER_OID=dev-azure-oid-12345
+DEV_MOCK_USER_EMAIL=dev.user@example.com
 
 # 本番モード（Azure AD認証）
 AUTH_MODE=production
@@ -334,6 +417,46 @@ AZURE_CLIENT_ID=your-client-id
 1. **ライブラリレベルでの検証**: fastapi-azure-authはpython-joseを使用し、JWTデコード時に自動的に`exp`クレームを検証
 2. **FastAPIセキュリティ統合**: Security依存性により、エンドポイント実行前に自動的にトークン検証が実行
 3. **標準的な実装**: JWT RFC 7519に準拠した標準的な有効期限検証
+
+### エンドポイント実装例（2つの認証システム）
+
+#### JWT認証エンドポイント（レガシー）
+
+```python
+# src/app/api/routes/sample_users.py
+from fastapi import APIRouter
+from app.api.core import CurrentUserDep
+from app.schemas.sample_user import SampleUserResponse
+
+router = APIRouter()
+
+
+@router.get("/me", response_model=SampleUserResponse)
+async def get_current_user_info(
+    current_user: CurrentUserDep,  # JWT認証（SampleUser）
+) -> SampleUserResponse:
+    """現在のユーザー情報を取得（JWT認証）。"""
+    return SampleUserResponse.model_validate(current_user)
+```
+
+#### Azure AD認証エンドポイント（本番）
+
+```python
+# src/app/api/routes/users.py
+from fastapi import APIRouter
+from app.api.core import CurrentUserAzureDep
+from app.schemas.user_account import UserAccountResponse
+
+router = APIRouter()
+
+
+@router.get("/me", response_model=UserAccountResponse)
+async def get_current_user_info_azure(
+    current_user: CurrentUserAzureDep,  # Azure AD認証（UserAccount）
+) -> UserAccountResponse:
+    """現在のユーザー情報を取得（Azure AD認証）。"""
+    return UserAccountResponse.model_validate(current_user)
+```
 
 ### 参考ドキュメント
 
@@ -349,3 +472,4 @@ AZURE_CLIENT_ID=your-client-id
 - [JWT.io](https://jwt.io/)
 - [Passlib Documentation](https://passlib.readthedocs.io/)
 - [JWT RFC 7519](https://tools.ietf.org/html/rfc7519)
+- [Azure AD Authentication](https://learn.microsoft.com/en-us/azure/active-directory/develop/)

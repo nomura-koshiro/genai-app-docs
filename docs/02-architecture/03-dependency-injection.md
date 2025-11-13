@@ -513,6 +513,120 @@ def test_create_user(client):
     assert response.status_code == 201
 ```
 
+## Azure AD認証の依存性注入
+
+camp-backendは、Azure AD認証をサポートしています。環境変数 `AUTH_MODE` で認証方式を切り替えます。
+
+### Azure AD用依存性の定義
+
+```python
+# src/app/api/core/dependencies.py
+from app.services.user_account.user_account import UserService
+
+def get_azure_user_service(db: DatabaseDep) -> UserService:
+    """Azure AD用ユーザーサービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        UserService: 初期化されたAzure AD用ユーザーサービスインスタンス
+    """
+    return UserService(db)
+
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+```
+
+### Azure AD認証ユーザーの取得
+
+```python
+# src/app/api/core/dependencies.py
+from app.core.security.azure_ad import get_current_azure_user
+from app.core.security.dev_auth import get_current_dev_user
+from app.models.user_account.user_account import UserAccount
+
+async def get_authenticated_user_from_azure(
+    user_service: AzureUserServiceDep,
+    azure_user: AuthUserType = Depends(
+        get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user
+    ),
+) -> UserAccount:
+    """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserAccountモデルと紐付け。
+
+    環境変数AUTH_MODEに応じて以下を切り替え:
+    - production: Azure ADトークン検証
+    - development: モックトークン検証
+
+    Args:
+        user_service: Azure AD用ユーザーサービス（自動注入）
+        azure_user: Azure ADまたはDevユーザー（自動注入）
+
+    Returns:
+        UserAccount: データベースのユーザーモデル（新しいAzure AD対応モデル）
+    """
+    # Azure OIDでユーザーを検索（または作成）
+    user = await user_service.get_or_create_by_azure_oid(
+        azure_oid=azure_user.oid,
+        email=azure_user.email or azure_user.preferred_username,
+        display_name=getattr(azure_user, "name", None),
+        roles=getattr(azure_user, "roles", []),
+    )
+
+    return user
+
+async def get_current_active_user_azure(
+    current_user: Annotated[UserAccount, Depends(get_authenticated_user_from_azure)],
+) -> UserAccount:
+    """Azure AD認証されたユーザーのアクティブ状態を検証します。"""
+    if not current_user.is_active:
+        raise HTTPException(status_code=403, detail="アカウントが無効化されています")
+    return current_user
+
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]
+```
+
+### Azure AD認証エンドポイントの例
+
+```python
+# src/app/api/routes/v1/user_accounts/user_accounts.py
+from app.api.core import CurrentUserAzureDep, AzureUserServiceDep
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user(
+    current_user: CurrentUserAzureDep,
+    user_service: AzureUserServiceDep,
+):
+    """現在の認証済みユーザーの情報を取得します。
+
+    - AUTH_MODE=development: モックトークン検証
+    - AUTH_MODE=production: Azure ADトークン検証
+    """
+    # 最終ログイン情報を更新
+    updated_user = await user_service.update_last_login(
+        user_id=current_user.id,
+        client_ip=request.client.host if request.client else None,
+    )
+
+    return UserResponse.model_validate(updated_user)
+```
+
+### 認証方式の切り替え
+
+```bash
+# 開発環境（.env.local）
+AUTH_MODE=development
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+DEV_MOCK_USER_EMAIL=dev.user@example.com
+DEV_MOCK_USER_OID=dev-user-oid-12345
+DEV_MOCK_USER_NAME=Dev User
+
+# 本番環境（.env.production）
+AUTH_MODE=production
+AZURE_TENANT_ID=your-tenant-id
+AZURE_CLIENT_ID=your-client-id
+AZURE_AUTHORITY=https://login.microsoftonline.com/your-tenant-id
+```
+
 ## ベストプラクティス
 
 ### 1. 型エイリアスを使用する

@@ -104,27 +104,31 @@ camp_backend/
 │       │   ├── driver_tree/# ドライバーツリーモデル
 │       │   ├── project/    # プロジェクト管理モデル
 │       │   ├── sample/     # サンプル機能モデル
-│       │   └── user/       # ユーザーモデル
+│       │   ├── user/       # ユーザーモデル（JWT認証用、非推奨）
+│       │   └── user_account/# ユーザーアカウントモデル（Azure AD対応）
 │       ├── repositories/   # データアクセス層（機能別サブディレクトリ）
 │       │   ├── analysis/   # 分析機能リポジトリ
 │       │   ├── driver_tree/# ドライバーツリーリポジトリ
 │       │   ├── project/    # プロジェクト管理リポジトリ
 │       │   ├── sample/     # サンプル機能リポジトリ
-│       │   └── user/       # ユーザーリポジトリ
+│       │   ├── user/       # ユーザーリポジトリ（JWT認証用、非推奨）
+│       │   └── user_account/# ユーザーアカウントリポジトリ（Azure AD対応）
 │       ├── schemas/        # Pydanticスキーマ（機能別サブディレクトリ）
 │       │   ├── analysis/   # 分析機能スキーマ
 │       │   ├── driver_tree/# ドライバーツリースキーマ
 │       │   ├── ppt_generator/# PPT生成スキーマ
 │       │   ├── project/    # プロジェクト管理スキーマ
 │       │   ├── sample/     # サンプル機能スキーマ
-│       │   └── user/       # ユーザースキーマ
+│       │   ├── user/       # ユーザースキーマ（JWT認証用、非推奨）
+│       │   └── user_account/# ユーザーアカウントスキーマ（Azure AD対応）
 │       ├── services/       # ビジネスロジック層（機能別サブディレクトリ）
 │       │   ├── analysis/   # 分析機能サービス（エージェント含む）
 │       │   ├── driver_tree/# ドライバーツリーサービス
 │       │   ├── ppt_generator/# PPT生成サービス
 │       │   ├── project/    # プロジェクト管理サービス
 │       │   ├── sample/     # サンプル機能サービス
-│       │   └── user/       # ユーザーサービス
+│       │   ├── user/       # ユーザーサービス（JWT認証用、非推奨）
+│       │   └── user_account/# ユーザーアカウントサービス（Azure AD対応）
 │       └── utils/          # ユーティリティ関数
 ├── tests/                   # テストコード（src/app/のミラー構造）
 │   ├── __init__.py
@@ -246,11 +250,7 @@ api/
 │   │   ├── __init__.py
 │   │   ├── analysis/        # 分析機能エンドポイント
 │   │   │   ├── __init__.py
-│   │   │   ├── analysis.py  # 分析セッション管理
-│   │   │   ├── chat.py      # チャット機能
-│   │   │   ├── files.py     # ファイル管理
-│   │   │   ├── snapshots.py # スナップショット管理
-│   │   │   ├── steps.py     # 分析ステップ管理
+│   │   │   ├── analysis.py  # 分析セッション統合管理（chat, files, steps機能含む）
 │   │   │   └── templates.py # テンプレート管理
 │   │   ├── driver_tree/     # ドライバーツリーエンドポイント
 │   │   │   ├── __init__.py
@@ -271,9 +271,12 @@ api/
 │   │   │   ├── files.py     # ファイル管理
 │   │   │   ├── sessions.py  # セッション管理
 │   │   │   └── users.py     # ユーザー管理
-│   │   └── users/           # ユーザー管理エンドポイント
+│   │   ├── users/           # ユーザー管理エンドポイント（JWT認証用、非推奨）
+│   │   │   ├── __init__.py
+│   │   │   └── users.py     # JWT認証ユーザー管理
+│   │   └── user_accounts/   # ユーザーアカウントエンドポイント
 │   │       ├── __init__.py
-│   │       └── users.py     # Azure AD対応ユーザー管理
+│   │       └── user_accounts.py # Azure AD対応ユーザー管理
 │   └── system/              # システムエンドポイント（インフラ）
 │       ├── __init__.py
 │       ├── root.py          # / (ルート)
@@ -302,8 +305,10 @@ APIレイヤーの基盤となる依存性注入と例外ハンドリング機�
 **`dependencies.py`** - 依存性注入の定義:
 
 - データベースセッション (`DatabaseDep`)
-- サービス層の注入 (`UserServiceDep`, `AgentServiceDep`, `FileServiceDep`, `SessionServiceDep`)
-- 認証ユーザー (`CurrentUserDep`, `CurrentSuperuserDep`, `CurrentUserOptionalDep`)
+- サービス層の注入 (`UserServiceDep`, `AzureUserServiceDep`, `AgentServiceDep`, `FileServiceDep`, `SessionServiceDep`)
+- 認証ユーザー:
+  - JWT認証（非推奨）: `CurrentUserDep`, `CurrentSuperuserDep`, `CurrentUserOptionalDep`
+  - Azure AD認証: `CurrentUserAzureDep`
 
 **`exception_handlers.py`** - グローバル例外ハンドラー:
 
@@ -427,10 +432,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
+# JWT認証用（非推奨）
 def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
     return SampleUserService(db)
 
 SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
+
+# Azure AD認証用（推奨）
+def get_azure_user_service(db: DatabaseDep) -> UserService:
+    return UserService(db)
+
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+
+# 認証依存性
+CurrentUserDep = Annotated[SampleUser, Depends(get_current_active_user)]  # JWT認証（非推奨）
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]  # Azure AD認証（推奨）
 ```
 
 ### models/ - データベースモデル
@@ -461,10 +477,13 @@ models/
 │   ├── __init__.py
 │   ├── file.py              # ファイルモデル
 │   ├── session.py           # セッションモデル
-│   └── user.py              # サンプルユーザーモデル
-└── user/                    # ユーザーモデル
+│   └── sample_user.py       # サンプルユーザーモデル（JWT認証用、非推奨）
+├── user/                    # ユーザーモデル（JWT認証用、非推奨）
+│   ├── __init__.py
+│   └── user.py              # JWT認証ユーザーモデル
+└── user_account/            # ユーザーアカウントモデル（Azure AD対応）
     ├── __init__.py
-    └── user.py              # Azure AD対応ユーザーモデル
+    └── user_account.py      # Azure AD対応ユーザーアカウントモデル
 ```
 
 #### 例: `models/sample/user.py`
@@ -521,10 +540,13 @@ schemas/
 │   ├── agent.py             # AI Agent/チャットスキーマ
 │   ├── file.py              # ファイルスキーマ
 │   ├── session.py           # セッション/メッセージスキーマ
-│   └── user.py              # サンプルユーザースキーマ
-└── user/                    # ユーザースキーマ
+│   └── sample_user.py       # サンプルユーザースキーマ（JWT認証用、非推奨）
+├── user/                    # ユーザースキーマ（JWT認証用、非推奨）
+│   ├── __init__.py
+│   └── user.py              # JWT認証ユーザースキーマ
+└── user_account/            # ユーザーアカウントスキーマ（Azure AD対応）
     ├── __init__.py
-    └── user.py              # Azure AD対応ユーザースキーマ
+    └── user_account.py      # Azure AD対応ユーザーアカウントスキーマ
 ```
 
 **注**: Pydantic v2対応済み（`ConfigDict`使用）
@@ -576,10 +598,13 @@ repositories/
 │   ├── __init__.py
 │   ├── file.py              # ファイルリポジトリ
 │   ├── session.py           # セッションリポジトリ
-│   └── user.py              # サンプルユーザーリポジトリ
-└── user/                    # ユーザーリポジトリ
+│   └── sample_user.py       # サンプルユーザーリポジトリ（JWT認証用、非推奨）
+├── user/                    # ユーザーリポジトリ（JWT認証用、非推奨）
+│   ├── __init__.py
+│   └── user.py              # JWT認証ユーザーリポジトリ
+└── user_account/            # ユーザーアカウントリポジトリ（Azure AD対応）
     ├── __init__.py
-    └── user.py              # Azure AD対応ユーザーリポジトリ
+    └── user_account.py      # Azure AD対応ユーザーアカウントリポジトリ
 ```
 
 #### `repositories/base.py` - ベースリポジトリ
@@ -644,18 +669,24 @@ services/
 │   ├── snapshot.py          # スナップショット管理サービス
 │   ├── step.py              # 分析ステップサービス
 │   ├── storage.py           # 分析ファイルストレージサービス
-│   └── agent/               # AI Agentサブシステム
+│   └── agent/               # LangGraphエージェントサブシステム（完全実装済み）
 │       ├── __init__.py
 │       ├── core.py          # エージェントコア
-│       ├── executor.py      # エージェント実行エンジン
+│       ├── executor.py      # LangGraphエージェント実行エンジン
 │       ├── state/           # 状態管理
 │       │   ├── __init__.py
 │       │   ├── data_manager.py      # データ管理
 │       │   ├── overview_provider.py # 概要提供
 │       │   ├── snapshot_manager.py  # スナップショット管理
 │       │   └── step_manager.py      # ステップ管理
-│       ├── steps/           # エージェントステップ
-│       │   └── __init__.py
+│       ├── steps/           # LangGraphエージェントステップ（実装済み）
+│       │   ├── __init__.py
+│       │   ├── filter.py    # フィルタステップ
+│       │   ├── aggregation.py # 集計ステップ
+│       │   ├── transform.py # 変換ステップ
+│       │   └── summary/     # サマリーステップ（グラフ生成）
+│       │       ├── __init__.py
+│       │       └── graphs/  # Plotlyグラフ生成
 │       └── utils/           # ユーティリティ
 │           ├── __init__.py
 │           ├── prompt_builder.py    # プロンプト構築
@@ -681,14 +712,17 @@ services/
 │   └── project.py           # プロジェクトサービス
 ├── sample/                  # サンプル機能サービス
 │   ├── __init__.py
-│   ├── agent.py             # AI Agentサービス
-│   ├── authorization.py     # 認可サービス
-│   ├── file.py              # ファイルサービス
-│   ├── session.py           # セッション管理サービス
-│   └── user.py              # サンプルユーザーサービス
-└── user/                    # ユーザーサービス
+│   ├── sample_agent.py      # AI Agentサービス
+│   ├── sample_authorization.py # 認可サービス
+│   ├── sample_file.py       # ファイルサービス
+│   ├── sample_session.py    # セッション管理サービス
+│   └── sample_user.py       # サンプルユーザーサービス（JWT認証用、非推奨）
+├── user/                    # ユーザーサービス（JWT認証用、非推奨）
+│   ├── __init__.py
+│   └── user.py              # JWT認証ユーザーサービス
+└── user_account/            # ユーザーアカウントサービス（Azure AD対応）
     ├── __init__.py
-    └── user.py              # Azure AD対応ユーザーサービス
+    └── user_account.py      # Azure AD対応ユーザーアカウントサービス
 ```
 
 #### 例: `services/sample/user.py`

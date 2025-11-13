@@ -570,6 +570,56 @@ class SampleUser(Base):
 - 外部サービスへの依存
 - 複雑な計算処理
 
+## 認証システムの構成
+
+camp-backendは、2つの認証方式をサポートしています：
+
+### 1. JWT認証（非推奨）
+
+- **モデル**: `SampleUser` (sample/sample_user.py)
+- **サービス**: `SampleUserService` (sample/sample_user.py)
+- **認証方式**: JWTトークン（ローカル発行）
+- **用途**: サンプル機能、開発初期段階
+- **状態**: 非推奨（新機能では使用しないでください）
+
+### 2. Azure AD認証（推奨）
+
+- **モデル**: `UserAccount` (user_account/user_account.py)
+- **サービス**: `UserService` (user_account/user_account.py)
+- **認証方式**: Azure AD Bearer Token（本番）/ モックトークン（開発）
+- **用途**: 本番環境、プロジェクト管理、分析機能
+- **切り替え**: 環境変数 `AUTH_MODE` で制御
+
+#### AUTH_MODEによる認証切り替え
+
+```python
+# 環境変数設定
+AUTH_MODE=development  # 開発モード（モック認証）
+AUTH_MODE=production   # 本番モード（Azure AD認証）
+
+# 依存性注入での使用
+from app.api.core import CurrentUserAzureDep
+
+@router.get("/profile")
+async def get_profile(current_user: CurrentUserAzureDep):
+    # AUTH_MODEに応じて自動的に認証方式が切り替わります
+    # - development: モックトークン検証
+    # - production: Azure ADトークン検証
+    return {"email": current_user.email}
+```
+
+#### 依存性注入の型アノテーション
+
+```python
+# JWT認証（非推奨）
+UserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
+CurrentUserDep = Annotated[SampleUser, Depends(get_current_active_user)]
+
+# Azure AD認証（推奨）
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]
+```
+
 ## 依存関係のルール
 
 各レイヤーは、自分より下のレイヤーにのみ依存できます。

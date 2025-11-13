@@ -199,6 +199,8 @@ if settings.ENVIRONMENT == "production":
 | SECRET_KEY | string | (開発用デフォルト) | ○ | JWT署名用の秘密鍵（本番環境では必須、32文字以上） |
 | ALGORITHM | string | "HS256" | × | JWT署名アルゴリズム |
 | ACCESS_TOKEN_EXPIRE_MINUTES | integer | 30 | × | アクセストークンの有効期限（分） |
+| REFRESH_TOKEN_EXPIRE_DAYS | integer | 7 | × | リフレッシュトークンの有効期限（日） |
+| BCRYPT_ROUNDS | integer | 12 | × | bcryptのコストファクター（ハッシュラウンド数） |
 
 #### レート制限設定
 
@@ -213,6 +215,8 @@ if settings.ENVIRONMENT == "production":
 |-------|---|------------|------|------|
 | MAX_LOGIN_ATTEMPTS | integer | 5 | × | アカウントロックまでのログイン失敗回数 |
 | ACCOUNT_LOCK_DURATION_HOURS | integer | 1 | × | アカウントロック時間（時間） |
+| ENABLE_CSP | boolean | true | × | Content Security Policy有効化 |
+| WORKERS | integer | 1 | × | Uvicornワーカープロセス数 |
 
 #### 設定例
 
@@ -221,14 +225,20 @@ if settings.ENVIRONMENT == "production":
 SECRET_KEY=your-random-secret-key-here-at-least-32-characters-long
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+REFRESH_TOKEN_EXPIRE_DAYS=7
+BCRYPT_ROUNDS=12
 
 # レート制限設定
 RATE_LIMIT_CALLS=100
 RATE_LIMIT_PERIOD=60
 
+# Content Security Policy
+ENABLE_CSP=true
+
 # セキュリティポリシー設定
 MAX_LOGIN_ATTEMPTS=5
 ACCOUNT_LOCK_DURATION_HOURS=1
+WORKERS=1
 ```
 
 #### 秘密鍵の生成
@@ -251,6 +261,79 @@ token = create_access_token(
     data={"sub": user.email},
     expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 )
+```
+
+---
+
+### 認証設定
+
+認証モードの設定（開発環境・本番環境）。
+
+#### 認証モード
+
+| 変数名 | 型 | デフォルト値 | 必須 | 説明 |
+|-------|---|------------|------|------|
+| AUTH_MODE | string | "development" | × | 認証モード（development/production） |
+
+#### Azure AD認証設定（本番環境）
+
+| 変数名 | 型 | デフォルト値 | 必須 | 説明 |
+|-------|---|------------|------|------|
+| AZURE_TENANT_ID | string | null | △ | Azure ADテナントID |
+| AZURE_CLIENT_ID | string | null | △ | Azure ADクライアントID |
+| AZURE_CLIENT_SECRET | string | null | △ | Azure ADクライアントシークレット |
+| AZURE_OPENAPI_CLIENT_ID | string | null | △ | OpenAPI用Azure ADクライアントID |
+
+#### 開発モック認証設定（開発環境）
+
+| 変数名 | 型 | デフォルト値 | 必須 | 説明 |
+|-------|---|------------|------|------|
+| DEV_MOCK_TOKEN | string | "mock-access-token-dev-12345" | × | モック認証トークン |
+| DEV_MOCK_USER_EMAIL | string | "dev.user@example.com" | × | モックユーザーメールアドレス |
+| DEV_MOCK_USER_OID | string | "dev-azure-oid-12345" | × | モックユーザーAzure OID |
+| DEV_MOCK_USER_NAME | string | "Development User" | × | モックユーザー名 |
+
+#### 設定例
+
+開発環境（モック認証）:
+
+```ini
+# 認証モード
+AUTH_MODE=development
+
+# 開発モック認証設定
+DEV_MOCK_TOKEN=mock-access-token-dev-12345
+DEV_MOCK_USER_EMAIL=dev.user@example.com
+DEV_MOCK_USER_OID=dev-azure-oid-12345
+DEV_MOCK_USER_NAME=Development User
+```
+
+本番環境（Azure AD認証）:
+
+```ini
+# 認証モード
+AUTH_MODE=production
+
+# Azure AD認証設定
+AZURE_TENANT_ID=your-azure-tenant-id
+AZURE_CLIENT_ID=your-azure-client-id
+AZURE_CLIENT_SECRET=your-azure-client-secret
+AZURE_OPENAPI_CLIENT_ID=your-azure-openapi-client-id
+```
+
+#### 使用例
+
+```python
+from app.core.config import settings
+
+if settings.AUTH_MODE == "production":
+    # Azure AD認証を使用
+    from app.core.security.azure_ad import verify_azure_token
+    user = await verify_azure_token(token)
+else:
+    # 開発モック認証を使用
+    from app.core.security.dev_auth import verify_dev_token
+    user = await verify_dev_token(token)
 ```
 
 ---
@@ -451,38 +534,25 @@ if settings.REDIS_URL:
 
 | 変数名 | 型 | デフォルト値 | 必須 | 説明 |
 |-------|---|------------|------|------|
-| STORAGE_BACKEND | string | "local" | × | ストレージバックエンド（local/azure） |
+| STORAGE_BACKEND | string | "local" | × | ストレージバックエンド（local） |
 | LOCAL_STORAGE_PATH | string | "./uploads" | × | ローカルストレージのパス |
-| AZURE_STORAGE_ACCOUNT_NAME | string | null | △ | Azure Storageアカウント名 |
-| AZURE_STORAGE_CONNECTION_STRING | string | null | △ | Azure Storage接続文字列 |
-| AZURE_STORAGE_CONTAINER_NAME | string | "uploads" | × | Azureコンテナ名 |
 
 #### 設定例
 
-ローカルストレージ（開発環境）:
+ローカルストレージ:
 
 ```ini
 STORAGE_BACKEND=local
 LOCAL_STORAGE_PATH=./uploads
 ```
 
-Azure Blob Storage（本番環境）:
-
-```ini
-STORAGE_BACKEND=azure
-AZURE_STORAGE_ACCOUNT_NAME=myaccount
-AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=myaccount;AccountKey=xxx;EndpointSuffix=core.windows.net"
-AZURE_STORAGE_CONTAINER_NAME=uploads
-```
-
 #### 使用例
 
 ```python
 from app.core.config import settings
-from app.storage import get_storage_backend
 
-storage = get_storage_backend()
-await storage.upload(file_path, content)
+# ストレージパスの取得
+storage_path = settings.LOCAL_STORAGE_PATH
 ```
 
 ---
@@ -578,18 +648,22 @@ llm = ChatAnthropic(
 | 変数名 | 型 | デフォルト値 | 必須 | 説明 |
 |-------|---|------------|------|------|
 | MAX_UPLOAD_SIZE | integer | 10485760 | × | 最大アップロードサイズ（バイト） |
+| MAX_FILE_SIZE_MB | integer | 10 | × | 最大ファイルサイズ（MB） |
 
 #### 設定例
 
 ```ini
 # 10MB
 MAX_UPLOAD_SIZE=10485760
+MAX_FILE_SIZE_MB=10
 
 # 50MB
 MAX_UPLOAD_SIZE=52428800
+MAX_FILE_SIZE_MB=50
 
 # 100MB
 MAX_UPLOAD_SIZE=104857600
+MAX_FILE_SIZE_MB=100
 ```
 
 #### サイズ計算

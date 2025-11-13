@@ -25,7 +25,7 @@ camp-backendは環境に応じて2つの認証モードを提供します。
 # 本番環境: Azure AD認証（必須）
 AUTH_MODE=production
 
-# 開発環境: モック認証（開発のみ）
+# 開発環境: Mock認証（開発のみ）
 AUTH_MODE=development
 ```
 
@@ -34,7 +34,7 @@ AUTH_MODE=development
 ```python
 AUTH_MODE: Literal["development", "production"] = Field(
     default="development",
-    description="Authentication mode: development (JWT) or production (Azure AD)",
+    description="Authentication mode: development (Mock Auth) or production (Azure AD)",
 )
 ```
 
@@ -79,7 +79,7 @@ AZURE_OPENAPI_CLIENT_ID=your-swagger-client-id
 # 認証モード切り替え
 AUTH_MODE: Literal["development", "production"] = Field(
     default="development",
-    description="Authentication mode: development (JWT) or production (Azure AD)",
+    description="Authentication mode: development (Mock Auth) or production (Azure AD)",
 )
 
 # Azure AD設定（本番モード用）
@@ -207,12 +207,12 @@ async def get_profile(user: CurrentUserAzureDep):
     }
 ```
 
-### Userモデル（Azure AD対応）
+### UserAccountモデル（Azure AD対応）
 
-**実装場所**: `src/app/models/user.py`
+**実装場所**: `src/app/models/user_account/user_account.py`
 
 ```python
-class User(Base, TimestampMixin):
+class UserAccount(Base, TimestampMixin):
     """Azure AD認証用ユーザーモデル。
 
     SampleUserとは異なる新しいモデル:
@@ -228,6 +228,7 @@ class User(Base, TimestampMixin):
     display_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     roles: Mapped[list] = mapped_column(JSON, default=list, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 ```
 
 ---
@@ -345,9 +346,9 @@ async def dev_test(user: CurrentUserAzureDep):
 
 ---
 
-## レガシー: JWT認証（参考）
+## レガシー: SampleUser用JWT認証（参考）
 
-以下は、SampleUserモデル用のレガシー認証機能です。段階的に Azure AD 認証に移行中です。
+以下は、SampleUserモデル用のレガシー認証機能です。段階的に Azure AD 認証に移行予定です。
 
 ### トークン生成
 
@@ -489,7 +490,7 @@ hashed_api_key = hash_password(api_key)
 
 ### APIキーのハッシュ化保存
 
-**実装場所**: `src/app/models/sample_user.py`
+**実装場所**: `src/app/models/sample/sample_user.py`
 
 ```python
 class SampleUser(Base):
@@ -502,7 +503,7 @@ class SampleUser(Base):
     )
 ```
 
-**APIキー生成時のハッシュ化**（`src/app/api/routes/v1/sample_users.py`）:
+**APIキー生成時のハッシュ化**（`src/app/api/v1/sample_users.py`）:
 
 ```python
 # APIキー生成

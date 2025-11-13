@@ -103,14 +103,22 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |---------|---|------|----------|------|
-| id | INTEGER | NOT NULL | AUTO | 主キー |
+| id | UUID | NOT NULL | UUID_V4 | 主キー |
 | email | VARCHAR(255) | NOT NULL | - | メールアドレス（一意） |
 | username | VARCHAR(50) | NOT NULL | - | ユーザー名（一意） |
-| hashed_password | VARCHAR(255) | NOT NULL | - | ハッシュ化されたパスワード |
+| hashed_password | VARCHAR(100) | NOT NULL | - | ハッシュ化されたパスワード |
 | is_active | BOOLEAN | NOT NULL | TRUE | アカウント有効フラグ |
 | is_superuser | BOOLEAN | NOT NULL | FALSE | 管理者フラグ |
 | created_at | TIMESTAMP | NOT NULL | NOW() | 作成日時（UTC） |
 | updated_at | TIMESTAMP | NOT NULL | NOW() | 更新日時（UTC） |
+| last_login_at | TIMESTAMP | NULL | - | 最終ログイン日時（UTC） |
+| last_login_ip | VARCHAR(45) | NULL | - | 最終ログインIPアドレス（IPv6対応） |
+| failed_login_attempts | INTEGER | NOT NULL | 0 | ログイン失敗回数 |
+| locked_until | TIMESTAMP | NULL | - | アカウントロック解除日時 |
+| refresh_token_hash | VARCHAR(100) | NULL | - | リフレッシュトークンハッシュ |
+| refresh_token_expires_at | TIMESTAMP | NULL | - | リフレッシュトークン有効期限 |
+| api_key_hash | VARCHAR(100) | NULL | - | APIキーハッシュ |
+| api_key_created_at | TIMESTAMP | NULL | - | APIキー作成日時 |
 
 #### インデックス
 
@@ -123,26 +131,42 @@ DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
 
 - `email`: NOT NULL, UNIQUE, MAX_LENGTH=255
 - `username`: NOT NULL, UNIQUE, MAX_LENGTH=50
-- `hashed_password`: NOT NULL, MAX_LENGTH=255
+- `hashed_password`: NOT NULL, MAX_LENGTH=100
+- `last_login_ip`: IPv4/IPv6対応（最大45文字）
+- `failed_login_attempts`: デフォルト0、アカウントロックに使用
+- `api_key_hash`: インデックス付き
 
 #### SQLAlchemyモデル
 
 ```python
-class SampleUser(Base):
+class SampleUser(Base, PrimaryKeyMixin, TimestampMixin):
     __tablename__ = "sample_users"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # PrimaryKeyMixinからid（UUID）を継承
+    # TimestampMixinからcreated_at, updated_atを継承
+
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(100), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # セキュリティ監査フィールド
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+    last_login_ip: Mapped[str | None] = mapped_column(String(45), nullable=True, default=None)
+    failed_login_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    # リフレッシュトークン関連
+    refresh_token_hash: Mapped[str | None] = mapped_column(String(100), nullable=True, default=None)
+    refresh_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    # APIキー認証関連
+    api_key_hash: Mapped[str | None] = mapped_column(String(100), nullable=True, default=None, index=True)
+    api_key_created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, default=None)
 
     # Relationships
     sessions: Mapped[list["SampleSession"]] = relationship("SampleSession", back_populates="user", cascade="all, delete-orphan")
-    files: Mapped[list["SampleFile"]] = relationship("SampleFile", back_populates="user", cascade="all, delete-orphan")
 ```
 
 #### サンプルデータ
@@ -162,9 +186,9 @@ AIエージェントとの会話セッションを管理するテーブル。
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |---------|---|------|----------|------|
-| id | INTEGER | NOT NULL | AUTO | 主キー |
+| id | UUID | NOT NULL | UUID_V4 | 主キー |
 | session_id | VARCHAR(255) | NOT NULL | - | セッション識別子（一意） |
-| user_id | INTEGER | NULL | - | ユーザーID（外部キー） |
+| user_id | UUID | NULL | - | ユーザーID（外部キー） |
 | metadata | JSON | NULL | - | セッションメタデータ |
 | created_at | TIMESTAMP | NOT NULL | NOW() | 作成日時（UTC） |
 | updated_at | TIMESTAMP | NOT NULL | NOW() | 更新日時（UTC） |
@@ -185,18 +209,23 @@ AIエージェントとの会話セッションを管理するテーブル。
 #### SQLAlchemyモデル
 
 ```python
-class SampleSession(Base):
+class SampleSession(Base, PrimaryKeyMixin, TimestampMixin):
     __tablename__ = "sample_sessions"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    # PrimaryKeyMixinからid（UUID）を継承
+    # TimestampMixinからcreated_at, updated_atを継承
+
     session_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="CASCADE"), nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    session_metadata: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
 
     # Relationships
-    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="sessions")
+    user: Mapped["SampleUser | None"] = relationship("SampleUser", back_populates="sessions")
     messages: Mapped[list["SampleMessage"]] = relationship("SampleMessage", back_populates="session", cascade="all, delete-orphan")
 ```
 
@@ -217,8 +246,8 @@ VALUES ('session_abc123', 1, '{"location": "Tokyo"}');
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |---------|---|------|----------|------|
-| id | INTEGER | NOT NULL | AUTO | 主キー |
-| session_id | INTEGER | NOT NULL | - | セッションID（外部キー） |
+| id | UUID | NOT NULL | UUID_V4 | 主キー |
+| session_id | UUID | NOT NULL | - | セッションID（外部キー） |
 | role | VARCHAR(50) | NOT NULL | - | メッセージロール（user/assistant/system） |
 | content | TEXT | NOT NULL | - | メッセージ内容 |
 | tokens_used | INTEGER | NULL | - | 使用トークン数 |
@@ -242,19 +271,25 @@ VALUES ('session_abc123', 1, '{"location": "Tokyo"}');
 #### SQLAlchemyモデル
 
 ```python
-class SampleMessage(Base):
+class SampleMessage(Base, PrimaryKeyMixin):
     __tablename__ = "sample_messages"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sample_sessions.id", ondelete="CASCADE"), nullable=False)
+    # PrimaryKeyMixinからid（UUID）を継承
+    # created_atのみ（updated_atは不要）
+
+    session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_sessions.id", ondelete="CASCADE"),
+        nullable=False,
+    )
     role: Mapped[str] = mapped_column(String(50), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tokens_used: Mapped[int | None] = mapped_column(Integer, nullable=True)
     model: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships
-    session: Mapped["Session"] = relationship("SampleSession", back_populates="messages")
+    session: Mapped["SampleSession"] = relationship("SampleSession", back_populates="messages")
 ```
 
 #### サンプルデータ
@@ -275,14 +310,13 @@ VALUES (1, 'user', 'こんにちは', NULL, NULL),
 
 | カラム名 | 型 | NULL | デフォルト | 説明 |
 |---------|---|------|----------|------|
-| id | INTEGER | NOT NULL | AUTO | 主キー |
+| id | UUID | NOT NULL | UUID_V4 | 主キー |
 | file_id | VARCHAR(255) | NOT NULL | - | ファイル識別子（一意） |
 | filename | VARCHAR(255) | NOT NULL | - | 保存ファイル名 |
-| original_filename | VARCHAR(255) | NOT NULL | - | 元のファイル名 |
-| content_type | VARCHAR(100) | NULL | - | MIMEタイプ |
+| filepath | VARCHAR(500) | NOT NULL | - | サーバー上のファイルパス |
+| content_type | VARCHAR(100) | NOT NULL | - | MIMEタイプ |
 | size | INTEGER | NOT NULL | - | ファイルサイズ（バイト） |
-| storage_path | VARCHAR(500) | NOT NULL | - | ストレージパス |
-| user_id | INTEGER | NULL | - | ユーザーID（外部キー） |
+| user_id | UUID | NULL | - | ユーザーID（外部キー） |
 | created_at | TIMESTAMP | NOT NULL | NOW() | 作成日時（UTC） |
 
 #### インデックス
@@ -296,29 +330,32 @@ VALUES (1, 'user', 'こんにちは', NULL, NULL),
 
 - `file_id`: NOT NULL, UNIQUE, MAX_LENGTH=255
 - `filename`: NOT NULL, MAX_LENGTH=255
-- `original_filename`: NOT NULL, MAX_LENGTH=255
+- `filepath`: NOT NULL, MAX_LENGTH=500
 - `size`: NOT NULL, INTEGER
-- `storage_path`: NOT NULL, MAX_LENGTH=500
+- `content_type`: NOT NULL, MAX_LENGTH=100
 - `user_id`: NULLABLE（ゲストユーザー対応）
 
 #### SQLAlchemyモデル
 
 ```python
-class SampleFile(Base):
+class SampleFile(Base, PrimaryKeyMixin):
     __tablename__ = "sample_files"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    file_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
-    filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    original_filename: Mapped[str] = mapped_column(String(255), nullable=False)
-    content_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    size: Mapped[int] = mapped_column(Integer, nullable=False)
-    storage_path: Mapped[str] = mapped_column(String(500), nullable=False)
-    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sample_users.id", ondelete="CASCADE"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    # PrimaryKeyMixinからid（UUID）を継承
+    # created_atのみ（updated_atは不要）
 
-    # Relationships
-    user: Mapped["SampleUser"] = relationship("SampleUser", back_populates="files")
+    file_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sample_users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    filepath: Mapped[str] = mapped_column(String(500), nullable=False)
+    size: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_type: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 ```
 
 #### サンプルデータ
@@ -477,7 +514,7 @@ alembic upgrade head
 
 ```python
 from sqlalchemy import select
-from app.models import User, Session
+from app.models.sample import SampleUser, SampleSession
 
 # SQLAlchemy 2.0スタイル
 stmt = select(SampleSession).where(SampleSession.user_id == user_id)
@@ -489,9 +526,9 @@ result = sessions.scalars().all()
 
 ```python
 from sqlalchemy import select
-from app.models import Message
+from app.models.sample import SampleMessage
 
-stmt = select(SampleMessage).where(Message.session_id == session_id).order_by(SampleMessage.created_at)
+stmt = select(SampleMessage).where(SampleMessage.session_id == session_id).order_by(SampleMessage.created_at)
 messages = await db.execute(stmt)
 result = messages.scalars().all()
 ```
@@ -500,9 +537,9 @@ result = messages.scalars().all()
 
 ```python
 from sqlalchemy import select
-from app.models import File
+from app.models.sample import SampleFile
 
-stmt = select(SampleFile).where(SampleFile.user_id == user_id).order_by(File.created_at.desc())
+stmt = select(SampleFile).where(SampleFile.user_id == user_id).order_by(SampleFile.created_at.desc())
 files = await db.execute(stmt)
 result = files.scalars().all()
 ```

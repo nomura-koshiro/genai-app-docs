@@ -18,7 +18,9 @@ camp-backendは、基本的なセキュリティ要件を満たす堅牢な実�
 
 ### 実装済みセキュリティ機能
 
-- JWT認証とbcryptパスワードハッシュ化
+- Azure AD認証（本番環境、fastapi-azure-authによる自動トークン検証）
+- Mock認証（開発環境専用）
+- JWT認証とbcryptパスワードハッシュ化（レガシー、SampleUser用）
 - リフレッシュトークン（ハッシュ化保存、7日間有効）
 - APIキー認証（ハッシュ化保存）
 - Redisベースのレート制限（スライディングウィンドウ）
@@ -38,10 +40,12 @@ camp-backendは、基本的なセキュリティ要件を満たす堅牢な実�
 
 各セキュリティ機能の詳細については、以下のドキュメントを参照してください：
 
-### 1. [認証・認可](./03-security-authentication.md)
+### 1. [認証・認可](./01-authentication.md)
 
+- Azure AD認証（本番環境、fastapi-azure-auth）
+- Mock認証（開発環境専用）
+- JWT認証（レガシー、SampleUser用）
 - パスワードハッシュ化（bcrypt）
-- JWT認証（HS256）
 - パスワード強度検証
 - 認証依存性注入
 - APIキー生成
@@ -87,7 +91,9 @@ camp-backendは、基本的なセキュリティ要件を満たす堅牢な実�
 
 **認証・認可**:
 
-- JWT認証とbcryptパスワードハッシュ化
+- Azure AD認証（本番環境、fastapi-azure-authによる自動検証）
+- Mock認証（開発環境専用）
+- JWT認証とbcryptパスワードハッシュ化（レガシー、SampleUser用）
 - リフレッシュトークン（ハッシュ化保存で漏洩対策）
 - APIキー認証（ハッシュ化保存）
 - ログイン失敗回数制限（ブルートフォース攻撃対策）
@@ -134,6 +140,7 @@ camp-backendは、基本的なセキュリティ要件を満たす堅牢な実�
 ### セキュリティ依存関係（pyproject.toml）
 
 ```toml
+"fastapi-azure-auth>=5.2.0"           # Azure AD認証（本番環境）
 "passlib[bcrypt]>=1.7.4"              # パスワードハッシュ化
 "python-jose[cryptography]>=3.3.0"    # JWT生成・検証
 "redis[hiredis]>=6.4.0"               # レート制限用キャッシュ
