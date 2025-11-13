@@ -72,6 +72,7 @@ camp_backend/
 │   ├── 05-testing/         # テスト戦略
 │   ├── 06-guides/          # 実装ガイド
 │   ├── 07-reference/       # リファレンス
+│   ├── specifications/     # 設計仕様書
 │   └── README.md           # ドキュメントインデックス
 ├── src/                     # アプリケーションソースコード
 │   ├── alembic/            # データベースマイグレーション
@@ -85,6 +86,8 @@ camp_backend/
 │       │   ├── decorators/ # デコレータ
 │       │   ├── middlewares/# ミドルウェア
 │       │   └── routes/     # エンドポイント定義
+│       │       ├── system/ # システムエンドポイント
+│       │       └── v1/     # API v1エンドポイント（機能別サブディレクトリ）
 │       ├── core/           # コア機能（設定、DB、例外、ロギング、セキュリティ、キャッシュ）
 │       │   ├── app_factory.py  # アプリケーションファクトリ
 │       │   ├── cache.py        # キャッシュ管理
@@ -94,10 +97,35 @@ camp_backend/
 │       │   ├── lifespan.py     # ライフサイクル管理
 │       │   ├── logging.py      # ログ設定
 │       │   └── security/       # セキュリティ機能
-│       ├── models/         # データベースモデル
-│       ├── repositories/   # データアクセス層
-│       ├── schemas/        # Pydanticスキーマ
-│       └── services/       # ビジネスロジック層
+│       ├── data/           # データファイル・テンプレート
+│       │   └── analysis/   # 分析機能用データ
+│       ├── models/         # データベースモデル（機能別サブディレクトリ）
+│       │   ├── analysis/   # 分析機能モデル
+│       │   ├── driver_tree/# ドライバーツリーモデル
+│       │   ├── project/    # プロジェクト管理モデル
+│       │   ├── sample/     # サンプル機能モデル
+│       │   └── user/       # ユーザーモデル
+│       ├── repositories/   # データアクセス層（機能別サブディレクトリ）
+│       │   ├── analysis/   # 分析機能リポジトリ
+│       │   ├── driver_tree/# ドライバーツリーリポジトリ
+│       │   ├── project/    # プロジェクト管理リポジトリ
+│       │   ├── sample/     # サンプル機能リポジトリ
+│       │   └── user/       # ユーザーリポジトリ
+│       ├── schemas/        # Pydanticスキーマ（機能別サブディレクトリ）
+│       │   ├── analysis/   # 分析機能スキーマ
+│       │   ├── driver_tree/# ドライバーツリースキーマ
+│       │   ├── ppt_generator/# PPT生成スキーマ
+│       │   ├── project/    # プロジェクト管理スキーマ
+│       │   ├── sample/     # サンプル機能スキーマ
+│       │   └── user/       # ユーザースキーマ
+│       ├── services/       # ビジネスロジック層（機能別サブディレクトリ）
+│       │   ├── analysis/   # 分析機能サービス（エージェント含む）
+│       │   ├── driver_tree/# ドライバーツリーサービス
+│       │   ├── ppt_generator/# PPT生成サービス
+│       │   ├── project/    # プロジェクト管理サービス
+│       │   ├── sample/     # サンプル機能サービス
+│       │   └── user/       # ユーザーサービス
+│       └── utils/          # ユーティリティ関数
 ├── tests/                   # テストコード（src/app/のミラー構造）
 │   ├── __init__.py
 │   ├── conftest.py         # 共通フィクスチャとテスト設定
@@ -209,24 +237,43 @@ API層は、HTTPリクエストを受け取り、レスポンスを返す責務�
 
 ```text
 api/
-├── core/                    # 🆕 APIコア機能
+├── core/                    # APIコア機能
 │   ├── __init__.py
 │   ├── dependencies.py      # 依存性注入の定義
 │   └── exception_handlers.py # グローバル例外ハンドラー
 ├── routes/                  # エンドポイント定義
 │   ├── v1/                  # API v1 エンドポイント（ビジネスロジック）
 │   │   ├── __init__.py
-│   │   ├── users.py             # Azure AD対応ユーザー管理
-│   │   ├── projects.py          # プロジェクト管理
-│   │   ├── project_members.py   # プロジェクトメンバー管理
-│   │   ├── project_files.py     # プロジェクトファイル管理
-│   │   ├── analysis.py          # データ分析セッション管理（Azure AD対応）
-│   │   ├── driver_tree.py       # ドライバーツリー（KPI分解ツリー）
-│   │   ├── ppt_generator.py     # PPTスライド生成・管理
-│   │   ├── sample_users.py      # サンプルユーザー管理（レガシー）
-│   │   ├── sample_agents.py     # AI Agent/チャット
-│   │   ├── sample_sessions.py   # セッション管理
-│   │   └── sample_files.py      # ファイル管理（レガシー）
+│   │   ├── analysis/        # 分析機能エンドポイント
+│   │   │   ├── __init__.py
+│   │   │   ├── analysis.py  # 分析セッション管理
+│   │   │   ├── chat.py      # チャット機能
+│   │   │   ├── files.py     # ファイル管理
+│   │   │   ├── snapshots.py # スナップショット管理
+│   │   │   ├── steps.py     # 分析ステップ管理
+│   │   │   └── templates.py # テンプレート管理
+│   │   ├── driver_tree/     # ドライバーツリーエンドポイント
+│   │   │   ├── __init__.py
+│   │   │   ├── categories.py # カテゴリー管理
+│   │   │   ├── driver_tree.py # ドライバーツリー管理
+│   │   │   └── nodes.py     # ノード管理
+│   │   ├── ppt_generator/   # PPT生成エンドポイント
+│   │   │   ├── __init__.py
+│   │   │   └── ppt_generator.py
+│   │   ├── project/         # プロジェクト管理エンドポイント
+│   │   │   ├── __init__.py
+│   │   │   ├── projects.py  # プロジェクト管理
+│   │   │   ├── members.py   # メンバー管理
+│   │   │   └── files.py     # ファイル管理
+│   │   ├── sample/          # サンプル機能エンドポイント
+│   │   │   ├── __init__.py
+│   │   │   ├── agents.py    # AI Agent/チャット
+│   │   │   ├── files.py     # ファイル管理
+│   │   │   ├── sessions.py  # セッション管理
+│   │   │   └── users.py     # ユーザー管理
+│   │   └── users/           # ユーザー管理エンドポイント
+│   │       ├── __init__.py
+│   │       └── users.py     # Azure AD対応ユーザー管理
 │   └── system/              # システムエンドポイント（インフラ）
 │       ├── __init__.py
 │       ├── root.py          # / (ルート)
@@ -388,33 +435,44 @@ SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_serv
 
 ### models/ - データベースモデル
 
-SQLAlchemyのORMモデルを定義します。
+SQLAlchemyのORMモデルを定義します。機能別にサブディレクトリ化されています。
 
 ```text
 models/
-├── __init__.py
+├── __init__.py              # モデル統合エクスポート
 ├── base.py                  # ベースモデル
-├── user.py                  # Azure AD対応ユーザーモデル
-├── project.py               # プロジェクトモデル
-├── project_member.py        # プロジェクトメンバーモデル
-├── project_file.py          # プロジェクトファイルモデル
-├── analysis_session.py      # 分析セッションモデル
-├── analysis_file.py         # 分析ファイルモデル
-├── analysis_step.py         # 分析ステップモデル
-├── driver_tree.py           # ドライバーツリーモデル
-├── driver_tree_node.py      # ドライバーツリーノードモデル
-├── driver_tree_category.py  # ドライバーツリーカテゴリー（業種別テンプレート）
-├── sample_user.py           # サンプルユーザーモデル（レガシー）
-├── sample_session.py        # セッションモデル
-└── sample_file.py           # ファイルモデル（レガシー）
+├── analysis/                # 分析機能モデル
+│   ├── __init__.py
+│   ├── file.py              # 分析ファイルモデル
+│   ├── session.py           # 分析セッションモデル
+│   ├── step.py              # 分析ステップモデル
+│   └── template.py          # 分析テンプレートモデル
+├── driver_tree/             # ドライバーツリーモデル
+│   ├── __init__.py
+│   ├── category.py          # カテゴリー（業種別テンプレート）
+│   ├── node.py              # ドライバーツリーノード
+│   └── tree.py              # ドライバーツリー
+├── project/                 # プロジェクト管理モデル
+│   ├── __init__.py
+│   ├── file.py              # プロジェクトファイル
+│   ├── member.py            # プロジェクトメンバー
+│   └── project.py           # プロジェクト
+├── sample/                  # サンプル機能モデル
+│   ├── __init__.py
+│   ├── file.py              # ファイルモデル
+│   ├── session.py           # セッションモデル
+│   └── user.py              # サンプルユーザーモデル
+└── user/                    # ユーザーモデル
+    ├── __init__.py
+    └── user.py              # Azure AD対応ユーザーモデル
 ```
 
-#### 例: `models/sample_user.py`
+#### 例: `models/sample/user.py`
 
 ```python
 from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.core.database import Base
+from app.models.base import Base
 
 class SampleUser(Base):
     __tablename__ = "sample_users"
@@ -432,28 +490,46 @@ class SampleUser(Base):
 
 ### schemas/ - Pydanticスキーマ
 
-APIリクエスト/レスポンスのバリデーションスキーマ。
+APIリクエスト/レスポンスのバリデーションスキーマ。機能別にサブディレクトリ化されています。
 
 ```text
 schemas/
-├── __init__.py
+├── __init__.py              # スキーマ統合エクスポート
 ├── common.py                # 共通スキーマ
-├── user.py                  # Azure AD対応ユーザースキーマ
-├── project.py               # プロジェクトスキーマ
-├── project_member.py        # プロジェクトメンバースキーマ
-├── project_file.py          # プロジェクトファイルスキーマ
-├── analysis_session.py      # 分析セッション/ステップスキーマ
-├── driver_tree.py           # ドライバーツリースキーマ
-├── ppt_generator.py         # PPT生成スキーマ
-├── sample_user.py           # サンプルユーザースキーマ（レガシー）
-├── sample_agents.py         # AI Agent/チャット関連スキーマ
-├── sample_sessions.py       # セッション/メッセージスキーマ
-└── sample_file.py           # ファイルスキーマ（レガシー）
+├── analysis/                # 分析機能スキーマ
+│   ├── __init__.py
+│   ├── file.py              # 分析ファイルスキーマ
+│   ├── session.py           # 分析セッションスキーマ
+│   ├── snapshot.py          # スナップショットスキーマ
+│   ├── step.py              # 分析ステップスキーマ
+│   └── template.py          # テンプレートスキーマ
+├── driver_tree/             # ドライバーツリースキーマ
+│   ├── __init__.py
+│   ├── category.py          # カテゴリースキーマ
+│   ├── node.py              # ノードスキーマ
+│   └── tree.py              # ツリースキーマ
+├── ppt_generator/           # PPT生成スキーマ
+│   ├── __init__.py
+│   └── ppt_generator.py     # PPT生成スキーマ
+├── project/                 # プロジェクト管理スキーマ
+│   ├── __init__.py
+│   ├── file.py              # プロジェクトファイルスキーマ
+│   ├── member.py            # メンバースキーマ
+│   └── project.py           # プロジェクトスキーマ
+├── sample/                  # サンプル機能スキーマ
+│   ├── __init__.py
+│   ├── agent.py             # AI Agent/チャットスキーマ
+│   ├── file.py              # ファイルスキーマ
+│   ├── session.py           # セッション/メッセージスキーマ
+│   └── user.py              # サンプルユーザースキーマ
+└── user/                    # ユーザースキーマ
+    ├── __init__.py
+    └── user.py              # Azure AD対応ユーザースキーマ
 ```
 
 **注**: Pydantic v2対応済み（`ConfigDict`使用）
 
-#### 例: `schemas/sample_user.py`
+#### 例: `schemas/sample/user.py`
 
 ```python
 from pydantic import BaseModel, EmailStr
@@ -474,25 +550,36 @@ class SampleUserResponse(BaseModel):
 
 ### repositories/ - データアクセス層
 
-データベース操作を抽象化します。
+データベース操作を抽象化します。機能別にサブディレクトリ化されています。
 
 ```text
 repositories/
-├── __init__.py
+├── __init__.py              # リポジトリ統合エクスポート
 ├── base.py                  # ベースリポジトリ（共通CRUD）
-├── user.py                  # Azure AD対応ユーザーリポジトリ
-├── project.py               # プロジェクトリポジトリ
-├── project_member.py        # プロジェクトメンバーリポジトリ
-├── project_file.py          # プロジェクトファイルリポジトリ
-├── analysis_session.py      # 分析セッションリポジトリ
-├── analysis_file.py         # 分析ファイルリポジトリ
-├── analysis_step.py         # 分析ステップリポジトリ
-├── driver_tree.py           # ドライバーツリーリポジトリ
-├── driver_tree_node.py      # ドライバーツリーノードリポジトリ
-├── driver_tree_category.py  # ドライバーツリーカテゴリーリポジトリ
-├── sample_user.py           # サンプルユーザーリポジトリ（レガシー）
-├── sample_session.py        # セッションリポジトリ
-└── sample_file.py           # ファイルリポジトリ（レガシー）
+├── analysis/                # 分析機能リポジトリ
+│   ├── __init__.py
+│   ├── file.py              # 分析ファイルリポジトリ
+│   ├── session.py           # 分析セッションリポジトリ
+│   ├── step.py              # 分析ステップリポジトリ
+│   └── template.py          # テンプレートリポジトリ
+├── driver_tree/             # ドライバーツリーリポジトリ
+│   ├── __init__.py
+│   ├── category.py          # カテゴリーリポジトリ
+│   ├── node.py              # ノードリポジトリ
+│   └── tree.py              # ツリーリポジトリ
+├── project/                 # プロジェクト管理リポジトリ
+│   ├── __init__.py
+│   ├── file.py              # プロジェクトファイルリポジトリ
+│   ├── member.py            # メンバーリポジトリ
+│   └── project.py           # プロジェクトリポジトリ
+├── sample/                  # サンプル機能リポジトリ
+│   ├── __init__.py
+│   ├── file.py              # ファイルリポジトリ
+│   ├── session.py           # セッションリポジトリ
+│   └── user.py              # サンプルユーザーリポジトリ
+└── user/                    # ユーザーリポジトリ
+    ├── __init__.py
+    └── user.py              # Azure AD対応ユーザーリポジトリ
 ```
 
 #### `repositories/base.py` - ベースリポジトリ
@@ -525,11 +612,11 @@ class BaseRepository(Generic[ModelType]):
         return db_obj
 ```
 
-#### `repositories/sample_user.py` - サンプルユーザーリポジトリ
+#### `repositories/sample/user.py` - サンプルユーザーリポジトリ
 
 ```python
 from app.repositories.base import BaseRepository
-from app.models.sample_user import SampleUser
+from app.models.sample.user import SampleUser
 
 class SampleUserRepository(BaseRepository[SampleUser]):
     def __init__(self, db: AsyncSession):
@@ -543,32 +630,72 @@ class SampleUserRepository(BaseRepository[SampleUser]):
 
 ### services/ - ビジネスロジック層
 
-ビジネスルールと複雑なロジックを実装します。
+ビジネスルールと複雑なロジックを実装します。機能別にサブディレクトリ化されています。
 
 ```text
 services/
-├── __init__.py
-├── user.py                  # Azure AD対応ユーザーサービス
-├── project.py               # プロジェクトサービス
-├── project_member.py        # プロジェクトメンバーサービス
-├── project_file.py          # プロジェクトファイルサービス
-├── analysis.py              # データ分析サービス（セッション・ファイル・ステップ統合）
-├── analysis_storage.py      # 分析ファイルストレージサービス
+├── __init__.py              # サービス統合エクスポート
 ├── storage.py               # 汎用ストレージサービス（Azure Blob/ローカル）
-├── driver_tree.py           # ドライバーツリーサービス
-├── ppt_generator.py         # PPTスライド生成サービス
-├── sample_user.py           # サンプルユーザーサービス（レガシー）
-├── sample_agent.py          # AI Agentサービス
-├── sample_session.py        # セッション管理サービス
-├── sample_file.py           # ファイルサービス（レガシー）
-└── sample_authorization.py  # 認可サービス
+├── analysis/                # 分析機能サービス
+│   ├── __init__.py
+│   ├── analysis.py          # 分析セッション統合サービス
+│   ├── chat.py              # チャットサービス
+│   ├── file.py              # ファイル管理サービス
+│   ├── snapshot.py          # スナップショット管理サービス
+│   ├── step.py              # 分析ステップサービス
+│   ├── storage.py           # 分析ファイルストレージサービス
+│   └── agent/               # AI Agentサブシステム
+│       ├── __init__.py
+│       ├── core.py          # エージェントコア
+│       ├── executor.py      # エージェント実行エンジン
+│       ├── state/           # 状態管理
+│       │   ├── __init__.py
+│       │   ├── data_manager.py      # データ管理
+│       │   ├── overview_provider.py # 概要提供
+│       │   ├── snapshot_manager.py  # スナップショット管理
+│       │   └── step_manager.py      # ステップ管理
+│       ├── steps/           # エージェントステップ
+│       │   └── __init__.py
+│       └── utils/           # ユーティリティ
+│           ├── __init__.py
+│           ├── prompt_builder.py    # プロンプト構築
+│           └── tools/       # ツール群
+│               ├── __init__.py
+│               ├── aggregation_tools.py
+│               ├── common_tools.py
+│               ├── filter_tools.py
+│               ├── summary_tools.py
+│               └── transform_tools.py
+├── driver_tree/             # ドライバーツリーサービス
+│   ├── __init__.py
+│   ├── category.py          # カテゴリーサービス
+│   ├── driver_tree.py       # ドライバーツリーサービス
+│   └── node.py              # ノードサービス
+├── ppt_generator/           # PPT生成サービス
+│   ├── __init__.py
+│   └── ppt_generator.py     # PPT生成サービス
+├── project/                 # プロジェクト管理サービス
+│   ├── __init__.py
+│   ├── file.py              # プロジェクトファイルサービス
+│   ├── member.py            # メンバーサービス
+│   └── project.py           # プロジェクトサービス
+├── sample/                  # サンプル機能サービス
+│   ├── __init__.py
+│   ├── agent.py             # AI Agentサービス
+│   ├── authorization.py     # 認可サービス
+│   ├── file.py              # ファイルサービス
+│   ├── session.py           # セッション管理サービス
+│   └── user.py              # サンプルユーザーサービス
+└── user/                    # ユーザーサービス
+    ├── __init__.py
+    └── user.py              # Azure AD対応ユーザーサービス
 ```
 
-#### 例: `services/sample_user.py`
+#### 例: `services/sample/user.py`
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.sample_user import SampleUserRepository
+from app.repositories.sample.user import SampleUserRepository
 from app.core.security import hash_password
 
 class SampleUserService:
@@ -770,6 +897,39 @@ def generate_api_key() -> str:
 - `password.py`: bcryptによるパスワードハッシュ化、検証、強度チェック
 - `jwt.py`: JWTトークンの生成、検証、リフレッシュトークン管理
 - `api_key.py`: セキュアなAPIキー生成
+
+### data/ - データファイル・テンプレート
+
+アプリケーションで使用する静的データファイルやテンプレートを格納します。
+
+```text
+data/
+└── analysis/                # 分析機能用データ
+    └── (テンプレートファイルなど)
+```
+
+**役割**:
+
+- 分析テンプレートの保存
+- 静的データファイルの管理
+- 初期シードデータの格納
+
+### utils/ - ユーティリティ関数
+
+アプリケーション全体で使用される汎用ユーティリティ関数を格納します。
+
+```text
+utils/
+├── __init__.py
+└── (各種ユーティリティファイル)
+```
+
+**役割**:
+
+- 共通ヘルパー関数
+- データ変換ユーティリティ
+- 日付・時刻処理
+- ファイル操作ヘルパー
 
 #### `core/cache.py`
 

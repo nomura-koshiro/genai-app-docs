@@ -92,7 +92,7 @@ camp_backend/
 │       │   ├── decorators/      # デコレータ
 │       │   ├── middlewares/     # ミドルウェア
 │       │   └── routes/          # エンドポイント定義
-│       │       ├── v1/          # API v1（ビジネスロジック）
+│       │       ├── v1/          # API v1（機能別サブディレクトリ）
 │       │       └── system/      # システムエンドポイント
 │       │
 │       ├── core/                # コア機能
@@ -105,10 +105,40 @@ camp_backend/
 │       │   ├── logging.py       # ログ設定
 │       │   └── security/        # セキュリティ機能
 │       │
-│       ├── models/              # SQLAlchemyモデル
-│       ├── schemas/             # Pydanticスキーマ
-│       ├── repositories/        # データアクセス層
-│       └── services/            # ビジネスロジック層
+│       ├── data/                # データファイル・テンプレート
+│       │   └── analysis/        # 分析機能用データ
+│       │
+│       ├── models/              # SQLAlchemyモデル（機能別サブディレクトリ）
+│       │   ├── analysis/        # 分析機能モデル
+│       │   ├── driver_tree/     # ドライバーツリーモデル
+│       │   ├── project/         # プロジェクト管理モデル
+│       │   ├── sample/          # サンプル機能モデル
+│       │   └── user/            # ユーザーモデル
+│       │
+│       ├── schemas/             # Pydanticスキーマ（機能別サブディレクトリ）
+│       │   ├── analysis/        # 分析機能スキーマ
+│       │   ├── driver_tree/     # ドライバーツリースキーマ
+│       │   ├── ppt_generator/   # PPT生成スキーマ
+│       │   ├── project/         # プロジェクト管理スキーマ
+│       │   ├── sample/          # サンプル機能スキーマ
+│       │   └── user/            # ユーザースキーマ
+│       │
+│       ├── repositories/        # データアクセス層（機能別サブディレクトリ）
+│       │   ├── analysis/        # 分析機能リポジトリ
+│       │   ├── driver_tree/     # ドライバーツリーリポジトリ
+│       │   ├── project/         # プロジェクト管理リポジトリ
+│       │   ├── sample/          # サンプル機能リポジトリ
+│       │   └── user/            # ユーザーリポジトリ
+│       │
+│       ├── services/            # ビジネスロジック層（機能別サブディレクトリ）
+│       │   ├── analysis/        # 分析機能サービス（エージェント含む）
+│       │   ├── driver_tree/     # ドライバーツリーサービス
+│       │   ├── ppt_generator/   # PPT生成サービス
+│       │   ├── project/         # プロジェクト管理サービス
+│       │   ├── sample/          # サンプル機能サービス
+│       │   └── user/            # ユーザーサービス
+│       │
+│       └── utils/               # ユーティリティ関数
 │
 ├── tests/                       # テストコード
 ├── docs/                        # ドキュメント
