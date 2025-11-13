@@ -21,7 +21,7 @@ from app.models import Project, ProjectMember, ProjectRole, UserAccount
 async def test_upload_file_success(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
     """ファイルアップロードAPIの成功テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],
@@ -87,7 +87,7 @@ async def test_upload_file_unauthorized(client: AsyncClient):
 async def test_upload_file_not_member(client: AsyncClient, override_auth, db_session, mock_azure_user):
     """非メンバーのファイルアップロード失敗テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],
@@ -124,7 +124,7 @@ async def test_upload_file_not_member(client: AsyncClient, override_auth, db_ses
 async def test_list_files(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
     """ファイル一覧取得APIのテスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],
@@ -180,7 +180,7 @@ async def test_list_files(client: AsyncClient, override_auth, db_session, tmp_pa
 async def test_list_files_with_pagination(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
     """ファイル一覧取得APIのページネーションテスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],
@@ -235,7 +235,7 @@ async def test_list_files_with_pagination(client: AsyncClient, override_auth, db
 async def test_get_file_not_found(client: AsyncClient, override_auth, db_session, mock_azure_user):
     """存在しないファイル取得APIのテスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],
@@ -277,12 +277,12 @@ async def test_get_file_not_found(client: AsyncClient, override_auth, db_session
 async def test_delete_file_by_admin(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
     """ADMINによる他人のファイル削除APIのテスト。"""
     # Arrange
-    uploader = User(
+    uploader = UserAccount(
         azure_oid="uploader-api-oid",
         email="uploaderapi@company.com",
         display_name="Uploader API",
     )
-    admin = User(
+    admin = UserAccount(
         azure_oid=mock_azure_user["oid"],
         email=mock_azure_user["email"],
         display_name=mock_azure_user["name"],

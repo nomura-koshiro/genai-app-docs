@@ -81,7 +81,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 
 **ファイル移行:**
 
-```
+```text
 移行元: app/agents/analysis/agent.py (226行)
    ↓
 移行先: src/app/services/analysis/agent/
@@ -164,7 +164,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 
 **camp-backend (Long Format):**
 
-```
+```text
 地域  | 科目 | 値
 -----|------|----
 東京 | 売上 | 100
@@ -173,7 +173,7 @@ camp-backend-code-analysis の Analysis Agent 機能が genai-app-docs へ **100
 
 **genai-app-docs (Wide Format):**
 
-```
+```text
 地域  | 売上 | 原価
 -----|------|-----
 東京 | 100  | 60
