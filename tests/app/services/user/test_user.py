@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 
 from app.core.exceptions import NotFoundError, ValidationError
-from app.models import User
+from app.models import UserAccount
 from app.services import UserService
 
 
@@ -38,7 +38,7 @@ async def test_get_or_create_by_azure_oid_new_user(db_session):
 async def test_get_or_create_by_azure_oid_existing_user(db_session):
     """既存ユーザー取得テスト（Azure OID 2回目以降のログイン）。"""
     # Arrange
-    existing_user = User(
+    existing_user = UserAccount(
         azure_oid="existing-oid-12345",
         email="existing@company.com",
         display_name="Existing User",
@@ -80,7 +80,7 @@ async def test_get_or_create_by_azure_oid_updates_fields(db_session, field, old_
         "display_name": "User" if field != "display_name" else old_value,
         "roles": ["User"],
     }
-    existing_user = User(**initial_values)
+    existing_user = UserAccount(**initial_values)
     db_session.add(existing_user)
     await db_session.commit()
 
@@ -103,7 +103,7 @@ async def test_get_or_create_by_azure_oid_updates_fields(db_session, field, old_
 async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
     """メールアドレス重複エラーテスト。"""
     # Arrange
-    user1 = User(
+    user1 = UserAccount(
         azure_oid="user1-oid",
         email="duplicate@company.com",
         display_name="User 1",
@@ -126,7 +126,7 @@ async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
 async def test_update_last_login(db_session):
     """最終ログイン情報更新テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="login-oid",
         email="login@company.com",
         display_name="Login User",
@@ -166,7 +166,7 @@ async def test_update_last_login_user_not_found(db_session):
 async def test_get_user(db_session):
     """ユーザー取得テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="get-oid",
         email="get@company.com",
         display_name="Get User",
@@ -204,7 +204,7 @@ async def test_get_user_not_found(db_session):
 async def test_get_user_by_email(db_session):
     """メールアドレスでユーザー取得テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="email-oid",
         email="email@company.com",
         display_name="Email User",
@@ -237,7 +237,7 @@ async def test_get_user_by_email_not_found(db_session):
 async def test_get_user_by_azure_oid(db_session):
     """Azure OIDでユーザー取得テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="oid-test-12345",
         email="oid@company.com",
         display_name="OID User",
@@ -272,7 +272,7 @@ async def test_list_active_users(db_session):
     # Arrange
     # アクティブユーザー3人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"active-{i}",
             email=f"active{i}@company.com",
             display_name=f"Active {i}",
@@ -282,7 +282,7 @@ async def test_list_active_users(db_session):
 
     # 非アクティブユーザー2人
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"inactive-{i}",
             email=f"inactive{i}@company.com",
             display_name=f"Inactive {i}",
@@ -308,7 +308,7 @@ async def test_list_users(db_session):
     # Arrange
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"user-{i}",
             email=f"user{i}@company.com",
             display_name=f"User {i}",
@@ -317,7 +317,7 @@ async def test_list_users(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"inactive-{i}",
             email=f"inactive{i}@company.com",
             display_name=f"Inactive {i}",
@@ -342,7 +342,7 @@ async def test_count_users_active_only(db_session):
     # Arrange
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count-active-user-{i}",
             email=f"countactiveuser{i}@company.com",
             display_name=f"Count Active User {i}",
@@ -351,7 +351,7 @@ async def test_count_users_active_only(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count-inactive-user-{i}",
             email=f"countinactiveuser{i}@company.com",
             display_name=f"Count Inactive User {i}",
@@ -376,7 +376,7 @@ async def test_count_users_inactive_only(db_session):
     # Arrange
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count2-active-user-{i}",
             email=f"count2activeuser{i}@company.com",
             display_name=f"Count2 Active User {i}",
@@ -385,7 +385,7 @@ async def test_count_users_inactive_only(db_session):
         db_session.add(user)
 
     for i in range(2):
-        user = User(
+        user = UserAccount(
             azure_oid=f"count2-inactive-user-{i}",
             email=f"count2inactiveuser{i}@company.com",
             display_name=f"Count2 Inactive User {i}",
@@ -408,7 +408,7 @@ async def test_count_users_inactive_only(db_session):
 async def test_update_user_roles_by_admin(db_session):
     """ユーザーのロール更新テスト（管理者）。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="update-roles-oid",
         email="roles@company.com",
         display_name="User",
@@ -436,7 +436,7 @@ async def test_update_user_roles_by_admin(db_session):
 async def test_update_user_roles_by_non_admin_fails(db_session):
     """一般ユーザーによるロール更新の失敗テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="fail-update-oid",
         email="fail@company.com",
         display_name="User",
@@ -463,7 +463,7 @@ async def test_update_user_roles_by_non_admin_fails(db_session):
 async def test_update_user_is_active_by_admin(db_session):
     """ユーザーのis_active更新テスト（管理者）。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="update-active-oid",
         email="active@company.com",
         display_name="User",
@@ -492,7 +492,7 @@ async def test_update_user_is_active_by_admin(db_session):
 async def test_update_user_is_active_by_non_admin_fails(db_session):
     """一般ユーザーによるis_active更新の失敗テスト。"""
     # Arrange
-    user = User(
+    user = UserAccount(
         azure_oid="fail-active-oid",
         email="fail-active@company.com",
         display_name="User",
