@@ -37,7 +37,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.project.project import Project
-    from app.models.user.user import User
+    from app.models.user.user import UserAccount
 
 
 class ProjectFile(Base):
@@ -126,8 +126,8 @@ class ProjectFile(Base):
         back_populates="files",
     )
 
-    uploader: Mapped["User"] = relationship(
-        "User",
+    uploader: Mapped["UserAccount"] = relationship(
+        "UserAccount",
         foreign_keys=[uploaded_by],
     )
 

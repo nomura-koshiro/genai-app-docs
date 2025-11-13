@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import cache_result, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models import User
+from app.models import UserAccount
 from app.repositories import UserRepository
 
 logger = get_logger(__name__)
@@ -80,7 +80,7 @@ class UserService:
         email: str,
         display_name: str | None = None,
         roles: list[str] | None = None,
-    ) -> User:
+    ) -> UserAccount:
         """Azure OIDでユーザーを取得、または新規作成します。
 
         Azure AD認証後、Azure Object IDをキーにしてユーザーを検索し、
@@ -102,7 +102,7 @@ class UserService:
                 - Noneの場合は空のリストが設定されます
 
         Returns:
-            User: 取得または作成されたユーザーモデルインスタンス
+            UserAccount: 取得または作成されたユーザーモデルインスタンス
                 - id: UUID型のプライマリキー
                 - azure_oid: Azure AD Object ID
                 - email: メールアドレス
@@ -152,7 +152,7 @@ class UserService:
 
         try:
             # Azure OIDで検索
-            user: User | None = await self.repository.get_by_azure_oid(azure_oid)
+            user: UserAccount | None = await self.repository.get_by_azure_oid(azure_oid)
 
             if user:
                 # 既存ユーザーの情報を更新（メール/表示名が変わった場合）
@@ -230,7 +230,7 @@ class UserService:
                     details={"email": email},
                 )
 
-            new_user = User(
+            new_user = UserAccount(
                 azure_oid=azure_oid,
                 email=email,
                 display_name=display_name,
@@ -265,7 +265,7 @@ class UserService:
 
     @measure_performance
     @transactional
-    async def update_last_login(self, user_id: uuid.UUID, client_ip: str | None = None) -> User:
+    async def update_last_login(self, user_id: uuid.UUID, client_ip: str | None = None) -> UserAccount:
         """ユーザーの最終ログイン情報を更新します。
 
         このメソッドは、ユーザーがログインした際に呼び出され、
@@ -278,7 +278,7 @@ class UserService:
                 - ロギング用途
 
         Returns:
-            User: 更新されたユーザーモデルインスタンス
+            UserAccount: 更新されたユーザーモデルインスタンス
                 - last_login: 現在のUTC日時に更新されます
 
         Raises:
@@ -344,14 +344,14 @@ class UserService:
 
     @cache_result(ttl=3600, key_prefix="user")
     @measure_performance
-    async def get_user(self, user_id: uuid.UUID) -> User | None:
+    async def get_user(self, user_id: uuid.UUID) -> UserAccount | None:
         """ユーザーIDでユーザー情報を取得します。
 
         Args:
             user_id (uuid.UUID): 取得対象のユーザーUUID（主キー）
 
         Returns:
-            User | None: 該当するユーザーモデルインスタンス、存在しない場合はNone
+            UserAccount | None: 該当するユーザーモデルインスタンス、存在しない場合はNone
                 - すべてのユーザー属性を含む
                 - リレーションシップ（project_memberships）は遅延ロードされます
 
@@ -380,14 +380,14 @@ class UserService:
         return user
 
     @measure_performance
-    async def get_user_by_email(self, email: str) -> User:
+    async def get_user_by_email(self, email: str) -> UserAccount:
         """メールアドレスでユーザー情報を取得します。
 
         Args:
             email (str): 検索対象のメールアドレス（一意制約フィールド）
 
         Returns:
-            User: 該当するユーザーモデルインスタンス
+            UserAccount: 該当するユーザーモデルインスタンス
                 - すべてのユーザー属性を含む
                 - リレーションシップは遅延ロードされます
 
@@ -419,14 +419,14 @@ class UserService:
         return user
 
     @measure_performance
-    async def get_user_by_azure_oid(self, azure_oid: str) -> User:
+    async def get_user_by_azure_oid(self, azure_oid: str) -> UserAccount:
         """Azure OIDでユーザー情報を取得します。
 
         Args:
             azure_oid (str): Azure AD Object ID（一意識別子）
 
         Returns:
-            User: 該当するユーザーモデルインスタンス
+            UserAccount: 該当するユーザーモデルインスタンス
                 - すべてのユーザー属性を含む
                 - リレーションシップは遅延ロードされます
 
@@ -458,7 +458,7 @@ class UserService:
         return user
 
     @measure_performance
-    async def list_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def list_active_users(self, skip: int = 0, limit: int = 100) -> list[UserAccount]:
         """アクティブなユーザーの一覧を取得します。
 
         Args:
@@ -469,7 +469,7 @@ class UserService:
                 最大値: データベースの制限に依存
 
         Returns:
-            list[User]: アクティブユーザーモデルインスタンスのリスト
+            list[UserAccount]: アクティブユーザーモデルインスタンスのリスト
                 - is_active=Trueのユーザーのみ
                 - リレーションシップは遅延ロードされます
 
@@ -501,7 +501,7 @@ class UserService:
         return users
 
     @measure_performance
-    async def list_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def list_users(self, skip: int = 0, limit: int = 100) -> list[UserAccount]:
         """すべてのユーザーの一覧を取得します（アクティブ・非アクティブ両方）。
 
         Args:
@@ -512,7 +512,7 @@ class UserService:
                 最大値: データベースの制限に依存
 
         Returns:
-            list[User]: ユーザーモデルインスタンスのリスト
+            list[UserAccount]: ユーザーモデルインスタンスのリスト
                 - アクティブ・非アクティブ両方を含む
                 - リレーションシップは遅延ロードされます
 
@@ -605,7 +605,7 @@ class UserService:
         user_id: uuid.UUID,
         update_data: dict[str, Any],
         current_user_roles: list[str],
-    ) -> User:
+    ) -> UserAccount:
         """ユーザー情報を更新します。
 
         このメソッドは、ユーザー情報の更新を行い、適切な権限チェックを実施します。
@@ -621,7 +621,7 @@ class UserService:
                 - 例: ["User"], ["SystemAdmin", "User"]
 
         Returns:
-            User: 更新されたユーザーモデルインスタンス
+            UserAccount: 更新されたユーザーモデルインスタンス
                 - updated_at フィールドが自動更新されます
                 - すべてのフィールドが最新の状態で返されます
 

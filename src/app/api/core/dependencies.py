@@ -73,7 +73,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.exceptions import AuthenticationError
 from app.core.security import decode_access_token
-from app.models import SampleUser, User
+from app.models import SampleUser, UserAccount
 from app.services import (
     ProjectService,
     SampleAgentService,
@@ -226,14 +226,14 @@ ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
 # ================================================================================
 
 
-def verify_active_user[UserType: (SampleUser, User)](user: UserType) -> UserType:
+def verify_active_user[UserType: (SampleUser, UserAccount)](user: UserType) -> UserType:
     """ユーザーのアクティブ状態を検証します（DRY原則）。
 
-    この関数は、SampleUserとUserの両方のモデルで使用できる汎用的な
+    この関数は、SampleUserとUserAccountの両方のモデルで使用できる汎用的な
     アクティブ状態検証ロジックを提供します。
 
     Args:
-        user: 検証対象のユーザー（SampleUser または User）
+        user: 検証対象のユーザー（SampleUser または UserAccount）
 
     Returns:
         アクティブなユーザー（同じ型）
@@ -443,8 +443,8 @@ async def get_current_superuser(
 async def get_authenticated_user_from_azure(
     user_service: AzureUserServiceDep,
     azure_user: AuthUserType = Depends(get_current_azure_user if settings.AUTH_MODE == "production" else get_current_dev_user),
-) -> User:
-    """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserモデルと紐付け。
+) -> UserAccount:
+    """Azure AD または開発モードから認証されたユーザーを取得し、DBのUserAccountモデルと紐付け。
 
     環境変数AUTH_MODEに応じて以下を切り替え:
     - production: Azure ADトークン検証
@@ -455,7 +455,7 @@ async def get_authenticated_user_from_azure(
         azure_user: Azure ADまたはDevユーザー（自動注入）
 
     Returns:
-        User: データベースのユーザーモデル（新しいAzure AD対応モデル）
+        UserAccount: データベースのユーザーモデル（新しいAzure AD対応モデル）
 
     Raises:
         HTTPException: ユーザーが見つからない、または作成できない場合（404エラー）
@@ -477,7 +477,7 @@ async def get_authenticated_user_from_azure(
         - Azure OIDでユーザーを検索、存在しない場合は自動作成します
         - 既存ユーザーの場合、メール/表示名が変わっていれば更新します
         - この関数は既存のJWT認証（get_current_user）と並行して使用できます
-        - 新しいUserモデル（UUID主キー、azure_oid）を使用します
+        - 新しいUserAccountモデル（UUID主キー、azure_oid）を使用します
     """
     # Azure OIDでユーザーを検索（または作成）
     user = await user_service.get_or_create_by_azure_oid(
@@ -494,15 +494,15 @@ async def get_authenticated_user_from_azure(
 
 
 async def get_current_active_user_azure(
-    current_user: Annotated[User, Depends(get_authenticated_user_from_azure)],
-) -> User:
+    current_user: Annotated[UserAccount, Depends(get_authenticated_user_from_azure)],
+) -> UserAccount:
     """Azure AD認証されたユーザーのアクティブ状態を検証します。
 
     Args:
         current_user: 認証済みユーザー（get_authenticated_user_from_azureから自動注入）
 
     Returns:
-        User: アクティブな認証済みユーザー（新しいAzure AD対応モデル）
+        UserAccount: アクティブな認証済みユーザー（新しいAzure AD対応モデル）
 
     Raises:
         HTTPException: ユーザーが無効化されている場合（403エラー）
@@ -580,13 +580,13 @@ CurrentUserOptionalDep = Annotated[SampleUser | None, Depends(get_current_user_o
 """
 
 # ✨ 新規: Azure AD認証用依存性型
-CurrentUserAzureDep = Annotated[User, Depends(get_current_active_user_azure)]
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]
 """Azure AD認証済みアクティブユーザーの依存性型。
 
 この依存性を使用すると、エンドポイントはAzure AD認証（本番）またはモック認証（開発）を
 自動的に実行します。環境変数AUTH_MODEで切り替えます。
 
-注意: このUserモデルはSampleUserとは異なる新しいAzure AD対応モデルです。
+注意: このUserAccountモデルはSampleUserとは異なる新しいAzure AD対応モデルです。
 - プライマリキーがUUID型
 - azure_oidフィールドを持つ
 - パスワード認証は含まない（Azure ADのみ）

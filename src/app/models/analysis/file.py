@@ -35,7 +35,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.session import AnalysisSession
-    from app.models.user.user import User
+    from app.models.user.user import UserAccount
 
 
 class AnalysisFile(Base, TimestampMixin):
@@ -64,7 +64,7 @@ class AnalysisFile(Base, TimestampMixin):
 
     Relationships:
         session (AnalysisSession): 所属セッション
-        uploader (User): アップロード者
+        uploader (UserAccount): アップロード者
 
     インデックス:
         - idx_analysis_files_session: session_id
@@ -150,8 +150,8 @@ class AnalysisFile(Base, TimestampMixin):
         back_populates="files",
     )
 
-    uploader: Mapped["User"] = relationship(
-        "User",
+    uploader: Mapped["UserAccount"] = relationship(
+        "UserAccount",
         foreign_keys=[uploaded_by],
     )
 

@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from app.models.analysis.file import AnalysisFile
     from app.models.analysis.step import AnalysisStep
     from app.models.project.project import Project
-    from app.models.user.user import User
+    from app.models.user.user import UserAccount
 
 
 class AnalysisSession(Base, TimestampMixin):
@@ -70,7 +70,7 @@ class AnalysisSession(Base, TimestampMixin):
 
     Relationships:
         project (Project): 所属プロジェクト
-        creator (User): セッション作成者
+        creator (UserAccount): セッション作成者
         steps (list[AnalysisStep]): 分析ステップリスト
         files (list[AnalysisFile]): アップロードファイルリスト
 
@@ -148,8 +148,8 @@ class AnalysisSession(Base, TimestampMixin):
         back_populates="analysis_sessions",
     )
 
-    creator: Mapped["User"] = relationship(
-        "User",
+    creator: Mapped["UserAccount"] = relationship(
+        "UserAccount",
         back_populates="analysis_sessions",
     )
 

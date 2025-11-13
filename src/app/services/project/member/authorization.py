@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.models import Project, ProjectMember, ProjectRole, User
+from app.models import Project, ProjectMember, ProjectRole, UserAccount
 from app.repositories import ProjectMemberRepository, ProjectRepository, UserRepository
 
 logger = get_logger(__name__)
@@ -104,14 +104,14 @@ class ProjectMemberAuthorizationChecker:
 
         return project
 
-    async def check_user_exists(self, user_id: uuid.UUID) -> User:
+    async def check_user_exists(self, user_id: uuid.UUID) -> UserAccount:
         """ユーザーの存在を確認します。
 
         Args:
             user_id (uuid.UUID): ユーザーのUUID
 
         Returns:
-            User: ユーザーインスタンス
+            UserAccount: ユーザーインスタンス
 
         Raises:
             NotFoundError: ユーザーが見つからない場合

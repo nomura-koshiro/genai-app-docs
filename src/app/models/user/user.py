@@ -13,8 +13,8 @@
     - ユニーク制約: azure_oid, email
 
 使用例:
-    >>> from app.models.user.user import User
-    >>> user = User(
+    >>> from app.models.user.user import UserAccount
+    >>> user = UserAccount(
     ...     azure_oid="azure-oid-12345",
     ...     email="user@company.com",
     ...     display_name="John Doe",
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from app.models.project.member import ProjectMember
 
 
-class SystemRole(str, Enum):
+class SystemUserRole(str, Enum):
     """システムレベルのロール定義。
 
     Attributes:
@@ -50,7 +50,7 @@ class SystemRole(str, Enum):
     USER = "user"
 
 
-class User(Base, TimestampMixin):
+class UserAccount(Base, TimestampMixin):
     """Azure AD認証用ユーザーモデル。
 
     Azure AD Object IDをキーとしてユーザーを管理します。
@@ -142,18 +142,18 @@ class User(Base, TimestampMixin):
         Index("idx_users_email", "email", unique=True),
     )
 
-    def has_system_role(self, role: "SystemRole") -> bool:
+    def has_system_role(self, role: "SystemUserRole") -> bool:
         """指定されたシステムロールを持っているかチェックします。
 
         Args:
-            role (SystemRole): チェックするシステムロール
+            role (SystemUserRole): チェックするシステムロール
 
         Returns:
             bool: ロールを持っている場合True
 
         Example:
-            >>> user = User(roles=["system_admin"])
-            >>> user.has_system_role(SystemRole.SYSTEM_ADMIN)
+            >>> user = UserAccount(roles=["system_admin"])
+            >>> user.has_system_role(SystemUserRole.SYSTEM_ADMIN)
             True
         """
         return role.value in self.roles
@@ -165,21 +165,21 @@ class User(Base, TimestampMixin):
             bool: システム管理者の場合True
 
         Example:
-            >>> user = User(roles=["system_admin"])
+            >>> user = UserAccount(roles=["system_admin"])
             >>> user.is_system_admin()
             True
         """
-        return self.has_system_role(SystemRole.SYSTEM_ADMIN)
+        return self.has_system_role(SystemUserRole.SYSTEM_ADMIN)
 
     def __repr__(self) -> str:
         """ユーザーオブジェクトの文字列表現。
 
         Returns:
-            str: "<User(id=..., email=...)>" 形式
+            str: "<UserAccount(id=..., email=...)>" 形式
 
         Example:
-            >>> user = User(id=uuid.uuid4(), email="user@example.com")
+            >>> user = UserAccount(id=uuid.uuid4(), email="user@example.com")
             >>> print(repr(user))
-            '<User(id=..., email=user@example.com)>'
+            '<UserAccount(id=..., email=user@example.com)>'
         """
-        return f"<User(id={self.id}, email={self.email})>"
+        return f"<UserAccount(id={self.id}, email={self.email})>"

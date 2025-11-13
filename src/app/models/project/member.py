@@ -36,7 +36,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.project.project import Project
-    from app.models.user.user import User
+    from app.models.user.user import UserAccount
 
 
 class ProjectRole(str, Enum):
@@ -135,8 +135,8 @@ class ProjectMember(Base):
         back_populates="members",
     )
 
-    user: Mapped["User"] = relationship(
-        "User",
+    user: Mapped["UserAccount"] = relationship(
+        "UserAccount",
         foreign_keys=[user_id],
         back_populates="project_memberships",
     )

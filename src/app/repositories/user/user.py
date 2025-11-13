@@ -1,6 +1,6 @@
 """Azure AD認証用ユーザーモデルのデータアクセスリポジトリ。
 
-このモジュールは、Azure AD認証に対応したUserモデルに特化したデータベース操作を提供します。
+このモジュールは、Azure AD認証に対応したUserAccountモデルに特化したデータベース操作を提供します。
 BaseRepositoryを継承し、Azure OID検索、メール検索、アクティブユーザー取得などの
 ユーザー固有のクエリメソッドを追加しています。
 
@@ -26,12 +26,12 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import User
+from app.models import UserAccount
 from app.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[User, uuid.UUID]):
-    """Azure AD認証用Userモデルのリポジトリクラス。
+class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
+    """Azure AD認証用UserAccountモデルのリポジトリクラス。
 
     このリポジトリは、BaseRepositoryの共通CRUD操作に加えて、
     Azure AD認証に特化したクエリメソッドを提供します。
@@ -89,9 +89,9 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
             - このコンストラクタは通常、FastAPIの依存性注入システムにより
               自動的に呼び出されます
         """
-        super().__init__(User, db)
+        super().__init__(UserAccount, db)
 
-    async def get_by_azure_oid(self, azure_oid: str) -> User | None:
+    async def get_by_azure_oid(self, azure_oid: str) -> UserAccount | None:
         """Azure AD Object IDによりユーザーを検索します。
 
         このメソッドは、Azure AD認証時に最も頻繁に使用されます。
@@ -99,7 +99,7 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
         データベースでUNIQUE制約が設定されているため、最大1件のみが返されます。
 
         クエリの最適化:
-            - User.azure_oidにインデックスが設定されているため高速です
+            - UserAccount.azure_oidにインデックスが設定されているため高速です
             - scalar_one_or_none()により、0件または1件のみを保証
 
         Args:
@@ -108,8 +108,8 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
                 - 例: "12345678-1234-1234-1234-123456789abc"
 
         Returns:
-            User | None: 該当するユーザーインスタンス、見つからない場合はNone
-                - User: Azure OIDに一致するユーザーモデル
+            UserAccount | None: 該当するユーザーインスタンス、見つからない場合はNone
+                - UserAccount: Azure OIDに一致するユーザーモデル
                 - None: 該当するユーザーが存在しない
 
         Example:
@@ -133,10 +133,10 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
             - このメソッドはAzure AD認証処理のクリティカルパスであり、パフォーマンスが重要です
             - Azure OIDは変更されないため、キャッシュ可能です
         """
-        result = await self.db.execute(select(User).where(User.azure_oid == azure_oid))
+        result = await self.db.execute(select(UserAccount).where(UserAccount.azure_oid == azure_oid))
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> User | None:
+    async def get_by_email(self, email: str) -> UserAccount | None:
         """メールアドレスによりユーザーを検索します。
 
         このメソッドは、メールアドレスによるユーザー検索や、
@@ -144,7 +144,7 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
         データベースでUNIQUE制約が設定されているため、最大1件のみが返されます。
 
         クエリの最適化:
-            - User.emailにインデックスが設定されているため高速です
+            - UserAccount.emailにインデックスが設定されているため高速です
             - scalar_one_or_none()により、0件または1件のみを保証
 
         使用ケース:
@@ -159,8 +159,8 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
                 - 例: "user@example.com"
 
         Returns:
-            User | None: 該当するユーザーインスタンス、見つからない場合はNone
-                - User: メールアドレスに一致するユーザーモデル
+            UserAccount | None: 該当するユーザーインスタンス、見つからない場合はNone
+                - UserAccount: メールアドレスに一致するユーザーモデル
                 - None: 該当するユーザーが存在しない
 
         Example:
@@ -182,10 +182,10 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
             - 大文字小文字の扱いはデータベース設定に依存します
             - PostgreSQLの場合、CITEXT型を使用すると大文字小文字を区別しない検索が可能
         """
-        result = await self.db.execute(select(User).where(User.email == email))
+        result = await self.db.execute(select(UserAccount).where(UserAccount.email == email))
         return result.scalar_one_or_none()
 
-    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[User]:
+    async def get_active_users(self, skip: int = 0, limit: int = 100) -> list[UserAccount]:
         """アクティブなユーザーの一覧を取得します（N+1クエリ対策付き）。
 
         このメソッドは、is_active=Trueのユーザーのみをフィルタリングして取得します。
@@ -211,7 +211,7 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
                 推奨: 1000以下に制限
 
         Returns:
-            list[User]: アクティブユーザーのリスト
+            list[UserAccount]: アクティブユーザーのリスト
                 - is_active=Trueのユーザーのみ
                 - データベース順でソートされます
                 - 0件の場合は空のリストを返します
@@ -252,7 +252,7 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
             load_relations=["project_memberships"],
         )
 
-    async def get_by_id(self, user_id: uuid.UUID) -> User | None:
+    async def get_by_id(self, user_id: uuid.UUID) -> UserAccount | None:
         """UUIDによりユーザーを検索します。
 
         このメソッドは、UUIDプライマリキーによるユーザー取得の便利メソッドです。
@@ -264,7 +264,7 @@ class UserRepository(BaseRepository[User, uuid.UUID]):
                 - 例: uuid.UUID("12345678-1234-1234-1234-123456789abc")
 
         Returns:
-            User | None: 該当するユーザーインスタンス、見つからない場合はNone
+            UserAccount | None: 該当するユーザーインスタンス、見つからない場合はNone
 
         Example:
             >>> import uuid

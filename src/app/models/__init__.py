@@ -22,7 +22,7 @@ from app.models.project import Project, ProjectFile, ProjectMember, ProjectRole
 from app.models.sample import SampleFile, SampleMessage, SampleSession, SampleUser
 
 # User models
-from app.models.user.user import SystemRole, User
+from app.models.user.user import SystemUserRole, UserAccount
 
 __all__ = [
     # Base classes
@@ -35,8 +35,8 @@ __all__ = [
     "SampleSession",
     "SampleUser",
     # User models
-    "SystemRole",
-    "User",
+    "SystemUserRole",
+    "UserAccount",
     # Project models
     "Project",
     "ProjectFile",
