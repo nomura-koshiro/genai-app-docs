@@ -3,7 +3,7 @@
 import pytest
 
 from app.core.exceptions import AuthorizationError, ValidationError
-from app.models import Project, ProjectMember, ProjectRole, User
+from app.models import Project, ProjectMember, ProjectRole, UserAccount
 from app.schemas import ProjectMemberCreate
 from app.services import ProjectMemberService
 

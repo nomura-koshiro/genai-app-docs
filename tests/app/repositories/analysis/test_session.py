@@ -122,7 +122,7 @@ async def test_list_by_user(db_session: AsyncSession, test_user, test_project):
     project_id = test_project.id
 
     # ユーザー2を作成
-    from app.models import User
+    from app.models import UserAccount
 
     user2 = User(
         azure_oid="test-user2-oid",

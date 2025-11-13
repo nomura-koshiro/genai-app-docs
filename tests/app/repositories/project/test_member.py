@@ -8,7 +8,7 @@
 
 import pytest
 
-from app.models import Project, ProjectMember, ProjectRole, User
+from app.models import Project, ProjectMember, ProjectRole, UserAccount
 from app.repositories import ProjectMemberRepository
 
 

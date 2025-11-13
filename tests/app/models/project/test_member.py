@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.models import Project, ProjectMember, ProjectRole, User
+from app.models import Project, ProjectMember, ProjectRole, UserAccount
 
 
 @pytest.mark.asyncio

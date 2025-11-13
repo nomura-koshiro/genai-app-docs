@@ -11,7 +11,7 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import ProjectMember, ProjectRole, User
+from app.models import ProjectMember, ProjectRole, UserAccount
 from app.repositories import ProjectRepository
 
 

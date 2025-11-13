@@ -10,7 +10,7 @@ Happy Pathとビジネスルールエラーのみをテストします。
 import pytest
 from httpx import AsyncClient
 
-from app.models import Project, ProjectMember, ProjectRole, User
+from app.models import Project, ProjectMember, ProjectRole, UserAccount
 
 
 @pytest.fixture

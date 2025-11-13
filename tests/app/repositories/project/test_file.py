@@ -8,7 +8,7 @@
 
 import pytest
 
-from app.models import Project, ProjectFile, User
+from app.models import Project, ProjectFile, UserAccount
 from app.repositories import ProjectFileRepository
 
 

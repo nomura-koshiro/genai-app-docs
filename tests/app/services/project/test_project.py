@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
-from app.models import ProjectMember, ProjectRole, User
+from app.models import ProjectMember, ProjectRole, UserAccount
 from app.schemas import ProjectCreate, ProjectUpdate
 from app.services import ProjectService
 

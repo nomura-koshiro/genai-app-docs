@@ -11,7 +11,7 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from app.models import User
+from app.models import UserAccount
 
 
 @pytest.fixture
