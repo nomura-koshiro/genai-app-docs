@@ -1,1117 +1,622 @@
-# ER図詳細設計書（Entity-Relationship Diagram）
-
-## 📋 文書管理情報
-
-| 項目 | 内容 |
-|------|------|
-| **文書名** | ER図詳細設計書（Entity-Relationship Diagram） |
-| **バージョン** | 1.0.0 |
-| **作成日** | 2025-01-11 |
-| **最終更新日** | 2025-01-11 |
-| **作成者** | Claude Code |
-| **レビュー状態** | 初版 |
-
----
-
-## 📑 目次
-
-1. [概要](#1-概要)
-2. [エンティティ一覧](#2-エンティティ一覧)
-3. [詳細ER図](#3-詳細er図)
-4. [リレーションシップ詳細](#4-リレーションシップ詳細)
-5. [カーディナリティ定義](#5-カーディナリティ定義)
-6. [参照整合性](#6-参照整合性)
-7. [カスケード動作](#7-カスケード動作)
-8. [インデックス戦略](#8-インデックス戦略)
-9. [データフロー](#9-データフロー)
-10. [付録](#10-付録)
-
----
+# ER図（Entity Relationship Diagram）
 
 ## 1. 概要
 
-### 1.1 目的
+本文書は、genai-app-docsシステムのデータベース構造をEntity Relationship Diagram（ER図）として可視化したものです。
 
-本設計書は、genai-app-docs（camp-backend）プロジェクトのエンティティリレーションシップ（ER）を詳細に定義し、以下を達成することを目的とします：
-
-- **データモデルの可視化**: 全テーブル間の関係を図解
-- **リレーションシップの明確化**: 外部キー、カーディナリティ、カスケード動作の定義
-- **参照整合性の保証**: データベース制約による整合性維持
-- **開発者ガイド**: テーブル間の関係性の理解促進
-
-### 1.2 適用範囲
-
-本設計書は以下を対象とします：
-
-- ✅ エンティティ定義（16テーブル）
-- ✅ リレーションシップ定義（外部キー、参照整合性）
-- ✅ カーディナリティ（1:1、1:N、N:M）
-- ✅ カスケード動作（CASCADE、SET NULL、RESTRICT）
-- ✅ 詳細なMermaid ER図
-
-以下は**対象外**とし、別の設計書で詳述します：
-
-- ❌ テーブル定義の詳細 → [Database設計書](./01-database-design.md)
-- ❌ マイグレーション戦略 → Migration設計書
-- ❌ パフォーマンス最適化 → Database設計書
-
-### 1.3 ER図記法
-
-本ドキュメントでは、Mermaid記法を使用してER図を記述します。
-
-**記法ルール**:
-
-| 記号 | 意味 |
-|------|------|
-| `\|\|--o{` | 1対多 (One-to-Many) |
-| `}o--\|\|` | 多対1 (Many-to-One) |
-| `\|\|--\|\|` | 1対1 (One-to-One) |
-| `}o--o{` | 多対多 (Many-to-Many、中間テーブル経由） |
-
-**例**:
+### 1.1 図の凡例
 
 ```mermaid
 erDiagram
-    User ||--o{ Project : "creates"
-    User ||--o{ ProjectMember : "belongs to"
-    Project ||--o{ ProjectMember : "has"
+    ENTITY_A ||--o{ ENTITY_B : "リレーション名"
+
+    ENTITY_A {
+        uuid id PK "主キー"
+        string name UK "ユニークキー"
+        uuid foreign_id FK "外部キー"
+    }
 ```
 
----
+**カーディナリティ記法:**
 
-## 2. エンティティ一覧
+- `||--||`: 1対1（One-to-One）
+- `||--o{`: 1対多（One-to-Many）
+- `}o--o{`: 多対多（Many-to-Many）
+- `}o--||`: 多対1（Many-to-One）
+- `}o--o|`: 多対0または1（Many-to-Zero-or-One）
 
-### 2.1 エンティティカテゴリ
+**列の属性:**
 
-本システムは以下の5つのカテゴリ、16のエンティティから構成されます。
-
-| カテゴリ | エンティティ名 | 説明 | テーブル名 |
-|---------|--------------|------|-----------|
-| **ユーザー管理** | User | ユーザー（Azure AD認証） | `users` |
-| **プロジェクト管理** | Project | プロジェクト | `projects` |
-| | ProjectMember | プロジェクトメンバーシップ | `project_members` |
-| | ProjectFile | プロジェクトファイル | `project_files` |
-| **データ分析** | AnalysisSession | 分析セッション | `analysis_sessions` |
-| | AnalysisStep | 分析ステップ | `analysis_steps` |
-| | AnalysisFile | 分析ファイル | `analysis_files` |
-| | AnalysisTemplate | 分析テンプレート | `analysis_templates` |
-| | AnalysisTemplateChart | テンプレートチャート | `analysis_template_charts` |
-| **ドライバーツリー** | DriverTree | ドライバーツリー | `driver_trees` |
-| | DriverTreeNode | ツリーノード | `driver_tree_nodes` |
-| | DriverTreeCategory | ツリーカテゴリ | `driver_tree_categories` |
-| **サンプル** | Item | サンプルアイテム | `items` |
-| | Sample | サンプルデータ | `samples` |
-| | Book | サンプルブック | `books` |
-
-### 2.2 エンティティ統計
-
-| 統計項目 | 数 |
-|---------|---|
-| **総エンティティ数** | 16 |
-| **外部キー総数** | 23 |
-| **1:N関係** | 18 |
-| **自己参照関係** | 2 (DriverTreeNode, DriverTreeCategory) |
-| **多対多関係** | 1 (User - Project via ProjectMember) |
+- `PK`: Primary Key（主キー）
+- `FK`: Foreign Key（外部キー）
+- `UK`: Unique Key（ユニーク制約）
 
 ---
 
-## 3. 詳細ER図
+## 2. 全体ER図
 
-### 3.1 全体ER図
+### 2.1 システム全体のエンティティ関連図
 
 ```mermaid
 erDiagram
-    %% =====================================
-    %% ユーザー管理
-    %% =====================================
-    User {
+    UserAccount ||--o{ ProjectMember : "creates"
+    UserAccount ||--o{ AnalysisSession : "creates"
+    UserAccount ||--o{ Project : "owns"
+
+    Project ||--o{ ProjectMember : "has"
+    Project ||--o{ ProjectFile : "contains"
+    Project ||--o{ AnalysisSession : "includes"
+    Project ||--o{ DriverTree : "has"
+
+    ProjectMember }o--|| UserAccount : "belongs to"
+    ProjectMember }o--|| Project : "member of"
+
+    AnalysisSession ||--o{ AnalysisStep : "tracks"
+    AnalysisSession ||--o{ AnalysisFile : "uses"
+    AnalysisSession }o--|| Project : "in"
+    AnalysisSession }o--|| UserAccount : "created by"
+    AnalysisSession }o--o| ProjectFile : "selects"
+    AnalysisSession }o--o| AnalysisTemplate : "based on"
+
+    AnalysisTemplate ||--o{ AnalysisTemplateChart : "defines"
+
+    DriverTree ||--o{ DriverTreeNode : "contains"
+    DriverTree }o--|| Project : "belongs to"
+    DriverTreeNode }o--o| DriverTreeCategory : "categorized by"
+    DriverTreeNode }o--o| DriverTreeNode : "parent-child"
+
+    UserAccount {
         uuid id PK
         string azure_oid UK
-        string email UK
+        string email
         string display_name
-        json roles
+        enum system_role
         boolean is_active
-        datetime created_at
-        datetime updated_at
-        datetime last_login
+        timestamp last_login
+        timestamp created_at
+        timestamp updated_at
     }
 
-    %% =====================================
-    %% プロジェクト管理
-    %% =====================================
     Project {
         uuid id PK
         string name
         string code UK
         text description
         boolean is_active
-        uuid created_by
-        datetime created_at
-        datetime updated_at
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
     }
 
     ProjectMember {
         uuid id PK
         uuid project_id FK
         uuid user_id FK
-        enum role
-        datetime joined_at
-        uuid added_by FK
+        enum project_role
+        timestamp joined_at
+        timestamp created_at
+        timestamp updated_at
     }
 
     ProjectFile {
         uuid id PK
         uuid project_id FK
-        string filename
-        string original_filename
+        string file_name
         string file_path
-        int file_size
-        string mime_type
+        bigint file_size
+        string content_type
         uuid uploaded_by FK
-        datetime uploaded_at
+        timestamp created_at
+        timestamp updated_at
     }
 
-    %% =====================================
-    %% データ分析
-    %% =====================================
     AnalysisSession {
         uuid id PK
         uuid project_id FK
-        uuid created_by FK
-        string session_name
+        uuid creator_id FK
+        uuid original_file_id FK
+        uuid template_id FK
         jsonb validation_config
         jsonb chat_history
         jsonb snapshot_history
-        uuid original_file_id
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        timestamp created_at
+        timestamp updated_at
     }
 
     AnalysisStep {
         uuid id PK
         uuid session_id FK
-        string step_name
-        string step_type
-        int step_order
-        string data_source
-        jsonb config
-        text result_data_path
-        jsonb result_chart
-        jsonb result_formula
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        enum step_type
+        jsonb parameters
+        jsonb result
+        integer step_order
+        timestamp created_at
     }
 
     AnalysisFile {
         uuid id PK
         uuid session_id FK
-        uuid uploaded_by FK
         string file_name
-        string table_name
-        text storage_path
-        bigint file_size
-        string content_type
-        array table_axis
-        jsonb file_metadata
-        boolean is_active
-        datetime created_at
-        datetime updated_at
+        string file_path
+        string file_type
+        timestamp created_at
     }
 
     AnalysisTemplate {
         uuid id PK
-        string template_name
+        string name UK
         text description
-        jsonb settings
-        datetime created_at
-        datetime updated_at
+        jsonb default_config
+        boolean is_active
+        timestamp created_at
+        timestamp updated_at
     }
 
     AnalysisTemplateChart {
         uuid id PK
         uuid template_id FK
-        string chart_name
         string chart_type
         jsonb chart_config
-        int display_order
-        datetime created_at
-        datetime updated_at
+        integer display_order
+        timestamp created_at
     }
 
-    %% =====================================
-    %% ドライバーツリー
-    %% =====================================
     DriverTree {
         uuid id PK
+        uuid project_id FK
         string name
-        uuid root_node_id FK
-        datetime created_at
-        datetime updated_at
+        text description
+        timestamp created_at
+        timestamp updated_at
     }
 
     DriverTreeNode {
         uuid id PK
         uuid tree_id FK
         uuid parent_id FK
+        uuid category_id FK
         string label
-        string operator
-        jsonb node_data
-        datetime created_at
-        datetime updated_at
+        jsonb metadata
+        integer level
+        integer position
+        timestamp created_at
+        timestamp updated_at
     }
 
     DriverTreeCategory {
         uuid id PK
-        uuid parent_id FK
-        string name
-        int sort_order
-        datetime created_at
-        datetime updated_at
+        string name UK
+        string color
+        text description
+        timestamp created_at
     }
-
-    %% =====================================
-    %% リレーションシップ
-    %% =====================================
-
-    %% ユーザー → プロジェクトメンバー
-    User ||--o{ ProjectMember : "user_id"
-    User ||--o{ AnalysisSession : "created_by"
-    User ||--o{ AnalysisFile : "uploaded_by"
-    User ||--o{ ProjectFile : "uploaded_by"
-
-    %% プロジェクト → 関連エンティティ
-    Project ||--o{ ProjectMember : "project_id"
-    Project ||--o{ ProjectFile : "project_id"
-    Project ||--o{ AnalysisSession : "project_id"
-
-    %% プロジェクトメンバー → ユーザー（added_by）
-    User ||--o{ ProjectMember : "added_by"
-
-    %% 分析セッション → 関連エンティティ
-    AnalysisSession ||--o{ AnalysisStep : "session_id"
-    AnalysisSession ||--o{ AnalysisFile : "session_id"
-
-    %% 分析テンプレート → チャート
-    AnalysisTemplate ||--o{ AnalysisTemplateChart : "template_id"
-
-    %% ドライバーツリー → ノード
-    DriverTree ||--o{ DriverTreeNode : "tree_id"
-    DriverTree ||--o| DriverTreeNode : "root_node_id"
-
-    %% ドライバーツリーノード → 親ノード（自己参照）
-    DriverTreeNode ||--o{ DriverTreeNode : "parent_id"
-
-    %% ドライバーツリーカテゴリ → 親カテゴリ（自己参照）
-    DriverTreeCategory ||--o{ DriverTreeCategory : "parent_id"
 ```
 
-### 3.2 ユーザー・プロジェクト管理ER図
+---
+
+## 3. モジュール別ER図
+
+### 3.1 ユーザー管理モジュール
 
 ```mermaid
 erDiagram
-    User ||--o{ ProjectMember : "creates membership"
-    Project ||--o{ ProjectMember : "has members"
-    ProjectMember }o--|| User : "is member"
-    ProjectMember }o--|| Project : "belongs to"
+    UserAccount ||--o{ ProjectMember : "participates in"
+    UserAccount ||--o{ AnalysisSession : "creates"
+    UserAccount ||--o{ Project : "creates"
+    UserAccount ||--o{ ProjectFile : "uploads"
 
-    User ||--o{ ProjectMember : "adds member (added_by)"
-
-    Project ||--o{ ProjectFile : "contains"
-    ProjectFile }o--|| User : "uploaded by"
-
-    User {
-        uuid id PK
-        string azure_oid UK "Azure AD Object ID"
-        string email UK "Email address"
-        string display_name "Display name"
-        json roles "System roles"
-        boolean is_active "Active flag"
-        datetime last_login "Last login time"
+    UserAccount {
+        uuid id PK "主キー"
+        string azure_oid UK "Azure AD Object ID（ユニーク）"
+        string email "メールアドレス"
+        string display_name "表示名"
+        enum system_role "システムロール（admin/user）"
+        boolean is_active "アクティブフラグ"
+        timestamp last_login "最終ログイン日時"
+        timestamp created_at "作成日時"
+        timestamp updated_at "更新日時"
     }
+```
+
+**主要な特徴:**
+
+- Azure AD統合: `azure_oid`でAzure ADユーザーと紐付け
+- システムロール: `system_admin`（システム管理者）、`user`（一般ユーザー）
+- ソフトデリート: `is_active`フラグで論理削除
+
+---
+
+### 3.2 プロジェクト管理モジュール
+
+```mermaid
+erDiagram
+    Project ||--o{ ProjectMember : "has members"
+    Project ||--o{ ProjectFile : "has files"
+    Project }o--|| UserAccount : "owned by"
+
+    ProjectMember }o--|| Project : "belongs to"
+    ProjectMember }o--|| UserAccount : "user"
+
+    ProjectFile }o--|| Project : "in"
+    ProjectFile }o--|| UserAccount : "uploaded by"
 
     Project {
         uuid id PK
-        string name "Project name"
-        string code UK "Project code"
-        text description "Description"
-        boolean is_active "Active flag"
-        uuid created_by "Creator user ID"
+        string name "プロジェクト名"
+        string code UK "プロジェクトコード（ユニーク）"
+        text description "説明"
+        boolean is_active "アクティブフラグ"
+        uuid created_by FK "作成者（UserAccount）"
+        timestamp created_at
+        timestamp updated_at
     }
 
     ProjectMember {
         uuid id PK
-        uuid project_id FK "→ projects.id"
-        uuid user_id FK "→ users.id"
-        enum role "project_manager/member/viewer"
-        datetime joined_at "Join timestamp"
-        uuid added_by FK "→ users.id (who added)"
+        uuid project_id FK "プロジェクト"
+        uuid user_id FK "ユーザー"
+        enum project_role "プロジェクトロール"
+        timestamp joined_at "参加日時"
+        timestamp created_at
+        timestamp updated_at
     }
 
     ProjectFile {
         uuid id PK
-        uuid project_id FK "→ projects.id"
-        string filename "Stored filename"
-        string original_filename "Original filename"
-        string file_path "Storage path"
-        int file_size "File size (bytes)"
-        string mime_type "MIME type"
-        uuid uploaded_by FK "→ users.id"
-        datetime uploaded_at "Upload timestamp"
+        uuid project_id FK "所属プロジェクト"
+        string file_name "ファイル名"
+        string file_path "ストレージパス"
+        bigint file_size "ファイルサイズ（バイト）"
+        string content_type "MIMEタイプ"
+        uuid uploaded_by FK "アップロード者"
+        timestamp created_at
+        timestamp updated_at
     }
 ```
 
-**リレーションシップ説明**:
+**プロジェクトロール（ProjectRole）:**
 
-1. **User - ProjectMember**: 1人のユーザーは複数のプロジェクトメンバーシップを持つ（1:N）
-2. **Project - ProjectMember**: 1つのプロジェクトは複数のメンバーを持つ（1:N）
-3. **User - Project**: ユーザーとプロジェクトの多対多関係はProjectMemberで実現
-4. **ProjectMember.added_by**: メンバーを追加したユーザーを記録（自己参照的な関係）
-5. **Project - ProjectFile**: 1つのプロジェクトは複数のファイルを持つ（1:N）
-6. **User - ProjectFile**: 1人のユーザーは複数のファイルをアップロード可能（1:N）
+- `PROJECT_MANAGER`: プロジェクトマネージャー（全権限）
+- `MEMBER`: メンバー（読み書き権限）
+- `VIEWER`: 閲覧者（読み取りのみ）
 
-### 3.3 データ分析ER図
+**制約:**
+
+- `(project_id, user_id)`に複合ユニーク制約（同じユーザーは1つのプロジェクトに1回だけ参加可能）
+- プロジェクト削除時、関連するメンバーとファイルはカスケード削除（ON DELETE CASCADE）
+
+---
+
+### 3.3 分析機能モジュール
 
 ```mermaid
 erDiagram
-    Project ||--o{ AnalysisSession : "contains"
-    User ||--o{ AnalysisSession : "creates"
     AnalysisSession ||--o{ AnalysisStep : "has steps"
     AnalysisSession ||--o{ AnalysisFile : "has files"
-    User ||--o{ AnalysisFile : "uploads"
+    AnalysisSession }o--|| Project : "belongs to"
+    AnalysisSession }o--|| UserAccount : "created by"
+    AnalysisSession }o--o| ProjectFile : "uses source file"
+    AnalysisSession }o--o| AnalysisTemplate : "uses template"
 
     AnalysisTemplate ||--o{ AnalysisTemplateChart : "defines charts"
 
+    AnalysisStep }o--|| AnalysisSession : "in"
+    AnalysisFile }o--|| AnalysisSession : "in"
+    AnalysisTemplateChart }o--|| AnalysisTemplate : "in"
+
     AnalysisSession {
         uuid id PK
-        uuid project_id FK "→ projects.id"
-        uuid created_by FK "→ users.id"
-        string session_name "Session name"
-        jsonb validation_config "Analysis config"
-        jsonb chat_history "Chat messages"
-        jsonb snapshot_history "Snapshots"
-        uuid original_file_id "Selected file"
-        boolean is_active "Active flag"
+        uuid project_id FK "所属プロジェクト"
+        uuid creator_id FK "作成者"
+        uuid original_file_id FK "元ファイル（ProjectFile）"
+        uuid template_id FK "使用テンプレート"
+        jsonb validation_config "バリデーション設定"
+        jsonb chat_history "チャット履歴"
+        jsonb snapshot_history "スナップショット履歴"
+        timestamp created_at
+        timestamp updated_at
     }
 
     AnalysisStep {
         uuid id PK
-        uuid session_id FK "→ analysis_sessions.id"
-        string step_name "Step name"
-        string step_type "filter/aggregate/transform/summary"
-        int step_order "Order (0-indexed)"
-        string data_source "original/step_0/step_1"
-        jsonb config "Step config"
-        text result_data_path "Result CSV path"
-        jsonb result_chart "Plotly chart JSON"
-        jsonb result_formula "Calculation results"
-        boolean is_active "Active flag"
+        uuid session_id FK "分析セッション"
+        enum step_type "ステップタイプ"
+        jsonb parameters "実行パラメータ"
+        jsonb result "実行結果"
+        integer step_order "実行順序"
+        timestamp created_at
     }
 
     AnalysisFile {
         uuid id PK
-        uuid session_id FK "→ analysis_sessions.id"
-        uuid uploaded_by FK "→ users.id"
-        string file_name "Original filename"
-        string table_name "User-defined table name"
-        text storage_path "Blob storage path"
-        bigint file_size "File size (bytes)"
-        string content_type "MIME type"
-        array table_axis "Axis candidates"
-        jsonb file_metadata "Additional metadata"
-        boolean is_active "Active flag"
+        uuid session_id FK "分析セッション"
+        string file_name "ファイル名"
+        string file_path "ストレージパス"
+        string file_type "ファイルタイプ"
+        timestamp created_at
     }
 
     AnalysisTemplate {
         uuid id PK
-        string template_name "Template name"
-        text description "Description"
-        jsonb settings "Template settings"
+        string name UK "テンプレート名（ユニーク）"
+        text description "説明"
+        jsonb default_config "デフォルト設定"
+        boolean is_active "有効フラグ"
+        timestamp created_at
+        timestamp updated_at
     }
 
     AnalysisTemplateChart {
         uuid id PK
-        uuid template_id FK "→ analysis_templates.id"
-        string chart_name "Chart name"
-        string chart_type "bar/line/pie/etc"
-        jsonb chart_config "Plotly config"
-        int display_order "Display order"
+        uuid template_id FK "テンプレート"
+        string chart_type "チャートタイプ"
+        jsonb chart_config "チャート設定"
+        integer display_order "表示順序"
+        timestamp created_at
     }
 ```
 
-**リレーションシップ説明**:
+**ステップタイプ（StepType）:**
 
-1. **Project - AnalysisSession**: 1つのプロジェクトは複数の分析セッションを持つ（1:N）
-2. **User - AnalysisSession**: 1人のユーザーは複数のセッションを作成可能（1:N）
-3. **AnalysisSession - AnalysisStep**: 1つのセッションは複数のステップを順序付けて持つ（1:N、order_byあり）
-4. **AnalysisSession - AnalysisFile**: 1つのセッションは複数のファイルをアップロード可能（1:N）
-5. **User - AnalysisFile**: 1人のユーザーは複数のファイルをアップロード可能（1:N）
-6. **AnalysisTemplate - AnalysisTemplateChart**: 1つのテンプレートは複数のチャートを定義（1:N）
+- `FILTER`: フィルタ処理
+- `AGGREGATE`: 集計処理
+- `TRANSFORM`: データ変換
+- `CHART`: チャート生成
+- `SUMMARY`: サマリー生成
 
-### 3.4 ドライバーツリーER図
+**JSONB列の用途:**
+
+- `validation_config`: データバリデーションルール
+- `chat_history`: LLMとのチャット履歴
+- `snapshot_history`: データスナップショット履歴
+- `parameters`: ステップごとの実行パラメータ
+- `result`: ステップ実行結果
+- `default_config`: テンプレートのデフォルト設定
+- `chart_config`: チャート固有の設定
+
+---
+
+### 3.4 ドライバーツリーモジュール
 
 ```mermaid
 erDiagram
-    DriverTree ||--o{ DriverTreeNode : "contains nodes"
-    DriverTree ||--o| DriverTreeNode : "has root node"
-    DriverTreeNode ||--o{ DriverTreeNode : "has children"
+    DriverTree ||--o{ DriverTreeNode : "contains"
+    DriverTree }o--|| Project : "belongs to"
 
-    DriverTreeCategory ||--o{ DriverTreeCategory : "has subcategories"
+    DriverTreeNode }o--|| DriverTree : "in"
+    DriverTreeNode }o--o| DriverTreeNode : "parent-child"
+    DriverTreeNode }o--o| DriverTreeCategory : "categorized"
 
     DriverTree {
         uuid id PK
-        string name "Tree name"
-        uuid root_node_id FK "→ driver_tree_nodes.id"
+        uuid project_id FK "所属プロジェクト"
+        string name "ツリー名"
+        text description "説明"
+        timestamp created_at
+        timestamp updated_at
     }
 
     DriverTreeNode {
         uuid id PK
-        uuid tree_id FK "→ driver_trees.id"
-        uuid parent_id FK "→ driver_tree_nodes.id"
-        string label "Node label (e.g., 売上)"
-        string operator "+ - * /"
-        jsonb node_data "Additional data"
+        uuid tree_id FK "所属ツリー"
+        uuid parent_id FK "親ノード（自己参照）"
+        uuid category_id FK "カテゴリ"
+        string label "ノードラベル"
+        jsonb metadata "カスタムメタデータ"
+        integer level "階層レベル"
+        integer position "表示位置"
+        timestamp created_at
+        timestamp updated_at
     }
 
     DriverTreeCategory {
         uuid id PK
-        uuid parent_id FK "→ driver_tree_categories.id"
-        string name "Category name"
-        int sort_order "Display order"
+        string name UK "カテゴリ名（ユニーク）"
+        string color "カラーコード（例: #FF5733）"
+        text description "説明"
+        timestamp created_at
     }
 ```
 
-**リレーションシップ説明**:
+**特徴:**
 
-1. **DriverTree - DriverTreeNode (tree_id)**: 1つのツリーは複数のノードを持つ（1:N）
-2. **DriverTree - DriverTreeNode (root_node_id)**: 1つのツリーは1つのルートノードを指す（1:1）
-3. **DriverTreeNode - DriverTreeNode (parent_id)**: ノードは親ノードを持つ（自己参照、1:N）
-4. **DriverTreeCategory - DriverTreeCategory (parent_id)**: カテゴリは親カテゴリを持つ（自己参照、1:N）
-
-**特記事項**:
-
-- DriverTreeの`root_node_id`とDriverTreeNodeの`tree_id`は循環参照を形成しますが、`post_update=True`で解決しています。
-- 自己参照関係により、任意の深さの階層構造を表現できます。
+- **自己参照**: `DriverTreeNode.parent_id`が同じテーブルの`id`を参照（親子関係）
+- **階層管理**: `level`フィールドで階層の深さを管理
+- **表示順序**: `position`フィールドで同階層内の表示順を制御
+- **カスタマイズ**: `metadata`（JSONB）でノードごとの追加情報を格納
 
 ---
 
 ## 4. リレーションシップ詳細
 
-### 4.1 リレーションシップ一覧表
+### 4.1 主要なリレーションシップ一覧
 
-| # | 親エンティティ | 子エンティティ | 外部キー | カーディナリティ | ON DELETE | 説明 |
-|---|-------------|-------------|---------|----------------|-----------|------|
-| 1 | User | ProjectMember | user_id | 1:N | CASCADE | ユーザーがプロジェクトメンバーシップを持つ |
-| 2 | Project | ProjectMember | project_id | 1:N | CASCADE | プロジェクトがメンバーを持つ |
-| 3 | User | ProjectMember | added_by | 1:N | SET NULL | メンバーを追加したユーザー |
-| 4 | Project | ProjectFile | project_id | 1:N | CASCADE | プロジェクトがファイルを持つ |
-| 5 | User | ProjectFile | uploaded_by | 1:N | RESTRICT | ユーザーがファイルをアップロード |
-| 6 | Project | AnalysisSession | project_id | 1:N | CASCADE | プロジェクトが分析セッションを持つ |
-| 7 | User | AnalysisSession | created_by | 1:N | SET NULL | ユーザーがセッションを作成 |
-| 8 | AnalysisSession | AnalysisStep | session_id | 1:N | CASCADE | セッションがステップを持つ |
-| 9 | AnalysisSession | AnalysisFile | session_id | 1:N | CASCADE | セッションがファイルを持つ |
-| 10 | User | AnalysisFile | uploaded_by | 1:N | SET NULL | ユーザーがファイルをアップロード |
-| 11 | AnalysisTemplate | AnalysisTemplateChart | template_id | 1:N | CASCADE | テンプレートがチャートを持つ |
-| 12 | DriverTree | DriverTreeNode | tree_id | 1:N | CASCADE | ツリーがノードを持つ |
-| 13 | DriverTree | DriverTreeNode | root_node_id | 1:1 | SET NULL | ツリーがルートノードを持つ |
-| 14 | DriverTreeNode | DriverTreeNode | parent_id | 1:N | CASCADE | ノードが子ノードを持つ（自己参照） |
-| 15 | DriverTreeCategory | DriverTreeCategory | parent_id | 1:N | CASCADE | カテゴリがサブカテゴリを持つ（自己参照） |
+| 親テーブル | 子テーブル | カーディナリティ | 外部キー | ON DELETE | 説明 |
+|-----------|-----------|----------------|---------|-----------|------|
+| UserAccount | Project | 1:N | created_by | SET NULL | ユーザーが作成したプロジェクト |
+| UserAccount | ProjectMember | 1:N | user_id | CASCADE | ユーザーのプロジェクト参加 |
+| UserAccount | AnalysisSession | 1:N | creator_id | CASCADE | ユーザーが作成した分析セッション |
+| UserAccount | ProjectFile | 1:N | uploaded_by | SET NULL | ユーザーがアップロードしたファイル |
+| Project | ProjectMember | 1:N | project_id | CASCADE | プロジェクトのメンバー |
+| Project | ProjectFile | 1:N | project_id | CASCADE | プロジェクトのファイル |
+| Project | AnalysisSession | 1:N | project_id | CASCADE | プロジェクトの分析セッション |
+| Project | DriverTree | 1:N | project_id | CASCADE | プロジェクトのドライバーツリー |
+| ProjectFile | AnalysisSession | 1:N | original_file_id | SET NULL | ファイルを元にした分析セッション |
+| AnalysisSession | AnalysisStep | 1:N | session_id | CASCADE | セッションの実行ステップ |
+| AnalysisSession | AnalysisFile | 1:N | session_id | CASCADE | セッションで生成されたファイル |
+| AnalysisTemplate | AnalysisSession | 1:N | template_id | SET NULL | テンプレートを使用したセッション |
+| AnalysisTemplate | AnalysisTemplateChart | 1:N | template_id | CASCADE | テンプレートのチャート定義 |
+| DriverTree | DriverTreeNode | 1:N | tree_id | CASCADE | ツリーのノード |
+| DriverTreeNode | DriverTreeNode | 1:N | parent_id | CASCADE | ノードの親子関係（自己参照） |
+| DriverTreeCategory | DriverTreeNode | 1:N | category_id | SET NULL | カテゴリ別のノード |
 
-**総リレーションシップ数**: 15
+### 4.2 削除動作（ON DELETE）の説明
 
-### 4.2 リレーションシップタイプ別分類
+#### CASCADE（カスケード削除）
 
-| タイプ | 数 | 例 |
-|-------|---|---|
-| **1:N（通常）** | 11 | Project → ProjectMember |
-| **1:1** | 1 | DriverTree → DriverTreeNode (root) |
-| **自己参照** | 2 | DriverTreeNode → DriverTreeNode (parent) |
-| **N:M（中間テーブル）** | 1 | User ⟷ Project (via ProjectMember) |
+親レコード削除時、関連する子レコードも自動削除されます。
 
----
+**適用箇所:**
 
-## 5. カーディナリティ定義
+- プロジェクト削除 → メンバー、ファイル、分析セッション、ドライバーツリーも削除
+- 分析セッション削除 → ステップ、生成ファイルも削除
+- ドライバーツリー削除 → すべてのノードも削除
 
-### 5.1 カーディナリティ記法
+#### SET NULL
 
-本ドキュメントでは、以下の記法を使用します：
+親レコード削除時、子レコードの外部キーがNULLに設定されます。
 
-| 記法 | 意味 |
-|------|------|
-| **1** | 必ず1つ（NOT NULL） |
-| **0..1** | 0または1つ（NULL可能） |
-| **1..*** | 1つ以上 |
-| **0..*** | 0個以上 |
+**適用箇所:**
 
-### 5.2 主要エンティティのカーディナリティ
-
-#### User - ProjectMember
-
-```text
-User 1 ──────< 0..* ProjectMember
-         user_id
-
-説明: 1人のユーザーは0個以上のプロジェクトメンバーシップを持つ
-制約: ProjectMember.user_id は NOT NULL（必須）
-```
-
-#### Project - ProjectMember
-
-```text
-Project 1 ──────< 0..* ProjectMember
-            project_id
-
-説明: 1つのプロジェクトは0人以上のメンバーを持つ
-制約: ProjectMember.project_id は NOT NULL（必須）
-```
-
-#### User ⟷ Project (N:M)
-
-```text
-User 0..* ────< ProjectMember >──── 0..* Project
-           user_id       project_id
-
-説明: ユーザーとプロジェクトは多対多関係（ProjectMemberが中間テーブル）
-制約: 同一ユーザーは同一プロジェクトに1度だけ参加可能（UNIQUE制約）
-```
-
-#### AnalysisSession - AnalysisStep
-
-```text
-AnalysisSession 1 ──────< 0..* AnalysisStep
-                   session_id
-
-説明: 1つのセッションは0個以上のステップを持つ
-制約: AnalysisStep.session_id は NOT NULL（必須）
-順序: AnalysisStep.step_order で順序付け（0から開始）
-```
-
-#### DriverTreeNode - DriverTreeNode (自己参照)
-
-```text
-DriverTreeNode 0..1 ──────< 0..* DriverTreeNode
-               parent_id
-
-説明: 1つのノードは0個以上の子ノードを持つ
-制約: DriverTreeNode.parent_id は NULL可能（ルートノードはNULL）
-階層: 任意の深さの階層構造を表現可能
-```
-
-### 5.3 カーディナリティ制約の実装
-
-#### UNIQUE制約によるカーディナリティ制限
-
-```python
-# ProjectMember: (project_id, user_id) の組み合わせが一意
-__table_args__ = (
-    UniqueConstraint("project_id", "user_id", name="uq_project_user"),
-)
-```
-
-**効果**: 同一ユーザーは同一プロジェクトに1度だけ参加可能
-
-#### NOT NULL制約による必須関係
-
-```python
-# AnalysisStep: session_idは必須
-session_id: Mapped[uuid.UUID] = mapped_column(
-    UUID(as_uuid=True),
-    ForeignKey("analysis_sessions.id", ondelete="CASCADE"),
-    nullable=False,  # 必須
-)
-```
-
-**効果**: すべてのステップは必ずセッションに属する
+- ユーザー削除 → プロジェクトの`created_by`、ファイルの`uploaded_by`がNULLに
+- ファイル削除 → 分析セッションの`original_file_id`がNULLに
+- テンプレート削除 → 分析セッションの`template_id`がNULLに
+- カテゴリ削除 → ノードの`category_id`がNULLに
 
 ---
 
-## 6. 参照整合性
-
-### 6.1 参照整合性制約
-
-本システムでは、すべての外部キーに対して参照整合性制約を設定しています。
-
-**実装方法**:
-
-```python
-# 外部キー定義例
-project_id: Mapped[uuid.UUID] = mapped_column(
-    UUID(as_uuid=True),
-    ForeignKey("projects.id", ondelete="CASCADE"),  # 参照整合性 + カスケード動作
-    nullable=False,
-)
-```
-
-### 6.2 参照整合性チェックポイント
-
-| チェック項目 | 説明 | 実装 |
-|------------|------|------|
-| **挿入時チェック** | 外部キーの値が親テーブルに存在するか | PostgreSQL自動チェック |
-| **更新時チェック** | 外部キーの更新値が親テーブルに存在するか | PostgreSQL自動チェック |
-| **削除時動作** | 親レコード削除時の子レコード処理 | ON DELETE句で定義 |
-| **循環参照チェック** | DriverTreeの循環参照対策 | `post_update=True` |
-
-### 6.3 参照整合性違反のエラーハンドリング
-
-```python
-# サービス層でのエラーハンドリング例
-from sqlalchemy.exc import IntegrityError
-
-try:
-    await repository.create(obj_in)
-except IntegrityError as e:
-    if "foreign key constraint" in str(e):
-        raise ValueError("参照先のレコードが存在しません")
-    elif "unique constraint" in str(e):
-        raise ValueError("既に存在するレコードです")
-    raise
-```
-
----
-
-## 7. カスケード動作
-
-### 7.1 カスケードポリシー
-
-本システムでは、以下のカスケードポリシーを採用しています。
-
-| ポリシー | 説明 | 用途 |
-|---------|------|------|
-| **CASCADE** | 親削除時に子も自動削除 | 強い従属関係（プロジェクト→ファイル等） |
-| **SET NULL** | 親削除時に外部キーをNULLに設定 | 弱い従属関係（作成者削除時等） |
-| **RESTRICT** | 子が存在する場合は親削除を禁止 | 削除禁止（ファイルアップロード者等） |
-
-### 7.2 CASCADE動作の詳細
-
-#### 7.2.1 Project削除時のカスケード
-
-```mermaid
-graph TD
-    Project[Project削除] --> ProjectMember[ProjectMember削除<br/>CASCADE]
-    Project --> ProjectFile[ProjectFile削除<br/>CASCADE]
-    Project --> AnalysisSession[AnalysisSession削除<br/>CASCADE]
-
-    AnalysisSession --> AnalysisStep[AnalysisStep削除<br/>CASCADE]
-    AnalysisSession --> AnalysisFile[AnalysisFile削除<br/>CASCADE]
-
-    style Project fill:#ffccbc
-    style ProjectMember fill:#ffccbc
-    style ProjectFile fill:#ffccbc
-    style AnalysisSession fill:#ffccbc
-    style AnalysisStep fill:#ffccbc
-    style AnalysisFile fill:#ffccbc
-```
-
-**削除順序**:
-
-1. `Project`を削除
-2. `ProjectMember`が自動削除（CASCADE）
-3. `ProjectFile`が自動削除（CASCADE）
-4. `AnalysisSession`が自動削除（CASCADE）
-5. `AnalysisStep`が自動削除（CASCADE、セッション削除に伴う）
-6. `AnalysisFile`が自動削除（CASCADE、セッション削除に伴う）
-
-**SQLAlchemyモデル定義**:
-
-```python
-class Project(Base):
-    members: Mapped[list["ProjectMember"]] = relationship(
-        "ProjectMember",
-        back_populates="project",
-        cascade="all, delete-orphan",  # SQLAlchemyのカスケード
-    )
-
-class ProjectMember(Base):
-    project_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("projects.id", ondelete="CASCADE"),  # DBのカスケード
-    )
-```
-
-#### 7.2.2 User削除時のカスケード
-
-```mermaid
-graph TD
-    User[User削除] --> ProjectMember[ProjectMember削除<br/>CASCADE]
-    User --> AnalysisSession[AnalysisSession.created_by → NULL<br/>SET NULL]
-    User --> AnalysisFile[AnalysisFile.uploaded_by → NULL<br/>SET NULL]
-    User --> ProjectFile[ProjectFile削除不可<br/>RESTRICT]
-
-    style User fill:#ffccbc
-    style ProjectMember fill:#ffccbc
-    style AnalysisSession fill:#fff9c4
-    style AnalysisFile fill:#fff9c4
-    style ProjectFile fill:#c8e6c9
-```
-
-**動作説明**:
-
-1. `User`を削除
-2. `ProjectMember`が自動削除（CASCADE）
-3. `AnalysisSession.created_by`がNULLに設定（SET NULL）
-4. `AnalysisFile.uploaded_by`がNULLに設定（SET NULL）
-5. `ProjectFile.uploaded_by`が存在する場合、User削除は**失敗**（RESTRICT）
-
-**RESTRICTの理由**:
-
-ProjectFileはプロジェクトの重要な資産であり、アップロード者が削除されても履歴を保持する必要があるため、User削除を禁止しています。
-
-```python
-class ProjectFile(Base):
-    uploaded_by: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="RESTRICT"),  # 削除禁止
-        nullable=False,
-    )
-```
-
-### 7.3 DriverTree循環参照の解決
-
-#### 問題
-
-`DriverTree`と`DriverTreeNode`は循環参照を持ちます：
-
-- `DriverTree.root_node_id` → `DriverTreeNode.id`
-- `DriverTreeNode.tree_id` → `DriverTree.id`
-
-#### 解決策
-
-SQLAlchemyの`post_update=True`を使用：
-
-```python
-class DriverTree(Base):
-    root_node_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("driver_tree_nodes.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-
-    root_node: Mapped["DriverTreeNode | None"] = relationship(
-        "DriverTreeNode",
-        foreign_keys=[root_node_id],
-        post_update=True,  # 循環参照を解決
-    )
-```
-
-**動作**:
-
-1. `DriverTree`を先にINSERT（`root_node_id`はNULL）
-2. `DriverTreeNode`をINSERT
-3. `DriverTree.root_node_id`をUPDATE
-
----
-
-## 8. インデックス戦略
-
-### 8.1 インデックスの目的
-
-本システムのインデックスは、以下の目的で設計されています：
-
-| 目的 | インデックス種類 | 例 |
-|------|----------------|---|
-| **外部キー高速化** | 単一カラムインデックス | `idx_project_members_project_id` |
-| **一意性保証** | UNIQUE制約 | `idx_users_email` |
-| **複合検索最適化** | 複合インデックス | `idx_analysis_steps_order` |
-| **ORDER BY最適化** | 単一カラムインデックス | `step_order` |
-
-### 8.2 リレーションシップ別インデックス
-
-#### 8.2.1 1:N関係のインデックス
-
-**原則**: すべての外部キーにインデックスを作成
-
-```python
-# ProjectMember
-__table_args__ = (
-    Index("idx_project_members_project_id", "project_id"),
-    Index("idx_project_members_user_id", "user_id"),
-)
-```
-
-**効果**:
-
-- `SELECT * FROM project_members WHERE project_id = ?` が高速化
-- `JOIN projects ON project_members.project_id = projects.id` が高速化
-
-#### 8.2.2 N:M関係のインデックス
-
-**原則**: 両方の外部キーにインデックスを作成
-
-```python
-# ProjectMember（中間テーブル）
-__table_args__ = (
-    Index("idx_project_members_project_id", "project_id"),  # プロジェクトからの検索
-    Index("idx_project_members_user_id", "user_id"),        # ユーザーからの検索
-    UniqueConstraint("project_id", "user_id", name="uq_project_user"),  # 重複防止
-)
-```
-
-**効果**:
-
-- `SELECT * FROM project_members WHERE project_id = ?` が高速化（プロジェクトのメンバー一覧）
-- `SELECT * FROM project_members WHERE user_id = ?` が高速化（ユーザーの所属プロジェクト一覧）
-
-#### 8.2.3 自己参照関係のインデックス
-
-```python
-# DriverTreeNode
-__table_args__ = (
-    Index("idx_driver_tree_nodes_tree_id", "tree_id"),     # ツリー全体の取得
-    Index("idx_driver_tree_nodes_parent_id", "parent_id"), # 子ノード検索
-)
-```
-
-**効果**:
-
-- `SELECT * FROM driver_tree_nodes WHERE tree_id = ?` が高速化（ツリー全体取得）
-- `SELECT * FROM driver_tree_nodes WHERE parent_id = ?` が高速化（子ノード取得）
-
-### 8.3 複合インデックス
-
-#### 順序付きリストの最適化
-
-```python
-# AnalysisStep
-__table_args__ = (
-    Index("idx_analysis_steps_session", "session_id"),
-    Index("idx_analysis_steps_order", "session_id", "step_order"),  # 複合インデックス
-)
-```
-
-**クエリ最適化**:
+## 5. インデックス設計
+
+### 5.1 推奨インデックス一覧
+
+| テーブル | インデックス名 | カラム | タイプ | 目的 |
+|---------|--------------|--------|--------|------|
+| users | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| users | idx_users_azure_oid | azure_oid | UNIQUE | Azure OID検索 |
+| users | idx_users_email | email | BTREE | メール検索 |
+| projects | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| projects | idx_projects_code | code | UNIQUE | プロジェクトコード検索 |
+| projects | idx_projects_created_by | created_by | BTREE | 作成者別プロジェクト |
+| project_members | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| project_members | idx_project_members_composite | (project_id, user_id) | UNIQUE | 重複参加防止 |
+| project_members | idx_project_members_user | user_id | BTREE | ユーザー別プロジェクト |
+| project_files | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| project_files | idx_project_files_project | project_id | BTREE | プロジェクト別ファイル |
+| analysis_sessions | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| analysis_sessions | idx_analysis_sessions_project | project_id | BTREE | プロジェクト別セッション |
+| analysis_sessions | idx_analysis_sessions_creator | creator_id | BTREE | 作成者別セッション |
+| analysis_sessions | idx_analysis_sessions_chat_history | chat_history | GIN | JSONB検索 |
+| analysis_steps | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| analysis_steps | idx_analysis_steps_session | session_id | BTREE | セッション別ステップ |
+| analysis_steps | idx_analysis_steps_parameters | parameters | GIN | JSONB検索 |
+| analysis_templates | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| analysis_templates | idx_analysis_templates_name | name | UNIQUE | テンプレート名検索 |
+| driver_trees | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| driver_trees | idx_driver_trees_project | project_id | BTREE | プロジェクト別ツリー |
+| driver_tree_nodes | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| driver_tree_nodes | idx_driver_tree_nodes_tree | tree_id | BTREE | ツリー別ノード |
+| driver_tree_nodes | idx_driver_tree_nodes_parent | parent_id | BTREE | 親ノード検索 |
+| driver_tree_categories | PRIMARY KEY | id | UNIQUE | 主キー検索 |
+| driver_tree_categories | idx_driver_tree_categories_name | name | UNIQUE | カテゴリ名検索 |
+
+### 5.2 JSONB列のGINインデックス
 
 ```sql
--- このクエリが高速化
-SELECT * FROM analysis_steps
-WHERE session_id = ?
-ORDER BY step_order;
+-- JSONB列の検索性能向上
+CREATE INDEX idx_analysis_sessions_chat_history
+ON analysis_sessions USING GIN (chat_history);
+
+CREATE INDEX idx_analysis_steps_parameters
+ON analysis_steps USING GIN (parameters);
+
+CREATE INDEX idx_analysis_sessions_snapshot_history
+ON analysis_sessions USING GIN (snapshot_history);
 ```
 
-**効果**: `session_id`でフィルタ + `step_order`でソートが1回のインデックススキャンで完了
+**効果:**
+
+- JSONB内の特定キーの高速検索
+- `@>`, `?`, `?&`, `?|` 演算子の最適化
+- チャット履歴、パラメータの部分一致検索
 
 ---
 
-## 9. データフロー
+## 6. データ整合性制約
 
-### 9.1 プロジェクト作成フロー
+### 6.1 ユニーク制約
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Project
-    participant ProjectMember
+| テーブル | カラム | 説明 |
+|---------|--------|------|
+| users | azure_oid | Azure AD Object IDの重複防止 |
+| projects | code | プロジェクトコードの重複防止 |
+| project_members | (project_id, user_id) | 同じユーザーが同じプロジェクトに重複参加防止 |
+| analysis_templates | name | テンプレート名の重複防止 |
+| driver_tree_categories | name | カテゴリ名の重複防止 |
 
-    User->>Project: プロジェクト作成
-    Note over Project: id, name, code, created_by
+### 6.2 NOT NULL制約
 
-    Project->>ProjectMember: 作成者をPROJECT_MANAGERとして追加
-    Note over ProjectMember: project_id, user_id, role=PROJECT_MANAGER
+すべてのテーブルで以下のカラムはNOT NULL:
 
-    User->>ProjectMember: 他のメンバーを招待
-    Note over ProjectMember: project_id, user_id, role, added_by
-```
+- `id` (主キー)
+- `created_at` (作成日時)
+- `updated_at` (更新日時、該当テーブルのみ)
 
-### 9.2 分析セッションフロー
+**その他の主要なNOT NULL:**
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Project
-    participant AnalysisSession
-    participant AnalysisFile
-    participant AnalysisStep
+- `users.azure_oid`, `users.email`, `users.system_role`, `users.is_active`
+- `projects.name`, `projects.code`, `projects.is_active`
+- `project_members.project_id`, `project_members.user_id`, `project_members.project_role`
+- `analysis_sessions.project_id`, `analysis_sessions.creator_id`
+- `driver_tree_nodes.tree_id`, `driver_tree_nodes.label`
 
-    User->>Project: プロジェクト選択
-
-    User->>AnalysisSession: セッション作成
-    Note over AnalysisSession: project_id, created_by, validation_config
-
-    User->>AnalysisFile: ファイルアップロード
-    Note over AnalysisFile: session_id, uploaded_by, storage_path
-
-    User->>AnalysisStep: ステップ1作成（フィルタ）
-    Note over AnalysisStep: session_id, step_type=filter, step_order=0
-
-    User->>AnalysisStep: ステップ2作成（集計）
-    Note over AnalysisStep: session_id, step_type=aggregate, step_order=1
-
-    AnalysisStep->>AnalysisStep: ステップ2がステップ1の結果を参照
-    Note over AnalysisStep: data_source='step_0'
-```
-
-### 9.3 ドライバーツリー構築フロー
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant DriverTree
-    participant DriverTreeNode as Node
-
-    User->>DriverTree: ツリー作成
-    Note over DriverTree: id, name
-
-    User->>Node: ルートノード作成
-    Note over Node: tree_id, label='粗利', parent_id=NULL
-
-    DriverTree->>Node: root_node_id設定
-    Note over DriverTree: root_node_id = root.id
-
-    User->>Node: 子ノード1作成
-    Note over Node: tree_id, label='売上', parent_id=root.id
-
-    User->>Node: 子ノード2作成
-    Note over Node: tree_id, label='原価', parent_id=root.id
-```
-
----
-
-## 10. 付録
-
-### 10.1 モデルファイル一覧
-
-| ファイルパス | エンティティ | 行数 |
-|------------|------------|-----|
-| `src/app/models/user.py` | User | 186 |
-| `src/app/models/project.py` | Project | 134 |
-| `src/app/models/project_member.py` | ProjectMember | 167 |
-| `src/app/models/project_file.py` | ProjectFile | 149 |
-| `src/app/models/analysis_session.py` | AnalysisSession | 186 |
-| `src/app/models/analysis_step.py` | AnalysisStep | 177 |
-| `src/app/models/analysis_file.py` | AnalysisFile | 176 |
-| `src/app/models/analysis_template.py` | AnalysisTemplate | - |
-| `src/app/models/analysis_template_chart.py` | AnalysisTemplateChart | - |
-| `src/app/models/driver_tree.py` | DriverTree | 112 |
-| `src/app/models/driver_tree_node.py` | DriverTreeNode | - |
-| `src/app/models/driver_tree_category.py` | DriverTreeCategory | - |
-
-### 10.2 外部キー制約一覧
+### 6.3 チェック制約
 
 ```sql
--- ProjectMember
-ALTER TABLE project_members
-ADD CONSTRAINT fk_project_members_project_id
-FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE;
-
-ALTER TABLE project_members
-ADD CONSTRAINT fk_project_members_user_id
-FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE project_members
-ADD CONSTRAINT fk_project_members_added_by
-FOREIGN KEY (added_by) REFERENCES users(id) ON DELETE SET NULL;
-
--- ProjectFile
+-- ファイルサイズは正の値
 ALTER TABLE project_files
-ADD CONSTRAINT fk_project_files_project_id
-FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE;
+ADD CONSTRAINT chk_project_files_size_positive
+CHECK (file_size > 0);
 
-ALTER TABLE project_files
-ADD CONSTRAINT fk_project_files_uploaded_by
-FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE RESTRICT;
+-- 階層レベルは0以上
+ALTER TABLE driver_tree_nodes
+ADD CONSTRAINT chk_driver_tree_nodes_level_positive
+CHECK (level >= 0);
 
--- AnalysisSession
-ALTER TABLE analysis_sessions
-ADD CONSTRAINT fk_analysis_sessions_project_id
-FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE;
+-- 表示順序は0以上
+ALTER TABLE driver_tree_nodes
+ADD CONSTRAINT chk_driver_tree_nodes_position_positive
+CHECK (position >= 0);
 
-ALTER TABLE analysis_sessions
-ADD CONSTRAINT fk_analysis_sessions_created_by
-FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL;
-
--- AnalysisStep
+-- ステップ順序は0以上
 ALTER TABLE analysis_steps
-ADD CONSTRAINT fk_analysis_steps_session_id
-FOREIGN KEY (session_id) REFERENCES analysis_sessions(id) ON DELETE CASCADE;
-
--- AnalysisFile
-ALTER TABLE analysis_files
-ADD CONSTRAINT fk_analysis_files_session_id
-FOREIGN KEY (session_id) REFERENCES analysis_sessions(id) ON DELETE CASCADE;
-
-ALTER TABLE analysis_files
-ADD CONSTRAINT fk_analysis_files_uploaded_by
-FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL;
-
--- AnalysisTemplateChart
-ALTER TABLE analysis_template_charts
-ADD CONSTRAINT fk_analysis_template_charts_template_id
-FOREIGN KEY (template_id) REFERENCES analysis_templates(id) ON DELETE CASCADE;
-
--- DriverTreeNode
-ALTER TABLE driver_tree_nodes
-ADD CONSTRAINT fk_driver_tree_nodes_tree_id
-FOREIGN KEY (tree_id) REFERENCES driver_trees(id) ON DELETE CASCADE;
-
-ALTER TABLE driver_tree_nodes
-ADD CONSTRAINT fk_driver_tree_nodes_parent_id
-FOREIGN KEY (parent_id) REFERENCES driver_tree_nodes(id) ON DELETE CASCADE;
-
--- DriverTree
-ALTER TABLE driver_trees
-ADD CONSTRAINT fk_driver_trees_root_node_id
-FOREIGN KEY (root_node_id) REFERENCES driver_tree_nodes(id) ON DELETE SET NULL;
-
--- DriverTreeCategory
-ALTER TABLE driver_tree_categories
-ADD CONSTRAINT fk_driver_tree_categories_parent_id
-FOREIGN KEY (parent_id) REFERENCES driver_tree_categories(id) ON DELETE CASCADE;
+ADD CONSTRAINT chk_analysis_steps_order_positive
+CHECK (step_order >= 0);
 ```
-
-### 10.3 UNIQUE制約一覧
-
-```sql
--- User
-ALTER TABLE users ADD CONSTRAINT uq_users_azure_oid UNIQUE (azure_oid);
-ALTER TABLE users ADD CONSTRAINT uq_users_email UNIQUE (email);
-
--- Project
-ALTER TABLE projects ADD CONSTRAINT uq_projects_code UNIQUE (code);
-
--- ProjectMember
-ALTER TABLE project_members ADD CONSTRAINT uq_project_user UNIQUE (project_id, user_id);
-```
-
-### 10.4 参考リンク
-
-#### SQLAlchemy公式ドキュメント
-
-- [Relationship Configuration](https://docs.sqlalchemy.org/en/20/orm/relationships.html)
-- [Cascades](https://docs.sqlalchemy.org/en/20/orm/cascades.html)
-- [Foreign Key](https://docs.sqlalchemy.org/en/20/core/constraints.html#foreign-key-constraint)
-
-#### PostgreSQL公式ドキュメント
-
-- [Foreign Keys](https://www.postgresql.org/docs/current/ddl-constraints.html#DDL-CONSTRAINTS-FK)
-- [Indexes](https://www.postgresql.org/docs/current/indexes.html)
-
-### 10.5 関連設計書
-
-| 設計書 | 関連箇所 |
-|-------|---------|
-| [Database設計書](./01-database-design.md) | テーブル定義、データ型、制約、接続管理 |
-| [RBAC設計書](../03-security/01-rbac-design.md) | User, ProjectMemberのロール設計 |
-| [API設計書](../04-api/01-api-design.md) | エンティティのREST APIエンドポイント |
-
-### 10.6 用語集
-
-| 用語 | 説明 |
-|------|------|
-| **ER図** | Entity-Relationship Diagram（エンティティ関連図） |
-| **カーディナリティ** | エンティティ間の数的関係（1:1, 1:N, N:M） |
-| **外部キー** | 他のテーブルの主キーを参照するカラム |
-| **CASCADE** | 親レコード削除時に子レコードも自動削除 |
-| **SET NULL** | 親レコード削除時に外部キーをNULLに設定 |
-| **RESTRICT** | 子レコードが存在する場合、親レコード削除を禁止 |
-| **自己参照** | 同じテーブル内の他のレコードを参照する関係 |
-| **循環参照** | 2つのテーブルが相互に外部キーで参照し合う関係 |
-
-### 10.7 変更履歴
-
-| バージョン | 日付 | 変更内容 | 変更者 |
-|-----------|------|---------|--------|
-| 1.0.0 | 2025-01-11 | 初版作成 | Claude Code |
 
 ---
 
-このER図詳細設計書は、genai-app-docsプロジェクトのエンティティリレーションシップを完全に文書化します。
-16のエンティティと15のリレーションシップを詳細なMermaid図とともに解説しています。
+## 7. まとめ
+
+### 7.1 テーブル数
+
+**合計: 15テーブル**
+
+- ユーザー管理: 1テーブル
+- プロジェクト管理: 3テーブル
+- 分析機能: 5テーブル
+- ドライバーツリー: 3テーブル
+- サンプル（レガシー）: 3テーブル（本ER図には含まない）
+
+### 7.2 主要な設計思想
+
+✅ **UUID主キー**: すべてのテーブルでUUID v4を使用（分散システム対応）
+✅ **JSONB活用**: 柔軟なスキーマが必要な箇所でJSONB型を使用
+✅ **タイムスタンプ**: すべてのレコードに作成日時・更新日時を記録（UTC）
+✅ **論理削除**: `is_active`フラグによるソフトデリート
+✅ **参照整合性**: 外部キー制約とON DELETE動作の適切な設定
+✅ **インデックス最適化**: 検索頻度の高いカラムにインデックスを配置
+✅ **非同期対応**: SQLAlchemy 2.0非同期ORMで実装
+
+### 7.3 関連ドキュメント
+
+- **データベース設計書**: `01-database-design.md`
+- **システムアーキテクチャ**: `../01-architecture/01-system-architecture.md`
+- **API仕様書**: `../04-api/01-api-specifications.md`
+
+---
+
+##### ドキュメント管理情報
+
+- **作成日**: 2025年
+- **対象バージョン**: 現行実装
+- **最終更新**: データベース設計書から抽出して独立ファイル化

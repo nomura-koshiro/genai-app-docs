@@ -303,14 +303,91 @@ async def process_file(file: UploadFile) -> FileResponse:
 - 名詞または名詞句を使用
 - 意味のある名前を使用
 
+### モジュール別のプレフィックス規則
+
+本プロジェクトでは、**サンプル/レガシー機能**と**実際の機能モジュール**で異なる命名規則を使用します：
+
+#### 1. サンプル/レガシー機能（`Sample`プレフィックス）
+
+移行予定のレガシー機能やサンプルコードには`Sample`プレフィックスを付与します：
+
+```text
+models/sample/
+├── sample_user.py → SampleUser
+├── sample_session.py → SampleSession
+├── sample_file.py → SampleFile
+└── sample_message.py → SampleMessage
+
+schemas/sample/
+├── sample_user.py → SampleUserCreate, SampleUserResponse
+└── sample_session.py → SampleSessionCreate
+
+repositories/sample/
+└── sample_user.py → SampleUserRepository
+
+api/routes/v1/sample/
+├── sample_users.py
+├── sample_sessions.py
+└── sample_files.py
+```
+
+**ルール**:
+
+- **クラス名**: `Sample{Entity}`（例: `SampleUser`, `SampleSession`）
+- **ファイル名**: `sample_{entity}.py`（例: `sample_user.py`）
+- **テーブル名**: `sample_{entities}`（例: `sample_users`）
+- **用途**: 移行予定の機能、サンプルコード、デモ用エンティティ
+
+#### 2. 実際の機能モジュール（プレフィックスなし、モジュール名で区別）
+
+実際の機能モジュールは`Sample`プレフィックスを使用せず、ディレクトリ構造で機能を区別します：
+
+```text
+models/analysis/
+├── file.py → AnalysisFile
+├── session.py → AnalysisSession
+└── template.py → AnalysisTemplate
+
+models/project/
+├── project.py → Project
+├── file.py → ProjectFile
+└── member.py → ProjectMember
+
+models/driver_tree/
+├── tree.py → DriverTree
+├── node.py → DriverTreeNode
+└── category.py → DriverTreeCategory
+
+models/user_account/
+└── user_account.py → UserAccount
+```
+
+**ルール**:
+
+- **クラス名**: `{ModuleName}{Entity}`または`{Entity}`（例: `AnalysisFile`, `Project`）
+- **ファイル名**: `{entity}.py`（例: `file.py`, `project.py`）
+- **テーブル名**: `{module}_{entities}`（例: `analysis_files`, `projects`）
+- **ディレクトリ**: `models/{module}/`で機能を区別
+
+#### 命名パターン比較
+
+| 機能タイプ | ディレクトリ | ファイル名 | クラス名 | テーブル名 |
+|-----------|-------------|-----------|----------|-----------|
+| **サンプル** | `models/sample/` | `sample_user.py` | `SampleUser` | `sample_users` |
+| **Analysis** | `models/analysis/` | `file.py` | `AnalysisFile` | `analysis_files` |
+| **Project** | `models/project/` | `project.py` | `Project` | `projects` |
+| **DriverTree** | `models/driver_tree/` | `node.py` | `DriverTreeNode` | `driver_tree_nodes` |
+| **UserAccount** | `models/user_account/` | `user_account.py` | `UserAccount` | `users` |
+
 ### 命名パターン
 
 | パターン | 例 | 用途 |
 |---------|-----|------|
-| エンティティ | `User`, `Session`, `File` | ドメインモデル |
-| スキーマ | `SampleUserCreate`, `SampleUserResponse`, `SessionResponse` | Pydanticスキーマ |
-| サービス | `UserService`, `FileService`, `SessionService` | ビジネスロジック |
-| リポジトリ | `UserRepository`, `SessionRepository` | データアクセス |
+| エンティティ（レガシー） | `SampleUser`, `SampleSession` | サンプル/レガシーモデル |
+| エンティティ（実機能） | `Project`, `AnalysisFile`, `DriverTreeNode` | 実際の機能モデル |
+| スキーマ | `SampleUserCreate`, `ProjectCreate`, `AnalysisFileResponse` | Pydanticスキーマ |
+| サービス | `UserService`, `ProjectService`, `AnalysisService` | ビジネスロジック |
+| リポジトリ | `UserRepository`, `ProjectRepository` | データアクセス |
 | 例外 | `ValidationError`, `AuthenticationError`, `NotFoundError` | カスタム例外 |
 | ミドルウェア | `ErrorHandlerMiddleware`, `LoggingMiddleware` | ミドルウェア |
 | 設定 | `Settings`, `DatabaseConfig` | 設定クラス |
@@ -517,6 +594,120 @@ class SampleSession(Base):
 @router.post("/createUser")        # 動詞を含めない
 @router.get("/user-list")          # ハイフン使用（アンダースコアかスラッシュを使用）
 ```
+
+---
+
+## 7. 型エイリアス（Type Aliases）命名規則
+
+FastAPIの依存性注入で使用する型エイリアスには、**`Dep`サフィックス**を付与します。
+
+### 基本ルール
+
+- `Annotated[型, Depends(関数)]`形式の型エイリアスは`Dep`で終わる
+- PascalCaseを使用
+- 用途が明確な名前を付ける
+
+### カテゴリ別の命名パターン
+
+#### 1. データベース依存性
+
+```python
+DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
+```
+
+**パターン**: `DatabaseDep`（固定名）
+
+#### 2. サービス依存性
+
+```python
+# レガシー（Sample）サービス
+UserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
+AgentServiceDep = Annotated[SampleAgentService, Depends(get_agent_service)]
+FileServiceDep = Annotated[SampleFileService, Depends(get_file_service)]
+SessionServiceDep = Annotated[SampleSessionService, Depends(get_session_service)]
+
+# 実機能サービス
+AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
+```
+
+**パターン**: `{Service名}ServiceDep`
+
+- レガシー: `{Entity}ServiceDep` → `UserServiceDep`
+- 実機能（Azure対応等）: `{Prefix}{Entity}ServiceDep` → `AzureUserServiceDep`
+
+#### 3. 認証ユーザー依存性
+
+```python
+# JWT認証（レガシー）
+CurrentUserDep = Annotated[SampleUser, Depends(get_current_active_user)]
+CurrentSuperuserDep = Annotated[SampleUser, Depends(get_current_superuser)]
+CurrentUserOptionalDep = Annotated[SampleUser | None, Depends(get_current_user_optional)]
+
+# Azure AD認証（本番）
+CurrentUserAzureDep = Annotated[UserAccount, Depends(get_current_active_user_azure)]
+```
+
+**パターン**: `Current{Type}{Modifier}Dep`
+
+- 基本: `CurrentUserDep`（アクティブユーザー）
+- 権限: `CurrentSuperuserDep`（管理者）
+- オプション: `CurrentUserOptionalDep`（認証任意）
+- Azure AD: `CurrentUserAzureDep`（Azure AD認証）
+
+### 使用例
+
+```python
+# エンドポイントでの使用
+@router.get("/profile")
+async def get_profile(
+    user: CurrentUserDep,  # 認証必須
+    user_service: UserServiceDep,  # サービス注入
+    db: DatabaseDep,  # DB注入
+) -> UserResponse:
+    """ユーザープロフィール取得。"""
+    return UserResponse.model_validate(user)
+
+
+@router.get("/public")
+async def public_endpoint(
+    user: CurrentUserOptionalDep,  # 認証任意
+) -> dict:
+    """認証任意のエンドポイント。"""
+    if user:
+        return {"message": f"Hello, {user.username}"}
+    return {"message": "Hello, guest"}
+```
+
+### 型エイリアス vs 直接Annotated
+
+```python
+# ❌ 悪い例: 毎回Annotatedを記述
+@router.get("/users/{user_id}")
+async def get_user(
+    user_id: int,
+    current_user: Annotated[SampleUser, Depends(get_current_active_user)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    pass
+
+
+# ✅ 良い例: 型エイリアスを再利用
+@router.get("/users/{user_id}")
+async def get_user(
+    user_id: int,
+    current_user: CurrentUserDep,
+    db: DatabaseDep,
+):
+    pass
+```
+
+**利点**:
+
+- コードの簡潔性（DRY原則）
+- 型の一貫性
+- IDEの型推論サポート
+- 変更時の一元管理
 
 ---
 
