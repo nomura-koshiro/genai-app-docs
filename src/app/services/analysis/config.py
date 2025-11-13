@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.decorators import async_timeout, measure_performance
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.schemas import DummyDataResponse, ValidationConfigResponse
+from app.schemas import AnalysisDummyDataResponse, AnalysisValidationConfigResponse
 
 logger = get_logger(__name__)
 
@@ -46,13 +46,13 @@ class AnalysisConfigService:
 
     @measure_performance
     @async_timeout(10.0)
-    async def get_validation_config(self) -> ValidationConfigResponse:
+    async def get_validation_config(self) -> AnalysisValidationConfigResponse:
         """検証設定を取得します。
 
         このメソッドは、validation.ymlファイルから検証設定を読み込みます。
 
         Returns:
-            ValidationConfigResponse: 検証設定
+            AnalysisValidationConfigResponse: 検証設定
                 - validation_config: 検証設定の全体
 
         Example:
@@ -74,7 +74,7 @@ class AnalysisConfigService:
 
             logger.debug("検証設定を正常に取得しました")
 
-            return ValidationConfigResponse(
+            return AnalysisValidationConfigResponse(
                 validation_config=config,
             )
 
@@ -91,7 +91,7 @@ class AnalysisConfigService:
 
     @measure_performance
     @async_timeout(10.0)
-    async def get_dummy_data(self, chart_type: str) -> DummyDataResponse:
+    async def get_dummy_data(self, chart_type: str) -> AnalysisDummyDataResponse:
         """ダミーチャートデータを取得します。
 
         このメソッドは、指定されたチャートタイプのダミーデータを返します。
@@ -101,7 +101,7 @@ class AnalysisConfigService:
                 - 例: "bar", "line", "pie", "scatter", など
 
         Returns:
-            DummyDataResponse: ダミーデータレスポンス
+            AnalysisDummyDataResponse: ダミーデータレスポンス
                 - formula: ダミー数式
                 - input: ダミー入力データ
                 - chart: ダミーチャート
@@ -146,7 +146,7 @@ class AnalysisConfigService:
                 chart_type=chart_type,
             )
 
-            return DummyDataResponse(
+            return AnalysisDummyDataResponse(
                 formula=dummy_data.get("formula", []),
                 input=dummy_data.get("input", []),
                 chart=dummy_data.get("chart", []),

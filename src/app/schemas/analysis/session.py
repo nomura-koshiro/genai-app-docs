@@ -38,11 +38,11 @@
         - AnalysisFileMetadata: アップロードファイルのメタ情報
 
     AIチャット:
-        - ChatRequest: チャットリクエスト
-        - ChatResponse: チャット応答
+        - AnalysisChatRequest: チャットリクエスト
+        - AnalysisChatResponse: チャット応答
 
 使用方法:
-    >>> from app.schemas.analysis.session import AnalysisSessionCreate, ChatRequest
+    >>> from app.schemas.analysis.session import AnalysisSessionCreate, AnalysisChatRequest
     >>>
     >>> # セッション作成
     >>> session = AnalysisSessionCreate(
@@ -52,7 +52,7 @@
     ... )
     >>>
     >>> # AIチャット
-    >>> chat = ChatRequest(
+    >>> chat = AnalysisChatRequest(
     ...     message="売上データを東京と大阪でフィルタリングしてください"
     ... )
 """
@@ -546,7 +546,7 @@ class AnalysisFileUploadResponse(BaseModel):
 # ================================================================================
 
 
-class ChatRequest(BaseModel):
+class AnalysisChatRequest(BaseModel):
     """AIチャットリクエストスキーマ。
 
     AIエージェントとのチャット時に使用します。
@@ -555,7 +555,7 @@ class ChatRequest(BaseModel):
         message (str): ユーザーのメッセージ
 
     Example:
-        >>> chat = ChatRequest(
+        >>> chat = AnalysisChatRequest(
         ...     message="売上データを東京と大阪でフィルタリングしてください"
         ... )
     """
@@ -563,7 +563,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, description="ユーザーのメッセージ")
 
 
-class ChatResponse(BaseModel):
+class AnalysisChatResponse(BaseModel):
     """AIチャット応答スキーマ。
 
     AIエージェントからの応答を返す際に使用します。
@@ -576,7 +576,7 @@ class ChatResponse(BaseModel):
         analysis_result (dict[str, Any] | None): 分析結果（チャート、数式など）
 
     Example:
-        >>> response = ChatResponse(
+        >>> response = AnalysisChatResponse(
         ...     message="東京と大阪でフィルタリングしました。",
         ...     steps_added=1,
         ...     steps_modified=0,
@@ -596,7 +596,7 @@ class ChatResponse(BaseModel):
 # ================================================================================
 
 
-class ValidationConfigResponse(BaseModel):
+class AnalysisValidationConfigResponse(BaseModel):
     """validation設定レスポンススキーマ。
 
     validation.ymlの内容を返す際に使用します。
@@ -605,7 +605,7 @@ class ValidationConfigResponse(BaseModel):
         validation_config (dict[str, Any]): validation設定の全体
 
     Example:
-        >>> config = ValidationConfigResponse(
+        >>> config = AnalysisValidationConfigResponse(
         ...     validation_config={
         ...         "市場拡大": {
         ...             "新規参入": {...}
@@ -617,7 +617,7 @@ class ValidationConfigResponse(BaseModel):
     validation_config: dict[str, Any] = Field(..., description="validation設定の全体")
 
 
-class DummyDataResponse(BaseModel):
+class AnalysisDummyDataResponse(BaseModel):
     """ダミーデータレスポンススキーマ。
 
     ダミーデータを返す際に使用します。
@@ -629,7 +629,7 @@ class DummyDataResponse(BaseModel):
         hint (str): ヒント文章
 
     Example:
-        >>> dummy = DummyDataResponse(
+        >>> dummy = AnalysisDummyDataResponse(
         ...     formula=[{"name": "売上合計", "value": "1000"}],
         ...     input=["地域,売上\\n東京,1000"],
         ...     chart=["{}"],

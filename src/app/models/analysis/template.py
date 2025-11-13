@@ -120,7 +120,7 @@ class AnalysisTemplate(Base, TimestampMixin):
         JSONB,
         nullable=False,
         default=list,
-        comment="Initial axis configuration (list[InitialAxisConfig] as dict)",
+        comment="Initial axis configuration (list[AnalysisInitialAxisConfig] as dict)",
     )
 
     dummy_formula: Mapped[list[dict[str, Any]] | None] = mapped_column(

@@ -40,7 +40,7 @@ from app.schemas import (
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisStepResponse,
-    ValidationConfig,
+    AnalysisValidationConfig,
 )
 
 logger = get_logger(__name__)
@@ -147,8 +147,8 @@ class AnalysisSessionService:
         )
 
         try:
-            # ValidationConfigスキーマを使用してバリデーション設定を作成
-            validation_config_obj = ValidationConfig(
+            # AnalysisValidationConfigスキーマを使用してバリデーション設定を作成
+            validation_config_obj = AnalysisValidationConfig(
                 policy=session_data.policy,
                 issue=session_data.issue,
             )

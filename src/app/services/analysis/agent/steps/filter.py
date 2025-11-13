@@ -30,9 +30,9 @@ from pydantic import ValidationError as PydanticValidationError
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.schemas import (
-    FilterConfig,
-    NumericFilterConfig,
-    TableFilterConfig,
+    AnalysisFilterConfig,
+    AnalysisNumericFilterConfig,
+    AnalysisTableFilterConfig,
 )
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
@@ -102,7 +102,7 @@ class FilterStep(BaseAnalysisStep):
 
         # Pydanticスキーマで基本構造を検証
         try:
-            filter_config = FilterConfig.model_validate(config)
+            filter_config = AnalysisFilterConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "フィルタ設定の形式が不正です",
@@ -265,7 +265,7 @@ class FilterStep(BaseAnalysisStep):
 
         # Pydanticスキーマに変換（型安全性）
         try:
-            filter_config = FilterConfig.model_validate(config)
+            filter_config = AnalysisFilterConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "フィルタ設定の形式が不正です",
@@ -362,13 +362,13 @@ class FilterStep(BaseAnalysisStep):
     async def _apply_numeric_filter(
         self,
         df: pd.DataFrame,
-        numeric_filter: NumericFilterConfig,
+        numeric_filter: AnalysisNumericFilterConfig,
     ) -> pd.DataFrame:
         """数値フィルタを適用します。
 
         Args:
             df (pd.DataFrame): データフレーム
-            numeric_filter (NumericFilterConfig): 数値フィルタ設定
+            numeric_filter (AnalysisNumericFilterConfig): 数値フィルタ設定
 
         Returns:
             pd.DataFrame: フィルタリング後のDataFrame
@@ -376,7 +376,7 @@ class FilterStep(BaseAnalysisStep):
         Example:
             >>> filtered = await self._apply_numeric_filter(
             ...     df,
-            ...     NumericFilterConfig(
+            ...     AnalysisNumericFilterConfig(
             ...         column="売上",
             ...         filter_type="range",
             ...         enable_min=True,
@@ -460,14 +460,14 @@ class FilterStep(BaseAnalysisStep):
     async def _apply_table_filter(
         self,
         df: pd.DataFrame,
-        table_filter: TableFilterConfig,
+        table_filter: AnalysisTableFilterConfig,
         reference_df: pd.DataFrame,
     ) -> pd.DataFrame:
         """テーブルフィルタを適用します。
 
         Args:
             df (pd.DataFrame): データフレーム
-            table_filter (TableFilterConfig): テーブルフィルタ設定
+            table_filter (AnalysisTableFilterConfig): テーブルフィルタ設定
             reference_df (pd.DataFrame): 参照用DataFrame
 
         Returns:
@@ -476,7 +476,7 @@ class FilterStep(BaseAnalysisStep):
         Example:
             >>> filtered = await self._apply_table_filter(
             ...     df,
-            ...     TableFilterConfig(
+            ...     AnalysisTableFilterConfig(
             ...         key_columns=["地域"],
             ...         exclude_mode=False
             ...     ),

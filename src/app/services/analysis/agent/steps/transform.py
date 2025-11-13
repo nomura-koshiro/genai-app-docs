@@ -40,7 +40,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas import TransformCalculation, TransformConfig
+from app.schemas import AnalysisTransformCalculation, AnalysisTransformConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
 logger = get_logger(__name__)
@@ -108,7 +108,7 @@ class TransformStep(BaseAnalysisStep):
         logger.debug("変換設定を検証中")
 
         try:
-            transform_config = TransformConfig.model_validate(config)
+            transform_config = AnalysisTransformConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "変換設定の形式が不正です",
@@ -134,7 +134,7 @@ class TransformStep(BaseAnalysisStep):
             AnalysisStepResult: 変換結果
         """
         try:
-            transform_config = TransformConfig.model_validate(config)
+            transform_config = AnalysisTransformConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "変換設定の形式が不正です",
@@ -197,7 +197,7 @@ class TransformStep(BaseAnalysisStep):
         df: pd.DataFrame,
         operation_type: str,
         target_name: str,
-        calculation: TransformCalculation,
+        calculation: AnalysisTransformCalculation,
     ) -> pd.DataFrame:
         """軸（列）操作を適用します。
 
@@ -293,7 +293,7 @@ class TransformStep(BaseAnalysisStep):
         df: pd.DataFrame,
         operation_type: str,
         target_name: str,
-        calculation: TransformCalculation,
+        calculation: AnalysisTransformCalculation,
     ) -> pd.DataFrame:
         """科目（行）操作を適用します。
 

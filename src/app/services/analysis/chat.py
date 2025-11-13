@@ -18,7 +18,7 @@ from app.api.decorators import async_timeout, measure_performance
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.repositories import AnalysisSessionRepository
-from app.schemas import ChatRequest, ChatResponse
+from app.schemas import AnalysisChatRequest, AnalysisChatResponse
 from app.schemas.analysis import AnalysisChatMessage
 
 logger = get_logger(__name__)
@@ -53,8 +53,8 @@ class AnalysisChatService:
     async def execute_chat(
         self,
         session_id: uuid.UUID,
-        chat_request: ChatRequest,
-    ) -> ChatResponse:
+        chat_request: AnalysisChatRequest,
+    ) -> AnalysisChatResponse:
         """AIエージェントとチャットを実行します（準備中）。
 
         このメソッドは、ユーザーのメッセージを受け取り、AIエージェントに処理を依頼します。
@@ -62,11 +62,11 @@ class AnalysisChatService:
 
         Args:
             session_id (uuid.UUID): セッションのUUID
-            chat_request (ChatRequest): チャットリクエスト
+            chat_request (AnalysisChatRequest): チャットリクエスト
                 - message: ユーザーメッセージ
 
         Returns:
-            ChatResponse: チャットレスポンス
+            AnalysisChatResponse: チャットレスポンス
                 - message: アシスタントの応答メッセージ
                 - snapshot_id: スナップショットID
 
@@ -75,7 +75,7 @@ class AnalysisChatService:
             ValidationError: チャット処理でエラーが発生した場合
 
         Example:
-            >>> chat_request = ChatRequest(
+            >>> chat_request = AnalysisChatRequest(
             ...     message="東京と大阪の売上を表示してください"
             ... )
             >>> response = await chat_service.execute_chat(
@@ -130,7 +130,7 @@ class AnalysisChatService:
                 snapshot_id=snapshot_id,
             )
 
-            return ChatResponse(
+            return AnalysisChatResponse(
                 message=response_message,
                 snapshot_id=snapshot_id,
                 steps_added=0,

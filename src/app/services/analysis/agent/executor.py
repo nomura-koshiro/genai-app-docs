@@ -32,7 +32,7 @@ from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import AnalysisStep
 from app.repositories import AnalysisFileRepository, AnalysisSessionRepository, AnalysisStepRepository
-from app.schemas import FilterConfig
+from app.schemas import AnalysisFilterConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 from app.services.analysis.agent.storage import AnalysisStorageService
 
@@ -188,7 +188,7 @@ class AnalysisStepExecutor:
             kwargs = {}
             if step.step_type == "filter":
                 try:
-                    filter_config = FilterConfig.model_validate(step.config)
+                    filter_config = AnalysisFilterConfig.model_validate(step.config)
                     if filter_config.table_filter is not None and filter_config.table_filter.enable:
                         table_df_source = filter_config.table_filter.table_df
                         if table_df_source:

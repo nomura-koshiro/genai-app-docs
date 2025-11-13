@@ -42,16 +42,16 @@ from app.core.database import get_db
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.schemas import (
+    AnalysisChatRequest,
+    AnalysisChatResponse,
+    AnalysisDummyDataResponse,
     AnalysisFileUploadRequest,
     AnalysisFileUploadResponse,
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisStepCreate,
     AnalysisStepResponse,
-    ChatRequest,
-    ChatResponse,
-    DummyDataResponse,
-    ValidationConfigResponse,
+    AnalysisValidationConfigResponse,
 )
 from app.services import AnalysisService, ProjectService
 
@@ -393,7 +393,7 @@ async def create_step(
 
 @router.post(
     "/sessions/{session_id}/chat",
-    response_model=ChatResponse,
+    response_model=AnalysisChatResponse,
     summary="AIチャット実行",
     description="""
     AIエージェントとチャットを実行します（準備中）。
@@ -413,10 +413,10 @@ async def create_step(
 @async_timeout(300.0)  # 5分タイムアウト（AIエージェント実行）
 async def execute_chat(
     session_id: uuid.UUID,
-    chat_request: ChatRequest,
+    chat_request: AnalysisChatRequest,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
-) -> ChatResponse:
+) -> AnalysisChatResponse:
     """AIエージェントとチャットを実行します。
 
     Args:
@@ -426,7 +426,7 @@ async def execute_chat(
         analysis_service: 分析サービス（自動注入）
 
     Returns:
-        ChatResponse: チャットレスポンス
+        AnalysisChatResponse: チャットレスポンス
 
     Raises:
         HTTPException:
@@ -671,7 +671,7 @@ async def get_session_result(
 
 @router.get(
     "/validation-config",
-    response_model=ValidationConfigResponse,
+    response_model=AnalysisValidationConfigResponse,
     summary="検証設定取得",
     description="""
     分析の検証設定（施策・課題）を取得します。
@@ -686,7 +686,7 @@ async def get_session_result(
 async def get_validation_config(
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
-) -> ValidationConfigResponse:
+) -> AnalysisValidationConfigResponse:
     """検証設定を取得します。
 
     Args:
@@ -694,7 +694,7 @@ async def get_validation_config(
         analysis_service: 分析サービス（自動注入）
 
     Returns:
-        ValidationConfigResponse: 検証設定
+        AnalysisValidationConfigResponse: 検証設定
 
     Raises:
         HTTPException:
@@ -720,7 +720,7 @@ async def get_validation_config(
 
 @router.get(
     "/dummy/{chart_type}",
-    response_model=DummyDataResponse,
+    response_model=AnalysisDummyDataResponse,
     summary="ダミーチャートデータ取得",
     description="""
     指定されたチャートタイプのダミーデータを取得します。
@@ -739,7 +739,7 @@ async def get_dummy_data(
     chart_type: str,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
-) -> DummyDataResponse:
+) -> AnalysisDummyDataResponse:
     """ダミーチャートデータを取得します。
 
     Args:
@@ -748,7 +748,7 @@ async def get_dummy_data(
         analysis_service: 分析サービス（自動注入）
 
     Returns:
-        DummyDataResponse: ダミーデータ
+        AnalysisDummyDataResponse: ダミーデータ
 
     Raises:
         HTTPException:

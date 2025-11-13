@@ -17,8 +17,8 @@
         - AnalysisTemplateChartResponse: チャート情報レスポンス
 
     初期軸設定:
-        - InitialAxisConfig: UI初期軸設定
-        - InitialAxisList: 初期軸設定のリスト
+        - AnalysisInitialAxisConfig: UI初期軸設定
+        - AnalysisInitialAxisList: 初期軸設定のリスト
 
 使用方法:
     >>> from app.schemas.analysis.template import AnalysisTemplateCreate
@@ -45,7 +45,7 @@ from pydantic import BaseModel, ConfigDict, Field
 # ================================================================================
 
 
-class InitialAxisConfig(BaseModel):
+class AnalysisInitialAxisConfig(BaseModel):
     """初期軸設定スキーマ。
 
     UIで表示する軸の初期設定を定義します。
@@ -56,7 +56,7 @@ class InitialAxisConfig(BaseModel):
         multiple (bool): 複数選択可能か
 
     Example:
-        >>> axis_config = InitialAxisConfig(
+        >>> axis_config = AnalysisInitialAxisConfig(
         ...     name="横軸",
         ...     option="科目",
         ...     multiple=False
@@ -71,7 +71,7 @@ class InitialAxisConfig(BaseModel):
 
 
 # 初期軸設定の型定義
-InitialAxisList = list[InitialAxisConfig]
+AnalysisInitialAxisList = list[AnalysisInitialAxisConfig]
 
 
 # ================================================================================
@@ -79,7 +79,7 @@ InitialAxisList = list[InitialAxisConfig]
 # ================================================================================
 
 
-class PlotlyChartData(BaseModel):
+class AnalysisPlotlyChartData(BaseModel):
     """Plotlyチャートデータの基本構造スキーマ。
 
     Plotly形式のチャートデータ（data, layout, config）を定義します。
@@ -91,7 +91,7 @@ class PlotlyChartData(BaseModel):
         config (dict[str, Any] | None): チャート設定（ツールバー表示など）
 
     Example:
-        >>> chart = PlotlyChartData(
+        >>> chart = AnalysisPlotlyChartData(
         ...     data=[
         ...         {
         ...             "type": "bar",

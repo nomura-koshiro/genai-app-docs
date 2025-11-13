@@ -33,7 +33,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas.analysis import AnalysisResultFormula, FormulaItemConfig, SummaryConfig
+from app.schemas.analysis import AnalysisResultFormula, AnalysisSummaryConfig, FormulaItemConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
 logger = get_logger(__name__)
@@ -104,7 +104,7 @@ class SummaryStep(BaseAnalysisStep):
         logger.debug("サマリー設定を検証中")
 
         try:
-            summary_config = SummaryConfig.model_validate(config)
+            summary_config = AnalysisSummaryConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "サマリー設定の形式が不正です",
@@ -142,7 +142,7 @@ class SummaryStep(BaseAnalysisStep):
                 - result_formula: 計算式結果
         """
         try:
-            summary_config = SummaryConfig.model_validate(config)
+            summary_config = AnalysisSummaryConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "サマリー設定の形式が不正です",

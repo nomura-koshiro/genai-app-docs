@@ -11,15 +11,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import AnalysisFile, AnalysisSession, AnalysisStep
 from app.schemas.analysis import AnalysisChatMessage
 from app.schemas.analysis.session import (
+    AnalysisChatRequest,
+    AnalysisChatResponse,
+    AnalysisDummyDataResponse,
     AnalysisFileUploadRequest,
     AnalysisFileUploadResponse,
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisStepCreate,
-    ChatRequest,
-    ChatResponse,
-    DummyDataResponse,
-    ValidationConfigResponse,
+    AnalysisValidationConfigResponse,
 )
 
 from .chat import AnalysisChatService
@@ -117,7 +117,7 @@ class AnalysisService:
         """チャット履歴をクリアします。"""
         await self._chat_service.clear_chat_history(session_id, user_id)
 
-    async def execute_chat(self, session_id: uuid.UUID, chat_request: ChatRequest) -> ChatResponse:
+    async def execute_chat(self, session_id: uuid.UUID, chat_request: AnalysisChatRequest) -> AnalysisChatResponse:
         """AIエージェントとチャットを実行します（準備中）。"""
         return await self._chat_service.execute_chat(session_id, chat_request)
 
@@ -138,11 +138,11 @@ class AnalysisService:
         """指定したスナップショットに戻します。"""
         await self._snapshot_service.revert_snapshot(session_id, user_id, snapshot_id)
 
-    async def get_validation_config(self) -> ValidationConfigResponse:
+    async def get_validation_config(self) -> AnalysisValidationConfigResponse:
         """検証設定を取得します。"""
         return await self._config_service.get_validation_config()
 
-    async def get_dummy_data(self, chart_type: str) -> DummyDataResponse:
+    async def get_dummy_data(self, chart_type: str) -> AnalysisDummyDataResponse:
         """ダミーチャートデータを取得します。"""
         return await self._config_service.get_dummy_data(chart_type)
 

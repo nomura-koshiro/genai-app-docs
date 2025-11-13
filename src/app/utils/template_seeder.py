@@ -29,7 +29,7 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AnalysisTemplate, AnalysisTemplateChart
-from app.schemas import InitialAxisConfig, PlotlyChartData
+from app.schemas import AnalysisInitialAxisConfig, AnalysisPlotlyChartData
 
 logger = structlog.get_logger(__name__)
 
@@ -247,8 +247,8 @@ class TemplateSeeder:
         """
         dummy = template_data.get("dummy", {})
 
-        # InitialAxisConfigスキーマを使用してバリデーション
-        initial_axis_validated = [InitialAxisConfig.model_validate(axis).model_dump() for axis in template_data["initial_axis"]]
+        # AnalysisInitialAxisConfigスキーマを使用してバリデーション
+        initial_axis_validated = [AnalysisInitialAxisConfig.model_validate(axis).model_dump() for axis in template_data["initial_axis"]]
 
         template = AnalysisTemplate(
             policy=template_data["policy"],
@@ -287,8 +287,8 @@ class TemplateSeeder:
         Returns:
             AnalysisTemplateChart: 作成されたチャート
         """
-        # PlotlyChartDataスキーマを使用してバリデーション
-        chart_data_validated = PlotlyChartData.model_validate(chart_data).model_dump()
+        # AnalysisPlotlyChartDataスキーマを使用してバリデーション
+        chart_data_validated = AnalysisPlotlyChartData.model_validate(chart_data).model_dump()
 
         # チャートタイプの推定（dataの最初の要素のtypeから取得）
         chart_type = None

@@ -53,7 +53,7 @@ from pydantic import ValidationError as PydanticValidationError
 
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
-from app.schemas import AggregateConfig
+from app.schemas import AnalysisAggregateConfig
 from app.services.analysis.agent.steps.base import AnalysisStepResult, BaseAnalysisStep
 
 logger = get_logger(__name__)
@@ -107,7 +107,7 @@ class AggregationStep(BaseAnalysisStep):
 
         # Pydanticスキーマで基本構造を検証
         try:
-            agg_config = AggregateConfig.model_validate(config)
+            agg_config = AnalysisAggregateConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "集計設定の形式が不正です",
@@ -227,7 +227,7 @@ class AggregationStep(BaseAnalysisStep):
         """
         # Pydanticスキーマに変換（型安全性）
         try:
-            agg_config = AggregateConfig.model_validate(config)
+            agg_config = AnalysisAggregateConfig.model_validate(config)
         except PydanticValidationError as e:
             raise ValidationError(
                 "集計設定の形式が不正です",

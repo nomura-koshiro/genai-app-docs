@@ -5,26 +5,26 @@
 
 主なスキーマ:
     Filter設定:
-        - NumericFilterConfig: 数値フィルタ設定
-        - CategoryFilterConfig: カテゴリフィルタ設定
-        - TableFilterConfig: テーブルフィルタ設定
-        - FilterConfig: 統合フィルタ設定
+        - AnalysisNumericFilterConfig: 数値フィルタ設定
+        - AnalysisCategoryFilterConfig: カテゴリフィルタ設定
+        - AnalysisTableFilterConfig: テーブルフィルタ設定
+        - AnalysisFilterConfig: 統合フィルタ設定
 
     Aggregate設定:
         - AggregationFunction: 集計関数設定
         - SortConfig: ソート設定
-        - AggregateConfig: 集計設定
+        - AnalysisAggregateConfig: 集計設定
 
     Transform設定:
-        - TransformConfig: 変換設定
+        - AnalysisTransformConfig: 変換設定
 
 使用方法:
-    >>> from app.schemas.analysis.config import FilterConfig, NumericFilterConfig
+    >>> from app.schemas.analysis.config import AnalysisFilterConfig, AnalysisNumericFilterConfig
     >>>
     >>> # フィルタ設定
-    >>> filter_config = FilterConfig(
+    >>> filter_config = AnalysisFilterConfig(
     ...     category_filter={"地域": ["東京", "大阪"]},
-    ...     numeric_filter=NumericFilterConfig(
+    ...     numeric_filter=AnalysisNumericFilterConfig(
     ...         column="売上",
     ...         filter_type="range",
     ...         enable_min=True,
@@ -43,7 +43,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # ================================================================================
 
 
-class NumericFilterConfig(BaseModel):
+class AnalysisNumericFilterConfig(BaseModel):
     """数値フィルタ設定スキーマ。
 
     数値カラムに対するフィルタリング設定を定義します。
@@ -63,7 +63,7 @@ class NumericFilterConfig(BaseModel):
         max_percentile (float): パーセンタイルフィルタの最大値（0-100）
 
     Example:
-        >>> numeric_filter = NumericFilterConfig(
+        >>> numeric_filter = AnalysisNumericFilterConfig(
         ...     column="売上",
         ...     filter_type="range",
         ...     enable_min=True,
@@ -121,10 +121,10 @@ class NumericFilterConfig(BaseModel):
 
 # カテゴリフィルタは dict[str, list[str]] の形式
 # 例: {"地域": ["東京", "大阪"], "商品": ["A", "B"]}
-CategoryFilterConfig = dict[str, list[str]]
+AnalysisCategoryFilterConfig = dict[str, list[str]]
 
 
-class TableFilterConfig(BaseModel):
+class AnalysisTableFilterConfig(BaseModel):
     """テーブルフィルタ設定スキーマ。
 
     別のテーブルを参照してフィルタリングする設定を定義します。
@@ -136,7 +136,7 @@ class TableFilterConfig(BaseModel):
         exclude_mode (bool): 除外モード（Trueの場合、参照テーブルにないものを抽出）
 
     Example:
-        >>> table_filter = TableFilterConfig(
+        >>> table_filter = AnalysisTableFilterConfig(
         ...     enable=True,
         ...     table_df="step_0",
         ...     key_columns=["地域"],
@@ -168,35 +168,35 @@ class TableFilterConfig(BaseModel):
         return v
 
 
-class FilterConfig(BaseModel):
+class AnalysisFilterConfig(BaseModel):
     """統合フィルタ設定スキーマ。
 
     Filter ステップの設定を統合的に管理します。
 
     Attributes:
-        category_filter (CategoryFilterConfig | None): カテゴリフィルタ設定
-        numeric_filter (NumericFilterConfig | None): 数値フィルタ設定
-        table_filter (TableFilterConfig | None): テーブルフィルタ設定
+        category_filter (AnalysisCategoryFilterConfig | None): カテゴリフィルタ設定
+        numeric_filter (AnalysisNumericFilterConfig | None): 数値フィルタ設定
+        table_filter (AnalysisTableFilterConfig | None): テーブルフィルタ設定
 
     Example:
-        >>> filter_config = FilterConfig(
+        >>> filter_config = AnalysisFilterConfig(
         ...     category_filter={"地域": ["東京", "大阪"]},
-        ...     numeric_filter=NumericFilterConfig(
+        ...     numeric_filter=AnalysisNumericFilterConfig(
         ...         column="売上",
         ...         filter_type="range",
         ...         enable_min=True,
         ...         min_value=1000,
         ...         include_min=True
         ...     ),
-        ...     table_filter=TableFilterConfig(enable=False)
+        ...     table_filter=AnalysisTableFilterConfig(enable=False)
         ... )
     """
 
     model_config = ConfigDict(frozen=False)
 
-    category_filter: CategoryFilterConfig | None = Field(default=None, description="カテゴリフィルタ設定")
-    numeric_filter: NumericFilterConfig | None = Field(default=None, description="数値フィルタ設定")
-    table_filter: TableFilterConfig | None = Field(default=None, description="テーブルフィルタ設定")
+    category_filter: AnalysisCategoryFilterConfig | None = Field(default=None, description="カテゴリフィルタ設定")
+    numeric_filter: AnalysisNumericFilterConfig | None = Field(default=None, description="数値フィルタ設定")
+    table_filter: AnalysisTableFilterConfig | None = Field(default=None, description="テーブルフィルタ設定")
 
 
 # ================================================================================
@@ -263,7 +263,7 @@ class AggregationColumnConfig(BaseModel):
         return v
 
 
-class AggregateConfig(BaseModel):
+class AnalysisAggregateConfig(BaseModel):
     """集計設定スキーマ。
 
     Aggregate ステップの設定を定義します。
@@ -273,7 +273,7 @@ class AggregateConfig(BaseModel):
         column (list[AggregationColumnConfig]): 集計カラム設定のリスト
 
     Example:
-        >>> aggregate_config = AggregateConfig(
+        >>> aggregate_config = AnalysisAggregateConfig(
         ...     axis=["地域", "商品"],
         ...     column=[
         ...         AggregationColumnConfig(
@@ -301,7 +301,7 @@ class AggregateConfig(BaseModel):
 # ================================================================================
 
 
-class TransformCalculation(BaseModel):
+class AnalysisTransformCalculation(BaseModel):
     """変換計算設定スキーマ。
 
     operation内のcalculationフィールドを定義します。
@@ -316,11 +316,11 @@ class TransformCalculation(BaseModel):
 
     Example:
         >>> # 定数
-        >>> calc = TransformCalculation(type="constant", constant_value="2024")
+        >>> calc = AnalysisTransformCalculation(type="constant", constant_value="2024")
         >>> # コピー
-        >>> calc = TransformCalculation(type="copy", copy_from="売上")
+        >>> calc = AnalysisTransformCalculation(type="copy", copy_from="売上")
         >>> # 数式
-        >>> calc = TransformCalculation(
+        >>> calc = AnalysisTransformCalculation(
         ...     type="formula",
         ...     formula_type="+",
         ...     operands=["売上", "原価"]
@@ -340,7 +340,7 @@ class TransformCalculation(BaseModel):
     source_column: str | None = Field(default=None, description="マッピング元列名（type=mappingの場合）")
 
 
-class TransformOperation(BaseModel):
+class AnalysisTransformOperation(BaseModel):
     """変換操作設定スキーマ。
 
     1つの変換操作を定義します。
@@ -348,13 +348,13 @@ class TransformOperation(BaseModel):
     Attributes:
         operation_type (str): 操作タイプ（add_axis/modify_axis/add_subject/modify_subject）
         target_name (str): 対象列名
-        calculation (TransformCalculation): 計算設定
+        calculation (AnalysisTransformCalculation): 計算設定
 
     Example:
-        >>> operation = TransformOperation(
+        >>> operation = AnalysisTransformOperation(
         ...     operation_type="add_axis",
         ...     target_name="年度",
-        ...     calculation=TransformCalculation(type="constant", constant_value="2024")
+        ...     calculation=AnalysisTransformCalculation(type="constant", constant_value="2024")
         ... )
     """
 
@@ -362,24 +362,24 @@ class TransformOperation(BaseModel):
 
     operation_type: Literal["add_axis", "modify_axis", "add_subject", "modify_subject"] = Field(..., description="操作タイプ")
     target_name: str = Field(..., description="対象列名")
-    calculation: TransformCalculation = Field(..., description="計算設定")
+    calculation: AnalysisTransformCalculation = Field(..., description="計算設定")
 
 
-class TransformConfig(BaseModel):
+class AnalysisTransformConfig(BaseModel):
     """変換設定スキーマ。
 
     Transform ステップの設定を定義します。
 
     Attributes:
-        operations (list[TransformOperation]): 変換操作のリスト
+        operations (list[AnalysisTransformOperation]): 変換操作のリスト
 
     Example:
-        >>> transform_config = TransformConfig(
+        >>> transform_config = AnalysisTransformConfig(
         ...     operations=[
-        ...         TransformOperation(
+        ...         AnalysisTransformOperation(
         ...             operation_type="add_axis",
         ...             target_name="年度",
-        ...             calculation=TransformCalculation(
+        ...             calculation=AnalysisTransformCalculation(
         ...                 type="constant",
         ...                 constant_value="2024"
         ...             )
@@ -390,7 +390,7 @@ class TransformConfig(BaseModel):
 
     model_config = ConfigDict(frozen=False)
 
-    operations: list[TransformOperation] = Field(..., min_length=1, description="変換操作のリスト")
+    operations: list[AnalysisTransformOperation] = Field(..., min_length=1, description="変換操作のリスト")
 
 
 # ================================================================================
@@ -491,7 +491,7 @@ class FormulaItemConfig(BaseModel):
     portion: float = Field(1.0, description="重み係数")
 
 
-class SummaryConfig(BaseModel):
+class AnalysisSummaryConfig(BaseModel):
     """サマリー設定スキーマ。
 
     Summary ステップの設定を定義します。
@@ -501,7 +501,7 @@ class SummaryConfig(BaseModel):
         chart (dict[str, Any] | None): グラフ設定（graph_typeなど）
 
     Example:
-        >>> config = SummaryConfig(
+        >>> config = AnalysisSummaryConfig(
         ...     formula=[
         ...         FormulaItemConfig(
         ...             target_subject="売上",
@@ -525,7 +525,7 @@ class SummaryConfig(BaseModel):
 # ================================================================================
 
 
-class ValidationConfig(BaseModel):
+class AnalysisValidationConfig(BaseModel):
     """分析セッションのバリデーション設定スキーマ。
 
     分析セッションで使用する施策と課題の設定を定義します。
@@ -535,7 +535,7 @@ class ValidationConfig(BaseModel):
         issue (str): 課題名（例: "新規参入"、"利益改善効果"）
 
     Example:
-        >>> config = ValidationConfig(
+        >>> config = AnalysisValidationConfig(
         ...     policy="市場拡大",
         ...     issue="新規参入"
         ... )
