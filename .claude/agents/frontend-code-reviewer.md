@@ -46,7 +46,7 @@ type UserProps = {
   onEdit?: (user: User) => void
 }
 
-├── hooks/useUserActions.ts  
+├── hooks/useUserActions.ts
 const useUserActions = () => {
   const handleSubmit = (data: FormData) => {
     // ビジネスロジック
@@ -105,10 +105,10 @@ src/models/User.ts                // ❌ 絶対禁止：features/user-management
 // ✅ 良い例：単一責任
 const UserAvatar = ({ user, size }: { user: User; size: 'sm' | 'md' | 'lg' }) => {
   return (
-    <img 
-      src={user.avatarUrl} 
+    <img
+      src={user.avatarUrl}
       alt={`${user.name}のアバター`}
-      className={cn('rounded-full', sizeVariants[size])} 
+      className={cn('rounded-full', sizeVariants[size])}
     />
   )
 }
@@ -273,7 +273,7 @@ const UserCard = ({ user, onEdit, onDelete }: UserCardProps) => {
     <div className="p-4 border rounded-lg">
       <UserAvatar user={user} size="md" />
       <UserInfo user={user} />
-      <UserActions 
+      <UserActions
         user={user}
         onEdit={onEdit}
         onDelete={onDelete}
@@ -295,7 +295,7 @@ const UserCard = ({ user }: { user: User }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState(user)
   const updateUser = useUpdateUser()
-  
+
   // アバター表示 + 情報表示 + 編集フォーム + API呼び出し
   // 複数の関心事が一つのコンポーネントに混在
 }
@@ -341,7 +341,7 @@ const useGlobalUIStore = create(() => ({
 const UserList = ({ users, filter }: UserListProps) => {
   // 重い計算のメモ化
   const filteredUsers = useMemo(() => {
-    return users.filter(user => 
+    return users.filter(user =>
       user.name.toLowerCase().includes(filter.toLowerCase()) ||
       user.email.toLowerCase().includes(filter.toLowerCase())
     )
@@ -468,7 +468,7 @@ const handleUser = async (data: any) => {
  * @param onSave - 保存時に実行されるコールバック関数
  * @param onCancel - キャンセル時に実行されるコールバック関数
  * @returns ユーザープロフィール編集フォーム
- * 
+ *
  * @example
  * <UserProfileEditForm
  *   user={currentUser}
@@ -531,14 +531,14 @@ type UserCardProps = {
 export const UserCard = ({ user, onEdit, onDelete }: UserCardProps) => {
   return (
     <div data-testid="user-card" data-user-id={user.id}>
-      <img 
-        src={user.avatarUrl} 
+      <img
+        src={user.avatarUrl}
         alt={`${user.name}のアバター`}
         data-testid="user-avatar"
       />
       <h3 data-testid="user-name">{user.name}</h3>
       <p data-testid="user-email">{user.email}</p>
-      
+
       {onEdit && (
         <Button
           data-testid="edit-button"
@@ -547,7 +547,7 @@ export const UserCard = ({ user, onEdit, onDelete }: UserCardProps) => {
           編集
         </Button>
       )}
-      
+
       {onDelete && (
         <Button
           data-testid="delete-button"
@@ -572,7 +572,7 @@ describe('UserCard', () => {
 
   it('ユーザー情報を正しく表示する', () => {
     render(<UserCard user={mockUser} />)
-    
+
     expect(screen.getByTestId('user-name')).toHaveTextContent('John Doe')
     expect(screen.getByTestId('user-email')).toHaveTextContent('john@example.com')
     expect(screen.getByTestId('user-avatar')).toHaveAttribute('src', '/avatar.jpg')
@@ -593,7 +593,7 @@ describe('UserCard', () => {
 const UserCard = ({ userId }: { userId: string }) => {
   const { data: user } = useUser(userId)  // テスト時のモック困難
   const navigate = useNavigate()  // 副作用
-  
+
   const handleEdit = () => {
     navigate(`/users/${userId}/edit`)  // ナビゲーション副作用
     analytics.track('user_edit_started')  // 外部サービス呼び出し
@@ -614,11 +614,11 @@ const UserCard = ({ userId }: { userId: string }) => {
 #### Webアクセシビリティ（WCAG 2.1）
 ```typescript
 // ✅ 良い例：アクセシブルなコンポーネント
-const Modal = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children 
+const Modal = ({
+  isOpen,
+  onClose,
+  title,
+  children
 }: ModalProps) => {
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -647,7 +647,7 @@ const Modal = ({
   if (!isOpen) return null
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}  // バックドロップクリック
     >
@@ -771,7 +771,7 @@ export const useUserProfile = (userId: string) => {
   // API呼び出し・状態管理ロジック
 }
 
-// components/UserProfileDisplay.tsx  
+// components/UserProfileDisplay.tsx
 export const UserProfileDisplay = ({ user, isLoading }: UserProfileDisplayProps) => {
   // UI表示のみに専念
 }

@@ -81,6 +81,7 @@ async def main(clear_existing: bool = True):
         print("=" * 60)
         print(f"   {type(e).__name__}: {e}")
         import traceback
+
         print()
         print("詳細:")
         traceback.print_exc()

@@ -8,12 +8,8 @@ from pathlib import Path
 from pprint import pprint
 
 # PKLファイルのパス
-CATEGORIES_PKL = Path(
-    "C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_tree_categories.pkl"
-)
-TREES_PKL = Path(
-    "C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_trees.pkl"
-)
+CATEGORIES_PKL = Path("C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_tree_categories.pkl")
+TREES_PKL = Path("C:/developments/camp-backend-code-analysis/dev_db/local_blob_storage/driver-tree/driver_trees.pkl")
 
 
 def inspect_categories():

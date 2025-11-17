@@ -6,7 +6,7 @@
 ```bash
 cd apps/frontend
 pnpm lint              # ESLint実行
-pnpm format            # Prettier実行  
+pnpm format            # Prettier実行
 pnpm test              # ユニットテスト実行
 pnpm test:coverage     # カバレッジ確認
 ```

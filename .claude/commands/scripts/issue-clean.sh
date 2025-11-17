@@ -28,7 +28,7 @@ if [ ! -d "${WORKTREE_DIR}" ]; then
     echo "既にクリーンアップ済みの可能性があります。"
 else
     echo "📂 作業ディレクトリを確認中: ${WORKTREE_DIR}"
-    
+
     # 未コミットの変更があるかチェック（worktreeが有効な場合のみ）
     if git worktree list | grep -q "${WORKTREE_DIR}"; then
         if ! git -C "${WORKTREE_DIR}" diff --quiet || ! git -C "${WORKTREE_DIR}" diff --cached --quiet; then
@@ -45,7 +45,7 @@ else
     else
         echo "⚠️  worktreeが既にGitから削除されています。ディレクトリのクリーンアップを続行します。"
     fi
-    
+
     # worktreeを削除（存在する場合のみ）
     if git worktree list | grep -q "${WORKTREE_DIR}"; then
         echo "🗑️  worktreeを削除中..."
@@ -55,15 +55,15 @@ else
     else
         echo "ℹ️  worktreeは既にGitから削除されています"
     fi
-    
+
     # 物理ディレクトリが残っている場合は強制削除
     if [ -d "${WORKTREE_DIR}" ]; then
         echo "⚠️  ディレクトリが残っています。強制削除を実行中..."
-        
+
         # Windows環境でnode_modules削除の問題に対処
         if [ -d "${WORKTREE_DIR}/node_modules" ]; then
             echo "    node_modules を削除中（時間がかかる場合があります）..."
-            
+
             # MINGW/Git Bashの場合はWindowsのrmdir使用
             if [[ "$OSTYPE" == "msys" ]]; then
                 cmd //c "rmdir /s /q $(cygpath -w "${WORKTREE_DIR}/node_modules")" 2>/dev/null || {
@@ -75,7 +75,7 @@ else
                 }
             fi
         fi
-        
+
         # 残りのファイルを削除（Windows/Unix対応）
         if [[ "$OSTYPE" == "msys" ]]; then
             # Windows環境ではrmdirを使用（より強力）
@@ -92,7 +92,7 @@ else
             }
         fi
     fi
-    
+
     if [ ! -d "${WORKTREE_DIR}" ]; then
         echo "✅ worktreeディレクトリを削除しました: ${WORKTREE_DIR}"
     else

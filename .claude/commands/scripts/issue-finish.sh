@@ -54,10 +54,10 @@ else
     echo "📝 変更を確認中..."
     git status
     echo ""
-    
+
     # コード品質チェック
     echo "🔍 コード品質をチェック中..."
-    
+
     # フロントエンドのlintとformat
     if [ -d "apps/frontend" ]; then
         echo "  - フロントエンドのlint/formatをチェック..."
@@ -66,7 +66,7 @@ else
         pnpm format 2>/dev/null || echo "    ⚠️ format警告があります"
         cd ../..
     fi
-    
+
     # TypeScriptの型チェック
     if [ -f "apps/frontend/tsconfig.json" ]; then
         echo "  - TypeScriptの型チェック..."
@@ -74,19 +74,19 @@ else
         npx tsc --noEmit 2>/dev/null || echo "    ⚠️ 型エラーがあります"
         cd ../..
     fi
-    
+
     echo ""
-    
+
     # コミット確認
     read -p "変更をコミットしますか？ (Y/n): " confirm
     if [[ ! $confirm =~ ^[Nn]$ ]]; then
         # ステージング
         git add .
-        
+
         # コミット
         echo "💾 変更をコミット中..."
         git commit -m "${COMMIT_MESSAGE}"
-        
+
         # リモートにプッシュ
         read -p "リモートにプッシュしますか？ (Y/n): " push_confirm
         if [[ ! $push_confirm =~ ^[Nn]$ ]]; then

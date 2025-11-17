@@ -138,7 +138,7 @@ class UserRepository:
     """ユーザーデータアクセスの責任のみ"""
     def __init__(self, db: AsyncSession):
         self.db = db
-        
+
     async def get_by_email(self, email: str) -> Optional[User]:
         """メールアドレスでユーザーを取得"""
         result = await self.db.execute(
@@ -150,7 +150,7 @@ class UserService:
     """ユーザービジネスロジックの責任のみ"""
     def __init__(self, user_repo: UserRepository):
         self.user_repo = user_repo
-        
+
     async def authenticate_user(
         self, email: str, password: str
     ) -> Optional[User]:
@@ -170,7 +170,7 @@ from abc import ABC, abstractmethod
 
 class NotificationProvider(ABC):
     """通知プロバイダーの抽象基底クラス"""
-    
+
     @abstractmethod
     async def send(self, recipient: str, message: str) -> bool:
         """通知送信の抽象メソッド"""
@@ -178,24 +178,24 @@ class NotificationProvider(ABC):
 
 class EmailNotificationProvider(NotificationProvider):
     """メール通知の具象実装"""
-    
+
     async def send(self, recipient: str, message: str) -> bool:
         # メール送信ロジック
         return True
 
 class PushNotificationProvider(NotificationProvider):
     """プッシュ通知の具象実装"""
-    
+
     async def send(self, recipient: str, message: str) -> bool:
         # プッシュ通知送信ロジック
         return True
 
 class NotificationService:
     """通知サービス（新しいプロバイダー追加時も変更不要）"""
-    
+
     def __init__(self, providers: List[NotificationProvider]):
         self.providers = providers
-        
+
     async def send_notification(self, recipient: str, message: str):
         """全プロバイダーで通知送信"""
         for provider in self.providers:
@@ -209,7 +209,7 @@ class NotificationService:
 """
 class BaseExerciseCalculator(ABC):
     """運動計算の基底クラス"""
-    
+
     @abstractmethod
     def calculate_calories(self, duration_minutes: int, user_weight_kg: float) -> float:
         """カロリー計算（すべての派生クラスで同じシグネチャ）"""
@@ -246,11 +246,11 @@ class ReadOnlyUserRepository:
     """読み取り専用リポジトリ（Readableのみ実装）"""
     def __init__(self, db: AsyncSession):
         self.db = db
-        
+
     async def get_by_id(self, id: UUID) -> Optional[User]:
         # 実装
         pass
-        
+
     async def get_all(self) -> List[User]:
         # 実装
         pass
@@ -272,7 +272,7 @@ class UserRepositoryInterface(ABC):
     """ユーザーリポジトリの抽象インターフェース"""
     @abstractmethod
     async def get_by_email(self, email: str) -> Optional[User]: ...
-    
+
     @abstractmethod
     async def create_user(self, user_data: UserCreateSchema) -> User: ...
 
@@ -280,24 +280,24 @@ class AuthService:
     """高レベル：抽象に依存"""
     def __init__(self, user_repo: UserRepositoryInterface):
         self.user_repo = user_repo  # 具象ではなく抽象に依存
-        
+
     async def register_user(self, user_data: UserCreateSchema) -> User:
         """ユーザー登録（具体的なDBアクセス方法を知らない）"""
         existing_user = await self.user_repo.get_by_email(user_data.email)
         if existing_user:
             raise UserAlreadyExistsError()
-        
+
         return await self.user_repo.create_user(user_data)
 
 class SQLUserRepository(UserRepositoryInterface):
     """低レベル：抽象を実装"""
     def __init__(self, db: AsyncSession):
         self.db = db
-        
+
     async def get_by_email(self, email: str) -> Optional[User]:
         # SQLAlchemy実装
         pass
-        
+
     async def create_user(self, user_data: UserCreateSchema) -> User:
         # SQLAlchemy実装
         pass
@@ -327,7 +327,7 @@ Base = declarative_base()
 class User(Base):
     """
     ユーザーモデル
-    
+
     Attributes:
         id: ユーザーID（UUID）
         email: メールアドレス（ユニーク）
@@ -339,38 +339,38 @@ class User(Base):
         updated_at: 更新日時
     """
     __tablename__ = "users"
-    
+
     id: UUID = Column(
-        UUID(as_uuid=True), 
-        primary_key=True, 
+        UUID(as_uuid=True),
+        primary_key=True,
         default=uuid.uuid4,
         comment="ユーザーID"
     )
     email: str = Column(
-        String(255), 
-        unique=True, 
-        nullable=False, 
+        String(255),
+        unique=True,
+        nullable=False,
         index=True,
         comment="メールアドレス"
     )
     password_hash: str = Column(
-        String(255), 
+        String(255),
         nullable=False,
         comment="パスワードハッシュ"
     )
     first_name: Optional[str] = Column(
-        String(100), 
+        String(100),
         nullable=True,
         comment="名前"
     )
     last_name: Optional[str] = Column(
-        String(100), 
+        String(100),
         nullable=True,
         comment="苗字"
     )
     is_active: bool = Column(
-        Boolean, 
-        default=True, 
+        Boolean,
+        default=True,
         nullable=False,
         comment="アクティブフラグ"
     )
@@ -387,11 +387,11 @@ class User(Base):
         nullable=False,
         comment="更新日時"
     )
-    
+
     # リレーション
     training_sessions = relationship("TrainingSession", back_populates="user")
     custom_exercises = relationship("Exercise", back_populates="created_by")
-    
+
     def __repr__(self) -> str:
         return f"<User(id={self.id}, email='{self.email}')>"
 ```
@@ -415,7 +415,7 @@ class UserBaseSchema(BaseModel):
     email: EmailStr = Field(..., description="メールアドレス")
     first_name: Optional[str] = Field(None, min_length=1, max_length=100, description="名前")
     last_name: Optional[str] = Field(None, min_length=1, max_length=100, description="苗字")
-    
+
     @validator('first_name', 'last_name')
     def validate_names(cls, v):
         """名前のバリデーション"""
@@ -427,7 +427,7 @@ class UserCreateSchema(UserBaseSchema):
     """ユーザー作成スキーマ"""
     password: str = Field(..., min_length=8, max_length=128, description="パスワード")
     password_confirm: str = Field(..., description="パスワード確認")
-    
+
     @root_validator
     def validate_passwords_match(cls, values):
         """パスワード一致確認"""
@@ -436,7 +436,7 @@ class UserCreateSchema(UserBaseSchema):
         if password != password_confirm:
             raise ValueError('パスワードが一致しません')
         return values
-    
+
     @validator('password')
     def validate_password_strength(cls, v):
         """パスワード強度チェック"""
@@ -452,7 +452,7 @@ class UserUpdateSchema(BaseModel):
     """ユーザー更新スキーマ"""
     first_name: Optional[str] = Field(None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(None, min_length=1, max_length=100)
-    
+
     class Config:
         # すべてのフィールドをオプションにして部分更新を可能に
         exclude_none = True
@@ -463,7 +463,7 @@ class UserResponseSchema(UserBaseSchema):
     is_active: bool = Field(..., description="アクティブフラグ")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
-    
+
     class Config:
         from_attributes = True  # SQLAlchemyモデルから自動変換
 ```
@@ -487,27 +487,27 @@ T = TypeVar('T')
 
 class BaseRepositoryInterface(ABC, Generic[T]):
     """基底リポジトリインターフェース"""
-    
+
     @abstractmethod
     async def get_by_id(self, id: UUID) -> Optional[T]:
         """IDでエンティティを取得"""
         pass
-        
+
     @abstractmethod
     async def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
         """全エンティティを取得"""
         pass
-        
+
     @abstractmethod
     async def create(self, entity_data: dict) -> T:
         """エンティティを作成"""
         pass
-        
+
     @abstractmethod
     async def update(self, id: UUID, entity_data: dict) -> Optional[T]:
         """エンティティを更新"""
         pass
-        
+
     @abstractmethod
     async def delete(self, id: UUID) -> bool:
         """エンティティを削除"""
@@ -515,25 +515,25 @@ class BaseRepositoryInterface(ABC, Generic[T]):
 
 class BaseRepository(BaseRepositoryInterface[T]):
     """基底リポジトリ実装"""
-    
+
     def __init__(self, db: AsyncSession, model_class: type[T]):
         self.db = db
         self.model_class = model_class
-    
+
     async def get_by_id(self, id: UUID) -> Optional[T]:
         """IDでエンティティを取得"""
         result = await self.db.execute(
             select(self.model_class).where(self.model_class.id == id)
         )
         return result.scalar_one_or_none()
-    
+
     async def get_all(self, skip: int = 0, limit: int = 100) -> List[T]:
         """全エンティティを取得"""
         result = await self.db.execute(
             select(self.model_class).offset(skip).limit(limit)
         )
         return result.scalars().all()
-    
+
     async def create(self, entity_data: dict) -> T:
         """エンティティを作成"""
         entity = self.model_class(**entity_data)
@@ -541,7 +541,7 @@ class BaseRepository(BaseRepositoryInterface[T]):
         await self.db.commit()
         await self.db.refresh(entity)
         return entity
-    
+
     async def update(self, id: UUID, entity_data: dict) -> Optional[T]:
         """エンティティを更新"""
         await self.db.execute(
@@ -551,7 +551,7 @@ class BaseRepository(BaseRepositoryInterface[T]):
         )
         await self.db.commit()
         return await self.get_by_id(id)
-    
+
     async def delete(self, id: UUID) -> bool:
         """エンティティを削除"""
         result = await self.db.execute(
@@ -562,17 +562,17 @@ class BaseRepository(BaseRepositoryInterface[T]):
 
 class UserRepository(BaseRepository[User]):
     """ユーザーリポジトリ"""
-    
+
     def __init__(self, db: AsyncSession):
         super().__init__(db, User)
-    
+
     async def get_by_email(self, email: str) -> Optional[User]:
         """メールアドレスでユーザーを取得"""
         result = await self.db.execute(
             select(User).where(User.email == email)
         )
         return result.scalar_one_or_none()
-    
+
     async def get_active_users(self) -> List[User]:
         """アクティブユーザー一覧を取得"""
         result = await self.db.execute(
@@ -600,14 +600,14 @@ from datetime import datetime, timedelta
 class UserService:
     """
     ユーザービジネスロジックサービス
-    
+
     責任:
         - ユーザー認証・認可
         - ユーザー管理ビジネスルール
         - パスワード管理
         - JWT トークン管理
     """
-    
+
     def __init__(
         self,
         user_repo: UserRepository,
@@ -619,52 +619,52 @@ class UserService:
         self.pwd_context = pwd_context
         self.secret_key = secret_key
         self.algorithm = algorithm
-    
+
     async def authenticate_user(
-        self, 
-        email: str, 
+        self,
+        email: str,
         password: str
     ) -> Optional[User]:
         """
         ユーザー認証
-        
+
         Args:
             email: メールアドレス
             password: パスワード
-            
+
         Returns:
             認証成功時はUserオブジェクト、失敗時はNone
-            
+
         Raises:
             UserNotFoundError: ユーザーが見つからない場合
             UserInactiveError: ユーザーが無効な場合
         """
         user = await self.user_repo.get_by_email(email)
-        
+
         if not user:
             raise UserNotFoundError("ユーザーが見つかりません")
-            
+
         if not user.is_active:
             raise UserInactiveError("ユーザーが無効です")
-            
+
         if not self.verify_password(password, user.password_hash):
             return None
-            
+
         return user
-    
+
     async def create_user(
-        self, 
+        self,
         user_data: UserCreateSchema
     ) -> User:
         """
         ユーザー作成
-        
+
         Args:
             user_data: ユーザー作成データ
-            
+
         Returns:
             作成されたUserオブジェクト
-            
+
         Raises:
             UserAlreadyExistsError: 既に同じメールアドレスのユーザーが存在
         """
@@ -672,10 +672,10 @@ class UserService:
         existing_user = await self.user_repo.get_by_email(user_data.email)
         if existing_user:
             raise UserAlreadyExistsError("このメールアドレスは既に使用されています")
-        
+
         # パスワードハッシュ化
         hashed_password = self.hash_password(user_data.password)
-        
+
         # ユーザーデータ準備
         create_data = {
             "email": user_data.email,
@@ -683,21 +683,21 @@ class UserService:
             "first_name": user_data.first_name,
             "last_name": user_data.last_name,
         }
-        
+
         return await self.user_repo.create(create_data)
-    
+
     def create_access_token(
-        self, 
-        user_id: UUID, 
+        self,
+        user_id: UUID,
         expires_delta: Optional[timedelta] = None
     ) -> str:
         """
         JWTアクセストークン作成
-        
+
         Args:
             user_id: ユーザーID
             expires_delta: 有効期限
-            
+
         Returns:
             JWTトークン文字列
         """
@@ -705,26 +705,26 @@ class UserService:
             expire = datetime.utcnow() + expires_delta
         else:
             expire = datetime.utcnow() + timedelta(minutes=15)
-            
+
         to_encode = {
             "sub": str(user_id),
             "exp": expire,
             "type": "access_token"
         }
-        
+
         return jwt.encode(to_encode, self.secret_key, algorithm=self.algorithm)
-    
+
     def hash_password(self, password: str) -> str:
         """パスワードハッシュ化"""
         return self.pwd_context.hash(password)
-    
+
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
         """パスワード検証"""
         return self.pwd_context.verify(plain_password, hashed_password)
 
 class TrainingSessionService:
     """トレーニングセッションビジネスロジック"""
-    
+
     def __init__(
         self,
         training_session_repo: TrainingSessionRepository,
@@ -732,14 +732,14 @@ class TrainingSessionService:
     ):
         self.training_session_repo = training_session_repo
         self.exercise_repo = exercise_repo
-    
+
     async def calculate_session_statistics(
-        self, 
+        self,
         session_id: UUID
     ) -> TrainingSessionStats:
         """
         セッション統計計算
-        
+
         ビジネスルール:
         - 総ボリューム = Σ(重量 × レップス)
         - 平均RPE = 全セットのRPE平均
@@ -748,23 +748,23 @@ class TrainingSessionService:
         session = await self.training_session_repo.get_by_id(session_id)
         if not session:
             raise SessionNotFoundError()
-        
+
         total_volume = 0
         total_rpe = 0
         set_count = 0
-        
+
         for exercise_set in session.exercise_sets:
             total_volume += exercise_set.weight * exercise_set.reps
             if exercise_set.rpe:
                 total_rpe += exercise_set.rpe
                 set_count += 1
-        
+
         avg_rpe = total_rpe / set_count if set_count > 0 else 0
-        
+
         # カロリー計算（簡易版）
         duration_hours = session.duration_minutes / 60
         estimated_calories = duration_hours * session.user.weight_kg * 6.0  # MET=6.0
-        
+
         return TrainingSessionStats(
             total_volume=total_volume,
             average_rpe=avg_rpe,
@@ -815,16 +815,16 @@ async def get_current_user(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="無効な認証トークンです"
             )
-        
+
         user = await user_service.user_repo.get_by_id(UUID(user_id))
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="ユーザーが見つかりません"
             )
-        
+
         return user
-        
+
     except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -844,14 +844,14 @@ async def register_user(
 ) -> UserResponseSchema:
     """
     ユーザー登録エンドポイント
-    
+
     Args:
         user_data: ユーザー作成データ
         user_service: ユーザーサービス
-        
+
     Returns:
         作成されたユーザー情報
-        
+
     Raises:
         400: バリデーションエラー
         409: メールアドレス重複
@@ -859,7 +859,7 @@ async def register_user(
     try:
         user = await user_service.create_user(user_data)
         return UserResponseSchema.from_orm(user)
-        
+
     except UserAlreadyExistsError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -879,23 +879,23 @@ async def login_user(
     """ユーザーログインエンドポイント"""
     try:
         user = await user_service.authenticate_user(
-            login_data.email, 
+            login_data.email,
             login_data.password
         )
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="メールアドレスまたはパスワードが間違っています"
             )
-        
+
         access_token = user_service.create_access_token(user.id)
-        
+
         return TokenResponseSchema(
             access_token=access_token,
             token_type="bearer"
         )
-        
+
     except (UserNotFoundError, UserInactiveError) as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -930,13 +930,13 @@ async def update_user_profile(
         current_user.id,
         update_data.dict(exclude_unset=True)
     )
-    
+
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="ユーザーが見つかりません"
         )
-    
+
     return UserResponseSchema.from_orm(updated_user)
 ```
 
@@ -982,7 +982,7 @@ class InsufficientPermissionError(TrainingTrackerException):
 # グローバル例外ハンドラー
 @app.exception_handler(TrainingTrackerException)
 async def training_tracker_exception_handler(
-    request: Request, 
+    request: Request,
     exc: TrainingTrackerException
 ) -> JSONResponse:
     """アプリケーション例外ハンドラー"""
@@ -991,9 +991,9 @@ async def training_tracker_exception_handler(
         "USER_ALREADY_EXISTS": 409,
         "INSUFFICIENT_PERMISSION": 403,
     }
-    
+
     status_code = status_code_map.get(exc.error_code, 400)
-    
+
     return JSONResponse(
         status_code=status_code,
         content={
@@ -1008,7 +1008,7 @@ async def training_tracker_exception_handler(
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
-    request: Request, 
+    request: Request,
     exc: RequestValidationError
 ) -> JSONResponse:
     """バリデーションエラーハンドラー"""
@@ -1051,7 +1051,7 @@ async def test_db():
     """テストデータベースセッション"""
     engine = create_async_engine(TEST_DATABASE_URL, echo=True)
     async_session = sessionmaker(engine, class_=AsyncSession)
-    
+
     async with async_session() as session:
         yield session
 
@@ -1061,7 +1061,7 @@ class UserFactory(SQLAlchemyModelFactory):
     class Meta:
         model = User
         sqlalchemy_session_persistence = "commit"
-    
+
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     password_hash = "$2b$12$test_hash"
     first_name = factory.Faker("first_name")
@@ -1071,7 +1071,7 @@ class UserFactory(SQLAlchemyModelFactory):
 # Service層単体テスト
 class TestUserService:
     """ユーザーサービステスト"""
-    
+
     @pytest.mark.asyncio
     async def test_authenticate_user_success(self, test_db):
         """ユーザー認証成功テスト"""
@@ -1079,14 +1079,14 @@ class TestUserService:
         user = UserFactory.create()
         user_repo = UserRepository(test_db)
         user_service = UserService(user_repo, get_password_context(), "test_secret")
-        
+
         # Act
         result = await user_service.authenticate_user(user.email, "correct_password")
-        
+
         # Assert
         assert result is not None
         assert result.email == user.email
-    
+
     @pytest.mark.asyncio
     async def test_create_user_duplicate_email(self, test_db):
         """重複メールアドレステスト"""
@@ -1094,7 +1094,7 @@ class TestUserService:
         existing_user = UserFactory.create()
         user_repo = UserRepository(test_db)
         user_service = UserService(user_repo, get_password_context(), "test_secret")
-        
+
         user_data = UserCreateSchema(
             email=existing_user.email,
             password="NewPassword123!",
@@ -1102,7 +1102,7 @@ class TestUserService:
             first_name="New",
             last_name="User"
         )
-        
+
         # Act & Assert
         with pytest.raises(UserAlreadyExistsError):
             await user_service.create_user(user_data)
@@ -1110,7 +1110,7 @@ class TestUserService:
 # API エンドポイント統合テスト
 class TestUserAPI:
     """ユーザーAPI統合テスト"""
-    
+
     @pytest.mark.asyncio
     async def test_register_user_success(self, client: AsyncClient):
         """ユーザー登録成功テスト"""
@@ -1122,16 +1122,16 @@ class TestUserAPI:
             "first_name": "New",
             "last_name": "User"
         }
-        
+
         # Act
         response = await client.post("/api/v1/users/register", json=user_data)
-        
+
         # Assert
         assert response.status_code == 201
         data = response.json()
         assert data["email"] == user_data["email"]
         assert "password" not in data  # パスワードは返されない
-    
+
     @pytest.mark.asyncio
     async def test_login_user_success(self, client: AsyncClient):
         """ログイン成功テスト"""
@@ -1141,10 +1141,10 @@ class TestUserAPI:
             "email": user.email,
             "password": "correct_password"
         }
-        
+
         # Act
         response = await client.post("/api/v1/users/login", json=login_data)
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -1167,7 +1167,7 @@ class TestUserAPI:
 ```bash
 # 開発中の品質チェック
 ruff check .                    # Python linting
-black .                         # Code formatting  
+black .                         # Code formatting
 mypy .                         # Type checking
 pytest                         # Unit tests
 pytest --cov=app              # Coverage report
@@ -1187,7 +1187,7 @@ pytest --cov=app              # Coverage report
 
 #### 🏗️ モデル作成時
 - [ ] 適切な型ヒント（Type hints）があるか（すべての変数・関数に必須）
-- [ ] 必要なバリデーション制約があるか  
+- [ ] 必要なバリデーション制約があるか
 - [ ] インデックスが適切に設定されているか
 - [ ] リレーションが正しく定義されているか
 - [ ] docstring が記述されているか（Google style推奨）

@@ -1,5 +1,5 @@
 ---
-name: frontend-developer  
+name: frontend-developer
 description: すべてのNext.js/Reactフロントエンド開発タスク、GitHub Issue駆動開発、コンポーネント作成、機能実装、状態管理、TypeScript実装、bulletproof-reactアーキテクチャの遵守で積極的に使用
 tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, mcp__serena__list_dir, mcp__serena__find_file, mcp__serena__search_for_pattern, mcp__serena__get_symbols_overview, mcp__serena__find_symbol, mcp__serena__replace_symbol_body, mcp__serena__insert_after_symbol, mcp__serena__insert_before_symbol
 ---
@@ -139,7 +139,7 @@ const buttonVariants = cva(
 )
 
 // 型安全なProps設計（typeを使用、interface禁止）
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & 
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
   VariantProps<typeof buttonVariants>
 
 // forwardRef + 適切なJSDoc
@@ -272,12 +272,12 @@ export const useUpdateUser = (config?: MutationConfig<typeof updateUser>) => {
 
   return useMutation({
     mutationFn: updateUser,
-    
+
     // 楽観的更新
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: ['users', id] })
       const previousUser = queryClient.getQueryData(['users', id])
-      
+
       queryClient.setQueryData(['users', id], (old: User) => ({
         ...old,
         ...data,
@@ -336,12 +336,12 @@ const formatUserDisplayName = (user: User): string => {
 
 const validateUserInput = (input: UserInput): ValidationResult => {
   const errors: Record<string, string> = {}
-  
+
   if (!input.email) errors.email = 'メールアドレスは必須です'
   if (!input.password || input.password.length < 8) {
     errors.password = 'パスワードは8文字以上で入力してください'
   }
-  
+
   return {
     isValid: Object.keys(errors).length === 0,
     errors,
@@ -388,10 +388,10 @@ const useUserForm = (initialUser?: User) => {
 #### React最適化パターン
 ```typescript
 // memo + shallow comparison
-const UserCard = React.memo(({ 
-  user, 
-  onEdit, 
-  onDelete 
+const UserCard = React.memo(({
+  user,
+  onEdit,
+  onDelete
 }: UserCardProps) => {
   const handleEdit = useCallback(() => onEdit(user), [user, onEdit])
   const handleDelete = useCallback(() => onDelete(user.id), [user.id, onDelete])
@@ -576,7 +576,7 @@ export class FeatureErrorBoundary extends Component<
 **これらのルールは例外なく守ること。違反は絶対に許可されません。**
 
 - **Features-based Architecture** の完全遵守
-- **SOLID/DRY/KISS原則** の厳格な適用  
+- **SOLID/DRY/KISS原則** の厳格な適用
 - **bulletproof-react** のディレクトリ構成の維持
 - **型安全性** の確保（interface禁止、アロー関数必須）
 

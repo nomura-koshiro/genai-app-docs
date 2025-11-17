@@ -12,7 +12,7 @@ handle_error() {
     local error_code=$2
     echo "❌ エラーが発生しました (行: $line_no, コード: $error_code)"
     echo "🔧 問題の詳細を確認してください"
-    
+
     # クリーンアップが必要な場合
     if [ -n "$WORKTREE_DIR" ] && [ -d "$WORKTREE_DIR" ]; then
         echo "🧹 作業ディレクトリをクリーンアップしています..."
@@ -20,7 +20,7 @@ handle_error() {
         git worktree remove "$WORKTREE_DIR" --force 2>/dev/null || true
         rm -rf "$WORKTREE_DIR" 2>/dev/null || true
     fi
-    
+
     exit $error_code
 }
 
@@ -137,7 +137,7 @@ if [ -f "package.json" ]; then
         echo "  npm install -g pnpm"
         exit 1
     fi
-    
+
     if ! pnpm install --frozen-lockfile; then
         echo "⚠️  lockfileでのインストールに失敗しました。通常のインストールを試行中..."
         if ! pnpm install; then
@@ -150,7 +150,7 @@ fi
 
 # ポート計算（Issue番号ベース）
 FRONTEND_PORT=$((3000 + ${ISSUE_NUMBER} % 100))  # 3000-3099の範囲
-BACKEND_PORT=$((8000 + ${ISSUE_NUMBER} % 100))   # 8000-8099の範囲  
+BACKEND_PORT=$((8000 + ${ISSUE_NUMBER} % 100))   # 8000-8099の範囲
 STORYBOOK_PORT=$((6000 + ${ISSUE_NUMBER} % 100)) # 6000-6099の範囲
 
 # worktree用の.envファイルを作成
@@ -159,7 +159,7 @@ cat > .env.local << EOF
 NEXT_PUBLIC_API_URL=http://localhost:${BACKEND_PORT}
 PORT=${FRONTEND_PORT}
 FRONTEND_PORT=${FRONTEND_PORT}
-BACKEND_PORT=${BACKEND_PORT}  
+BACKEND_PORT=${BACKEND_PORT}
 STORYBOOK_PORT=${STORYBOOK_PORT}
 EOF
 
@@ -205,7 +205,7 @@ fi
 if [ -d "apps/backend" ]; then
     echo "▶️  バックエンドを起動中..."
     cd apps/backend
-    
+
     # uvがある場合はuv syncで環境を整備
     if command -v uv >/dev/null 2>&1; then
         echo "🐍 Python環境をuv syncで同期中..."

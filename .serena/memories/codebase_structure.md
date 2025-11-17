@@ -74,7 +74,7 @@ app/
 - **スタイリング**: Tailwind CSS + CVA
 - **フォーム**: React Hook Form + Zod
 
-### バックエンド  
+### バックエンド
 - **アーキテクチャ**: 層分離アーキテクチャ
 - **API**: FastAPI + Pydantic
 - **データベース**: SQLAlchemy + Alembic

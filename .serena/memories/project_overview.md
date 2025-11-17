@@ -9,7 +9,7 @@
 - **フレームワーク**: Next.js 15.5.2
 - **言語**: TypeScript 5.5+
 - **スタイリング**: Tailwind CSS + CVA (Class Variance Authority)
-- **状態管理**: 
+- **状態管理**:
   - TanStack Query (サーバー状態)
   - Zustand (ローカル状態)
 - **フォーム**: React Hook Form + Zod バリデーション

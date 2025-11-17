@@ -47,28 +47,28 @@ def get_user_data(id, include_profile=True):
 
 # ✅ 良い例：PEP8準拠、適切な型ヒント
 async def get_user_data(
-    user_id: UUID, 
+    user_id: UUID,
     include_profile: bool = True,
     db: AsyncSession = Depends(get_db)
 ) -> Optional[UserWithProfile]:
     """
     ユーザーデータを取得します
-    
+
     Args:
         user_id: ユーザーID
         include_profile: プロフィール情報を含めるかどうか
         db: データベースセッション
-        
+
     Returns:
         ユーザー情報、見つからない場合はNone
     """
     if user_id is None:
         return None
-        
+
     user = await db.get(User, user_id)
     if include_profile and user:
         user.profile = await get_profile(user.id)
-        
+
     return user
 ```
 
@@ -82,18 +82,18 @@ def calc_1rm(w, r):
 def calculate_one_rep_max(weight: float, reps: int) -> float:
     """
     Epley式を使用して1RM（1 Rep Max）を計算します
-    
+
     Args:
         weight: 挙上重量（kg）
         reps: 反復回数（1-15回の範囲で精度が高い）
-        
+
     Returns:
         計算された1RM値
-        
+
     Raises:
         ValueError: 重量が負数または0の場合
         ValueError: レップ数が1未満の場合
-        
+
     Example:
         >>> calculate_one_rep_max(100.0, 5)
         116.67
@@ -102,7 +102,7 @@ def calculate_one_rep_max(weight: float, reps: int) -> float:
         raise ValueError("重量は正の値である必要があります")
     if reps < 1:
         raise ValueError("レップ数は1以上である必要があります")
-        
+
     # Epley式: 1RM = weight × (1 + reps / 30)
     return weight * (1 + reps / 30)
 ```
@@ -117,18 +117,18 @@ class UserManager:
         # バリデーション
         if not user_data.email or '@' not in user_data.email:
             raise ValueError("Invalid email")
-        
+
         # パスワードハッシュ化
         hashed = bcrypt.hashpw(user_data.password.encode(), bcrypt.gensalt())
-        
+
         # データベース保存
         user = User(email=user_data.email, password_hash=hashed)
         db.add(user)
         db.commit()
-        
+
         # メール送信
         send_welcome_email(user.email)
-        
+
         return user
 
 # ✅ 良い例：責任分離
@@ -161,7 +161,7 @@ class EmailService:
 class UserService:
     """ユーザー管理のオーケストレーション"""
     def __init__(
-        self, 
+        self,
         user_repo: UserRepository,
         password_service: PasswordService,
         email_service: EmailService
@@ -169,17 +169,17 @@ class UserService:
         self.user_repo = user_repo
         self.password_service = password_service
         self.email_service = email_service
-    
+
     async def create_user(self, user_data: UserCreateSchema) -> User:
         UserValidator.validate_user_data(user_data)
-        
+
         hashed_password = self.password_service.hash_password(user_data.password)
         user_dict = user_data.dict()
         user_dict['password_hash'] = hashed_password
-        
+
         user = await self.user_repo.create(user_dict)
         await self.email_service.send_welcome_email(user.email)
-        
+
         return user
 ```
 
@@ -202,7 +202,7 @@ from abc import ABC, abstractmethod
 
 class ExerciseCalorieCalculator(ABC):
     """運動カロリー計算の抽象基底クラス"""
-    
+
     @abstractmethod
     def calculate(self, duration_minutes: int, weight_kg: float) -> float:
         """カロリー計算を実行"""
@@ -221,11 +221,11 @@ class CyclingCalculator(ExerciseCalorieCalculator):
 class CalorieCalculationService:
     def __init__(self):
         self.calculators: Dict[str, ExerciseCalorieCalculator] = {}
-    
+
     def register_calculator(self, exercise_type: str, calculator: ExerciseCalorieCalculator):
         """新しい計算機の登録（既存コード修正不要）"""
         self.calculators[exercise_type] = calculator
-    
+
     def calculate_calories(self, exercise_type: str, duration: int, weight: float) -> float:
         calculator = self.calculators.get(exercise_type)
         if not calculator:
@@ -268,7 +268,7 @@ async def delete_user(
 ):
     """
     ユーザー削除（認証・認可実装済み）
-    
+
     - 管理者権限または本人のみ削除可能
     - JWT認証必須
     """
@@ -278,7 +278,7 @@ async def delete_user(
             status_code=403,
             detail="このユーザーを削除する権限がありません"
         )
-    
+
     await user_service.delete_user(user_id)
 ```
 
@@ -293,7 +293,7 @@ def authenticate_user(email: str, password: str):
 
 # ✅ 良い例：適切なセキュリティ実装
 async def authenticate_user(
-    email: str, 
+    email: str,
     password: str,
     user_service: UserService
 ) -> Optional[User]:
@@ -302,18 +302,18 @@ async def authenticate_user(
     """
     # 機密情報はログに出力しない
     logger.info(f"Login attempt for email: {email}")
-    
+
     user = await user_service.get_user_by_email(email)
-    
+
     if not user:
         # ユーザーが存在しない場合もタイミング攻撃を防ぐため同じ処理時間
         verify_password("dummy", "$2b$12$dummy_hash")
         return None
-    
+
     # ハッシュ化されたパスワードとの比較
     if not verify_password(password, user.password_hash):
         return None
-    
+
     return user
 ```
 
@@ -325,7 +325,7 @@ async def authenticate_user(
 async def get_users_with_sessions():
     users = await db.execute(select(User))
     result = []
-    
+
     for user in users.scalars():
         # 各ユーザーごとにクエリ実行（N+1問題）
         sessions = await db.execute(
@@ -336,7 +336,7 @@ async def get_users_with_sessions():
             "sessions": sessions.scalars().all()
         }
         result.append(user_data)
-    
+
     return result
 
 # ✅ 良い例：JOINまたはeager loading使用
@@ -347,7 +347,7 @@ async def get_users_with_sessions(db: AsyncSession):
         .options(selectinload(User.training_sessions))  # Eager loading
         .order_by(User.created_at.desc())
     )
-    
+
     return result.scalars().all()
 
 # または、より複雑な場合はJOIN
@@ -358,14 +358,14 @@ async def get_users_with_sessions_join(db: AsyncSession):
         .join(TrainingSession, User.id == TrainingSession.user_id)
         .order_by(User.created_at.desc())
     )
-    
+
     # 結果をグループ化して返す
     users_dict = {}
     for user, session in result:
         if user.id not in users_dict:
             users_dict[user.id] = {"user": user, "sessions": []}
         users_dict[user.id]["sessions"].append(session)
-    
+
     return list(users_dict.values())
 ```
 
@@ -389,10 +389,10 @@ async def process_user_data(user_ids: List[UUID]):
         # 各ユーザーの情報取得を並行実行
         user_task = get_user(user_id)
         profile_task = get_profile(user_id)
-        
+
         user, profile = await asyncio.gather(user_task, profile_task)
         return {"user": user, "profile": profile}
-    
+
     # 全ユーザーの処理を並行実行
     tasks = [process_single_user(user_id) for user_id in user_ids]
     return await asyncio.gather(*tasks)
@@ -411,7 +411,7 @@ def test_create_user():
 # ✅ 良い例：包括的なテスト
 class TestUserService:
     """ユーザーサービスの包括的テストスイート"""
-    
+
     @pytest.mark.asyncio
     async def test_create_user_success(self, user_service, user_factory):
         """正常系：ユーザー作成成功"""
@@ -422,9 +422,9 @@ class TestUserService:
             first_name="Test",
             last_name="User"
         )
-        
+
         user = await user_service.create_user(user_data)
-        
+
         assert user.email == user_data.email
         assert user.first_name == user_data.first_name
         assert user.is_active is True
@@ -432,12 +432,12 @@ class TestUserService:
         # パスワードは平文で保存されていないことを確認
         assert user.password_hash != user_data.password
         assert len(user.password_hash) > 50  # ハッシュ化されている
-    
+
     @pytest.mark.asyncio
     async def test_create_user_duplicate_email(self, user_service, user_factory):
         """異常系：重複メールアドレス"""
         existing_user = await user_factory()
-        
+
         user_data = UserCreateSchema(
             email=existing_user.email,  # 既存のメールアドレス
             password="SecurePass123!",
@@ -445,12 +445,12 @@ class TestUserService:
             first_name="Duplicate",
             last_name="User"
         )
-        
+
         with pytest.raises(UserAlreadyExistsError) as exc_info:
             await user_service.create_user(user_data)
-        
+
         assert "既に使用されています" in str(exc_info.value)
-    
+
     @pytest.mark.asyncio
     async def test_create_user_invalid_password(self, user_service):
         """異常系：無効なパスワード"""
@@ -461,12 +461,12 @@ class TestUserService:
             first_name="Test",
             last_name="User"
         )
-        
+
         with pytest.raises(ValidationError) as exc_info:
             await user_service.create_user(user_data)
-        
+
         assert "パスワードには大文字を含めてください" in str(exc_info.value)
-    
+
     @pytest.mark.asyncio
     async def test_create_user_database_error(
         self, user_service, mock_database_error
@@ -479,7 +479,7 @@ class TestUserService:
             first_name="Test",
             last_name="User"
         )
-        
+
         with mock_database_error:
             with pytest.raises(DatabaseError):
                 await user_service.create_user(user_data)
@@ -511,7 +511,7 @@ class TestUserService:
    # 現在のコード（問題あり）
    for user in users:
        sessions = await get_user_sessions(user.id)  # N+1問題
-   
+
    # 改善案
    users_with_sessions = await db.execute(
        select(User).options(selectinload(User.training_sessions))
@@ -540,7 +540,7 @@ class TestUserService:
 class User(Base):
     email = Column(String)  # 制約不足
 
-# 改善案  
+# 改善案
 class User(Base):
     email: str = Column(String(255), unique=True, nullable=False, index=True)
 ```
@@ -564,7 +564,7 @@ async def get_users_with_stats(self, limit: int = 50):
 
 ### 📋 チェックリスト
 - [ ] N+1クエリ問題の修正
-- [ ] JWT有効期限チェックの追加  
+- [ ] JWT有効期限チェックの追加
 - [ ] UserControllerの責任分離
 - [ ] 異常系テストの追加
 - [ ] API文書の更新

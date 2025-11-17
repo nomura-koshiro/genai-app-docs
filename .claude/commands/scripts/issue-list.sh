@@ -26,7 +26,7 @@ if [ "$worktree_count" -gt 1 ]; then
         path=$(echo "$line" | awk '{print $1}')
         commit=$(echo "$line" | awk '{print $2}')
         branch=$(echo "$line" | awk '{print $3}' | sed 's/\[//;s/\]//')
-        
+
         if [[ "$path" == *"training-tracker-issue-"* ]]; then
             issue_num=$(basename "$path" | sed 's/training-tracker-issue-//')
             frontend_port=$((3000 + ${issue_num} % 100))

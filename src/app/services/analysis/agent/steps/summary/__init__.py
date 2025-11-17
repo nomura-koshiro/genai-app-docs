@@ -306,7 +306,7 @@ class SummaryStep(BaseAnalysisStep):
             elif hasattr(result, "item"):
                 # pandas の scalar 型（numpy scalar など）
                 final_result = float(result.item())  # type: ignore[arg-type]
-            elif isinstance(result, (int, float)):
+            elif isinstance(result, int | float):
                 final_result = float(result)
             else:
                 # Series や他の型の場合、値を抽出

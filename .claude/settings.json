@@ -62,7 +62,7 @@
       "description": "Backend Developer Agent specialized in FastAPI, SQLAlchemy, and Python development"
     },
     "frontend-developer": {
-      "path": ".claude/agents/frontend-developer.md", 
+      "path": ".claude/agents/frontend-developer.md",
       "enabled": true,
       "description": "Frontend Developer Agent specialized in React, Next.js, and TypeScript development"
     },
