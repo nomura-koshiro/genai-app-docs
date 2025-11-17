@@ -33,8 +33,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.analysis.file import AnalysisFile
-    from app.models.analysis.step import AnalysisStep
+    from app.models.analysis.analysis_file import AnalysisFile
+    from app.models.analysis.analysis_step import AnalysisStep
     from app.models.project.project import Project
     from app.models.user_account.user_account import UserAccount
 

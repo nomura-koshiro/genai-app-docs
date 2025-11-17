@@ -50,7 +50,7 @@ from app.services import ProjectMemberService
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+project_members_router = APIRouter()
 
 
 # ================================================================================
@@ -58,7 +58,7 @@ router = APIRouter()
 # ================================================================================
 
 
-@router.get(
+@project_members_router.get(
     "",
     response_model=ProjectMemberListResponse,
     summary="プロジェクトメンバー一覧取得",
@@ -164,7 +164,7 @@ async def get_project_members(
     )
 
 
-@router.get(
+@project_members_router.get(
     "/me",
     response_model=UserRoleResponse,
     summary="自分のロール取得",
@@ -268,7 +268,7 @@ async def get_my_role(
 # ================================================================================
 
 
-@router.post(
+@project_members_router.post(
     "",
     response_model=ProjectMemberDetailResponse,
     status_code=status.HTTP_201_CREATED,
@@ -367,7 +367,7 @@ async def add_project_member(
     return ProjectMemberDetailResponse.model_validate(member)
 
 
-@router.post(
+@project_members_router.post(
     "/bulk",
     response_model=ProjectMemberBulkResponse,
     status_code=status.HTTP_201_CREATED,
@@ -498,7 +498,7 @@ async def add_project_members_bulk(
 # ================================================================================
 
 
-@router.patch(
+@project_members_router.patch(
     "/{member_id}",
     response_model=ProjectMemberDetailResponse,
     summary="メンバーロール更新",
@@ -588,7 +588,7 @@ async def update_member_role(
     return ProjectMemberDetailResponse.model_validate(updated_member)
 
 
-@router.patch(
+@project_members_router.patch(
     "/bulk",
     response_model=ProjectMemberBulkUpdateResponse,
     summary="メンバーロール複数人更新",
@@ -718,7 +718,7 @@ async def update_members_bulk(
 # ================================================================================
 
 
-@router.delete(
+@project_members_router.delete(
     "/{member_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="メンバー削除",
@@ -785,7 +785,7 @@ async def remove_member(
     )
 
 
-@router.delete(
+@project_members_router.delete(
     "/me",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="プロジェクト退出",

@@ -57,7 +57,7 @@ from app.services import AnalysisService, ProjectService
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+analysis_router = APIRouter()
 
 
 # ================================================================================
@@ -94,7 +94,7 @@ def get_project_service(db: AsyncSession = Depends(get_db)) -> ProjectService:
 # ================================================================================
 
 
-@router.post(
+@analysis_router.post(
     "/sessions",
     response_model=AnalysisSessionDetailResponse,
     status_code=status.HTTP_201_CREATED,
@@ -219,7 +219,7 @@ async def create_session(
     return await analysis_service.get_session_result(session.id)
 
 
-@router.post(
+@analysis_router.post(
     "/sessions/{session_id}/files",
     response_model=AnalysisFileUploadResponse,
     status_code=status.HTTP_201_CREATED,
@@ -323,7 +323,7 @@ async def upload_file(
     return result
 
 
-@router.post(
+@analysis_router.post(
     "/sessions/{session_id}/steps",
     response_model=AnalysisStepResponse,
     status_code=status.HTTP_201_CREATED,
@@ -423,7 +423,7 @@ async def create_step(
     return AnalysisStepResponse.model_validate(step)
 
 
-@router.post(
+@analysis_router.post(
     "/sessions/{session_id}/chat",
     response_model=AnalysisChatResponse,
     summary="AIチャット実行",
@@ -524,7 +524,7 @@ async def execute_chat(
 # ================================================================================
 
 
-@router.get(
+@analysis_router.get(
     "/sessions",
     response_model=list[AnalysisSessionDetailResponse],
     summary="分析セッション一覧取得",
@@ -619,7 +619,7 @@ async def list_sessions(
     return [await analysis_service.get_session_result(session.id) for session in sessions]
 
 
-@router.get(
+@analysis_router.get(
     "/sessions/{session_id}",
     response_model=AnalysisSessionDetailResponse,
     summary="セッション詳細取得",
@@ -701,7 +701,7 @@ async def get_session(
     return result
 
 
-@router.get(
+@analysis_router.get(
     "/sessions/{session_id}/result",
     response_model=AnalysisSessionDetailResponse,
     summary="分析結果取得",
@@ -741,7 +741,7 @@ async def get_session_result(
     return await get_session(session_id, current_user, analysis_service)
 
 
-@router.get(
+@analysis_router.get(
     "/validation-config",
     response_model=AnalysisValidationConfigResponse,
     summary="検証設定取得",
@@ -790,7 +790,7 @@ async def get_validation_config(
     return config
 
 
-@router.get(
+@analysis_router.get(
     "/dummy/{chart_type}",
     response_model=AnalysisDummyDataResponse,
     summary="ダミーチャートデータ取得",
@@ -850,7 +850,7 @@ async def get_dummy_data(
 # ================================================================================
 
 
-@router.delete(
+@analysis_router.delete(
     "/sessions/{session_id}/steps/{step_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="分析ステップ削除",

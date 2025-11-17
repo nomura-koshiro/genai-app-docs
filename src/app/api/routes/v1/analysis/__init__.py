@@ -23,7 +23,7 @@
     >>> {"file_name": "data.csv", "file_data": "base64..."}
 """
 
-from app.api.routes.v1.analysis.analysis import router as analysis_router
-from app.api.routes.v1.analysis.templates import router as analysis_templates_router
+from app.api.routes.v1.analysis.analysis import analysis_router
+from app.api.routes.v1.analysis.templates import analysis_templates_router
 
 __all__ = ["analysis_router", "analysis_templates_router"]

@@ -51,13 +51,18 @@ from app.schemas.ppt_generator import (
     PPTUploadResponse,
     QuestionDownloadRequest,
 )
-from app.schemas.project.file import (
+from app.schemas.project.project import (
+    ProjectCreate,
+    ProjectResponse,
+    ProjectUpdate,
+)
+from app.schemas.project.project_file import (
     ProjectFileDeleteResponse,
     ProjectFileListResponse,
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
-from app.schemas.project.member import (
+from app.schemas.project.project_member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkError,
     ProjectMemberBulkResponse,
@@ -71,11 +76,6 @@ from app.schemas.project.member import (
     ProjectMemberRoleUpdate,
     ProjectMemberUpdate,
     UserRoleResponse,
-)
-from app.schemas.project.project import (
-    ProjectCreate,
-    ProjectResponse,
-    ProjectUpdate,
 )
 from app.schemas.sample.sample_agents import (
     SampleChatRequest,

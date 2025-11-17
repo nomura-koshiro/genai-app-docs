@@ -37,7 +37,7 @@ from app.services import ProjectFileService
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+project_files_router = APIRouter()
 
 
 # ================================================================================
@@ -45,7 +45,7 @@ router = APIRouter()
 # ================================================================================
 
 
-@router.get(
+@project_files_router.get(
     "/projects/{project_id}/files",
     response_model=ProjectFileListResponse,
     summary="プロジェクトファイル一覧取得",
@@ -114,7 +114,7 @@ async def list_files(
     return ProjectFileListResponse(files=file_responses, total=total, project_id=project_id)
 
 
-@router.get(
+@project_files_router.get(
     "/projects/{project_id}/files/{file_id}",
     response_model=ProjectFileResponse,
     summary="プロジェクトファイル情報取得",
@@ -177,7 +177,7 @@ async def get_file(
     return ProjectFileResponse.model_validate(file)
 
 
-@router.get(
+@project_files_router.get(
     "/projects/{project_id}/files/{file_id}/download",
     response_class=FileResponse,
     summary="プロジェクトファイルダウンロード",
@@ -256,7 +256,7 @@ async def download_file(
 # ================================================================================
 
 
-@router.post(
+@project_files_router.post(
     "/projects/{project_id}/files",
     response_model=ProjectFileUploadResponse,
     status_code=status.HTTP_201_CREATED,
@@ -343,7 +343,7 @@ async def upload_file(
 # ================================================================================
 
 
-@router.delete(
+@project_files_router.delete(
     "/projects/{project_id}/files/{file_id}",
     response_model=ProjectFileDeleteResponse,
     summary="プロジェクトファイル削除",

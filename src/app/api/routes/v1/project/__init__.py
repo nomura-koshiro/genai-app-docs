@@ -33,8 +33,8 @@
     >>> {"user_id": "...", "role": "manager"}
 """
 
-from app.api.routes.v1.project.files import router as project_files_router
-from app.api.routes.v1.project.members import router as project_members_router
-from app.api.routes.v1.project.project import router as projects_router
+from app.api.routes.v1.project.files import project_files_router
+from app.api.routes.v1.project.members import project_members_router
+from app.api.routes.v1.project.project import projects_router
 
 __all__ = ["projects_router", "project_files_router", "project_members_router"]

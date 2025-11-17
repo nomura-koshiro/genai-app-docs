@@ -18,11 +18,11 @@
     ... )
 """
 
-from app.models.analysis.file import AnalysisFile
-from app.models.analysis.session import AnalysisSession
-from app.models.analysis.step import AnalysisStep
-from app.models.analysis.template import AnalysisTemplate
-from app.models.analysis.template_chart import AnalysisTemplateChart
+from app.models.analysis.analysis_file import AnalysisFile
+from app.models.analysis.analysis_session import AnalysisSession
+from app.models.analysis.analysis_step import AnalysisStep
+from app.models.analysis.analysis_template import AnalysisTemplate
+from app.models.analysis.analysis_template_chart import AnalysisTemplateChart
 
 __all__ = [
     "AnalysisFile",

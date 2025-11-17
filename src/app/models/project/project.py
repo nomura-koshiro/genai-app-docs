@@ -32,9 +32,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.analysis.session import AnalysisSession
-    from app.models.project.file import ProjectFile
-    from app.models.project.member import ProjectMember
+    from app.models.analysis.analysis_session import AnalysisSession
+    from app.models.project.project_file import ProjectFile
+    from app.models.project.project_member import ProjectMember
 
 
 class Project(Base, TimestampMixin):

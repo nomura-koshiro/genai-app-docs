@@ -17,7 +17,7 @@
 # config.py からのエクスポート
 # ================================================================================
 
-from app.schemas.analysis.config import (
+from app.schemas.analysis.analysis_config import (
     AggregationColumnConfig,
     AnalysisAggregateConfig,
     AnalysisCategoryFilterConfig,
@@ -37,7 +37,7 @@ from app.schemas.analysis.config import (
 # ================================================================================
 # session.py からのエクスポート
 # ================================================================================
-from app.schemas.analysis.session import (
+from app.schemas.analysis.analysis_session import (
     AnalysisChatMessage,
     AnalysisChatRequest,
     AnalysisChatResponse,
@@ -67,7 +67,7 @@ from app.schemas.analysis.session import (
 # ================================================================================
 # template.py からのエクスポート
 # ================================================================================
-from app.schemas.analysis.template import (
+from app.schemas.analysis.analysis_template import (
     AnalysisInitialAxisConfig,
     AnalysisInitialAxisList,
     AnalysisPlotlyChartData,

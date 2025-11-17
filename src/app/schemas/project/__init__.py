@@ -36,13 +36,18 @@
     ... )
 """
 
-from app.schemas.project.file import (
+from app.schemas.project.project import (
+    ProjectCreate,
+    ProjectResponse,
+    ProjectUpdate,
+)
+from app.schemas.project.project_file import (
     ProjectFileDeleteResponse,
     ProjectFileListResponse,
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
-from app.schemas.project.member import (
+from app.schemas.project.project_member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkError,
     ProjectMemberBulkResponse,
@@ -56,11 +61,6 @@ from app.schemas.project.member import (
     ProjectMemberRoleUpdate,
     ProjectMemberUpdate,
     UserRoleResponse,
-)
-from app.schemas.project.project import (
-    ProjectCreate,
-    ProjectResponse,
-    ProjectUpdate,
 )
 
 __all__ = [

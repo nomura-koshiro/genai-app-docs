@@ -14,8 +14,8 @@
     ...     project = await project_repo.get(project_id)
 """
 
-from app.repositories.project.file import ProjectFileRepository
-from app.repositories.project.member import ProjectMemberRepository
 from app.repositories.project.project import ProjectRepository
+from app.repositories.project.project_file import ProjectFileRepository
+from app.repositories.project.project_member import ProjectMemberRepository
 
 __all__ = ["ProjectRepository", "ProjectFileRepository", "ProjectMemberRepository"]

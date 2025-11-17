@@ -15,10 +15,10 @@
     ...     session = await session_repo.get(session_id)
 """
 
-from app.repositories.analysis.file import AnalysisFileRepository
-from app.repositories.analysis.session import AnalysisSessionRepository
-from app.repositories.analysis.step import AnalysisStepRepository
-from app.repositories.analysis.template import AnalysisTemplateRepository
+from app.repositories.analysis.analysis_file import AnalysisFileRepository
+from app.repositories.analysis.analysis_session import AnalysisSessionRepository
+from app.repositories.analysis.analysis_step import AnalysisStepRepository
+from app.repositories.analysis.analysis_template import AnalysisTemplateRepository
 
 __all__ = [
     "AnalysisFileRepository",

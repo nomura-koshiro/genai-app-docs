@@ -27,7 +27,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.driver_tree.tree import DriverTree
+    from app.models.driver_tree.driver_tree import DriverTree
 
 
 class DriverTreeNode(Base, TimestampMixin):

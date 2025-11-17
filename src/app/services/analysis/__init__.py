@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AnalysisFile, AnalysisSession, AnalysisStep
 from app.schemas.analysis import AnalysisChatMessage
-from app.schemas.analysis.session import (
+from app.schemas.analysis.analysis_session import (
     AnalysisChatRequest,
     AnalysisChatResponse,
     AnalysisDummyDataResponse,

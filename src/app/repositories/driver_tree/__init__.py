@@ -14,8 +14,8 @@
     ...     tree = await tree_repo.get(tree_id)
 """
 
-from app.repositories.driver_tree.category import DriverTreeCategoryRepository
-from app.repositories.driver_tree.node import DriverTreeNodeRepository
-from app.repositories.driver_tree.tree import DriverTreeRepository
+from app.repositories.driver_tree.driver_tree import DriverTreeRepository
+from app.repositories.driver_tree.driver_tree_category import DriverTreeCategoryRepository
+from app.repositories.driver_tree.driver_tree_node import DriverTreeNodeRepository
 
 __all__ = ["DriverTreeRepository", "DriverTreeNodeRepository", "DriverTreeCategoryRepository"]

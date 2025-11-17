@@ -20,8 +20,8 @@
     ... )
 """
 
-from app.models.driver_tree.category import DriverTreeCategory
-from app.models.driver_tree.node import DriverTreeNode
-from app.models.driver_tree.tree import DriverTree
+from app.models.driver_tree.driver_tree import DriverTree
+from app.models.driver_tree.driver_tree_category import DriverTreeCategory
+from app.models.driver_tree.driver_tree_node import DriverTreeNode
 
 __all__ = ["DriverTree", "DriverTreeNode", "DriverTreeCategory"]

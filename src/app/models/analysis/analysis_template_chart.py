@@ -34,7 +34,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.analysis.template import AnalysisTemplate
+    from app.models.analysis.analysis_template import AnalysisTemplate
 
 
 class AnalysisTemplateChart(Base, TimestampMixin):

@@ -34,7 +34,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.analysis.session import AnalysisSession
+    from app.models.analysis.analysis_session import AnalysisSession
     from app.models.user_account.user_account import UserAccount
 
 

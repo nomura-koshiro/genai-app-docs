@@ -19,7 +19,7 @@
     ...     )
 """
 
-from app.services.project.file import ProjectFileService
 from app.services.project.project import ProjectService
+from app.services.project.project_file import ProjectFileService
 
 __all__ = ["ProjectService", "ProjectFileService"]

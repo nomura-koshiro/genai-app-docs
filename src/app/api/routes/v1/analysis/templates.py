@@ -41,7 +41,7 @@ from app.schemas import (
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+analysis_templates_router = APIRouter()
 
 
 # ================================================================================
@@ -66,7 +66,7 @@ def get_template_repository(db: AsyncSession = Depends(get_db)) -> AnalysisTempl
 # ================================================================================
 
 
-@router.get(
+@analysis_templates_router.get(
     "",
     response_model=list[AnalysisTemplateResponse],
     status_code=status.HTTP_200_OK,
@@ -118,7 +118,7 @@ async def list_templates(
     return templates
 
 
-@router.get(
+@analysis_templates_router.get(
     "/{template_id}",
     response_model=AnalysisTemplateDetailResponse,
     status_code=status.HTTP_200_OK,
@@ -188,7 +188,7 @@ async def get_template_detail(
     return template
 
 
-@router.get(
+@analysis_templates_router.get(
     "/policy/{policy}",
     response_model=list[AnalysisTemplateResponse],
     status_code=status.HTTP_200_OK,
@@ -233,7 +233,7 @@ async def list_templates_by_policy(
     return templates
 
 
-@router.get(
+@analysis_templates_router.get(
     "/search/by-policy-issue",
     response_model=AnalysisTemplateDetailResponse,
     status_code=status.HTTP_200_OK,

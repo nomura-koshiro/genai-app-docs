@@ -39,7 +39,7 @@ from app.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
 
 logger = get_logger(__name__)
 
-router = APIRouter()
+projects_router = APIRouter()
 
 
 # ================================================================================
@@ -47,7 +47,7 @@ router = APIRouter()
 # ================================================================================
 
 
-@router.get(
+@projects_router.get(
     "",
     response_model=list[ProjectResponse],
     summary="プロジェクト一覧取得",
@@ -138,7 +138,7 @@ async def list_projects(
     return [ProjectResponse.model_validate(project) for project in projects]
 
 
-@router.get(
+@projects_router.get(
     "/{project_id}",
     response_model=ProjectResponse,
     summary="プロジェクト詳細取得",
@@ -242,7 +242,7 @@ async def get_project(
     return ProjectResponse.model_validate(project)
 
 
-@router.get(
+@projects_router.get(
     "/code/{code}",
     response_model=ProjectResponse,
     summary="プロジェクトコード検索",
@@ -338,7 +338,7 @@ async def get_project_by_code(
 # ================================================================================
 
 
-@router.post(
+@projects_router.post(
     "",
     response_model=ProjectResponse,
     status_code=status.HTTP_201_CREATED,
@@ -434,7 +434,7 @@ async def create_project(
 # ================================================================================
 
 
-@router.patch(
+@projects_router.patch(
     "/{project_id}",
     response_model=ProjectResponse,
     summary="プロジェクト情報更新",
@@ -533,7 +533,7 @@ async def update_project(
 # ================================================================================
 
 
-@router.delete(
+@projects_router.delete(
     "/{project_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="プロジェクト削除",
