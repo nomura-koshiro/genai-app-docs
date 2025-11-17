@@ -317,6 +317,131 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
+## Pre-commitフックのセットアップ
+
+Pre-commitは、git commitの前に自動的にコード品質チェックを実行するツールです。
+このプロジェクトでは、Ruffによるlintingとformattingを自動実行します。
+
+### Pre-commitとは
+
+Pre-commitフックを設定すると、`git commit`実行時に以下が自動実行されます：
+
+- ✅ **Ruff Linter**: コード品質チェック
+- ✅ **Ruff Formatter**: コードフォーマット
+- ✅ **末尾の空白削除**: ファイル末尾の不要な空白を削除
+- ✅ **ファイル末尾の改行**: ファイル末尾に改行を追加
+
+問題が検出された場合、commitは中断され、自動修正が適用されます。
+修正されたファイルを再度`git add`して`git commit`すれば完了です。
+
+### インストール手順
+
+#### 1. Pre-commitのインストール
+
+```powershell
+# プロジェクトディレクトリで実行
+uv pip install pre-commit
+```
+
+#### 2. Git フックの有効化
+
+```powershell
+# プロジェクトディレクトリで実行
+pre-commit install
+```
+
+これで、`git commit`時に自動的にpre-commitフックが実行されるようになります。
+
+### 使用方法
+
+#### 自動実行（推奨）
+
+通常通り`git commit`すると、自動的にチェックが実行されます：
+
+```powershell
+git add .
+git commit -m "feat: 新機能を追加"
+```
+
+チェックが失敗した場合：
+
+1. Pre-commitが自動修正を適用
+2. 修正されたファイルを再度addする
+3. 再度commitする
+
+```powershell
+# 修正されたファイルを再度add
+git add .
+# 再度commit
+git commit -m "feat: 新機能を追加"
+```
+
+#### 手動実行
+
+全ファイルに対してチェックを実行する場合：
+
+```powershell
+# すべてのファイルをチェック
+pre-commit run --all-files
+```
+
+特定のファイルのみチェックする場合：
+
+```powershell
+# ステージングされたファイルのみチェック
+pre-commit run
+```
+
+### Ruffコマンドの直接実行
+
+Pre-commitを使わずに直接Ruffを実行することもできます：
+
+```powershell
+# Lintチェック
+uv run ruff check .
+
+# Lint修正を自動適用
+uv run ruff check --fix .
+
+# フォーマットチェック
+uv run ruff format --check .
+
+# フォーマットを適用
+uv run ruff format .
+
+# Lint + フォーマットを一括実行
+uv run ruff check --fix . && uv run ruff format .
+```
+
+### トラブルシューティング
+
+#### Pre-commitが実行されない
+
+Gitフックが正しくインストールされているか確認：
+
+```powershell
+# .git/hooks/pre-commitファイルが存在するか確認
+Test-Path .git\hooks\pre-commit
+```
+
+存在しない場合は、再度インストール：
+
+```powershell
+pre-commit install
+```
+
+#### Pre-commitをスキップしたい場合
+
+緊急時のみ、`--no-verify`フラグでスキップできます：
+
+```powershell
+git commit -m "メッセージ" --no-verify
+```
+
+**注意**: 通常はpre-commitをスキップしないでください。コード品質を保つために重要です。
+
+---
+
 ## トラブルシューティング
 
 ### PostgreSQLに接続できない（Scoop版）
