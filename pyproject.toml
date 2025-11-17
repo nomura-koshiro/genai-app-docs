@@ -61,6 +61,7 @@ dev = [
     "ruff>=0.8.0",
     "types-aiofiles>=25.1.0.20251011",
     "types-redis>=4.6.0",
+    "pre-commit>=3.5.0",
 ]
 
 [build-system]
@@ -69,6 +70,20 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/app"]
+
+[tool.hatch.envs.default.scripts]
+# ドキュメント生成
+generate-docs = "python scripts/generate_openapi_docs.py"
+
+# Git hooks設定
+install-hooks = "pre-commit install"
+run-hooks = "pre-commit run --all-files"
+
+# コミット前の一括実行
+pre-commit = [
+    "ruff check src/",
+    "generate-docs",
+]
 
 [tool.ruff]
 line-length = 140

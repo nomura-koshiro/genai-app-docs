@@ -1,0 +1,33 @@
+# See https://pre-commit.com for more information
+default_language_version:
+  python: python3.13
+
+repos:
+  # Ruff - Python linter & formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  # Trailing whitespace & EOF fixes
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+
+  # OpenAPI/Swagger ドキュメント自動生成
+  - repo: local
+    hooks:
+      - id: generate-openapi-docs
+        name: Generate OpenAPI Documentation
+        entry: uv run python scripts/generate_openapi_docs.py
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+        always_run: true

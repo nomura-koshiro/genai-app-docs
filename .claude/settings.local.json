@@ -127,7 +127,8 @@
       "Bash(src/app/services/__init__.py )",
       "Bash(tests/app/services/analysis/test_analysis.py)",
       "Bash(timeout 300 uv run python -m pytest:*)",
-      "Bash(npx markdownlint:*)"
+      "Bash(npx markdownlint:*)",
+      "Bash(uv sync:*)"
     ],
     "deny": [],
     "ask": []
