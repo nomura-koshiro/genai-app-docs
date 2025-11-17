@@ -20,14 +20,17 @@ HTML形式でドキュメントを自動生成します。
     - .envファイルが設定されていること（DATABASE_URLなど）
 """
 
+import io
 import json
 import sys
 from pathlib import Path
 
 # Windows環境でのUnicode出力を有効化
 if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8")
-    sys.stderr.reconfigure(encoding="utf-8")
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
+    if isinstance(sys.stderr, io.TextIOWrapper):
+        sys.stderr.reconfigure(encoding="utf-8")
 
 # プロジェクトルートをPythonパスに追加
 project_root = Path(__file__).parent.parent / "src"
@@ -80,7 +83,7 @@ def generate_openapi_docs() -> None:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{openapi_schema.get('info', {}).get('title', 'API')} - Swagger UI</title>
+    <title>{openapi_schema.get("info", {}).get("title", "API")} - Swagger UI</title>
     <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.0/swagger-ui.css">
     <style>
         body {{ margin: 0; padding: 0; }}
@@ -124,7 +127,7 @@ def generate_openapi_docs() -> None:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{openapi_schema.get('info', {}).get('title', 'API')} - ReDoc</title>
+    <title>{openapi_schema.get("info", {}).get("title", "API")} - ReDoc</title>
     <style>
         body {{ margin: 0; padding: 0; }}
     </style>

@@ -88,6 +88,9 @@ pre-commit = [
 [tool.ruff]
 line-length = 140
 target-version = "py313"
+exclude = [
+    "back",
+]
 
 [tool.ruff.lint]
 select = [
