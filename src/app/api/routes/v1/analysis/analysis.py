@@ -249,6 +249,7 @@ async def upload_file(
     file_request: AnalysisFileUploadRequest,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> AnalysisFileUploadResponse:
     """データファイルをアップロードします。
 
@@ -281,7 +282,7 @@ async def upload_file(
         action="upload_analysis_file",
     )
 
-    # セッション存在確認とアクセス権限チェック
+    # セッション存在確認
     session = await analysis_service.get_session(session_id)
     if not session:
         raise NotFoundError(
@@ -289,7 +290,21 @@ async def upload_file(
             details={"session_id": str(session_id)},
         )
 
-    # TODO: プロジェクトメンバーシップチェック（後で追加）
+    # プロジェクトメンバーシップチェック
+    has_access = await project_service.check_user_access(
+        project_id=session.project_id,
+        user_id=current_user.id,
+    )
+    if not has_access:
+        logger.warning(
+            "プロジェクトアクセス権限なし",
+            project_id=str(session.project_id),
+            user_id=str(current_user.id),
+        )
+        raise AuthorizationError(
+            "このプロジェクトへのアクセス権限がありません",
+            details={"project_id": str(session.project_id)},
+        )
 
     # ファイルアップロード
     result = await analysis_service.upload_data_file(
@@ -337,6 +352,7 @@ async def create_step(
     step_data: AnalysisStepCreate,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> AnalysisStepResponse:
     """新しい分析ステップを作成します。
 
@@ -372,6 +388,22 @@ async def create_step(
         raise NotFoundError(
             "セッションが見つかりません",
             details={"session_id": str(session_id)},
+        )
+
+    # プロジェクトメンバーシップチェック
+    has_access = await project_service.check_user_access(
+        project_id=session.project_id,
+        user_id=current_user.id,
+    )
+    if not has_access:
+        logger.warning(
+            "プロジェクトアクセス権限なし",
+            project_id=str(session.project_id),
+            user_id=str(current_user.id),
+        )
+        raise AuthorizationError(
+            "このプロジェクトへのアクセス権限がありません",
+            details={"project_id": str(session.project_id)},
         )
 
     # ステップ作成
@@ -416,6 +448,7 @@ async def execute_chat(
     chat_request: AnalysisChatRequest,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> AnalysisChatResponse:
     """AIエージェントとチャットを実行します。
 
@@ -453,6 +486,22 @@ async def execute_chat(
         raise NotFoundError(
             "セッションが見つかりません",
             details={"session_id": str(session_id)},
+        )
+
+    # プロジェクトメンバーシップチェック
+    has_access = await project_service.check_user_access(
+        project_id=session.project_id,
+        user_id=current_user.id,
+    )
+    if not has_access:
+        logger.warning(
+            "プロジェクトアクセス権限なし",
+            project_id=str(session.project_id),
+            user_id=str(current_user.id),
+        )
+        raise AuthorizationError(
+            "このプロジェクトへのアクセス権限がありません",
+            details={"project_id": str(session.project_id)},
         )
 
     # チャット実行
@@ -589,6 +638,7 @@ async def get_session(
     session_id: uuid.UUID,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> AnalysisSessionDetailResponse:
     """セッション詳細を取得します。
 
@@ -614,7 +664,29 @@ async def get_session(
         action="get_analysis_session",
     )
 
-    # TODO: プロジェクトメンバーシップチェック
+    # セッション取得
+    session = await analysis_service.get_session(session_id)
+    if not session:
+        raise NotFoundError(
+            "セッションが見つかりません",
+            details={"session_id": str(session_id)},
+        )
+
+    # プロジェクトメンバーシップチェック
+    has_access = await project_service.check_user_access(
+        project_id=session.project_id,
+        user_id=current_user.id,
+    )
+    if not has_access:
+        logger.warning(
+            "プロジェクトアクセス権限なし",
+            project_id=str(session.project_id),
+            user_id=str(current_user.id),
+        )
+        raise AuthorizationError(
+            "このプロジェクトへのアクセス権限がありません",
+            details={"project_id": str(session.project_id)},
+        )
 
     # セッション詳細取得
     result = await analysis_service.get_session_result(session_id)
@@ -798,6 +870,7 @@ async def delete_step(
     step_id: uuid.UUID,
     current_user: CurrentUserAzureDep,
     analysis_service: AnalysisService = Depends(get_analysis_service),
+    project_service: ProjectService = Depends(get_project_service),
 ) -> None:
     """分析ステップを削除します。
 
@@ -832,6 +905,22 @@ async def delete_step(
         raise NotFoundError(
             "セッションが見つかりません",
             details={"session_id": str(session_id)},
+        )
+
+    # プロジェクトメンバーシップチェック
+    has_access = await project_service.check_user_access(
+        project_id=session.project_id,
+        user_id=current_user.id,
+    )
+    if not has_access:
+        logger.warning(
+            "プロジェクトアクセス権限なし",
+            project_id=str(session.project_id),
+            user_id=str(current_user.id),
+        )
+        raise AuthorizationError(
+            "このプロジェクトへのアクセス権限がありません",
+            details={"project_id": str(session.project_id)},
         )
 
     # ステップ削除
