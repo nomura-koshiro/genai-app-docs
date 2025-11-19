@@ -39,6 +39,11 @@ def get_driver_tree_service(db: AsyncSession = Depends(get_db)) -> DriverTreeSer
     return DriverTreeService(db)
 
 
+# ================================================================================
+# POST Endpoints
+# ================================================================================
+
+
 @driver_tree_router.post("/nodes", response_model=DriverTreeNodeResponse, status_code=status.HTTP_201_CREATED)
 @handle_service_errors
 async def create_node(
@@ -82,6 +87,11 @@ async def create_node(
     return DriverTreeNodeResponse.model_validate(node)
 
 
+# ================================================================================
+# GET Endpoints
+# ================================================================================
+
+
 @driver_tree_router.get("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
 @handle_service_errors
 async def get_node(
@@ -115,6 +125,11 @@ async def get_node(
     )
 
     return DriverTreeNodeResponse.model_validate(node)
+
+
+# ================================================================================
+# PUT Endpoints
+# ================================================================================
 
 
 @driver_tree_router.put("/nodes/{node_id}", response_model=DriverTreeNodeResponse)

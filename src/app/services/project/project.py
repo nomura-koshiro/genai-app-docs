@@ -67,6 +67,10 @@ class ProjectService:
         self.db = db
         self.repository = ProjectRepository(db)
 
+    # ================================================================================
+    # Public API
+    # ================================================================================
+
     @measure_performance
     @transactional
     async def create_project(
@@ -529,6 +533,41 @@ class ProjectService:
             project_code=project.code,
         )
 
+    async def check_user_access(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> bool:
+        """ユーザーがプロジェクトにアクセスできるかチェックします。
+
+        Args:
+            project_id (uuid.UUID): プロジェクトのUUID
+            user_id (uuid.UUID): ユーザーのUUID
+
+        Returns:
+            bool: アクセス可能な場合はTrue、不可能な場合はFalse
+
+        Example:
+            >>> has_access = await project_service.check_user_access(
+            ...     project_id=project_id,
+            ...     user_id=user_id
+            ... )
+            >>> if has_access:
+            ...     print("User can access this project")
+        """
+        from sqlalchemy import select
+
+        result = await self.db.execute(
+            select(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.user_id == user_id)
+        )
+        member = result.scalar_one_or_none()
+
+        return member is not None
+
+    # ================================================================================
+    # Private Helper Methods
+    # ================================================================================
+
     async def _delete_physical_files(self, project) -> None:
         """プロジェクトに関連する物理ファイルを削除します。
 
@@ -661,34 +700,3 @@ class ProjectService:
             )
 
         return member
-
-    async def check_user_access(
-        self,
-        project_id: uuid.UUID,
-        user_id: uuid.UUID,
-    ) -> bool:
-        """ユーザーがプロジェクトにアクセスできるかチェックします。
-
-        Args:
-            project_id (uuid.UUID): プロジェクトのUUID
-            user_id (uuid.UUID): ユーザーのUUID
-
-        Returns:
-            bool: アクセス可能な場合はTrue、不可能な場合はFalse
-
-        Example:
-            >>> has_access = await project_service.check_user_access(
-            ...     project_id=project_id,
-            ...     user_id=user_id
-            ... )
-            >>> if has_access:
-            ...     print("User can access this project")
-        """
-        from sqlalchemy import select
-
-        result = await self.db.execute(
-            select(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.user_id == user_id)
-        )
-        member = result.scalar_one_or_none()
-
-        return member is not None

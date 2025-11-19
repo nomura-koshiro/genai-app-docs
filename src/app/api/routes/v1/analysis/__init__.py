@@ -24,6 +24,6 @@
 """
 
 from app.api.routes.v1.analysis.analysis import analysis_router
-from app.api.routes.v1.analysis.templates import analysis_templates_router
+from app.api.routes.v1.analysis.analysis_templates import analysis_templates_router
 
 __all__ = ["analysis_router", "analysis_templates_router"]

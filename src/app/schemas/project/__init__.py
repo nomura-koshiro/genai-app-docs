@@ -21,8 +21,6 @@
         - ProjectMemberDetailResponse: メンバー詳細レスポンス
         - ProjectMemberListResponse: メンバー一覧レスポンス
         - ProjectMemberBulkCreate: 一括追加リクエスト
-        - ProjectMemberBulkUpdate: 一括更新リクエスト
-        - ProjectMemberRoleUpdate: ロール変更リクエスト
 
 使用例:
     >>> from app.schemas.project import ProjectCreate, ProjectMemberCreate
@@ -51,14 +49,10 @@ from app.schemas.project.project_member import (
     ProjectMemberBulkCreate,
     ProjectMemberBulkError,
     ProjectMemberBulkResponse,
-    ProjectMemberBulkUpdate,
-    ProjectMemberBulkUpdateError,
-    ProjectMemberBulkUpdateResponse,
     ProjectMemberCreate,
     ProjectMemberDetailResponse,
     ProjectMemberListResponse,
     ProjectMemberResponse,
-    ProjectMemberRoleUpdate,
     ProjectMemberUpdate,
     UserRoleResponse,
 )
@@ -74,13 +68,9 @@ __all__ = [
     "ProjectMemberBulkCreate",
     "ProjectMemberBulkError",
     "ProjectMemberBulkResponse",
-    "ProjectMemberBulkUpdateError",
-    "ProjectMemberBulkUpdate",
-    "ProjectMemberBulkUpdateResponse",
     "ProjectMemberCreate",
     "ProjectMemberListResponse",
     "ProjectMemberResponse",
-    "ProjectMemberRoleUpdate",
     "ProjectMemberUpdate",
     "ProjectMemberDetailResponse",
     "UserRoleResponse",

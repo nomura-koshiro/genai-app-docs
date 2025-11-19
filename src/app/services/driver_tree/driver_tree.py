@@ -46,6 +46,10 @@ class DriverTreeService:
         self.tree_repo = DriverTreeRepository(db)
         self.category_repo = DriverTreeCategoryRepository(db)
 
+    # ================================================================================
+    # Public API
+    # ================================================================================
+
     @measure_performance
     @transactional
     async def create_node(

@@ -10,7 +10,7 @@
     "license": {
       "name": "MIT"
     },
-    "version": "0.1.0"
+    "version": "0.1.2"
   },
   "paths": {
     "/api/v1/sample-users": {
@@ -1939,63 +1939,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProjectMemberBulkResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "project-members"
-        ],
-        "summary": "メンバーロール複数人更新",
-        "description": "プロジェクトメンバーのロールを一括更新します。\n\n    **PROJECT_MANAGER の権限が必要です。**\n\n    - 最後の PROJECT_MANAGER は降格できません\n    - 一部失敗しても成功したメンバーは更新されます\n    - 最大100人まで一度に更新可能\n\n    リクエストボディ:\n        - updates: 更新するメンバーのリスト\n            - member_id: 更新するメンバーシップID\n            - role: 新しいプロジェクトロール\n\n    レスポンス:\n        - updated: 更新に成功したメンバーリスト\n        - failed: 更新に失敗したメンバーリスト（エラー理由付き）\n        - total_requested: リクエストされたメンバー数\n        - total_updated: 更新に成功したメンバー数\n        - total_failed: 更新に失敗したメンバー数",
-        "operationId": "update_members_bulk_api_v1_projects__project_id__members_bulk_patch",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Project Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProjectMemberBulkUpdate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProjectMemberBulkUpdateResponse"
                 }
               }
             }
@@ -5942,105 +5885,6 @@
         "title": "ProjectMemberBulkResponse",
         "description": "プロジェクトメンバー複数人追加レスポンススキーマ。\n\n複数人登録APIのレスポンス形式を定義します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    added (list[ProjectMemberDetailResponse]): 追加に成功したメンバーリスト\n    failed (list[ProjectMemberBulkError]): 追加に失敗したメンバーリスト\n    total_requested (int): リクエストされたメンバー数\n    total_added (int): 追加に成功したメンバー数\n    total_failed (int): 追加に失敗したメンバー数\n\nExample:\n    >>> response = ProjectMemberBulkResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     added=[member1, member2],\n    ...     failed=[error1],\n    ...     total_requested=3,\n    ...     total_added=2,\n    ...     total_failed=1\n    ... )\n\nNote:\n    - 一部失敗しても成功したメンバーは追加されます\n    - failed リストで失敗理由を確認できます"
       },
-      "ProjectMemberBulkUpdate": {
-        "properties": {
-          "updates": {
-            "items": {
-              "$ref": "#/components/schemas/ProjectMemberRoleUpdate"
-            },
-            "type": "array",
-            "maxItems": 100,
-            "minItems": 1,
-            "title": "Updates",
-            "description": "更新するメンバーのリスト（最大100件）"
-          }
-        },
-        "type": "object",
-        "required": [
-          "updates"
-        ],
-        "title": "ProjectMemberBulkUpdate",
-        "description": "プロジェクトメンバー複数人ロール更新リクエストスキーマ。\n\nプロジェクトの複数メンバーのロールを一括更新する際に使用します。\n\nAttributes:\n    updates (list[ProjectMemberRoleUpdate]): 更新するメンバーのリスト\n\nExample:\n    >>> bulk_update = ProjectMemberBulkUpdate(\n    ...     updates=[\n    ...         ProjectMemberRoleUpdate(member_id=uuid.uuid4(), role=ProjectRole.ADMIN),\n    ...         ProjectMemberRoleUpdate(member_id=uuid.uuid4(), role=ProjectRole.MEMBER)\n    ...     ]\n    ... )\n\nNote:\n    - 各メンバーは個別にバリデーションされます\n    - 一部失敗しても成功したメンバーは更新されます"
-      },
-      "ProjectMemberBulkUpdateError": {
-        "properties": {
-          "member_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Member Id",
-            "description": "失敗したメンバーシップID"
-          },
-          "role": {
-            "$ref": "#/components/schemas/ProjectRole",
-            "description": "指定されたロール"
-          },
-          "error": {
-            "type": "string",
-            "title": "Error",
-            "description": "エラーメッセージ"
-          }
-        },
-        "type": "object",
-        "required": [
-          "member_id",
-          "role",
-          "error"
-        ],
-        "title": "ProjectMemberBulkUpdateError",
-        "description": "メンバー更新失敗情報スキーマ。\n\n複数人更新時の個別の失敗情報を表します。\n\nAttributes:\n    member_id (uuid.UUID): 失敗したメンバーシップID\n    role (ProjectRole): 指定されたロール\n    error (str): エラーメッセージ\n\nExample:\n    >>> error = ProjectMemberBulkUpdateError(\n    ...     member_id=uuid.uuid4(),\n    ...     role=ProjectRole.ADMIN,\n    ...     error=\"メンバーが見つかりません\"\n    ... )"
-      },
-      "ProjectMemberBulkUpdateResponse": {
-        "properties": {
-          "project_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Project Id",
-            "description": "プロジェクトID"
-          },
-          "updated": {
-            "items": {
-              "$ref": "#/components/schemas/ProjectMemberDetailResponse"
-            },
-            "type": "array",
-            "title": "Updated",
-            "description": "更新に成功したメンバーリスト"
-          },
-          "failed": {
-            "items": {
-              "$ref": "#/components/schemas/ProjectMemberBulkUpdateError"
-            },
-            "type": "array",
-            "title": "Failed",
-            "description": "更新に失敗したメンバーリスト"
-          },
-          "total_requested": {
-            "type": "integer",
-            "title": "Total Requested",
-            "description": "リクエストされたメンバー数"
-          },
-          "total_updated": {
-            "type": "integer",
-            "title": "Total Updated",
-            "description": "更新に成功したメンバー数"
-          },
-          "total_failed": {
-            "type": "integer",
-            "title": "Total Failed",
-            "description": "更新に失敗したメンバー数"
-          }
-        },
-        "type": "object",
-        "required": [
-          "project_id",
-          "updated",
-          "failed",
-          "total_requested",
-          "total_updated",
-          "total_failed"
-        ],
-        "title": "ProjectMemberBulkUpdateResponse",
-        "description": "プロジェクトメンバー複数人ロール更新レスポンススキーマ。\n\n複数人更新APIのレスポンス形式を定義します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    updated (list[ProjectMemberDetailResponse]): 更新に成功したメンバーリスト\n    failed (list[ProjectMemberBulkUpdateError]): 更新に失敗したメンバーリスト\n    total_requested (int): リクエストされたメンバー数\n    total_updated (int): 更新に成功したメンバー数\n    total_failed (int): 更新に失敗したメンバー数\n\nExample:\n    >>> response = ProjectMemberBulkUpdateResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     updated=[member1, member2],\n    ...     failed=[error1],\n    ...     total_requested=3,\n    ...     total_updated=2,\n    ...     total_failed=1\n    ... )\n\nNote:\n    - 一部失敗しても成功したメンバーは更新されます\n    - failed リストで失敗理由を確認できます"
-      },
       "ProjectMemberCreate": {
         "properties": {
           "user_id": {
@@ -6158,27 +6002,6 @@
         ],
         "title": "ProjectMemberListResponse",
         "description": "プロジェクトメンバー一覧レスポンススキーマ。\n\nメンバー一覧APIのレスポンス形式を定義します。\n\nAttributes:\n    members (list[ProjectMemberDetailResponse]): メンバーリスト\n    total (int): 総件数\n    project_id (uuid.UUID): プロジェクトID\n\nExample:\n    >>> response = ProjectMemberListResponse(\n    ...     members=[member1, member2, member3],\n    ...     total=15,\n    ...     project_id=uuid.uuid4()\n    ... )\n\nNote:\n    - ページネーション情報を含みます\n    - total は全体の件数"
-      },
-      "ProjectMemberRoleUpdate": {
-        "properties": {
-          "member_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Member Id",
-            "description": "更新するメンバーシップID"
-          },
-          "role": {
-            "$ref": "#/components/schemas/ProjectRole",
-            "description": "新しいプロジェクトロール"
-          }
-        },
-        "type": "object",
-        "required": [
-          "member_id",
-          "role"
-        ],
-        "title": "ProjectMemberRoleUpdate",
-        "description": "プロジェクトメンバーロール更新リクエストアイテムスキーマ。\n\n複数人更新時の個別のメンバー更新情報を表します。\n\nAttributes:\n    member_id (uuid.UUID): 更新するメンバーシップID\n    role (ProjectRole): 新しいプロジェクトロール\n\nExample:\n    >>> update = ProjectMemberRoleUpdate(\n    ...     member_id=uuid.uuid4(),\n    ...     role=ProjectRole.ADMIN\n    ... )"
       },
       "ProjectMemberUpdate": {
         "properties": {

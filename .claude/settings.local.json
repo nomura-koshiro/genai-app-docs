@@ -128,7 +128,10 @@
       "Bash(tests/app/services/analysis/test_analysis.py)",
       "Bash(timeout 300 uv run python -m pytest:*)",
       "Bash(npx markdownlint:*)",
-      "Bash(uv sync:*)"
+      "Bash(uv sync:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(timeout 120 uv run python -m pytest:*)",
+      "Bash(do echo \"=== $file ===\" grep -n \"^# ====\" \"$file\")"
     ],
     "deny": [],
     "ask": []

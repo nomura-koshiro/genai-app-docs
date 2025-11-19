@@ -70,26 +70,9 @@ class PPTGeneratorService:
             container=self.container,
         )
 
-    def _generate_file_path(self, package: str, phase: str, template: str, filename: str = "") -> str:
-        """ストレージパスを生成します。
-
-        Args:
-            package: パッケージ名
-            phase: フェーズ名
-            template: テンプレート名
-            filename: ファイル名（オプション）
-
-        Returns:
-            str: ストレージパス（例: "package/phase/template/file.pptx"）
-
-        Example:
-            >>> path = self._generate_file_path("pkg", "phase1", "temp_a", "slide.pptx")
-            >>> print(path)
-            pkg/phase1/temp_a/slide.pptx
-        """
-        if filename:
-            return f"{package}/{phase}/{template}/{filename}"
-        return f"{package}/{phase}/{template}"
+    # ================================================================================
+    # Public API
+    # ================================================================================
 
     @measure_performance
     @async_timeout(seconds=180)  # 3分タイムアウト
@@ -573,3 +556,28 @@ class PPTGeneratorService:
                 "PPTファイルのアップロードに失敗しました",
                 details={"error": str(e)},
             ) from e
+
+    # ================================================================================
+    # Private Helper Methods
+    # ================================================================================
+
+    def _generate_file_path(self, package: str, phase: str, template: str, filename: str = "") -> str:
+        """ストレージパスを生成します。
+
+        Args:
+            package: パッケージ名
+            phase: フェーズ名
+            template: テンプレート名
+            filename: ファイル名（オプション）
+
+        Returns:
+            str: ストレージパス（例: "package/phase/template/file.pptx"）
+
+        Example:
+            >>> path = self._generate_file_path("pkg", "phase1", "temp_a", "slide.pptx")
+            >>> print(path)
+            pkg/phase1/temp_a/slide.pptx
+        """
+        if filename:
+            return f"{package}/{phase}/{template}/{filename}"
+        return f"{package}/{phase}/{template}"
