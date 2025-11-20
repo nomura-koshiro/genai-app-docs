@@ -59,7 +59,7 @@ class DriverTree(Base, TimestampMixin):
         ... )
     """
 
-    __tablename__ = "driver_trees"
+    __tablename__ = "driver_tree"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -74,7 +74,7 @@ class DriverTree(Base, TimestampMixin):
     )
     root_node_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("driver_tree_nodes.id", ondelete="SET NULL"),
+        ForeignKey("driver_tree_node.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
         comment="ルートノードID",

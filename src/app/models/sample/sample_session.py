@@ -32,7 +32,7 @@ class SampleSession(Base, PrimaryKeyMixin, TimestampMixin):
         messages: セッションに関連するメッセージのリスト
     """
 
-    __tablename__ = "sample_sessions"
+    __tablename__ = "sample_session"
 
     # PrimaryKeyMixinからid継承
     # TimestampMixinからcreated_at, updated_at継承
@@ -40,7 +40,7 @@ class SampleSession(Base, PrimaryKeyMixin, TimestampMixin):
     session_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("sample_users.id", ondelete="CASCADE"),
+        ForeignKey("sample_user.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
     )
@@ -70,14 +70,14 @@ class SampleMessage(Base, PrimaryKeyMixin):
         created_at: メッセージ作成日時
     """
 
-    __tablename__ = "sample_messages"
+    __tablename__ = "sample_message"
 
     # PrimaryKeyMixinからid継承
     # created_atのみ（updated_atは不要なのでTimestampMixinは使用しない）
 
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("sample_sessions.id", ondelete="CASCADE"),
+        ForeignKey("sample_session.id", ondelete="CASCADE"),
         nullable=False,
     )
     role: Mapped[str] = mapped_column(String(50), nullable=False)

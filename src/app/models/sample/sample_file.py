@@ -29,7 +29,7 @@ class SampleFile(Base, PrimaryKeyMixin):
         created_at: アップロード日時
     """
 
-    __tablename__ = "sample_files"
+    __tablename__ = "sample_file"
 
     # PrimaryKeyMixinからid継承
     # created_atのみ（updated_atは不要なのでTimestampMixinは使用しない）
@@ -37,7 +37,7 @@ class SampleFile(Base, PrimaryKeyMixin):
     file_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("sample_users.id", ondelete="SET NULL"),
+        ForeignKey("sample_user.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

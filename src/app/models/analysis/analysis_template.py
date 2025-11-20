@@ -75,82 +75,82 @@ class AnalysisTemplate(Base, TimestampMixin):
         - ix_analysis_templates_issue: issue
     """
 
-    __tablename__ = "analysis_templates"
+    __tablename__ = "analysis_template"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="Template ID (Primary Key)",
+        comment="テンプレートID（主キー）",
     )
 
     policy: Mapped[str] = mapped_column(
         String(200),
         nullable=False,
         index=True,
-        comment="Policy name (施策名)",
+        comment="施策名",
     )
 
     issue: Mapped[str] = mapped_column(
         String(500),
         nullable=False,
         index=True,
-        comment="Issue name (課題名)",
+        comment="課題名",
     )
 
     description: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        comment="Template description",
+        comment="テンプレート説明",
     )
 
     agent_prompt: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        comment="AI agent prompt for this analysis",
+        comment="この分析用のAIエージェントプロンプト",
     )
 
     initial_msg: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        comment="Initial message for user",
+        comment="ユーザーへの初期メッセージ",
     )
 
     initial_axis: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
-        comment="Initial axis configuration (list[AnalysisInitialAxisConfig] as dict)",
+        comment="初期軸設定（AnalysisInitialAxisConfigのリストを辞書形式で保存）",
     )
 
     dummy_formula: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Dummy formula settings (list of formula definitions)",
+        comment="ダミー式設定（式定義のリスト）",
     )
 
     dummy_input: Mapped[list[str] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Dummy input data (list of input strings)",
+        comment="ダミー入力データ（入力文字列のリスト）",
     )
 
     dummy_hint: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        comment="Dummy hint text",
+        comment="ダミーヒントテキスト",
     )
 
     is_active: Mapped[bool] = mapped_column(
         default=True,
         nullable=False,
-        comment="Active flag (False = archived)",
+        comment="アクティブフラグ（False = アーカイブ済み）",
     )
 
     display_order: Mapped[int] = mapped_column(
         default=0,
         nullable=False,
-        comment="Display order for UI",
+        comment="UI表示順序",
     )
 
     # リレーションシップ

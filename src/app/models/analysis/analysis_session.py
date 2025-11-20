@@ -79,67 +79,67 @@ class AnalysisSession(Base, TimestampMixin):
         - idx_analysis_sessions_created_by: created_by
     """
 
-    __tablename__ = "analysis_sessions"
+    __tablename__ = "analysis_session"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="Session ID (Primary Key)",
+        comment="セッションID（主キー）",
     )
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey("project.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Project ID (Foreign Key)",
+        comment="プロジェクトID（外部キー）",
     )
 
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Creator user ID (Foreign Key)",
+        comment="作成者ユーザーID（外部キー）",
     )
 
     session_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-        comment="Session name",
+        comment="セッション名",
     )
 
     validation_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
-        comment="Validation configuration from validation.yml",
+        comment="validation.ymlからの検証設定",
     )
 
     chat_history: Mapped[list[dict[str, Any]]] = mapped_column(
         JSONB,
         nullable=False,
         default=list,
-        comment="Chat history with AI agent (list[AnalysisChatMessage] as dict)",
+        comment="AIエージェントとのチャット履歴（AnalysisChatMessageのリストを辞書形式で保存）",
     )
 
     snapshot_history: Mapped[list[list[dict[str, Any]]] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Snapshot history (list of snapshots, each snapshot is a list of step states)",
+        comment="スナップショット履歴（各スナップショットはステップ状態のリスト）",
     )
 
     original_file_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
-        comment="Currently selected file ID",
+        comment="現在選択中のファイルID",
     )
 
     is_active: Mapped[bool] = mapped_column(
         default=True,
         nullable=False,
-        comment="Active flag",
+        comment="アクティブフラグ",
     )
 
     # リレーションシップ

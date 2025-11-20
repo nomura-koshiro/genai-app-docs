@@ -63,45 +63,45 @@ class AnalysisTemplateChart(Base, TimestampMixin):
         - ix_analysis_template_charts_template: template_id
     """
 
-    __tablename__ = "analysis_template_charts"
+    __tablename__ = "analysis_template_chart"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="Chart ID (Primary Key)",
+        comment="チャートID（主キー）",
     )
 
     template_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("analysis_templates.id", ondelete="CASCADE"),
+        ForeignKey("analysis_template.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Template ID (Foreign Key)",
+        comment="テンプレートID（外部キー）",
     )
 
     chart_name: Mapped[str] = mapped_column(
         String(500),
         nullable=False,
-        comment="Chart name (from filename)",
+        comment="チャート名（ファイル名から取得）",
     )
 
     chart_data: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
-        comment="Plotly chart data (data, layout, config)",
+        comment="Plotlyチャートデータ（data, layout, config）",
     )
 
     chart_order: Mapped[int] = mapped_column(
         default=0,
         nullable=False,
-        comment="Display order for charts under same template",
+        comment="同一テンプレート内のチャート表示順序",
     )
 
     chart_type: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
-        comment="Chart type (bar, line, pie, etc.)",
+        comment="チャートタイプ（bar, line, pie等）",
     )
 
     # リレーションシップ

@@ -86,7 +86,7 @@ class ProjectMember(Base):
         - uq_project_user: (project_id, user_id) UNIQUE
     """
 
-    __tablename__ = "project_members"
+    __tablename__ = "project_member"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -96,37 +96,37 @@ class ProjectMember(Base):
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey("project.id", ondelete="CASCADE"),
         nullable=False,
-        comment="Project ID",
+        comment="プロジェクトID",
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="CASCADE"),
+        ForeignKey("user_account.id", ondelete="CASCADE"),
         nullable=False,
-        comment="User ID",
+        comment="ユーザーID",
     )
 
     role: Mapped[ProjectRole] = mapped_column(
         SQLEnum(ProjectRole),
         nullable=False,
         default=ProjectRole.MEMBER,
-        comment="Project role (project_manager/project_moderator/member/viewer)",
+        comment="プロジェクトロール（project_manager/project_moderator/member/viewer）",
     )
 
     joined_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         nullable=False,
-        comment="Join timestamp",
+        comment="参加タイムスタンプ",
     )
 
     added_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
-        comment="User ID who added this member",
+        comment="このメンバーを追加したユーザーID",
     )
 
     # リレーションシップ

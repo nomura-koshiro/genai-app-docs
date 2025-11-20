@@ -65,7 +65,7 @@ class DriverTreeNode(Base, TimestampMixin):
         ... )
     """
 
-    __tablename__ = "driver_tree_nodes"
+    __tablename__ = "driver_tree_node"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -75,7 +75,7 @@ class DriverTreeNode(Base, TimestampMixin):
     )
     tree_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("driver_trees.id", ondelete="CASCADE"),
+        ForeignKey("driver_tree.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
         comment="所属するツリーのID",
@@ -88,7 +88,7 @@ class DriverTreeNode(Base, TimestampMixin):
     )
     parent_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("driver_tree_nodes.id", ondelete="CASCADE"),
+        ForeignKey("driver_tree_node.id", ondelete="CASCADE"),
         nullable=True,
         index=True,
         comment="親ノードID（Noneの場合はルートノード）",

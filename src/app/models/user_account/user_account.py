@@ -72,7 +72,7 @@ class UserAccount(Base, TimestampMixin):
         - idx_users_email: email（UNIQUE）
     """
 
-    __tablename__ = "users"
+    __tablename__ = "user_account"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -85,7 +85,7 @@ class UserAccount(Base, TimestampMixin):
         unique=True,
         nullable=False,
         index=True,
-        comment="Azure AD Object ID",
+        comment="Azure AD オブジェクトID",
     )
 
     email: Mapped[str] = mapped_column(
@@ -93,33 +93,33 @@ class UserAccount(Base, TimestampMixin):
         unique=True,
         nullable=False,
         index=True,
-        comment="Email address",
+        comment="メールアドレス",
     )
 
     display_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-        comment="Display name",
+        comment="表示名",
     )
 
     roles: Mapped[list[str]] = mapped_column(
         JSON,
         default=list,
         nullable=False,
-        comment="System-level roles (e.g., ['SystemAdmin', 'User'])",
+        comment="システムレベルロール（例: ['SystemAdmin', 'User']）",
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
         nullable=False,
-        comment="Active flag",
+        comment="アクティブフラグ",
     )
 
     last_login: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
-        comment="Last login timestamp",
+        comment="最終ログインタイムスタンプ",
     )
 
     # リレーションシップ

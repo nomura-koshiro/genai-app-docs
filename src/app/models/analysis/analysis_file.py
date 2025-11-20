@@ -71,77 +71,77 @@ class AnalysisFile(Base, TimestampMixin):
         - idx_analysis_files_uploaded_by: uploaded_by
     """
 
-    __tablename__ = "analysis_files"
+    __tablename__ = "analysis_file"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="File ID (Primary Key)",
+        comment="ファイルID（主キー）",
     )
 
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("analysis_sessions.id", ondelete="CASCADE"),
+        ForeignKey("analysis_session.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Session ID (Foreign Key)",
+        comment="セッションID（外部キー）",
     )
 
     uploaded_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="SET NULL"),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
-        comment="Uploader user ID (Foreign Key)",
+        comment="アップロードユーザーID（外部キー）",
     )
 
     file_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Original file name",
+        comment="元のファイル名",
     )
 
     table_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Table name (user-defined)",
+        comment="テーブル名（ユーザー定義）",
     )
 
     storage_path: Mapped[str] = mapped_column(
         Text,
         nullable=False,
-        comment="Storage path in Blob Storage",
+        comment="Blob Storageの保存パス",
     )
 
     file_size: Mapped[int] = mapped_column(
         BigInteger,
         nullable=False,
-        comment="File size in bytes",
+        comment="ファイルサイズ（バイト）",
     )
 
     content_type: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
-        comment="MIME type (e.g., application/vnd.ms-excel)",
+        comment="MIMEタイプ（例: application/vnd.ms-excel）",
     )
 
     table_axis: Mapped[list[str] | None] = mapped_column(
         ARRAY(String),
         nullable=True,
-        comment="Table axis candidates (e.g., ['地域', '商品'])",
+        comment="テーブル軸候補（例: ['地域', '商品']）",
     )
 
     file_metadata: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="File metadata (AnalysisFileMetadata as dict)",
+        comment="ファイルメタデータ（AnalysisFileMetadataを辞書形式で保存）",
     )
 
     is_active: Mapped[bool] = mapped_column(
         default=True,
         nullable=False,
-        comment="Active flag",
+        comment="アクティブフラグ",
     )
 
     # リレーションシップ

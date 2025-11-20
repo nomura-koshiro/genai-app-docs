@@ -50,7 +50,7 @@ class DriverTreeCategory(Base, TimestampMixin):
         自動車製造
     """
 
-    __tablename__ = "driver_tree_categories"
+    __tablename__ = "driver_tree_category"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

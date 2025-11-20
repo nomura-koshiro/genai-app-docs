@@ -56,7 +56,7 @@ class Project(Base, TimestampMixin):
         - idx_projects_code: code（UNIQUE）
     """
 
-    __tablename__ = "projects"
+    __tablename__ = "project"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -67,7 +67,7 @@ class Project(Base, TimestampMixin):
     name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Project name",
+        comment="プロジェクト名",
     )
 
     code: Mapped[str] = mapped_column(
@@ -75,26 +75,26 @@ class Project(Base, TimestampMixin):
         unique=True,
         nullable=False,
         index=True,
-        comment="Project code (unique identifier)",
+        comment="プロジェクトコード（一意識別子）",
     )
 
     description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        comment="Project description",
+        comment="プロジェクト説明",
     )
 
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         default=True,
         nullable=False,
-        comment="Active flag",
+        comment="アクティブフラグ",
     )
 
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         nullable=True,
-        comment="Creator user ID",
+        comment="作成者ユーザーID",
     )
 
     # リレーションシップ

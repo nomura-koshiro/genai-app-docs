@@ -114,7 +114,7 @@ class SampleUser(Base, PrimaryKeyMixin, TimestampMixin):
         - タイムゾーンは必ずUTCを使用（datetime.now(UTC)）
     """
 
-    __tablename__ = "sample_users"
+    __tablename__ = "sample_user"
 
     # PrimaryKeyMixinからid継承
     # TimestampMixinからcreated_at, updated_at継承

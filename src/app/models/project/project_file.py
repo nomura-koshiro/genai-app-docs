@@ -60,7 +60,7 @@ class ProjectFile(Base):
         - idx_project_files_project_id: project_id
     """
 
-    __tablename__ = "project_files"
+    __tablename__ = "project_file"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -70,54 +70,54 @@ class ProjectFile(Base):
 
     project_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("projects.id", ondelete="CASCADE"),
+        ForeignKey("project.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Project ID",
+        comment="プロジェクトID",
     )
 
     filename: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Stored filename",
+        comment="保存ファイル名",
     )
 
     original_filename: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Original filename",
+        comment="元のファイル名",
     )
 
     file_path: Mapped[str] = mapped_column(
         String(512),
         nullable=False,
-        comment="File path (Azure Blob Storage, etc.)",
+        comment="ファイルパス（Azure Blob Storage等）",
     )
 
     file_size: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="File size in bytes",
+        comment="ファイルサイズ（バイト）",
     )
 
     mime_type: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
-        comment="MIME type",
+        comment="MIMEタイプ",
     )
 
     uploaded_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("users.id", ondelete="RESTRICT"),
+        ForeignKey("user_account.id", ondelete="RESTRICT"),
         nullable=False,
-        comment="Uploader user ID",
+        comment="アップロードユーザーID",
     )
 
     uploaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         nullable=False,
-        comment="Upload timestamp",
+        comment="アップロードタイムスタンプ",
     )
 
     # リレーションシップ

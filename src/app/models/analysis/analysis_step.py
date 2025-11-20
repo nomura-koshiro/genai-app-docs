@@ -73,77 +73,77 @@ class AnalysisStep(Base, TimestampMixin):
         - idx_analysis_steps_order: session_id, step_order
     """
 
-    __tablename__ = "analysis_steps"
+    __tablename__ = "analysis_step"
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="Step ID (Primary Key)",
+        comment="ステップID（主キー）",
     )
 
     session_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("analysis_sessions.id", ondelete="CASCADE"),
+        ForeignKey("analysis_session.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="Session ID (Foreign Key)",
+        comment="セッションID（外部キー）",
     )
 
     step_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="Step name (user-friendly)",
+        comment="ステップ名（ユーザーフレンドリー）",
     )
 
     step_type: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
-        comment="Step type: filter/aggregate/transform/summary",
+        comment="ステップタイプ: filter/aggregate/transform/summary",
     )
 
     step_order: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
-        comment="Step order (0-indexed)",
+        comment="ステップ順序（0から開始）",
     )
 
     data_source: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
         default="original",
-        comment="Data source: original/step_0/step_1/...",
+        comment="データソース: original/step_0/step_1/...",
     )
 
     config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
         nullable=False,
         default=dict,
-        comment="Step configuration (type-specific structure)",
+        comment="ステップ設定（タイプ固有の構造）",
     )
 
     result_data_path: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
-        comment="Result data storage path (CSV file path)",
+        comment="結果データ保存パス（CSVファイルパス）",
     )
 
     result_chart: Mapped[dict[str, Any] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Result chart (Plotly JSON format)",
+        comment="結果チャート（Plotly JSON形式）",
     )
 
     result_formula: Mapped[list[dict[str, Any]] | None] = mapped_column(
         JSONB,
         nullable=True,
-        comment="Result formulas (list[AnalysisResultFormula] as dict)",
+        comment="結果式（AnalysisResultFormulaのリストを辞書形式で保存）",
     )
 
     is_active: Mapped[bool] = mapped_column(
         default=True,
         nullable=False,
-        comment="Active flag",
+        comment="アクティブフラグ",
     )
 
     # リレーションシップ
