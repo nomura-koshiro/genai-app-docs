@@ -166,7 +166,7 @@ def create_app() -> FastAPI:
     app.include_router(sample_files_router, prefix="/api/v1/sample-files", tags=["sample-files"])
 
     # Azure AD認証用ユーザー管理API
-    app.include_router(user_accounts_router, prefix="/api/v1/users", tags=["users"])
+    app.include_router(user_accounts_router, prefix="/api/v1/user_accounts", tags=["user_accounts"])
 
     # プロジェクト管理API
     app.include_router(projects_router, prefix="/api/v1/projects", tags=["projects"])

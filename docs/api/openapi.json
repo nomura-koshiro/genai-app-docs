@@ -1125,14 +1125,14 @@
         }
       }
     },
-    "/api/v1/users": {
+    "/api/v1/user_accounts": {
       "get": {
         "tags": [
-          "users"
+          "user_accounts"
         ],
         "summary": "ユーザー一覧取得",
         "description": "登録されているすべてのユーザーの一覧を取得します。\n\n    **管理者権限が必要です（SystemAdminロール）。**\n\n    - **skip**: スキップするレコード数（デフォルト: 0）\n    - **limit**: 取得する最大レコード数（デフォルト: 100、最大: 1000）\n\n    ページネーション情報:\n        - users: ユーザーリスト\n        - total: 総件数\n        - skip: スキップ数\n        - limit: 取得件数",
-        "operationId": "list_users_api_v1_users_get",
+        "operationId": "list_users_api_v1_user_accounts_get",
         "security": [
           {
             "HTTPBearer": []
@@ -1191,14 +1191,14 @@
         }
       }
     },
-    "/api/v1/users/me": {
+    "/api/v1/user_accounts/me": {
       "get": {
         "tags": [
-          "users"
+          "user_accounts"
         ],
         "summary": "現在のユーザー情報取得",
         "description": "Azure AD認証されたユーザー自身の情報を取得します。\n\n    このエンドポイントはAzure AD認証が必須です。\n    `Authorization: Bearer <Azure_AD_Token>` ヘッダーが必要です。\n\n    開発環境では、モックトークンを使用できます:\n    `Authorization: Bearer mock-access-token-dev-12345`",
-        "operationId": "get_current_user_api_v1_users_me_get",
+        "operationId": "get_current_user_api_v1_user_accounts_me_get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1219,11 +1219,11 @@
       },
       "patch": {
         "tags": [
-          "users"
+          "user_accounts"
         ],
         "summary": "ユーザー情報更新",
         "description": "現在のユーザー情報を更新します。\n\n    更新可能なフィールド:\n        - display_name: 表示名\n        - roles: システムレベルのロール（管理者のみ）\n        - is_active: アクティブフラグ（管理者のみ）\n\n    注意:\n        - email と azure_oid は更新できません\n        - roles と is_active の更新にはSystemAdminロールが必要です\n        - 指定されたフィールドのみが更新されます（PATCH）",
-        "operationId": "update_current_user_api_v1_users_me_patch",
+        "operationId": "update_current_user_api_v1_user_accounts_me_patch",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1263,14 +1263,14 @@
         ]
       }
     },
-    "/api/v1/users/{user_id}": {
+    "/api/v1/user_accounts/{user_id}": {
       "get": {
         "tags": [
-          "users"
+          "user_accounts"
         ],
         "summary": "特定ユーザー情報取得",
         "description": "指定されたIDのユーザー情報を取得します。\n\n    **管理者権限が必要です（SystemAdminロール）。**\n\n    パスパラメータ:\n        - user_id: ユーザーID（UUID形式）",
-        "operationId": "get_user_api_v1_users__user_id__get",
+        "operationId": "get_user_api_v1_user_accounts__user_id__get",
         "security": [
           {
             "HTTPBearer": []
@@ -1313,11 +1313,11 @@
       },
       "delete": {
         "tags": [
-          "users"
+          "user_accounts"
         ],
         "summary": "ユーザー削除",
         "description": "指定されたIDのユーザーを削除します。\n\n    **管理者権限が必要です（SystemAdminロール）。**\n\n    パスパラメータ:\n        - user_id: ユーザーID（UUID形式）\n\n    注意:\n        - 削除は物理削除です（データベースから完全に削除されます）\n        - CASCADE設定により、関連する ProjectMember も自動削除されます\n        - 自分自身を削除することはできません\n        - この操作は取り消せません",
-        "operationId": "delete_user_api_v1_users__user_id__delete",
+        "operationId": "delete_user_api_v1_user_accounts__user_id__delete",
         "security": [
           {
             "HTTPBearer": []
