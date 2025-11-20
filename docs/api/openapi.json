@@ -1173,7 +1173,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserListResponse"
+                  "$ref": "#/components/schemas/UserAccountListResponse"
                 }
               }
             }
@@ -1205,7 +1205,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
+                  "$ref": "#/components/schemas/UserAccountResponse"
                 }
               }
             }
@@ -1228,7 +1228,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UserUpdate"
+                "$ref": "#/components/schemas/UserAccountUpdate"
               }
             }
           },
@@ -1240,7 +1240,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
+                  "$ref": "#/components/schemas/UserAccountResponse"
                 }
               }
             }
@@ -1294,7 +1294,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UserResponse"
+                  "$ref": "#/components/schemas/UserAccountResponse"
                 }
               }
             }
@@ -5684,7 +5684,7 @@
           "uploader": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/UserResponse"
+                "$ref": "#/components/schemas/UserAccountResponse"
               },
               {
                 "type": "null"
@@ -5705,7 +5705,7 @@
           "uploaded_at"
         ],
         "title": "ProjectFileResponse",
-        "description": "プロジェクトファイル情報レスポンススキーマ。\n\nアップロード者情報を含む詳細なファイル情報を返却します。\n\nAttributes:\n    id (uuid.UUID): ファイルID（UUID）\n    project_id (uuid.UUID): プロジェクトID\n    filename (str): 保存ファイル名\n    original_filename (str): 元のファイル名\n    file_path (str): ファイルパス\n    file_size (int): ファイルサイズ（バイト）\n    mime_type (str | None): MIMEタイプ\n    uploaded_by (uuid.UUID): アップロード者のユーザーID\n    uploaded_at (datetime): アップロード日時\n    uploader (UserResponse | None): アップロード者のユーザー情報\n\nExample:\n    >>> file_response = ProjectFileResponse(\n    ...     id=uuid.uuid4(),\n    ...     project_id=project_id,\n    ...     filename=\"doc_12345.pdf\",\n    ...     original_filename=\"document.pdf\",\n    ...     file_path=\"uploads/projects/proj-id/doc_12345.pdf\",\n    ...     file_size=1024000,\n    ...     mime_type=\"application/pdf\",\n    ...     uploaded_by=user_id,\n    ...     uploaded_at=datetime.now(UTC),\n    ...     uploader=UserResponse(...)\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - uploaderフィールドはリレーションシップから自動的に解決されます"
+        "description": "プロジェクトファイル情報レスポンススキーマ。\n\nアップロード者情報を含む詳細なファイル情報を返却します。\n\nAttributes:\n    id (uuid.UUID): ファイルID（UUID）\n    project_id (uuid.UUID): プロジェクトID\n    filename (str): 保存ファイル名\n    original_filename (str): 元のファイル名\n    file_path (str): ファイルパス\n    file_size (int): ファイルサイズ（バイト）\n    mime_type (str | None): MIMEタイプ\n    uploaded_by (uuid.UUID): アップロード者のユーザーID\n    uploaded_at (datetime): アップロード日時\n    uploader (UserAccountResponse | None): アップロード者のユーザー情報\n\nExample:\n    >>> file_response = ProjectFileResponse(\n    ...     id=uuid.uuid4(),\n    ...     project_id=project_id,\n    ...     filename=\"doc_12345.pdf\",\n    ...     original_filename=\"document.pdf\",\n    ...     file_path=\"uploads/projects/proj-id/doc_12345.pdf\",\n    ...     file_size=1024000,\n    ...     mime_type=\"application/pdf\",\n    ...     uploaded_by=user_id,\n    ...     uploaded_at=datetime.now(UTC),\n    ...     uploader=UserAccountResponse(...)\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - uploaderフィールドはリレーションシップから自動的に解決されます"
       },
       "ProjectFileUploadResponse": {
         "properties": {
@@ -5952,7 +5952,7 @@
           "user": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/UserResponse"
+                "$ref": "#/components/schemas/UserAccountResponse"
               },
               {
                 "type": "null"
@@ -5970,7 +5970,7 @@
           "joined_at"
         ],
         "title": "ProjectMemberDetailResponse",
-        "description": "ユーザー情報付きプロジェクトメンバーレスポンススキーマ。\n\nメンバー情報とユーザー情報を含むレスポンスに使用します。\n\nAttributes:\n    id (uuid.UUID): メンバーシップID（ProjectMemberResponseから継承）\n    project_id (uuid.UUID): プロジェクトID（ProjectMemberResponseから継承）\n    user_id (uuid.UUID): ユーザーID（ProjectMemberResponseから継承）\n    role (ProjectRole): プロジェクトロール（ProjectMemberResponseから継承）\n    joined_at (datetime): 参加日時（ProjectMemberResponseから継承）\n    added_by (uuid.UUID | None): 追加者のユーザーID（ProjectMemberResponseから継承）\n    user (UserResponse | None): ユーザー情報（ネストされたオブジェクト）\n\nExample:\n    >>> member = ProjectMemberDetailResponse(\n    ...     id=uuid.uuid4(),\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.MEMBER,\n    ...     joined_at=datetime.now(UTC),\n    ...     added_by=uuid.uuid4(),\n    ...     user=UserResponse(...)\n    ... )\n\nNote:\n    - ユーザー情報を含むため、N+1クエリ対策が必要です\n    - selectinload を使用してユーザー情報を事前ロードしてください"
+        "description": "ユーザー情報付きプロジェクトメンバーレスポンススキーマ。\n\nメンバー情報とユーザー情報を含むレスポンスに使用します。\n\nAttributes:\n    id (uuid.UUID): メンバーシップID（ProjectMemberResponseから継承）\n    project_id (uuid.UUID): プロジェクトID（ProjectMemberResponseから継承）\n    user_id (uuid.UUID): ユーザーID（ProjectMemberResponseから継承）\n    role (ProjectRole): プロジェクトロール（ProjectMemberResponseから継承）\n    joined_at (datetime): 参加日時（ProjectMemberResponseから継承）\n    added_by (uuid.UUID | None): 追加者のユーザーID（ProjectMemberResponseから継承）\n    user (UserAccountResponse | None): ユーザー情報（ネストされたオブジェクト）\n\nExample:\n    >>> member = ProjectMemberDetailResponse(\n    ...     id=uuid.uuid4(),\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.MEMBER,\n    ...     joined_at=datetime.now(UTC),\n    ...     added_by=uuid.uuid4(),\n    ...     user=UserAccountResponse(...)\n    ... )\n\nNote:\n    - ユーザー情報を含むため、N+1クエリ対策が必要です\n    - selectinload を使用してユーザー情報を事前ロードしてください"
       },
       "ProjectMemberListResponse": {
         "properties": {
@@ -6679,7 +6679,8 @@
             "description": "ユーザー名"
           },
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id",
             "description": "ユーザーID"
           },
@@ -6710,13 +6711,13 @@
           "created_at"
         ],
         "title": "SampleUserResponse",
-        "description": "ユーザー情報レスポンススキーマ。\n\nユーザー情報取得時のレスポンスボディを定義します。\n\nAttributes:\n    id (int): ユーザーID（プライマリキー）\n    email (EmailStr): ユーザーメールアドレス（SampleUserBaseから継承）\n    username (str): ユーザー名（SampleUserBaseから継承）\n    is_active (bool): ユーザーがアクティブかどうか\n        - False: アカウント無効化\n    is_superuser (bool): 管理者権限フラグ\n        - デフォルト: False\n    created_at (datetime): ユーザー作成日時（UTC）\n\nExample:\n    >>> from datetime import datetime, UTC\n    >>> user = SampleUserResponse(\n    ...     id=1,\n    ...     email=\"john@example.com\",\n    ...     username=\"johndoe\",\n    ...     is_active=True,\n    ...     is_superuser=False,\n    ...     created_at=datetime.now(UTC)\n    ... )\n\nNote:\n    - パスワードは含まれません（セキュリティ）\n    - GET /users/me エンドポイント等で使用されます\n    - model_config によりORMモデルから直接変換可能です"
+        "description": "ユーザー情報レスポンススキーマ。\n\nユーザー情報取得時のレスポンスボディを定義します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID（プライマリキー、UUID）\n    email (EmailStr): ユーザーメールアドレス（SampleUserBaseから継承）\n    username (str): ユーザー名（SampleUserBaseから継承）\n    is_active (bool): ユーザーがアクティブかどうか\n        - False: アカウント無効化\n    is_superuser (bool): 管理者権限フラグ\n        - デフォルト: False\n    created_at (datetime): ユーザー作成日時（UTC）\n\nExample:\n    >>> from datetime import datetime, UTC\n    >>> user = SampleUserResponse(\n    ...     id=uuid.uuid4(),\n    ...     email=\"john@example.com\",\n    ...     username=\"johndoe\",\n    ...     is_active=True,\n    ...     is_superuser=False,\n    ...     created_at=datetime.now(UTC)\n    ... )\n\nNote:\n    - パスワードは含まれません（セキュリティ）\n    - GET /users/me エンドポイント等で使用されます\n    - model_config によりORMモデルから直接変換可能です"
       },
-      "UserListResponse": {
+      "UserAccountListResponse": {
         "properties": {
           "users": {
             "items": {
-              "$ref": "#/components/schemas/UserResponse"
+              "$ref": "#/components/schemas/UserAccountResponse"
             },
             "type": "array",
             "title": "Users",
@@ -6745,10 +6746,10 @@
           "skip",
           "limit"
         ],
-        "title": "UserListResponse",
-        "description": "ユーザー一覧レスポンススキーマ。\n\nユーザー一覧APIのレスポンス形式を定義します。\n\nAttributes:\n    users (list[UserResponse]): ユーザーリスト\n    total (int): 総件数\n    skip (int): スキップ数（オフセット）\n    limit (int): 取得件数\n\nExample:\n    >>> response = UserListResponse(\n    ...     users=[user1, user2, user3],\n    ...     total=100,\n    ...     skip=0,\n    ...     limit=10\n    ... )\n\nNote:\n    - ページネーション情報を含みます\n    - total は全体の件数、skip/limit はページング パラメータ"
+        "title": "UserAccountListResponse",
+        "description": "ユーザー一覧レスポンススキーマ。\n\nユーザー一覧APIのレスポンス形式を定義します。\n\nAttributes:\n    users (list[UserAccountResponse]): ユーザーリスト\n    total (int): 総件数\n    skip (int): スキップ数（オフセット）\n    limit (int): 取得件数\n\nExample:\n    >>> response = UserAccountListResponse(\n    ...     users=[user1, user2, user3],\n    ...     total=100,\n    ...     skip=0,\n    ...     limit=10\n    ... )\n\nNote:\n    - ページネーション情報を含みます\n    - total は全体の件数、skip/limit はページング パラメータ"
       },
-      "UserResponse": {
+      "UserAccountResponse": {
         "properties": {
           "email": {
             "type": "string",
@@ -6828,50 +6829,10 @@
           "created_at",
           "updated_at"
         ],
-        "title": "UserResponse",
-        "description": "ユーザー情報レスポンススキーマ。\n\nAPIレスポンスでユーザー情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID（UUID）\n    azure_oid (str): Azure AD Object ID\n    email (EmailStr): ユーザーメールアドレス（UserBaseから継承）\n    display_name (str | None): 表示名（UserBaseから継承）\n    roles (list[str]): システムレベルのロール（UserBaseから継承）\n    is_active (bool): アクティブフラグ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n    last_login (datetime | None): 最終ログイン日時\n\nExample:\n    >>> from datetime import UTC\n    >>> user = UserResponse(\n    ...     id=uuid.uuid4(),\n    ...     azure_oid=\"azure-oid-12345\",\n    ...     email=\"john@company.com\",\n    ...     display_name=\"John Doe\",\n    ...     roles=[\"User\"],\n    ...     is_active=True,\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC),\n    ...     last_login=None\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - パスワード情報は含まれません（Azure AD認証のため）"
+        "title": "UserAccountResponse",
+        "description": "ユーザー情報レスポンススキーマ。\n\nAPIレスポンスでユーザー情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID（UUID）\n    azure_oid (str): Azure AD Object ID\n    email (EmailStr): ユーザーメールアドレス（UserAccountBaseから継承）\n    display_name (str | None): 表示名（UserAccountBaseから継承）\n    roles (list[str]): システムレベルのロール（UserAccountBaseから継承）\n    is_active (bool): アクティブフラグ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n    last_login (datetime | None): 最終ログイン日時\n\nExample:\n    >>> from datetime import UTC\n    >>> user = UserAccountResponse(\n    ...     id=uuid.uuid4(),\n    ...     azure_oid=\"azure-oid-12345\",\n    ...     email=\"john@company.com\",\n    ...     display_name=\"John Doe\",\n    ...     roles=[\"User\"],\n    ...     is_active=True,\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC),\n    ...     last_login=None\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - パスワード情報は含まれません（Azure AD認証のため）"
       },
-      "UserRoleResponse": {
-        "properties": {
-          "project_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Project Id",
-            "description": "プロジェクトID"
-          },
-          "user_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "User Id",
-            "description": "ユーザーID"
-          },
-          "role": {
-            "$ref": "#/components/schemas/ProjectRole",
-            "description": "プロジェクトロール"
-          },
-          "is_owner": {
-            "type": "boolean",
-            "title": "Is Owner",
-            "description": "PROJECT_MANAGER ロールかどうか（後方互換性のため維持）"
-          },
-          "is_admin": {
-            "type": "boolean",
-            "title": "Is Admin",
-            "description": "PROJECT_MANAGER ロールかどうか（後方互換性のため維持）"
-          }
-        },
-        "type": "object",
-        "required": [
-          "project_id",
-          "user_id",
-          "role",
-          "is_owner",
-          "is_admin"
-        ],
-        "title": "UserRoleResponse",
-        "description": "ユーザーのプロジェクトロールレスポンススキーマ。\n\n現在のユーザーのロール情報を返す際に使用します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    user_id (uuid.UUID): ユーザーID\n    role (ProjectRole): プロジェクトロール\n    is_owner (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n    is_admin (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n\nExample:\n    >>> role_info = UserRoleResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.PROJECT_MANAGER,\n    ...     is_owner=True,\n    ...     is_admin=True\n    ... )\n\nNote:\n    - 権限チェックに使用されます\n    - is_owner: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）\n    - is_admin: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）"
-      },
-      "UserUpdate": {
+      "UserAccountUpdate": {
         "properties": {
           "display_name": {
             "anyOf": [
@@ -6915,8 +6876,48 @@
           }
         },
         "type": "object",
-        "title": "UserUpdate",
-        "description": "ユーザー情報更新リクエストスキーマ。\n\nユーザー情報の更新時に使用します。\n\nAttributes:\n    display_name (str | None): 表示名（オプション）\n    roles (list[str] | None): システムレベルのロール（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n\nExample:\n    >>> update = UserUpdate(\n    ...     display_name=\"John Smith\",\n    ...     roles=[\"SystemAdmin\", \"User\"],\n    ...     is_active=True\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - 指定されたフィールドのみが更新されます\n    - email と azure_oid は更新できません"
+        "title": "UserAccountUpdate",
+        "description": "ユーザー情報更新リクエストスキーマ。\n\nユーザー情報の更新時に使用します。\n\nAttributes:\n    display_name (str | None): 表示名（オプション）\n    roles (list[str] | None): システムレベルのロール（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n\nExample:\n    >>> update = UserAccountUpdate(\n    ...     display_name=\"John Smith\",\n    ...     roles=[\"SystemAdmin\", \"User\"],\n    ...     is_active=True\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - 指定されたフィールドのみが更新されます\n    - email と azure_oid は更新できません"
+      },
+      "UserRoleResponse": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id",
+            "description": "プロジェクトID"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id",
+            "description": "ユーザーID"
+          },
+          "role": {
+            "$ref": "#/components/schemas/ProjectRole",
+            "description": "プロジェクトロール"
+          },
+          "is_owner": {
+            "type": "boolean",
+            "title": "Is Owner",
+            "description": "PROJECT_MANAGER ロールかどうか（後方互換性のため維持）"
+          },
+          "is_admin": {
+            "type": "boolean",
+            "title": "Is Admin",
+            "description": "PROJECT_MANAGER ロールかどうか（後方互換性のため維持）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_id",
+          "user_id",
+          "role",
+          "is_owner",
+          "is_admin"
+        ],
+        "title": "UserRoleResponse",
+        "description": "ユーザーのプロジェクトロールレスポンススキーマ。\n\n現在のユーザーのロール情報を返す際に使用します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    user_id (uuid.UUID): ユーザーID\n    role (ProjectRole): プロジェクトロール\n    is_owner (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n    is_admin (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n\nExample:\n    >>> role_info = UserRoleResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.PROJECT_MANAGER,\n    ...     is_owner=True,\n    ...     is_admin=True\n    ... )\n\nNote:\n    - 権限チェックに使用されます\n    - is_owner: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）\n    - is_admin: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）"
       },
       "ValidationError": {
         "properties": {

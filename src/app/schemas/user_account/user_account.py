@@ -5,16 +5,16 @@
 
 主なスキーマ:
     ユーザー情報:
-        - UserBase: 基本ユーザー情報（共通フィールド）
-        - UserResponse: ユーザー情報レスポンス
-        - UserUpdate: ユーザー情報更新リクエスト
-        - UserListResponse: ユーザー一覧レスポンス
+        - UserAccountBase: 基本ユーザー情報（共通フィールド）
+        - UserAccountResponse: ユーザー情報レスポンス
+        - UserAccountUpdate: ユーザー情報更新リクエスト
+        - UserAccountListResponse: ユーザー一覧レスポンス
 
 使用方法:
-    >>> from app.schemas.user_account.user_account import UserResponse
+    >>> from app.schemas.user_account.user_account import UserAccountResponse
     >>>
     >>> # ユーザー情報レスポンス
-    >>> user = UserResponse(
+    >>> user = UserAccountResponse(
     ...     id=uuid.uuid4(),
     ...     azure_oid="azure-oid-12345",
     ...     email="user@company.com",
@@ -32,7 +32,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class UserBase(BaseModel):
+class UserAccountBase(BaseModel):
     """ベースユーザースキーマ。
 
     ユーザーの基本情報を定義します。他のユーザースキーマの基底クラスとして使用されます。
@@ -46,7 +46,7 @@ class UserBase(BaseModel):
             - 例: ["SystemAdmin", "User"]
 
     Example:
-        >>> user = UserBase(
+        >>> user = UserAccountBase(
         ...     email="john@company.com",
         ...     display_name="John Doe",
         ...     roles=["User"]
@@ -62,7 +62,7 @@ class UserBase(BaseModel):
     roles: list[str] = Field(default_factory=list, description="システムレベルのロール")
 
 
-class UserResponse(UserBase):
+class UserAccountResponse(UserAccountBase):
     """ユーザー情報レスポンススキーマ。
 
     APIレスポンスでユーザー情報を返す際に使用します。
@@ -70,9 +70,9 @@ class UserResponse(UserBase):
     Attributes:
         id (uuid.UUID): ユーザーID（UUID）
         azure_oid (str): Azure AD Object ID
-        email (EmailStr): ユーザーメールアドレス（UserBaseから継承）
-        display_name (str | None): 表示名（UserBaseから継承）
-        roles (list[str]): システムレベルのロール（UserBaseから継承）
+        email (EmailStr): ユーザーメールアドレス（UserAccountBaseから継承）
+        display_name (str | None): 表示名（UserAccountBaseから継承）
+        roles (list[str]): システムレベルのロール（UserAccountBaseから継承）
         is_active (bool): アクティブフラグ
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
@@ -80,7 +80,7 @@ class UserResponse(UserBase):
 
     Example:
         >>> from datetime import UTC
-        >>> user = UserResponse(
+        >>> user = UserAccountResponse(
         ...     id=uuid.uuid4(),
         ...     azure_oid="azure-oid-12345",
         ...     email="john@company.com",
@@ -107,7 +107,7 @@ class UserResponse(UserBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserUpdate(BaseModel):
+class UserAccountUpdate(BaseModel):
     """ユーザー情報更新リクエストスキーマ。
 
     ユーザー情報の更新時に使用します。
@@ -118,7 +118,7 @@ class UserUpdate(BaseModel):
         is_active (bool | None): アクティブフラグ（オプション）
 
     Example:
-        >>> update = UserUpdate(
+        >>> update = UserAccountUpdate(
         ...     display_name="John Smith",
         ...     roles=["SystemAdmin", "User"],
         ...     is_active=True
@@ -135,19 +135,19 @@ class UserUpdate(BaseModel):
     is_active: bool | None = Field(default=None, description="アクティブフラグ")
 
 
-class UserListResponse(BaseModel):
+class UserAccountListResponse(BaseModel):
     """ユーザー一覧レスポンススキーマ。
 
     ユーザー一覧APIのレスポンス形式を定義します。
 
     Attributes:
-        users (list[UserResponse]): ユーザーリスト
+        users (list[UserAccountResponse]): ユーザーリスト
         total (int): 総件数
         skip (int): スキップ数（オフセット）
         limit (int): 取得件数
 
     Example:
-        >>> response = UserListResponse(
+        >>> response = UserAccountListResponse(
         ...     users=[user1, user2, user3],
         ...     total=100,
         ...     skip=0,
@@ -159,7 +159,7 @@ class UserListResponse(BaseModel):
         - total は全体の件数、skip/limit はページング パラメータ
     """
 
-    users: list[UserResponse] = Field(..., description="ユーザーリスト")
+    users: list[UserAccountResponse] = Field(..., description="ユーザーリスト")
     total: int = Field(..., description="総件数")
     skip: int = Field(..., description="スキップ数（オフセット）")
     limit: int = Field(..., description="取得件数")

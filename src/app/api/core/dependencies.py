@@ -80,7 +80,7 @@ from app.services import (
     SampleFileService,
     SampleSessionService,
     SampleUserService,
-    UserService,
+    UserAccountService,
 )
 
 # ================================================================================
@@ -136,24 +136,24 @@ UserServiceDep = Annotated[SampleUserService, Depends(get_user_service)]
 """ユーザーサービスの依存性型。"""
 
 
-def get_azure_user_service(db: DatabaseDep) -> UserService:
+def get_azure_user_service(db: DatabaseDep) -> UserAccountService:
     """Azure AD用ユーザーサービスインスタンスを生成するDIファクトリ関数。
 
     Args:
         db (AsyncSession): データベースセッション（自動注入）
 
     Returns:
-        UserService: 初期化されたAzure AD用ユーザーサービスインスタンス
+        UserAccountService: 初期化されたAzure AD用ユーザーサービスインスタンス
 
     Note:
         - この関数はFastAPIのDependsで自動的に呼び出されます
         - サービスインスタンスはリクエストごとに生成されます
         - Azure AD認証用の新しいUserモデルを使用します
     """
-    return UserService(db)
+    return UserAccountService(db)
 
 
-AzureUserServiceDep = Annotated[UserService, Depends(get_azure_user_service)]
+AzureUserServiceDep = Annotated[UserAccountService, Depends(get_azure_user_service)]
 """Azure AD用ユーザーサービスの依存性型。"""
 
 
@@ -335,7 +335,9 @@ async def get_current_user(
                 headers={"WWW-Authenticate": 'Bearer error="invalid_token"'},
             )
 
-        user = await user_service.get_user(int(user_id))
+        import uuid
+
+        user = await user_service.get_user(uuid.UUID(user_id))
         if not user:
             raise HTTPException(
                 status_code=401,
@@ -484,7 +486,7 @@ async def get_authenticated_user_from_azure(
         azure_oid=azure_user.oid,
         email=azure_user.email or azure_user.preferred_username,
         display_name=getattr(azure_user, "name", None),
-        roles=getattr(azure_user, "roles", []),
+        roles=getattr(azure_user, "roles", None),  # Noneをデフォルトにして既存rolesを保持
     )
 
     if not user:

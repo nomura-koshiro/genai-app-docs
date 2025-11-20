@@ -40,7 +40,7 @@ from app.api.core import AzureUserServiceDep, CurrentUserAzureDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.schemas import UserListResponse, UserResponse, UserUpdate
+from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountUpdate
 
 logger = get_logger(__name__)
 
@@ -54,7 +54,7 @@ user_accounts_router = APIRouter()
 
 @user_accounts_router.get(
     "",
-    response_model=UserListResponse,
+    response_model=UserAccountListResponse,
     summary="ユーザー一覧取得",
     description="""
     登録されているすべてのユーザーの一覧を取得します。
@@ -77,11 +77,11 @@ async def list_users(
     current_user: CurrentUserAzureDep,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得する最大レコード数"),
-) -> UserListResponse:
+) -> UserAccountListResponse:
     """ユーザー一覧を取得します（管理者専用）。
 
     Args:
-        user_service (UserService): ユーザーサービス（自動注入）
+        user_service (UserAccountService): ユーザーサービス（自動注入）
         current_user (User): 認証済みユーザー（自動注入）
         skip (int): スキップするレコード数（ページネーション用）
             - デフォルト: 0
@@ -91,7 +91,7 @@ async def list_users(
             - 範囲: 1-1000
 
     Returns:
-        UserListResponse: ユーザー一覧とページネーション情報
+        UserAccountListResponse: ユーザー一覧とページネーション情報
             - users: ユーザーリスト
             - total: 総件数
             - skip: スキップ数
@@ -180,8 +180,8 @@ async def list_users(
         limit=limit,
     )
 
-    return UserListResponse(
-        users=[UserResponse.model_validate(user) for user in users],
+    return UserAccountListResponse(
+        users=[UserAccountResponse.model_validate(user) for user in users],
         total=total,
         skip=skip,
         limit=limit,
@@ -190,7 +190,7 @@ async def list_users(
 
 @user_accounts_router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=UserAccountResponse,
     summary="現在のユーザー情報取得",
     description="""
     Azure AD認証されたユーザー自身の情報を取得します。
@@ -207,7 +207,7 @@ async def get_current_user(
     request: Request,
     current_user: CurrentUserAzureDep,
     user_service: AzureUserServiceDep,
-) -> UserResponse:
+) -> UserAccountResponse:
     """現在の認証済みユーザーの情報を取得します。
 
     このエンドポイントは、Azure AD認証されたユーザー自身の情報を返します。
@@ -216,10 +216,10 @@ async def get_current_user(
     Args:
         request (Request): FastAPIリクエストオブジェクト（クライアントIP取得用）
         current_user (User): 認証済みユーザー（自動注入）
-        user_service (UserService): ユーザーサービス（自動注入）
+        user_service (UserAccountService): ユーザーサービス（自動注入）
 
     Returns:
-        UserResponse: 現在のユーザー情報
+        UserAccountResponse: 現在のユーザー情報
             - id: ユーザーID（UUID）
             - azure_oid: Azure AD Object ID
             - email: メールアドレス
@@ -270,12 +270,12 @@ async def get_current_user(
         client_ip=client_ip,
     )
 
-    return UserResponse.model_validate(updated_user)
+    return UserAccountResponse.model_validate(updated_user)
 
 
 @user_accounts_router.get(
     "/{user_id}",
-    response_model=UserResponse,
+    response_model=UserAccountResponse,
     summary="特定ユーザー情報取得",
     description="""
     指定されたIDのユーザー情報を取得します。
@@ -291,16 +291,16 @@ async def get_user(
     user_id: uuid.UUID,
     user_service: AzureUserServiceDep,
     current_user: CurrentUserAzureDep,
-) -> UserResponse:
+) -> UserAccountResponse:
     """特定のユーザー情報を取得します（管理者専用）。
 
     Args:
         user_id (uuid.UUID): 取得するユーザーのUUID
-        user_service (UserService): ユーザーサービス（自動注入）
+        user_service (UserAccountService): ユーザーサービス（自動注入）
         current_user (User): 認証済みユーザー（権限チェック用、自動注入）
 
     Returns:
-        UserResponse: 指定されたユーザーの情報
+        UserAccountResponse: 指定されたユーザーの情報
             - すべてのユーザー属性を含む
             - リレーションシップは遅延ロードされます
 
@@ -370,7 +370,7 @@ async def get_user(
         email=user.email,
     )
 
-    return UserResponse.model_validate(user)
+    return UserAccountResponse.model_validate(user)
 
 
 # ================================================================================
@@ -380,7 +380,7 @@ async def get_user(
 
 @user_accounts_router.patch(
     "/me",
-    response_model=UserResponse,
+    response_model=UserAccountResponse,
     summary="ユーザー情報更新",
     description="""
     現在のユーザー情報を更新します。
@@ -398,25 +398,25 @@ async def get_user(
 )
 @handle_service_errors
 async def update_current_user(
-    update_data: UserUpdate,
+    update_data: UserAccountUpdate,
     current_user: CurrentUserAzureDep,
     user_service: AzureUserServiceDep,
-) -> UserResponse:
+) -> UserAccountResponse:
     """現在のユーザー情報を更新します。
 
     このエンドポイントは、認証済みユーザー自身の情報を更新します。
     一部のフィールド（roles, is_active）の更新には管理者権限が必要です。
 
     Args:
-        update_data (UserUpdate): 更新データ
+        update_data (UserAccountUpdate): 更新データ
             - display_name: 表示名（オプション）
             - roles: システムレベルのロール（オプション、管理者のみ）
             - is_active: アクティブフラグ（オプション、管理者のみ）
         current_user (User): 認証済みユーザー（自動注入）
-        user_service (UserService): ユーザーサービス（自動注入）
+        user_service (UserAccountService): ユーザーサービス（自動注入）
 
     Returns:
-        UserResponse: 更新されたユーザー情報
+        UserAccountResponse: 更新されたユーザー情報
 
     Raises:
         HTTPException:
@@ -464,7 +464,7 @@ async def update_current_user(
 
     if not update_dict:
         logger.info("更新フィールドが指定されていません", user_id=str(current_user.id))
-        return UserResponse.model_validate(current_user)
+        return UserAccountResponse.model_validate(current_user)
 
     # サービス層を使用してユーザー情報を更新
     # サービス層で権限チェック、バリデーション、ビジネスロジックを実行
@@ -474,7 +474,7 @@ async def update_current_user(
         current_user_roles=current_user.roles,
     )
 
-    return UserResponse.model_validate(updated_user)
+    return UserAccountResponse.model_validate(updated_user)
 
 
 # ================================================================================
@@ -511,7 +511,7 @@ async def delete_user(
 
     Args:
         user_id (uuid.UUID): 削除するユーザーのUUID
-        user_service (UserService): ユーザーサービス（自動注入）
+        user_service (UserAccountService): ユーザーサービス（自動注入）
         current_user (User): 認証済みユーザー（権限チェック用、自動注入）
 
     Returns:

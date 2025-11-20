@@ -28,7 +28,7 @@ from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import Project, ProjectMember, ProjectRole, UserAccount
-from app.repositories import ProjectMemberRepository, ProjectRepository, UserRepository
+from app.repositories import ProjectMemberRepository, ProjectRepository, UserAccountRepository
 from app.schemas import (
     ProjectMemberBulkError,
     ProjectMemberCreate,
@@ -46,7 +46,7 @@ class ProjectMemberService:
         db (AsyncSession): データベースセッション
         repository (ProjectMemberRepository): メンバーリポジトリ
         project_repository (ProjectRepository): プロジェクトリポジトリ
-        user_repository (UserRepository): ユーザーリポジトリ
+        user_repository (UserAccountRepository): ユーザーリポジトリ
 
     Example:
         >>> async with get_db() as db:
@@ -69,7 +69,7 @@ class ProjectMemberService:
         self.db = db
         self.repository = ProjectMemberRepository(db)
         self.project_repository = ProjectRepository(db)
-        self.user_repository = UserRepository(db)
+        self.user_repository = UserAccountRepository(db)
 
         logger.info("プロジェクトメンバーサービスを初期化しました")
 

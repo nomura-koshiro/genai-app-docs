@@ -23,7 +23,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.user_account.user_account import UserResponse
+from app.schemas.user_account.user_account import UserAccountResponse
 
 
 class ProjectFileUploadResponse(BaseModel):
@@ -85,7 +85,7 @@ class ProjectFileResponse(BaseModel):
         mime_type (str | None): MIMEタイプ
         uploaded_by (uuid.UUID): アップロード者のユーザーID
         uploaded_at (datetime): アップロード日時
-        uploader (UserResponse | None): アップロード者のユーザー情報
+        uploader (UserAccountResponse | None): アップロード者のユーザー情報
 
     Example:
         >>> file_response = ProjectFileResponse(
@@ -98,7 +98,7 @@ class ProjectFileResponse(BaseModel):
         ...     mime_type="application/pdf",
         ...     uploaded_by=user_id,
         ...     uploaded_at=datetime.now(UTC),
-        ...     uploader=UserResponse(...)
+        ...     uploader=UserAccountResponse(...)
         ... )
 
     Note:
@@ -117,7 +117,7 @@ class ProjectFileResponse(BaseModel):
     mime_type: str | None = Field(default=None, description="MIMEタイプ")
     uploaded_by: uuid.UUID = Field(..., description="アップロード者のユーザーID")
     uploaded_at: datetime = Field(..., description="アップロード日時")
-    uploader: UserResponse | None = Field(default=None, description="アップロード者のユーザー情報")
+    uploader: UserAccountResponse | None = Field(default=None, description="アップロード者のユーザー情報")
 
 
 class ProjectFileListResponse(BaseModel):

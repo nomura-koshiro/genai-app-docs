@@ -10,10 +10,10 @@
     - アクティブユーザーの一覧取得
 
 使用例:
-    >>> from app.services.user_account.user_account import UserService
+    >>> from app.services.user_account.user_account import UserAccountService
     >>>
     >>> async with get_db() as db:
-    ...     user_service = UserService(db)
+    ...     user_service = UserAccountService(db)
     ...     user = await user_service.get_or_create_by_azure_oid(
     ...         azure_oid="azure-oid-12345",
     ...         email="user@company.com",
@@ -31,26 +31,26 @@ from app.api.decorators import cache_result, measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import UserAccount
-from app.repositories import UserRepository
+from app.repositories import UserAccountRepository
 
 logger = get_logger(__name__)
 
 
-class UserService:
+class UserAccountService:
     """Azure AD認証用ユーザーサービスクラス。
 
     このサービスは、Azure AD認証に対応したユーザー管理のビジネスロジックを提供します。
     すべての操作は非同期で実行され、適切なロギングとエラーハンドリングを含みます。
 
     Attributes:
-        repository: UserRepositoryインスタンス（データベースアクセス用）
+        repository: UserAccountRepositoryインスタンス（データベースアクセス用）
 
     Example:
         >>> from sqlalchemy.ext.asyncio import AsyncSession
-        >>> from app.services.user_account.user_account import UserService
+        >>> from app.services.user_account.user_account import UserAccountService
         >>>
         >>> async with get_db() as db:
-        ...     user_service = UserService(db)
+        ...     user_service = UserAccountService(db)
         ...     user = await user_service.get_or_create_by_azure_oid(
         ...         azure_oid="azure-oid-12345",
         ...         email="user@company.com",
@@ -70,7 +70,7 @@ class UserService:
             - セッションのライフサイクルはFastAPIのDependsによって管理されます
         """
         self.db = db
-        self.repository = UserRepository(db)
+        self.repository = UserAccountRepository(db)
 
     @measure_performance
     @transactional

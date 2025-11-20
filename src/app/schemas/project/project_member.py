@@ -27,7 +27,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.project.project_member import ProjectRole
-from app.schemas.user_account.user_account import UserResponse
+from app.schemas.user_account.user_account import UserAccountResponse
 
 # ================================================================================
 # プロジェクトメンバースキーマ
@@ -129,7 +129,7 @@ class ProjectMemberDetailResponse(ProjectMemberResponse):
         role (ProjectRole): プロジェクトロール（ProjectMemberResponseから継承）
         joined_at (datetime): 参加日時（ProjectMemberResponseから継承）
         added_by (uuid.UUID | None): 追加者のユーザーID（ProjectMemberResponseから継承）
-        user (UserResponse | None): ユーザー情報（ネストされたオブジェクト）
+        user (UserAccountResponse | None): ユーザー情報（ネストされたオブジェクト）
 
     Example:
         >>> member = ProjectMemberDetailResponse(
@@ -139,7 +139,7 @@ class ProjectMemberDetailResponse(ProjectMemberResponse):
         ...     role=ProjectRole.MEMBER,
         ...     joined_at=datetime.now(UTC),
         ...     added_by=uuid.uuid4(),
-        ...     user=UserResponse(...)
+        ...     user=UserAccountResponse(...)
         ... )
 
     Note:
@@ -147,7 +147,7 @@ class ProjectMemberDetailResponse(ProjectMemberResponse):
         - selectinload を使用してユーザー情報を事前ロードしてください
     """
 
-    user: UserResponse | None = Field(default=None, description="ユーザー情報")
+    user: UserAccountResponse | None = Field(default=None, description="ユーザー情報")
 
 
 class ProjectMemberListResponse(BaseModel):

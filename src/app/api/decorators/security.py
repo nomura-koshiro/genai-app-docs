@@ -309,14 +309,14 @@ def handle_service_errors[T](
         Callable: エラーハンドリングが適用された関数
 
     Example:
-        >>> @router.post("/users", response_model=UserResponse)
+        >>> @router.post("/users", response_model=UserAccountResponse)
         >>> @handle_service_errors
         >>> async def create_user(
         ...     user_data: UserCreate,
         ...     service: UserServiceDep,
-        ... ) -> UserResponse:
+        ... ) -> UserAccountResponse:
         ...     user = await service.create_user(user_data)
-        ...     return UserResponse.model_validate(user)
+        ...     return UserAccountResponse.model_validate(user)
 
     Note:
         - このデコレータは非同期関数専用です

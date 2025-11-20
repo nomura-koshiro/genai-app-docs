@@ -12,10 +12,10 @@ BaseRepositoryを継承し、Azure OID検索、メール検索、アクティブ
 
 使用例:
     >>> from sqlalchemy.ext.asyncio import AsyncSession
-    >>> from app.repositories.user_account.user_account import UserRepository
+    >>> from app.repositories.user_account.user_account import UserAccountRepository
     >>>
     >>> async with get_db() as db:
-    ...     user_repo = UserRepository(db)
+    ...     user_repo = UserAccountRepository(db)
     ...     user = await user_repo.get_by_azure_oid("azure-oid-12345")
     ...     if user:
     ...         print(f"Found user: {user.email}")
@@ -30,7 +30,7 @@ from app.models import UserAccount
 from app.repositories.base import BaseRepository
 
 
-class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
+class UserAccountRepository(BaseRepository[UserAccount, uuid.UUID]):
     """Azure AD認証用UserAccountモデルのリポジトリクラス。
 
     このリポジトリは、BaseRepositoryの共通CRUD操作に加えて、
@@ -51,7 +51,7 @@ class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
 
     Example:
         >>> async with get_db() as db:
-        ...     user_repo = UserRepository(db)
+        ...     user_repo = UserAccountRepository(db)
         ...
         ...     # Azure OIDでユーザーを検索
         ...     user = await user_repo.get_by_azure_oid("azure-oid-12345")
@@ -113,7 +113,7 @@ class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
                 - None: 該当するユーザーが存在しない
 
         Example:
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> user = await user_repo.get_by_azure_oid("azure-oid-12345")
             >>> if user:
             ...     print(f"Found user: {user.email}")
@@ -164,7 +164,7 @@ class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
                 - None: 該当するユーザーが存在しない
 
         Example:
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> user = await user_repo.get_by_email("john@example.com")
             >>> if user:
             ...     print(f"Found user: {user.display_name}")
@@ -218,7 +218,7 @@ class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
                 - project_memberships が事前ロード済み（追加クエリなし）
 
         Example:
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> # アクティブユーザーの最初の10件を取得
             >>> active_users = await user_repo.get_active_users(skip=0, limit=10)
             >>> print(f"Active users: {len(active_users)}")
@@ -268,7 +268,7 @@ class UserRepository(BaseRepository[UserAccount, uuid.UUID]):
 
         Example:
             >>> import uuid
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> user_id = uuid.UUID("12345678-1234-1234-1234-123456789abc")
             >>> user = await user_repo.get_by_id(user_id)
             >>> if user:

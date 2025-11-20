@@ -1,4 +1,4 @@
-"""Azure AD認証用UserRepositoryのテスト。
+"""Azure AD認証用UserAccountRepositoryのテスト。
 
 このテストファイルは REPOSITORY_TEST_POLICY.md に従い、
 複雑なクエリやカスタムメソッドのみをテストします。
@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import text
 
 from app.models import Project, ProjectMember, ProjectRole, UserAccount
-from app.repositories import UserRepository
+from app.repositories import UserAccountRepository
 
 
 @pytest.mark.asyncio
@@ -31,7 +31,7 @@ async def test_repository_get_by_azure_oid(db_session):
     db_session.add(user)
     await db_session.commit()
 
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # Act
     result = await repository.get_by_azure_oid("azure-oid-12345")
@@ -49,7 +49,7 @@ async def test_repository_get_by_azure_oid_not_found(db_session):
     認証失敗時の動作に直結する重要なエッジケース。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # Act
     result = await repository.get_by_azure_oid("non-existent-oid")
@@ -66,7 +66,7 @@ async def test_repository_get_active_users(db_session):
     ユーザー管理画面や権限チェックで使用される。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # アクティブユーザーを3人作成
     for i in range(3):
@@ -106,7 +106,7 @@ async def test_repository_count_all_users(db_session):
     ページネーションのtotal値として使用される。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
@@ -144,7 +144,7 @@ async def test_repository_count_active_users(db_session):
     アクティブユーザー統計として使用される。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
@@ -181,7 +181,7 @@ async def test_repository_count_inactive_users(db_session):
     ビジネスロジック: is_active=Falseでフィルタリングしてカウント。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # アクティブユーザー3人 + 非アクティブ2人
     for i in range(3):
@@ -222,7 +222,7 @@ async def test_repository_get_active_users_with_n_plus_one_prevention(db_session
     パフォーマンス最適化の重要なビジネスロジックをテストします。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # アクティブユーザーを3人作成
     users = []
@@ -296,7 +296,7 @@ async def test_repository_get_active_users_eager_loading_verification(db_session
     遅延ロードが発生しないことを確認。
     """
     # Arrange
-    repository = UserRepository(db_session)
+    repository = UserAccountRepository(db_session)
 
     # ユーザーとプロジェクトメンバーシップを作成
     user = UserAccount(

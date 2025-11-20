@@ -60,7 +60,9 @@ class DevUser:
         self.preferred_username = settings.DEV_MOCK_USER_EMAIL
         self.email = settings.DEV_MOCK_USER_EMAIL
         self.name = settings.DEV_MOCK_USER_NAME
-        self.roles = []
+        # rolesはデータベースの値を保持するため、Noneにする
+        # これにより、get_or_create_by_azure_oidで既存のrolesが上書きされない
+        self.roles = None
 
     def __repr__(self):
         """オブジェクトの文字列表現を返します。

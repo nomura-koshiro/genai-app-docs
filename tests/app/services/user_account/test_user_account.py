@@ -1,4 +1,4 @@
-"""Azure AD認証用UserServiceのテスト。"""
+"""Azure AD認証用UserAccountServiceのテスト。"""
 
 import uuid
 from datetime import datetime
@@ -7,14 +7,14 @@ import pytest
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models import UserAccount
-from app.services import UserService
+from app.services import UserAccountService
 
 
 @pytest.mark.asyncio
 async def test_get_or_create_by_azure_oid_new_user(db_session):
     """新規ユーザー作成テスト（Azure OID初回ログイン）。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     user = await service.get_or_create_by_azure_oid(
@@ -48,7 +48,7 @@ async def test_get_or_create_by_azure_oid_existing_user(db_session):
     await db_session.commit()
     await db_session.refresh(existing_user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     user = await service.get_or_create_by_azure_oid(
@@ -84,7 +84,7 @@ async def test_get_or_create_by_azure_oid_updates_fields(db_session, field, old_
     db_session.add(existing_user)
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     update_values = {
@@ -111,7 +111,7 @@ async def test_get_or_create_by_azure_oid_duplicate_email(db_session):
     db_session.add(user1)
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act & Assert - 別のOIDで同じメールは作成できない
     with pytest.raises(ValidationError):
@@ -137,7 +137,7 @@ async def test_update_last_login(db_session):
 
     assert user.last_login is None
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     updated_user = await service.update_last_login(
@@ -154,7 +154,7 @@ async def test_update_last_login(db_session):
 async def test_update_last_login_user_not_found(db_session):
     """存在しないユーザーの最終ログイン更新エラーテスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert
@@ -175,7 +175,7 @@ async def test_get_user(db_session):
     await db_session.commit()
     await db_session.refresh(user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     result = await service.get_user(user.id)
@@ -190,7 +190,7 @@ async def test_get_user(db_session):
 async def test_get_user_not_found(db_session):
     """存在しないユーザー取得テスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act
@@ -212,7 +212,7 @@ async def test_get_user_by_email(db_session):
     db_session.add(user)
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     result = await service.get_user_by_email("email@company.com")
@@ -226,7 +226,7 @@ async def test_get_user_by_email(db_session):
 async def test_get_user_by_email_not_found(db_session):
     """存在しないメールでユーザー取得エラーテスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act & Assert
     with pytest.raises(NotFoundError):
@@ -245,7 +245,7 @@ async def test_get_user_by_azure_oid(db_session):
     db_session.add(user)
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     result = await service.get_user_by_azure_oid("oid-test-12345")
@@ -259,7 +259,7 @@ async def test_get_user_by_azure_oid(db_session):
 async def test_get_user_by_azure_oid_not_found(db_session):
     """存在しないAzure OIDでユーザー取得エラーテスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act & Assert
     with pytest.raises(NotFoundError):
@@ -292,7 +292,7 @@ async def test_list_active_users(db_session):
 
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     active_users = await service.list_active_users(skip=0, limit=10)
@@ -327,7 +327,7 @@ async def test_list_users(db_session):
 
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     all_users = await service.list_users(skip=0, limit=10)
@@ -361,7 +361,7 @@ async def test_count_users_active_only(db_session):
 
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     active_count = await service.count_users(is_active=True)
@@ -395,7 +395,7 @@ async def test_count_users_inactive_only(db_session):
 
     await db_session.commit()
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act
     inactive_count = await service.count_users(is_active=False)
@@ -418,7 +418,7 @@ async def test_update_user_roles_by_admin(db_session):
     await db_session.commit()
     await db_session.refresh(user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act - 管理者がロールを更新
     updated_user = await service.update_user(
@@ -446,7 +446,7 @@ async def test_update_user_roles_by_non_admin_fails(db_session):
     await db_session.commit()
     await db_session.refresh(user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act & Assert - 一般ユーザーがロールを更新しようとすると失敗
     with pytest.raises(ValidationError) as exc_info:
@@ -474,7 +474,7 @@ async def test_update_user_is_active_by_admin(db_session):
     await db_session.commit()
     await db_session.refresh(user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act - 管理者がis_activeを更新
     updated_user = await service.update_user(
@@ -503,7 +503,7 @@ async def test_update_user_is_active_by_non_admin_fails(db_session):
     await db_session.commit()
     await db_session.refresh(user)
 
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
 
     # Act & Assert - 一般ユーザーがis_activeを更新しようとすると失敗
     with pytest.raises(ValidationError) as exc_info:
@@ -520,7 +520,7 @@ async def test_update_user_is_active_by_non_admin_fails(db_session):
 async def test_update_user_not_found(db_session):
     """存在しないユーザーの更新エラーテスト。"""
     # Arrange
-    service = UserService(db_session)
+    service = UserAccountService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert

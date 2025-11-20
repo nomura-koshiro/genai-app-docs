@@ -180,7 +180,7 @@ class PaginatedResponse(BaseModel):
 
     Note:
         - 実際の使用時はitemsの型を具体的なモデルに置き換えてください
-        - 例: list[UserResponse], list[FileInfo]
+        - 例: list[UserAccountResponse], list[FileInfo]
     """
 
     total: int = Field(..., ge=0, description="総アイテム数")

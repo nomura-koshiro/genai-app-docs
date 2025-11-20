@@ -39,7 +39,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         db (AsyncSession): 非同期データベースセッション
 
     Example:
-        >>> class UserRepository(BaseRepository[User]):
+        >>> class UserAccountRepository(BaseRepository[User]):
         ...     def __init__(self, db: AsyncSession):
         ...         super().__init__(User, db)
         ...
@@ -81,7 +81,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
                 - リレーションシップは遅延ロードされます
 
         Example:
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> user = await user_repo.get(1)
             >>> if user:
             ...     print(f"Found: {user.username}")
@@ -262,7 +262,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         Example:
             >>> # 単一レコード作成
             >>> async with get_db() as db:
-            ...     user_repo = UserRepository(db)
+            ...     user_repo = UserAccountRepository(db)
             ...     user = await user_repo.create(
             ...         email="john@example.com",
             ...         username="john_doe",
@@ -275,7 +275,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
             >>>
             >>> # 複数操作を1つのトランザクションで実行
             >>> async with get_db() as db:
-            ...     user_repo = UserRepository(db)
+            ...     user_repo = UserAccountRepository(db)
             ...     user1 = await user_repo.create(email="user1@example.com", ...)
             ...     user2 = await user_repo.create(email="user2@example.com", ...)
             ...     await db.commit()  # 両方まとめてcommit
@@ -326,7 +326,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         Example:
             >>> # ユーザー情報を更新
             >>> async with get_db() as db:
-            ...     user_repo = UserRepository(db)
+            ...     user_repo = UserAccountRepository(db)
             ...     user = await user_repo.get(1)
             ...     updated_user = await user_repo.update(
             ...         user,
@@ -385,7 +385,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         Example:
             >>> # レコードを削除
             >>> async with get_db() as db:
-            ...     user_repo = UserRepository(db)
+            ...     user_repo = UserAccountRepository(db)
             ...     success = await user_repo.delete(user_id)
             ...     if success:
             ...         await db.commit()  # 呼び出し側でcommit
@@ -441,7 +441,7 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
 
         Example:
             >>> # 全ユーザー数を取得
-            >>> user_repo = UserRepository(db)
+            >>> user_repo = UserAccountRepository(db)
             >>> total_users = await user_repo.count()
             >>> print(f"Total users: {total_users}")
             Total users: 150

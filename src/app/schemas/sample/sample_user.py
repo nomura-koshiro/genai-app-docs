@@ -31,6 +31,7 @@
     ... )
 """
 
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
@@ -145,7 +146,7 @@ class SampleUserResponse(SampleUserBase):
     ユーザー情報取得時のレスポンスボディを定義します。
 
     Attributes:
-        id (int): ユーザーID（プライマリキー）
+        id (uuid.UUID): ユーザーID（プライマリキー、UUID）
         email (EmailStr): ユーザーメールアドレス（SampleUserBaseから継承）
         username (str): ユーザー名（SampleUserBaseから継承）
         is_active (bool): ユーザーがアクティブかどうか
@@ -157,7 +158,7 @@ class SampleUserResponse(SampleUserBase):
     Example:
         >>> from datetime import datetime, UTC
         >>> user = SampleUserResponse(
-        ...     id=1,
+        ...     id=uuid.uuid4(),
         ...     email="john@example.com",
         ...     username="johndoe",
         ...     is_active=True,
@@ -173,7 +174,7 @@ class SampleUserResponse(SampleUserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int = Field(..., description="ユーザーID")
+    id: uuid.UUID = Field(..., description="ユーザーID")
     is_active: bool = Field(..., description="ユーザーがアクティブかどうか")
     is_superuser: bool = Field(False, description="ユーザーがスーパーユーザーかどうか")
     created_at: datetime = Field(..., description="ユーザー作成時刻")

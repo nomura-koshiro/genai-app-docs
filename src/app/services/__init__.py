@@ -12,7 +12,7 @@ from app.services.sample import (
     SampleSessionService,
     SampleUserService,
 )
-from app.services.user_account.user_account import UserService
+from app.services.user_account.user_account import UserAccountService
 
 __all__ = [
     "AnalysisService",
@@ -26,5 +26,5 @@ __all__ = [
     "SampleFileService",
     "SampleSessionService",
     "SampleUserService",
-    "UserService",
+    "UserAccountService",
 ]

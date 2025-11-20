@@ -3,21 +3,21 @@
 このモジュールは、ユーザー管理機能に関連するビジネスロジックを提供します。
 
 主なサービス:
-    - UserService: ユーザー管理サービス（ユーザー作成、更新、認証、ロール管理）
+    - UserAccountService: ユーザー管理サービス（ユーザー作成、更新、認証、ロール管理）
 
 使用例:
-    >>> from app.services.user_account import UserService
-    >>> from app.schemas.user_account import UserUpdate
+    >>> from app.services.user_account import UserAccountService
+    >>> from app.schemas.user_account import UserAccountUpdate
     >>>
     >>> async with get_db() as db:
-    ...     user_service = UserService(db)
+    ...     user_service = UserAccountService(db)
     ...     user = await user_service.get_by_email("user@example.com")
     ...     updated = await user_service.update(
     ...         user_id=user.id,
-    ...         user_update=UserUpdate(full_name="新しい名前")
+    ...         user_update=UserAccountUpdate(full_name="新しい名前")
     ...     )
 """
 
-from app.services.user_account.user_account import UserService
+from app.services.user_account.user_account import UserAccountService
 
-__all__ = ["UserService"]
+__all__ = ["UserAccountService"]

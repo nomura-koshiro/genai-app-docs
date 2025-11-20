@@ -101,9 +101,9 @@ from app.schemas.sample.sample_user import (
     SampleUserResponse,
 )
 from app.schemas.user_account.user_account import (
-    UserListResponse,
-    UserResponse,
-    UserUpdate,
+    UserAccountListResponse,
+    UserAccountResponse,
+    UserAccountUpdate,
 )
 
 __all__ = [
@@ -201,7 +201,7 @@ __all__ = [
     "ProjectMemberBulkError",
     "UserRoleResponse",
     # ユーザースキーマ
-    "UserResponse",
-    "UserUpdate",
-    "UserListResponse",
+    "UserAccountListResponse",
+    "UserAccountResponse",
+    "UserAccountUpdate",
 ]
