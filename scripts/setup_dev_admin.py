@@ -1,25 +1,41 @@
-"""開発モードユーザーをSystemAdminに昇格するスクリプト（SQLAlchemy ORM使用）。
+"""開発環境用の管理者ユーザーをセットアップするスクリプト。
 
-ユーザーが存在しない場合は自動作成し、SystemAdminロールを付与します。
-既存ユーザーの場合は、SystemAdminロールを追加します。
+このスクリプトは開発モード認証用の管理者ユーザーを作成または更新します。
+
+主な機能:
+    - ユーザーが存在しない場合: 新規作成 + SystemAdminロール付与
+    - ユーザーが存在する場合: SystemAdminロールを追加（必要な場合のみ）
+
+使用方法:
+    uv run python scripts/setup_dev_admin.py
+
+実行タイミング:
+    - 開発環境の初回セットアップ時
+    - データベースをリセットした後
+    - 管理者専用エンドポイントをテストする前
+
+環境変数:
+    DEV_MOCK_USER_OID: 開発ユーザーのAzure Object ID (デフォルト: dev-azure-oid-12345)
+    DEV_MOCK_USER_EMAIL: 開発ユーザーのメールアドレス (デフォルト: dev.user@example.com)
+    DEV_MOCK_USER_NAME: 開発ユーザーの表示名 (デフォルト: Development User)
 """
 
 import asyncio
 import sys
 from pathlib import Path
 
-from app.core.config import settings
-from app.core.database import get_db
-from app.services.user_account.user_account import UserAccountService
-
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root / "src"))
 
+from app.core.config import settings  # noqa: E402
+from app.core.database import get_db  # noqa: E402
+from app.services.user_account.user_account import UserAccountService  # noqa: E402
 
-async def update_dev_user_roles():
-    """開発ユーザーを取得または作成し、SystemAdminロールを付与します。"""
+
+async def setup_dev_admin():
+    """開発環境用の管理者ユーザーをセットアップします。"""
     print("=" * 60)
-    print("開発モードユーザー昇格（get_or_create使用）")
+    print("開発管理者セットアップ")
     print("=" * 60)
     print()
 
@@ -86,4 +102,4 @@ async def update_dev_user_roles():
 
 
 if __name__ == "__main__":
-    asyncio.run(update_dev_user_roles())
+    asyncio.run(setup_dev_admin())

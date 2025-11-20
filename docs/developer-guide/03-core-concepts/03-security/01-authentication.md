@@ -4,12 +4,11 @@
 
 ## 目次
 
-- [認証モードの選択](#認証モードの選択)
-- [Azure AD認証（本番環境）](#azure-ad認証本番環境)
-- [開発モード認証](#開発モード認証)
-- [レガシー: JWT認証（参考）](#レガシー-jwt認証参考)
-- [パスワードハッシュ化](#パスワードハッシュ化)
-- [APIキー生成](#apiキー生成)
+1. [認証モードの選択](#認証モードの選択)
+2. [本番環境: Azure AD認証](#本番環境-azure-ad認証)
+3. [開発環境: モック認証](#開発環境-モック認証)
+4. [共通セキュリティ機能](#共通セキュリティ機能)
+5. [レガシー機能（参考）](#レガシー機能参考)
 
 ---
 
@@ -56,7 +55,7 @@ def validate_dev_auth_not_in_production(self) -> Settings:
 
 ---
 
-## Azure AD認証（本番環境）
+## 本番環境: Azure AD認証
 
 本番環境では、**Azure AD Bearer認証**を使用します。`fastapi-azure-auth`ライブラリにより、Azure ADトークンの自動検証を実現します。
 
@@ -233,7 +232,7 @@ class UserAccount(Base, TimestampMixin):
 
 ---
 
-## 開発モード認証
+## 開発環境: モック認証
 
 開発環境では、**モック認証**を使用して簡易的な認証を提供します。
 
@@ -344,79 +343,33 @@ async def dev_test(user: CurrentUserAzureDep):
 - **固定トークン**: モックトークンは固定値（セキュアではない）
 - **開発専用**: ローカル開発環境でのみ使用
 
----
+### 開発管理者ユーザーのセットアップ
 
-## レガシー: SampleUser用JWT認証（参考）
+開発環境で管理者権限（SystemAdmin）が必要なエンドポイントをテストする場合、`setup_dev_admin.py`スクリプトを使用します。
 
-以下は、SampleUserモデル用のレガシー認証機能です。段階的に Azure AD 認証に移行予定です。
+**スクリプトの場所**: `scripts/setup_dev_admin.py`
 
-### トークン生成
+**実行方法**:
 
-**実装場所**: `src/app/core/security/jwt.py`
-
-```python
-def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str
+```bash
+uv run python scripts/setup_dev_admin.py
 ```
 
-**トークンに含まれるフィールド**:
+このスクリプトは、開発ユーザー（`DEV_MOCK_USER_OID`で識別）にSystemAdminロールを付与します。ユーザーが存在しない場合は新規作成し、既に存在する場合はロールを追加します。
 
-- `sub`: Subject（user_id）
-- `exp`: 有効期限（UTC）
-- `iat`: 発行時刻（UTC）
-- `type`: トークンタイプ（"access"）
-
-**アルゴリズム**: HS256（HMAC-SHA256）
-
-**デフォルト有効期限**: 30分（`ACCESS_TOKEN_EXPIRE_MINUTES`）
-
-### トークン検証
-
-```python
-def decode_access_token(token: str) -> dict[str, Any] | None
-```
-
-**検証項目**:
-
-1. 署名の検証（SECRET_KEYとの一致）
-2. 有効期限の検証（exp）
-3. アルゴリズムの検証（HS256）
-4. subフィールドの存在確認
-
-**無効なトークンの場合**: `None`を返し、警告ログを記録
-
-### 認証依存性注入（SampleUser用）
-
-**実装場所**: `src/app/api/dependencies.py`
-
-```python
-# 基本認証
-async def get_current_user(token: str = Depends(oauth2_scheme)) -> SampleUser
-
-# アクティブユーザー
-async def get_current_active_user(current_user: SampleUser = Depends(get_current_user)) -> SampleUser
-
-# スーパーユーザー
-async def get_current_superuser(current_user: SampleUser = Depends(get_current_user)) -> SampleUser
-
-# オプション認証（ゲスト対応）
-async def get_current_user_optional(authorization: str | None = Header(None)) -> SampleUser | None
-```
-
-**認証フロー**:
-
-1. Authorizationヘッダーから`Bearer <token>`を抽出
-2. JWTトークンをデコードして検証
-3. ペイロードから`user_id`を抽出
-4. データベースからユーザー情報を取得
-5. アクティブ状態・権限チェック
+> **詳細な使用方法**: [クイックスタートガイド - 開発管理者ユーザーのセットアップ](../../01-getting-started/05-quick-start.md#開発管理者ユーザーのセットアップ)を参照してください。
 
 ---
 
-## パスワードハッシュ化
+## 共通セキュリティ機能
+
+認証方式に関わらず使用される共通のセキュリティ機能について説明します。
+
+### パスワードハッシュ化
 
 **実装場所**: `src/app/core/security/password.py`
 
-### アルゴリズム
+#### アルゴリズム
 
 - **bcrypt**: パスワードハッシュアルゴリズム
 - **コスト**: 自動（デフォルト12ラウンド）
@@ -441,7 +394,7 @@ is_valid = verify_password("SecurePass123!", hashed)  # → True
 - bcryptのsalt自動処理
 - 同じパスワードでも毎回異なるハッシュ生成
 
-### パスワード強度検証
+#### パスワード強度検証
 
 **パスワード要件（必須）**:
 
@@ -463,9 +416,7 @@ is_valid, error = validate_password_strength("SecurePass123!")
 # → (True, "")
 ```
 
----
-
-## APIキー生成
+### APIキー生成
 
 **実装場所**: `src/app/core/security/api_key.py`
 
@@ -488,7 +439,7 @@ api_key = generate_api_key()
 hashed_api_key = hash_password(api_key)
 ```
 
-### APIキーのハッシュ化保存
+#### APIキーのハッシュ化保存
 
 **実装場所**: `src/app/models/sample/sample_user.py`
 
@@ -523,12 +474,80 @@ return APIKeyResponse(
 )
 ```
 
-### セキュリティ効果
+#### セキュリティ効果
 
 1. **平文保存の防止**: トークンが漏洩してもデータベースから復元不可能
 2. **bcrypt使用**: パスワードと同じハッシュアルゴリズムで保護
 3. **一度だけ表示**: ユーザーに最初の一度だけ平文を表示
 4. **検証時**: `verify_password()`で定時間比較（タイミング攻撃対策）
+
+---
+
+## レガシー機能（参考）
+
+以下は、SampleUserモデル用のレガシー認証機能です。段階的に Azure AD 認証に移行予定です。
+
+### SampleUser用JWT認証
+
+#### トークン生成
+
+**実装場所**: `src/app/core/security/jwt.py`
+
+```python
+def create_access_token(data: dict[str, Any], expires_delta: timedelta | None = None) -> str
+```
+
+**トークンに含まれるフィールド**:
+
+- `sub`: Subject（user_id）
+- `exp`: 有効期限（UTC）
+- `iat`: 発行時刻（UTC）
+- `type`: トークンタイプ（"access"）
+
+**アルゴリズム**: HS256（HMAC-SHA256）
+
+**デフォルト有効期限**: 30分（`ACCESS_TOKEN_EXPIRE_MINUTES`）
+
+#### トークン検証
+
+```python
+def decode_access_token(token: str) -> dict[str, Any] | None
+```
+
+**検証項目**:
+
+1. 署名の検証（SECRET_KEYとの一致）
+2. 有効期限の検証（exp）
+3. アルゴリズムの検証（HS256）
+4. subフィールドの存在確認
+
+**無効なトークンの場合**: `None`を返し、警告ログを記録
+
+#### 認証依存性注入（SampleUser用）
+
+**実装場所**: `src/app/api/dependencies.py`
+
+```python
+# 基本認証
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> SampleUser
+
+# アクティブユーザー
+async def get_current_active_user(current_user: SampleUser = Depends(get_current_user)) -> SampleUser
+
+# スーパーユーザー
+async def get_current_superuser(current_user: SampleUser = Depends(get_current_user)) -> SampleUser
+
+# オプション認証（ゲスト対応）
+async def get_current_user_optional(authorization: str | None = Header(None)) -> SampleUser | None
+```
+
+**認証フロー**:
+
+1. Authorizationヘッダーから`Bearer <token>`を抽出
+2. JWTトークンをデコードして検証
+3. ペイロードから`user_id`を抽出
+4. データベースからユーザー情報を取得
+5. アクティブ状態・権限チェック
 
 ---
 
