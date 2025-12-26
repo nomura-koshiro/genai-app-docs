@@ -24,7 +24,7 @@ class TestExceptionHandlers:
     """RFC 9457準拠の例外ハンドラーのテストクラス。"""
 
     def test_register_exception_handlers(self):
-        """例外ハンドラーが正しく登録されること。"""
+        """[test_exception_handlers-001] 例外ハンドラーが正しく登録されること。"""
         app = FastAPI()
         register_exception_handlers(app)
 
@@ -33,7 +33,7 @@ class TestExceptionHandlers:
 
     @pytest.mark.asyncio
     async def test_validation_error_handler(self):
-        """ValidationErrorがRFC 9457準拠の422レスポンスになること。"""
+        """[test_exception_handlers-002] ValidationErrorがRFC 9457準拠の422レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
         # モックリクエスト
@@ -60,7 +60,7 @@ class TestExceptionHandlers:
         assert response.media_type == "application/problem+json"  # RFC 9457準拠のContent-Type
 
         # レスポンスボディの検証（RFC 9457準拠）
-        body = response.body.decode()
+        body = bytes(response.body).decode()
         import json
 
         data = json.loads(body)
@@ -76,7 +76,7 @@ class TestExceptionHandlers:
 
     @pytest.mark.asyncio
     async def test_authentication_error_handler(self):
-        """AuthenticationErrorがRFC 9457準拠の401レスポンスになること。"""
+        """[test_exception_handlers-003] AuthenticationErrorがRFC 9457準拠の401レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
         request = Request(
@@ -97,7 +97,7 @@ class TestExceptionHandlers:
         assert response.status_code == 401
         assert response.media_type == "application/problem+json"
 
-        body = response.body.decode()
+        body = bytes(response.body).decode()
         import json
 
         data = json.loads(body)
@@ -107,7 +107,7 @@ class TestExceptionHandlers:
 
     @pytest.mark.asyncio
     async def test_authorization_error_handler(self):
-        """AuthorizationErrorがRFC 9457準拠の403レスポンスになること。"""
+        """[test_exception_handlers-004] AuthorizationErrorがRFC 9457準拠の403レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
         request = Request(
@@ -128,7 +128,7 @@ class TestExceptionHandlers:
         assert response.status_code == 403
         assert response.media_type == "application/problem+json"
 
-        body = response.body.decode()
+        body = bytes(response.body).decode()
         import json
 
         data = json.loads(body)
@@ -138,7 +138,7 @@ class TestExceptionHandlers:
 
     @pytest.mark.asyncio
     async def test_not_found_error_handler(self):
-        """NotFoundErrorがRFC 9457準拠の404レスポンスになること。"""
+        """[test_exception_handlers-005] NotFoundErrorがRFC 9457準拠の404レスポンスになること。"""
         from app.api.core.exception_handlers import app_exception_handler
 
         request = Request(
@@ -159,7 +159,7 @@ class TestExceptionHandlers:
         assert response.status_code == 404
         assert response.media_type == "application/problem+json"
 
-        body = response.body.decode()
+        body = bytes(response.body).decode()
         import json
 
         data = json.loads(body)

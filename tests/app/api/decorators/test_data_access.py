@@ -26,7 +26,7 @@ class TestCacheResult:
 
     @pytest.mark.asyncio
     async def test_cache_hit(self):
-        """キャッシュヒット時にキャッシュから返却されることをテスト。"""
+        """[test_data_access-001] キャッシュヒット時にキャッシュから返却されることをテスト。"""
         mock_cache = AsyncMock()
         mock_cache.get.return_value = {"cached": "data"}
 
@@ -44,7 +44,7 @@ class TestCacheResult:
 
     @pytest.mark.asyncio
     async def test_cache_miss_and_set(self):
-        """キャッシュミス時に関数実行後キャッシュに保存されることをテスト。"""
+        """[test_data_access-002] キャッシュミス時に関数実行後キャッシュに保存されることをテスト。"""
         mock_cache = AsyncMock()
         mock_cache.get.return_value = None  # キャッシュミス
 
@@ -70,7 +70,7 @@ class TestTransactional:
 
     @pytest.mark.asyncio
     async def test_commit_on_success(self):
-        """正常終了時にコミットされることをテスト。"""
+        """[test_data_access-003] 正常終了時にコミットされることをテスト。"""
         mock_db = AsyncMock()
 
         class TestService:
@@ -90,7 +90,7 @@ class TestTransactional:
 
     @pytest.mark.asyncio
     async def test_rollback_on_error(self):
-        """例外発生時にロールバックされることをテスト。"""
+        """[test_data_access-004] 例外発生時にロールバックされることをテスト。"""
         mock_db = AsyncMock()
 
         class TestService:

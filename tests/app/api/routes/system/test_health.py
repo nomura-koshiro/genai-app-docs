@@ -1,47 +1,36 @@
-"""システムエンドポイントのテスト。"""
+"""ヘルスチェックエンドポイントのテスト。
+
+対象: src/app/api/routes/system/health.py
+"""
+
+from unittest.mock import patch
 
 import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.asyncio
-async def test_root_endpoint(client: AsyncClient):
-    """ルートエンドポイントのテスト。"""
-    # Act
-    response = await client.get("/")
+class TestHealthEndpoint:
+    """ヘルスチェックエンドポイント(/health)のテスト。"""
 
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "message" in data
-    assert "version" in data
-    assert "docs" in data
+    @pytest.mark.asyncio
+    async def test_health_returns_200(self, client: AsyncClient):
+        """[test_health-001] ヘルスチェックエンドポイントが200を返すこと。"""
+        response = await client.get("/health")
+        assert response.status_code == 200
 
+    @pytest.mark.asyncio
+    async def test_health_response_structure(self, client: AsyncClient, db_session):
+        """[test_health-002] レスポンスが期待される構造を持つこと。"""
 
-@pytest.mark.asyncio
-async def test_health_endpoint(client: AsyncClient):
-    """ヘルスチェックエンドポイントのテスト。"""
-    # Act
-    response = await client.get("/health")
+        # get_dbをモックしてテスト用セッションを返す
+        async def mock_get_db():
+            yield db_session
 
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "healthy"
-    assert "timestamp" in data
-    assert "version" in data
-    assert "environment" in data
+        with patch("app.api.routes.system.health.get_db", mock_get_db):
+            response = await client.get("/health")
+            data = response.json()
 
-
-@pytest.mark.asyncio
-async def test_openapi_schema(client: AsyncClient):
-    """OpenAPIスキーマの取得テスト。"""
-    # Act
-    response = await client.get("/openapi.json")
-
-    # Assert
-    assert response.status_code == 200
-    schema = response.json()
-    assert "openapi" in schema
-    assert "info" in schema
-    assert "paths" in schema
+            assert data["status"] == "healthy"
+            assert "timestamp" in data
+            assert "version" in data
+            assert "environment" in data

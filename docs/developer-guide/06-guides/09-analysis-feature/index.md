@@ -68,7 +68,7 @@
 
 ### レイヤード構造
 
-```mermaid
+::: mermaid
 graph TB
     Client[クライアント<br/>React/Vue]
     API[API層<br/>FastAPI Router]
@@ -96,7 +96,7 @@ graph TB
     style DB fill:#64b5f6
     style Storage fill:#fff176
     style LLM fill:#ff8a65
-```
+:::
 
 ### サービス層の分割設計
 
@@ -117,7 +117,7 @@ services/analysis/
 
 ### データモデルリレーション
 
-```mermaid
+::: mermaid
 erDiagram
     AnalysisSession ||--o{ AnalysisStep : has
     AnalysisSession ||--o{ AnalysisFile : has
@@ -156,7 +156,7 @@ erDiagram
         ARRAY table_axis
         TIMESTAMP created_at
     }
-```
+:::
 
 ## AIエージェント機能
 
@@ -588,7 +588,7 @@ fig = heatmap.create(
 
 ### ファイルアップロードフロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -614,11 +614,11 @@ sequenceDiagram
 
     FS-->>-API: FileUploadResponse
     API-->>-C: 201 Created
-```
+:::
 
 ### AIチャット実行フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -652,11 +652,11 @@ sequenceDiagram
 
     CS-->>-API: ChatResponse
     API-->>-C: 200 OK
-```
+:::
 
 ### ステップ実行フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -691,7 +691,7 @@ sequenceDiagram
     Exec-->>-SS: 実行結果
     SS-->>-API: StepExecuteResponse
     API-->>-C: 200 OK
-```
+:::
 
 ## 使用方法
 

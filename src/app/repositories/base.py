@@ -17,6 +17,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# from sqlalchemy.orm.attributes import flag_modified
 from app.core.logging import get_logger
 from app.models.base import Base
 
@@ -354,6 +355,8 @@ class BaseRepository[ModelType: Base, IDType: (int, uuid.UUID)]:
         for field, value in update_data.items():
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
+                # JSONB など複合型の変更を明示的にマーク
+                # flag_modified(db_obj, field)
 
         await self.db.flush()
         await self.db.refresh(db_obj)

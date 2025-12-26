@@ -8,7 +8,7 @@
 
 ### リクエストフロー（クライアント → データベース）
 
-```mermaid
+::: mermaid
 graph LR
     A[HTTPリクエスト] --> B[API Layer]
     B --> C[Service Layer]
@@ -22,11 +22,11 @@ graph LR
     style D fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
     style E fill:#f48fb1,stroke:#880e4f,stroke-width:3px,color:#000
     style F fill:#757575,stroke:#212121,stroke-width:3px,color:#fff
-```
+:::
 
 ### レスポンスフロー（データベース → クライアント）
 
-```mermaid
+::: mermaid
 graph LR
     F[(PostgreSQL<br/>Database)] --> E[Model Layer]
     E --> D[Repository Layer]
@@ -40,13 +40,13 @@ graph LR
     style C fill:#ce93d8,stroke:#4a148c,stroke-width:3px,color:#000
     style B fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
     style A fill:#81d4fa,stroke:#01579b,stroke-width:3px,color:#000
-```
+:::
 
 ### レイヤーの役割
 
 各レイヤーの責務を詳細に図示します。
 
-```mermaid
+::: mermaid
 graph TB
     subgraph "API Layer api/"
         direction TB
@@ -112,7 +112,7 @@ graph TB
     style Model_2 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
     style Model_3 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
     style Model_4 fill:#ffe0b2,stroke:#ef6c00,stroke-width:2px,color:#000
-```
+:::
 
 **各レイヤーの詳細:**
 
@@ -177,7 +177,7 @@ graph TB
 
 以下は、新しいユーザーを作成する際の各レイヤーの連携を示すシーケンス図です。
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant Client
     participant API as API Layer<br/>(routes/users.py)
@@ -216,7 +216,7 @@ sequenceDiagram
     API->>API: SampleUserResponse.model_validate()
 
     API-->>Client: 201 Created<br/>SampleUserResponse
-```
+:::
 
 この図から、各レイヤーが明確に分離され、それぞれの責務を果たしていることが分かります。
 
@@ -283,81 +283,80 @@ async def get_current_user(
 - 複数リポジトリの調整
 - データ変換とバリデーション
 
-**実装例**:
+**実装例（Facadeパターン）**:
+
+サービス層はFacadeパターンで実装され、機能別にサブサービスに分割されています。
 
 ```python
-# src/app/services/sample_user.py
+# src/app/services/project/project/__init__.py（Facadeクラス）
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.repositories.sample_user import SampleUserRepository
-from app.repositories.session import SessionRepository
-from app.core.security import hash_password, create_access_token
-from app.core.exceptions import ValidationError, AuthenticationError
-from app.schemas.sample_user import SampleUserCreate
+from app.models import Project
+from app.schemas import ProjectCreate, ProjectUpdate
+from app.services.project.project.crud import ProjectCrudService
 
-class SampleUserService:
-    """ユーザー関連のビジネスロジック。"""
+
+class ProjectService:
+    """プロジェクト管理のビジネスロジックを提供するサービスクラス。
+
+    各機能は専用のサービスクラスに委譲されます（Facadeパターン）。
+    """
 
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.user_repo = SampleUserRepository(db)
-        self.session_repo = SessionRepository(db)
+        self._crud_service = ProjectCrudService(db)
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        """新しいユーザーを作成します。
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        """新しいプロジェクトを作成します。"""
+        return await self._crud_service.create_project(project_data, creator_id)
 
-        ビジネスルール:
-        - メールアドレスは一意である必要がある
-        - ユーザー名は一意である必要がある
-        - パスワードは安全にハッシュ化される
-        """
-        # ビジネスルール1: 既存ユーザーのチェック
-        existing_user = await self.user_repo.get_by_email(user_data.email)
-        if existing_user:
+    async def get_project(self, project_id: uuid.UUID) -> Project | None:
+        """プロジェクトIDでプロジェクト情報を取得します。"""
+        return await self._crud_service.get_project(project_id)
+```
+
+```python
+# src/app/services/project/project/crud.py（サブサービス）
+import uuid
+from app.core.exceptions import NotFoundError, ValidationError
+from app.models import Project, ProjectRole
+from app.services.project.project.base import ProjectBaseService
+
+
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクトのCRUD操作を提供するサービス。"""
+
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        """新しいプロジェクトを作成します。"""
+        # ビジネスルール: プロジェクトコードの重複チェック
+        existing = await self.project_repo.get_by_code(project_data.code)
+        if existing:
             raise ValidationError(
-                "User with this email already exists",
-                details={"email": user_data.email}
+                "プロジェクトコードが既に使用されています",
+                details={"code": project_data.code}
             )
 
-        existing_username = await self.user_repo.get_by_username(user_data.username)
-        if existing_username:
-            raise ValidationError(
-                "Username already taken",
-                details={"username": user_data.username}
-            )
-
-        # ビジネスルール2: パスワードのハッシュ化
-        hashed_password = hash_password(user_data.password)
-
-        # リポジトリを使用してユーザーを作成
-        user = await self.user_repo.create(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
+        # プロジェクト作成
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            description=project_data.description,
+            created_by=creator_id,
         )
 
-        return user
-
-    async def authenticate_user(self, email: str, password: str) -> tuple[User, str]:
-        """ユーザーを認証し、アクセストークンを返します。"""
-        # ユーザーの取得
-        user = await self.user_repo.get_by_email(email)
-        if not user:
-            raise AuthenticationError("Invalid email or password")
-
-        # パスワードの検証
-        if not verify_password(password, user.hashed_password):
-            raise AuthenticationError("Invalid email or password")
-
-        # アクティブユーザーのチェック
-        if not user.is_active:
-            raise AuthenticationError("User account is inactive")
-
-        # アクセストークンの生成
-        access_token = create_access_token(
-            data={"sub": str(user.id), "email": user.email}
+        # 作成者をOWNERとして追加
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
         )
 
-        return user, access_token
+        await self.db.commit()
+        return project
 ```
 
 **禁止事項**:
@@ -670,35 +669,33 @@ class SampleUser(Base):
 トランザクションはService層で管理します。
 
 ```python
-# src/app/services/sample_user.py
-class SampleUserService:
-    async def register_user_with_profile(
+# src/app/services/project/project/crud.py
+class ProjectCrudService(ProjectBaseService):
+    async def create_project(
         self,
-        user_data: SampleUserCreate,
-        profile_data: ProfileCreate,
-    ) -> SampleUser:
-        """ユーザーとプロフィールを同時に作成（トランザクション）。"""
+        project_data: ProjectCreate,
+        creator_id: uuid.UUID,
+    ) -> Project:
+        """プロジェクトとメンバーを同時に作成（トランザクション）。"""
         # 複数のリポジトリ操作を1つのトランザクションで実行
-        try:
-            # ユーザー作成
-            user = await self.user_repo.create(
-                email=user_data.email,
-                username=user_data.username,
-                hashed_password=hash_password(user_data.password),
-            )
+        # プロジェクト作成
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            description=project_data.description,
+            created_by=creator_id,
+        )
 
-            # プロフィール作成
-            await self.profile_repo.create(
-                user_id=user.id,
-                **profile_data.model_dump(),
-            )
+        # 作成者をOWNERとして追加
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
+        )
 
-            # トランザクションは get_db() の finally ブロックでコミットされる
-            return user
-
-        except Exception as e:
-            # エラーが発生した場合、get_db() がロールバックを実行
-            raise
+        # 明示的にコミット
+        await self.db.commit()
+        return project
 ```
 
 データベースセッションの管理:

@@ -22,7 +22,7 @@
 3. **各テスト関数の後**: 全テーブルを削除
 4. **テストセッション終了時**: `test_db`データベースを削除
 
-```mermaid
+::: mermaid
 graph TB
     subgraph "1. テストセッション開始"
         A[pytest起動] --> B[setup_test_database fixture]
@@ -56,7 +56,7 @@ graph TB
     style N fill:#ccccff,stroke:#1976d2,stroke-width:3px
     style I fill:#ffffcc,stroke:#f57c00,stroke-width:3px
     style K fill:#ffe0cc,stroke:#e64a19,stroke-width:3px
-```
+:::
 
 この仕組みにより、各テストは完全に独立した環境で実行され、テスト間のデータ干渉を防ぎます。
 

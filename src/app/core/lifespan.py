@@ -3,7 +3,7 @@
 このモジュールは、FastAPIアプリケーションの起動時と終了時に実行される処理を管理します。
 
 主な役割:
-    1. **起動時処理**: データベース初期化、Redis接続、設定情報ロギング
+    1. **起動時処理**: データベース初期化、シードデータ投入、Redis接続、設定情報ロギング
     2. **終了時処理**: Redis切断、データベース接続クローズ
 
 Usage:
@@ -19,10 +19,40 @@ from fastapi import FastAPI
 
 from app.core.cache import cache_manager
 from app.core.config import get_env_file, settings
-from app.core.database import close_db, init_db
+from app.core.database import AsyncSessionLocal, close_db, init_db
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+async def load_seed_data_if_needed() -> None:
+    """開発・テスト環境でシードデータを投入します。
+
+    本番環境ではスキップされます。
+    既存データがある場合は重複投入されません（冪等性を担保）。
+    """
+    if settings.ENVIRONMENT == "production":
+        logger.info("本番環境のためシードデータ投入をスキップします")
+        return
+
+    try:
+        from app.seeds.seed_loader import load_seed_data
+
+        async with AsyncSessionLocal() as session:
+            results = await load_seed_data(session)
+            total = sum(results.values())
+            if total > 0:
+                logger.info(f"シードデータを投入しました（{total}件）")
+            else:
+                logger.info("シードデータは既に投入済みです")
+    except Exception as e:
+        logger.error(
+            "シードデータ投入エラー",
+            error_type=type(e).__name__,
+            error_message=str(e),
+        )
+        # シードデータ投入の失敗はアプリ起動を妨げない
+        # 開発環境では警告のみ
 
 
 @asynccontextmanager
@@ -79,13 +109,16 @@ async def lifespan(app: FastAPI):
     if env_files:
         logger.info("設定ファイル読み込み", env_files=list(env_files))
 
-    # データベースURLからパスワードをマスク
+    # データベースURLからトークンをマスク
     db_url_safe = settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else "***"
     logger.info("データベース接続先", db_url=f"***@{db_url_safe}")
 
     # データベーステーブルを確認・作成
     await init_db()
     logger.info("データベーステーブルの確認が完了しました")
+
+    # シードデータを投入（開発・テスト環境のみ）
+    await load_seed_data_if_needed()
 
     # Redisキャッシュを初期化
     if settings.REDIS_URL:
@@ -94,7 +127,7 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Redisキャッシュが無効です（REDIS_URLが設定されていません）")
 
-    # ✨ 追加: Azure AD認証の初期化（本番モードのみ）
+    # Azure AD認証の初期化（本番モードのみ）
     if settings.AUTH_MODE == "production":
         try:
             from app.core.security.azure_ad import initialize_azure_scheme

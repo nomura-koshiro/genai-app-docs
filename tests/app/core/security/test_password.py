@@ -11,7 +11,7 @@ class TestPasswordHashing:
     """パスワードハッシュ化のテストクラス。"""
 
     def test_hash_password_success(self):
-        """パスワードのハッシュ化が成功すること。"""
+        """[test_password-001] パスワードのハッシュ化が成功すること。"""
         # Arrange
         password = "SecurePass123!"
 
@@ -24,7 +24,7 @@ class TestPasswordHashing:
         assert len(hashed) >= 60  # bcryptハッシュの標準長
 
     def test_hash_password_different_salts(self):
-        """同じパスワードでも毎回異なるハッシュが生成されること（salt）。"""
+        """[test_password-002] 同じパスワードでも毎回異なるハッシュが生成されること（salt）。"""
         # Arrange
         password = "SecurePass123!"
 
@@ -36,7 +36,7 @@ class TestPasswordHashing:
         assert hash1 != hash2  # saltが異なるため
 
     def test_hash_password_with_multibyte_characters(self):
-        """マルチバイト文字（日本語）を含むパスワードのハッシュ化。"""
+        """[test_password-003] マルチバイト文字（日本語）を含むパスワードのハッシュ化。"""
         # Arrange
         password = "パスワード123!Abc"
 
@@ -48,7 +48,7 @@ class TestPasswordHashing:
         assert hashed.startswith("$2b$")
 
     def test_hash_password_long_password(self):
-        """72バイトを超える長いパスワードのハッシュ化。"""
+        """[test_password-004] 72バイトを超える長いパスワードのハッシュ化。"""
         # Arrange
         password = "A" * 100  # 100文字の長いパスワード
 
@@ -64,7 +64,7 @@ class TestPasswordVerification:
     """パスワード検証のテストクラス。"""
 
     def test_verify_password_success(self):
-        """正しいパスワードの検証が成功すること。"""
+        """[test_password-005] 正しいパスワードの検証が成功すること。"""
         # Arrange
         password = "SecurePass123!"
         hashed = hash_password(password)
@@ -76,7 +76,7 @@ class TestPasswordVerification:
         assert result is True
 
     def test_verify_password_failure(self):
-        """誤ったパスワードの検証が失敗すること。"""
+        """[test_password-006] 誤ったパスワードの検証が失敗すること。"""
         # Arrange
         correct_password = "SecurePass123!"
         wrong_password = "WrongPassword456!"
@@ -89,7 +89,7 @@ class TestPasswordVerification:
         assert result is False
 
     def test_verify_password_case_sensitive(self):
-        """パスワード検証が大文字小文字を区別すること。"""
+        """[test_password-007] パスワード検証が大文字小文字を区別すること。"""
         # Arrange
         password = "SecurePass123!"
         hashed = hash_password(password)
@@ -101,7 +101,7 @@ class TestPasswordVerification:
         assert result is False
 
     def test_verify_password_with_multibyte(self):
-        """マルチバイト文字を含むパスワードの検証。"""
+        """[test_password-008] マルチバイト文字を含むパスワードの検証。"""
         # Arrange
         password = "パスワード123!Abc"
         hashed = hash_password(password)
@@ -117,7 +117,7 @@ class TestPasswordStrengthValidation:
     """パスワード強度検証のテストクラス。"""
 
     def test_validate_strong_password(self):
-        """強いパスワードの検証が成功すること。"""
+        """[test_password-009] 強いパスワードの検証が成功すること。"""
         # Arrange
         password = "SecurePass123!"
 
@@ -129,7 +129,7 @@ class TestPasswordStrengthValidation:
         assert error == ""
 
     def test_validate_password_too_short(self):
-        """8文字未満のパスワードが拒否されること。"""
+        """[test_password-010] 8文字未満のパスワードが拒否されること。"""
         # Arrange
         password = "Pass1!"
 
@@ -141,7 +141,7 @@ class TestPasswordStrengthValidation:
         assert "8文字以上" in error
 
     def test_validate_password_no_uppercase(self):
-        """大文字がないパスワードが拒否されること。"""
+        """[test_password-011] 大文字がないパスワードが拒否されること。"""
         # Arrange
         password = "password123!"
 
@@ -153,7 +153,7 @@ class TestPasswordStrengthValidation:
         assert "大文字" in error
 
     def test_validate_password_no_lowercase(self):
-        """小文字がないパスワードが拒否されること。"""
+        """[test_password-012] 小文字がないパスワードが拒否されること。"""
         # Arrange
         password = "PASSWORD123!"
 
@@ -165,7 +165,7 @@ class TestPasswordStrengthValidation:
         assert "小文字" in error
 
     def test_validate_password_no_digit(self):
-        """数字がないパスワードが拒否されること。"""
+        """[test_password-013] 数字がないパスワードが拒否されること。"""
         # Arrange
         password = "SecurePass!"
 
@@ -177,7 +177,7 @@ class TestPasswordStrengthValidation:
         assert "数字" in error
 
     def test_validate_password_no_special_char(self):
-        """特殊文字がなくても検証が成功すること（推奨だが必須ではない）。"""
+        """[test_password-014] 特殊文字がなくても検証が成功すること（推奨だが必須ではない）。"""
         # Arrange
         password = "SecurePass123"
 
@@ -189,7 +189,7 @@ class TestPasswordStrengthValidation:
         assert error == ""
 
     def test_validate_password_minimum_requirements(self):
-        """最低要件を満たすパスワードの検証。"""
+        """[test_password-015] 最低要件を満たすパスワードの検証。"""
         # Arrange
         password = "Password1"  # 8文字、大文字、小文字、数字
 

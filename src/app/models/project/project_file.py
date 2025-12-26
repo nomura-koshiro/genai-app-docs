@@ -36,6 +36,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 if TYPE_CHECKING:
+    from app.models.analysis.analysis_file import AnalysisFile
+    from app.models.driver_tree.driver_tree_file import DriverTreeFile
     from app.models.project.project import Project
     from app.models.user_account.user_account import UserAccount
 
@@ -129,6 +131,18 @@ class ProjectFile(Base):
     uploader: Mapped["UserAccount"] = relationship(
         "UserAccount",
         foreign_keys=[uploaded_by],
+    )
+
+    analysis_files: Mapped[list["AnalysisFile"]] = relationship(
+        "AnalysisFile",
+        back_populates="project_file",
+        cascade="all, delete-orphan",
+    )
+
+    driver_tree_files: Mapped[list["DriverTreeFile"]] = relationship(
+        "DriverTreeFile",
+        back_populates="project_file",
+        cascade="all, delete-orphan",
     )
 
     # インデックス

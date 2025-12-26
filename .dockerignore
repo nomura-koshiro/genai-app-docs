@@ -1,0 +1,75 @@
+# Git関連
+.git
+.gitignore
+.gitattributes
+
+# Python関連
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# 仮想環境（uvが管理するので不要）
+.venv/
+venv/
+env/
+
+# uv関連
+.uv/
+
+# IDE・エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# テスト・カバレッジ
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# ドキュメント
+*.md
+!README.md
+docs/
+*.rst
+
+# CI/CD
+.github/
+.azure-pipelines/
+azure-pipelines.yml
+.gitlab-ci.yml
+.azure/
+
+# Docker関連
+Dockerfile*
+.dockerignore
+docker-compose*.yml
+
+# 環境変数ファイル（機密情報）
+.env
+.env.*
+*.env
+
+# ログファイル
+*.log
+
+# 一時ファイル
+tmp/
+temp/
+*.tmp
+
+# 不要ファイル
+scripts/
+back/
+app/
+.markdownlint.json
+.pre-commit-config.yaml

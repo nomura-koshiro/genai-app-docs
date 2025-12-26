@@ -7,12 +7,12 @@
     2. **例外ハンドリング**: グローバル例外ハンドラーの登録
 
 使用例:
-    >>> from app.api.core import CurrentUserDep, DatabaseDep
+    >>> from app.api.core import CurrentUserAccountDep, DatabaseDep
     >>> from app.api.core import register_exception_handlers
     >>>
     >>> @router.get("/profile")
     >>> async def get_profile(
-    ...     current_user: CurrentUserDep,
+    ...     current_user: CurrentUserAccountDep,
     ...     db: DatabaseDep,
     ... ):
     ...     return {"email": current_user.email}
@@ -20,25 +20,40 @@
 
 # 依存性注入
 from app.api.core.dependencies import (
-    AgentServiceDep,
-    AzureUserServiceDep,
-    CurrentSuperuserDep,
-    CurrentUserAzureDep,
-    CurrentUserDep,
-    CurrentUserOptionalDep,
+    # 分析サービス
+    AnalysisSessionServiceDep,
+    AnalysisTemplateServiceDep,
+    CurrentUserAccountDep,
+    CurrentUserAccountOptionalDep,
     DatabaseDep,
-    FileServiceDep,
+    # ドライバーツリーサービス
+    DriverTreeFileServiceDep,
+    DriverTreeNodeServiceDep,
+    DriverTreeServiceDep,
+    ProjectFileServiceDep,
+    # 認可依存性（プロジェクトメンバーシップ・ロールチェック）
+    ProjectManagerDep,
+    ProjectMemberDep,
+    ProjectMemberServiceDep,
+    ProjectModeratorDep,
     ProjectServiceDep,
-    SessionServiceDep,
+    SuperuserAccountDep,
     UserServiceDep,
-    get_agent_service,
-    get_current_active_user,
-    get_current_superuser,
-    get_current_user_optional,
+    get_analysis_session_service,
+    get_analysis_template_service,
+    get_current_active_user_account,
+    get_current_superuser_account,
+    get_current_user_account_optional,
     get_db,
-    get_file_service,
+    get_driver_tree_file_service,
+    get_driver_tree_node_service,
+    get_driver_tree_service,
+    get_project_file_service,
+    get_project_manager,
+    get_project_member,
+    get_project_member_service,
+    get_project_moderator,
     get_project_service,
-    get_session_service,
     get_user_service,
 )
 
@@ -49,26 +64,42 @@ __all__ = [
     # Database Dependencies
     "DatabaseDep",
     "get_db",
-    # Service Dependencies
+    # UserAccount Service Dependencies
     "UserServiceDep",
     "get_user_service",
-    "AzureUserServiceDep",
-    "AgentServiceDep",
-    "get_agent_service",
-    "FileServiceDep",
-    "get_file_service",
+    # Project Service Dependencies
     "ProjectServiceDep",
     "get_project_service",
-    "SessionServiceDep",
-    "get_session_service",
+    "ProjectFileServiceDep",
+    "get_project_file_service",
+    "ProjectMemberServiceDep",
+    "get_project_member_service",
+    # Analysis Service Dependencies
+    "AnalysisTemplateServiceDep",
+    "get_analysis_template_service",
+    "AnalysisSessionServiceDep",
+    "get_analysis_session_service",
+    # Driver Tree Service Dependencies
+    "DriverTreeFileServiceDep",
+    "get_driver_tree_file_service",
+    "DriverTreeServiceDep",
+    "get_driver_tree_service",
+    "DriverTreeNodeServiceDep",
+    "get_driver_tree_node_service",
     # Authentication Dependencies
-    "CurrentUserDep",
-    "get_current_active_user",
-    "CurrentUserAzureDep",
-    "CurrentSuperuserDep",
-    "get_current_superuser",
-    "CurrentUserOptionalDep",
-    "get_current_user_optional",
+    "CurrentUserAccountDep",
+    "get_current_active_user_account",
+    "SuperuserAccountDep",
+    "get_current_superuser_account",
+    "CurrentUserAccountOptionalDep",
+    "get_current_user_account_optional",
+    # Authorization Dependencies (Project Membership/Role Check)
+    "ProjectMemberDep",
+    "get_project_member",
+    "ProjectManagerDep",
+    "get_project_manager",
+    "ProjectModeratorDep",
+    "get_project_moderator",
     # Exception Handlers
     "register_exception_handlers",
 ]

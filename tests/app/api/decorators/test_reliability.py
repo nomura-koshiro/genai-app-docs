@@ -24,7 +24,7 @@ class TestRetryOnError:
 
     @pytest.mark.asyncio
     async def test_retry_and_success(self):
-        """リトライ後に成功することをテスト（Happy Path）。"""
+        """[test_reliability-001] リトライ後に成功することをテスト（Happy Path）。"""
         call_count = 0
 
         @retry_on_error(max_retries=3, delay=0.01, exceptions=(ValueError,))
@@ -42,7 +42,7 @@ class TestRetryOnError:
 
     @pytest.mark.asyncio
     async def test_all_retries_failed(self):
-        """すべてのリトライが失敗した場合にエラーが送出されることをテスト（Error Case）。"""
+        """[test_reliability-002] すべてのリトライが失敗した場合にエラーが送出されることをテスト（Error Case）。"""
         call_count = 0
 
         @retry_on_error(max_retries=2, delay=0.01, exceptions=(ValueError,))

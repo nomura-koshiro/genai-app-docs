@@ -73,7 +73,7 @@ PPT Generator機能
 
 ### サービス構造
 
-```mermaid
+::: mermaid
 graph TB
     Client[クライアント<br/>ブラウザ]
     API[API層<br/>FastAPI Router]
@@ -97,7 +97,7 @@ graph TB
     style PPTX fill:#81c784
     style PIL fill:#f06292
     style Pandas fill:#ce93d8
-```
+:::
 
 ### ストレージパス構造
 
@@ -118,7 +118,7 @@ storage_root/
 
 ### PPTダウンロードフロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -144,11 +144,11 @@ sequenceDiagram
     style S fill:#ce93d8
     style ST fill:#fff176
     style Blob fill:#64b5f6
-```
+:::
 
 ### スライドエクスポートフロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -181,11 +181,11 @@ sequenceDiagram
     style S fill:#ce93d8
     style PPTX fill:#81c784
     style ST fill:#fff176
-```
+:::
 
 ### スライド画像生成フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -204,11 +204,11 @@ sequenceDiagram
     API-->>-C: Response<br/>Content-Type: image/png
 
     Note over C,ST: 画像が存在しない場合は<br/>PPTXから動的生成することも可能
-```
+:::
 
 ### 質問データ変換フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -232,7 +232,7 @@ sequenceDiagram
 
     S-->>-API: csv_bytes
     API-->>-C: Response<br/>Content-Type: text/csv<br/>Content-Disposition: attachment
-```
+:::
 
 ## 使用方法
 

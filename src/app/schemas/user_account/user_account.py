@@ -6,8 +6,8 @@
 主なスキーマ:
     ユーザー情報:
         - UserAccountBase: 基本ユーザー情報（共通フィールド）
-        - UserAccountResponse: ユーザー情報レスポンス
         - UserAccountUpdate: ユーザー情報更新リクエスト
+        - UserAccountResponse: ユーザー情報レスポンス
         - UserAccountListResponse: ユーザー一覧レスポンス
 
 使用方法:
@@ -29,10 +29,12 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import EmailStr, Field
+
+from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
 
-class UserAccountBase(BaseModel):
+class UserAccountBase(BaseCamelCaseModel):
     """ベースユーザースキーマ。
 
     ユーザーの基本情報を定義します。他のユーザースキーマの基底クラスとして使用されます。
@@ -62,52 +64,7 @@ class UserAccountBase(BaseModel):
     roles: list[str] = Field(default_factory=list, description="システムレベルのロール")
 
 
-class UserAccountResponse(UserAccountBase):
-    """ユーザー情報レスポンススキーマ。
-
-    APIレスポンスでユーザー情報を返す際に使用します。
-
-    Attributes:
-        id (uuid.UUID): ユーザーID（UUID）
-        azure_oid (str): Azure AD Object ID
-        email (EmailStr): ユーザーメールアドレス（UserAccountBaseから継承）
-        display_name (str | None): 表示名（UserAccountBaseから継承）
-        roles (list[str]): システムレベルのロール（UserAccountBaseから継承）
-        is_active (bool): アクティブフラグ
-        created_at (datetime): 作成日時
-        updated_at (datetime): 更新日時
-        last_login (datetime | None): 最終ログイン日時
-
-    Example:
-        >>> from datetime import UTC
-        >>> user = UserAccountResponse(
-        ...     id=uuid.uuid4(),
-        ...     azure_oid="azure-oid-12345",
-        ...     email="john@company.com",
-        ...     display_name="John Doe",
-        ...     roles=["User"],
-        ...     is_active=True,
-        ...     created_at=datetime.now(UTC),
-        ...     updated_at=datetime.now(UTC),
-        ...     last_login=None
-        ... )
-
-    Note:
-        - from_attributesを有効にしているため、ORMモデルから直接変換可能です
-        - パスワード情報は含まれません（Azure AD認証のため）
-    """
-
-    id: uuid.UUID = Field(..., description="ユーザーID（UUID）")
-    azure_oid: str = Field(..., description="Azure AD Object ID")
-    is_active: bool = Field(..., description="アクティブフラグ")
-    created_at: datetime = Field(..., description="作成日時")
-    updated_at: datetime = Field(..., description="更新日時")
-    last_login: datetime | None = Field(default=None, description="最終ログイン日時")
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class UserAccountUpdate(BaseModel):
+class UserAccountUpdate(BaseCamelCaseModel):
     """ユーザー情報更新リクエストスキーマ。
 
     ユーザー情報の更新時に使用します。
@@ -135,7 +92,53 @@ class UserAccountUpdate(BaseModel):
     is_active: bool | None = Field(default=None, description="アクティブフラグ")
 
 
-class UserAccountListResponse(BaseModel):
+class UserAccountResponse(BaseCamelCaseORMModel):
+    """ユーザー情報レスポンススキーマ。
+
+    APIレスポンスでユーザー情報を返す際に使用します。
+
+    Attributes:
+        id (uuid.UUID): ユーザーID（UUID）
+        azure_oid (str): Azure AD Object ID
+        email (EmailStr): ユーザーメールアドレス
+        display_name (str | None): 表示名
+        roles (list[str]): システムレベルのロール
+        is_active (bool): アクティブフラグ
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
+        last_login (datetime | None): 最終ログイン日時
+
+    Example:
+        >>> from datetime import UTC
+        >>> user = UserAccountResponse(
+        ...     id=uuid.uuid4(),
+        ...     azure_oid="azure-oid-12345",
+        ...     email="john@company.com",
+        ...     display_name="John Doe",
+        ...     roles=["User"],
+        ...     is_active=True,
+        ...     created_at=datetime.now(UTC),
+        ...     updated_at=datetime.now(UTC),
+        ...     last_login=None
+        ... )
+
+    Note:
+        - from_attributesを有効にしているため、ORMモデルから直接変換可能です
+        - パスワード情報は含まれません（Azure AD認証のため）
+    """
+
+    id: uuid.UUID = Field(..., description="ユーザーID（UUID）")
+    azure_oid: str = Field(..., description="Azure AD Object ID")
+    email: EmailStr = Field(..., description="ユーザーメールアドレス")
+    display_name: str | None = Field(default=None, max_length=255, description="表示名")
+    roles: list[str] = Field(default_factory=list, description="システムレベルのロール")
+    is_active: bool = Field(..., description="アクティブフラグ")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
+    last_login: datetime | None = Field(default=None, description="最終ログイン日時")
+
+
+class UserAccountListResponse(BaseCamelCaseModel):
     """ユーザー一覧レスポンススキーマ。
 
     ユーザー一覧APIのレスポンス形式を定義します。

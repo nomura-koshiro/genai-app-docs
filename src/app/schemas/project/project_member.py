@@ -24,9 +24,10 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
 from app.models.project.project_member import ProjectRole
+from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 from app.schemas.user_account.user_account import UserAccountResponse
 
 # ================================================================================
@@ -34,7 +35,7 @@ from app.schemas.user_account.user_account import UserAccountResponse
 # ================================================================================
 
 
-class ProjectMemberCreate(BaseModel):
+class ProjectMemberCreate(BaseCamelCaseModel):
     """プロジェクトメンバー追加リクエストスキーマ。
 
     プロジェクトに新しいメンバーを追加する際に使用します。
@@ -60,7 +61,7 @@ class ProjectMemberCreate(BaseModel):
     )
 
 
-class ProjectMemberUpdate(BaseModel):
+class ProjectMemberUpdate(BaseCamelCaseModel):
     """プロジェクトメンバーロール更新リクエストスキーマ。
 
     メンバーのロールを更新する際に使用します。
@@ -79,7 +80,7 @@ class ProjectMemberUpdate(BaseModel):
     role: ProjectRole = Field(..., description="新しいプロジェクトロール")
 
 
-class ProjectMemberResponse(BaseModel):
+class ProjectMemberResponse(BaseCamelCaseORMModel):
     """プロジェクトメンバー情報レスポンススキーマ。
 
     APIレスポンスでメンバー情報を返す際に使用します。
@@ -113,8 +114,6 @@ class ProjectMemberResponse(BaseModel):
     role: ProjectRole = Field(..., description="プロジェクトロール（project_manager/project_moderator/member/viewer）")
     joined_at: datetime = Field(..., description="参加日時")
     added_by: uuid.UUID | None = Field(default=None, description="追加者のユーザーID")
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 class ProjectMemberDetailResponse(ProjectMemberResponse):
@@ -150,7 +149,7 @@ class ProjectMemberDetailResponse(ProjectMemberResponse):
     user: UserAccountResponse | None = Field(default=None, description="ユーザー情報")
 
 
-class ProjectMemberListResponse(BaseModel):
+class ProjectMemberListResponse(BaseCamelCaseModel):
     """プロジェクトメンバー一覧レスポンススキーマ。
 
     メンバー一覧APIのレスポンス形式を定義します。
@@ -177,7 +176,7 @@ class ProjectMemberListResponse(BaseModel):
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
 
 
-class UserRoleResponse(BaseModel):
+class UserRoleResponse(BaseCamelCaseModel):
     """ユーザーのプロジェクトロールレスポンススキーマ。
 
     現在のユーザーのロール情報を返す際に使用します。
@@ -216,7 +215,7 @@ class UserRoleResponse(BaseModel):
 # ================================================================================
 
 
-class ProjectMemberBulkCreate(BaseModel):
+class ProjectMemberBulkCreate(BaseCamelCaseModel):
     """プロジェクトメンバー複数人追加リクエストスキーマ。
 
     プロジェクトに複数のメンバーを一括追加する際に使用します。
@@ -241,7 +240,7 @@ class ProjectMemberBulkCreate(BaseModel):
     members: list[ProjectMemberCreate] = Field(..., min_length=1, max_length=100, description="追加するメンバーのリスト（最大100件）")
 
 
-class ProjectMemberBulkError(BaseModel):
+class ProjectMemberBulkError(BaseCamelCaseModel):
     """メンバー追加失敗情報スキーマ。
 
     複数人登録時の個別の失敗情報を表します。
@@ -264,7 +263,7 @@ class ProjectMemberBulkError(BaseModel):
     error: str = Field(..., description="エラーメッセージ")
 
 
-class ProjectMemberBulkResponse(BaseModel):
+class ProjectMemberBulkResponse(BaseCamelCaseModel):
     """プロジェクトメンバー複数人追加レスポンススキーマ。
 
     複数人登録APIのレスポンス形式を定義します。

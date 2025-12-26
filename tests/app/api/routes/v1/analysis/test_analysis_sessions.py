@@ -1,0 +1,985 @@
+"""分析セッションAPIのテスト。
+
+このテストファイルは API_ROUTE_TEST_POLICY.md に従い、
+Happy Pathとビジネスルールエラーのみをテストします。
+
+対応エンドポイント:
+    - GET /api/v1/project/{project_id}/analysis/session - セッション一覧取得
+    - POST /api/v1/project/{project_id}/analysis/session - セッション作成
+    - GET /api/v1/project/{project_id}/analysis/session/{session_id} - セッション詳細取得
+    - GET /api/v1/project/{project_id}/analysis/{session_id}/result - 分析結果取得
+    - PUT /api/v1/project/{project_id}/analysis/{session_id} - セッション更新
+    - DELETE /api/v1/project/{project_id}/analysis/session/{session_id} - セッション削除
+    - GET /api/v1/project/{project_id}/analysis/session/{session_id}/file - ファイル一覧取得
+    - POST /api/v1/project/{project_id}/analysis/session/{session_id}/file - ファイルアップロード
+    - PATCH /api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id} - ファイル設定更新
+"""
+
+import uuid
+
+import pytest
+from httpx import AsyncClient
+
+from tests.fixtures import create_invalid_format_excel_bytes
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/analysis/session - セッション一覧取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-001] セッション一覧取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "sessions" in result
+    assert "total" in result
+    assert len(result["sessions"]) == 1
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_with_pagination(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-002] ページネーション付きセッション一覧取得。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    validation = await test_data_seeder.create_validation_master()
+    issue = await test_data_seeder.create_issue_master(validation=validation)
+
+    for _ in range(5):
+        session = await test_data_seeder.create_analysis_session(project=project, creator=owner, issue=issue)
+        await test_data_seeder.create_analysis_snapshot(session=session)
+
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session?skip=0&limit=3")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["skip"] == 0
+    assert result["limit"] == 3
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-003] 認証なしでのセッション一覧取得失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_forbidden(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-004] メンバー以外によるセッション一覧取得失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+    override_auth(other_user)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/analysis/session - セッション作成
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_create_session_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-005] セッション作成の成功ケース。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    validation = await test_data_seeder.create_validation_master()
+    issue = await test_data_seeder.create_issue_master(validation=validation)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "project_id": str(project.id),
+        "issue_id": str(issue.id),
+    }
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/analysis/session", json=request_body)
+
+    # Assert
+    assert response.status_code == 201
+    result = response.json()
+    assert "id" in result
+    assert result["projectId"] == str(project.id)
+    assert result["currentSnapshot"] == 0
+
+
+@pytest.mark.asyncio
+async def test_create_session_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-006] 認証なしでのセッション作成失敗。"""
+    # Arrange
+    project, _ = await test_data_seeder.create_project_with_owner()
+    validation = await test_data_seeder.create_validation_master()
+    issue = await test_data_seeder.create_issue_master(validation=validation)
+    await test_data_seeder.db.commit()
+
+    request_body = {
+        "project_id": str(project.id),
+        "issue_id": str(issue.id),
+    }
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/analysis/session", json=request_body)
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/analysis/session/{session_id} - セッション詳細取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_session_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-007] セッション詳細取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["id"] == str(session.id)
+    assert result["projectId"] == str(project.id)
+
+
+@pytest.mark.asyncio
+async def test_get_session_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-008] 存在しないセッションの取得で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{uuid.uuid4()}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/analysis/{session_id}/result - 分析結果取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_session_result_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-009] 分析結果取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}/result")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "results" in result
+    assert "total" in result
+
+
+@pytest.mark.asyncio
+async def test_get_session_result_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-010] 存在しないセッションの結果取得で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{uuid.uuid4()}/result")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# PUT /api/v1/project/{project_id}/analysis/{session_id} - セッション更新
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_update_session_select_input_file(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-011] 入力ファイル選択の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(
+        session=session,
+        project_file=project_file,
+        data=[{"科目": "売上", "値": 100}],
+    )
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"input_file_id": str(analysis_file.id)}
+
+    # Act
+    response = await client.put(f"/api/v1/project/{project.id}/analysis/session/{session.id}", json=request_body)
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["inputFileId"] == str(analysis_file.id)
+
+
+@pytest.mark.asyncio
+async def test_update_session_restore_snapshot(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-012] スナップショット復元の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    # 追加スナップショットを作成
+    await test_data_seeder.create_analysis_snapshot(session=session, snapshot_order=1)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"current_snapshot": 0}
+
+    # Act
+    response = await client.put(f"/api/v1/project/{project.id}/analysis/session/{session.id}", json=request_body)
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["currentSnapshot"] == 0
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/analysis/session/{session_id} - セッション削除
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_session_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-013] セッション削除の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/analysis/session/{session.id}")
+
+    # Assert
+    assert response.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_delete_session_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-014] 存在しないセッションの削除で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/analysis/session/{uuid.uuid4()}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/analysis/session/{session_id}/file - ファイル一覧取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_list_session_files_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-015] ファイル一覧取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}/file")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "files" in result
+    assert "total" in result
+    assert len(result["files"]) == 1
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/analysis/session/{session_id}/file - ファイルアップロード
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_upload_session_file_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-016] ファイルアップロードの成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"project_file_id": str(project_file.id)}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 201
+    result = response.json()
+    assert "id" in result
+    assert "configList" in result
+
+
+@pytest.mark.asyncio
+async def test_upload_session_file_no_valid_sheets(client: AsyncClient, override_auth, test_data_seeder, mock_storage_service):
+    """[test_analysis_sessions-017] 有効なシートがないExcelファイルのアップロードでエラー。
+
+    Excelファイル内の全シートがparse_hierarchical_excelで処理できない場合、
+    ValidationError(422)が返される。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # モックのダウンロードを無効なExcelファイルに変更
+    mock_storage_service.download.return_value = create_invalid_format_excel_bytes()
+
+    request_body = {"project_file_id": str(project_file.id)}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 422
+    result = response.json()
+    assert "No valid sheets" in result.get("detail", "")
+
+
+# ================================================================================
+# PATCH /api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id}
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_update_file_config_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-018] ファイル設定更新の成功ケース。
+
+    モックExcelファイルには "Sheet1", "Sheet2" が存在し、
+    軸として "年度", "部門" が利用可能。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # モックExcelに存在するシート名と軸名を使用
+    request_body = {
+        "sheet_name": "Sheet1",
+        "axis_config": {"axis1": "年度"},
+    }
+
+    # Act
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["sheetName"] == "Sheet1"
+    assert result["axisConfig"] == {"axis1": "年度"}
+
+
+@pytest.mark.asyncio
+async def test_update_file_config_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-019] 存在しないファイルの設定更新で404。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    request_body = {"sheet_name": "UpdatedSheet"}
+
+    # Act
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{uuid.uuid4()}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_file_config_invalid_sheet_name(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-020] 存在しないシート名でファイル設定更新を試みるとエラー。
+
+    モックExcelファイルには "Sheet1", "Sheet2" が存在するため、
+    "NonExistentSheet" を指定するとValidationError(422)になる。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "sheet_name": "NonExistentSheet",  # 存在しないシート名
+        "axis_config": {"axis1": "年度"},
+    }
+
+    # Act
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 422
+    result = response.json()
+    assert "available_sheets" in result
+
+
+@pytest.mark.asyncio
+async def test_update_file_config_invalid_axis_config(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-021] 存在しない軸名でファイル設定更新を試みるとエラー。
+
+    モックExcelファイルには "年度", "部門" の軸のみ存在するため、
+    存在しない軸を指定するとValidationError(422)になる。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "sheet_name": "Sheet1",  # 存在するシート名
+        "axis_config": {"axis1": "存在しない軸"},  # 存在しない軸名
+    }
+
+    # Act
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 422
+    result = response.json()
+    assert "invalid_axis" in result
+    assert "available_axis" in result
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/analysis/session/{session_id}/step - ステップ作成
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_create_step_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-022] 分析ステップ作成の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    # 入力ファイルを設定
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(
+        session=session,
+        project_file=project_file,
+        data=[{"col1": 1, "col2": 2}, {"col1": 3, "col2": 4}],
+    )
+    session.input_file_id = analysis_file.id
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "name": "Test Filter Step",
+        "type": "filter",
+        "input": "original",
+    }
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/step",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 201
+    result = response.json()
+    assert "id" in result
+    assert result["name"] == "Test Filter Step"
+    assert result["type"] == "filter"
+    assert result["input"] == "original"
+
+
+@pytest.mark.asyncio
+async def test_create_step_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-023] 認証なしでのステップ作成失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    session = data["session"]
+
+    request_body = {
+        "name": "Test Step",
+        "type": "filter",
+        "input": "original",
+    }
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/step",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_create_step_session_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-024] 存在しないセッションへのステップ作成で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "name": "Test Step",
+        "type": "filter",
+        "input": "original",
+    }
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{uuid.uuid4()}/step",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# PUT /api/v1/project/{project_id}/analysis/session/{session_id}/step/{step_id} - ステップ更新
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_update_step_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-025] 分析ステップ更新の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    snapshot = data["snapshot"]
+
+    # 入力ファイルを設定
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(
+        session=session,
+        project_file=project_file,
+        data=[{"col1": 1, "col2": 2}, {"col1": 3, "col2": 4}],
+    )
+    session.input_file_id = analysis_file.id
+
+    # ステップを作成
+    step = await test_data_seeder.create_analysis_step(
+        snapshot=snapshot,
+        name="Original Step",
+        step_order=0,
+        step_type="filter",
+        input_ref="original",
+        config={"table_filter": {}, "numeric_filter": {}, "category_filter": {}},
+    )
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {
+        "name": "Updated Step",
+        "type": "filter",
+        "input": "original",
+        "config": {"table_filter": {}, "numeric_filter": {}, "category_filter": {}},
+    }
+
+    # Act
+    response = await client.put(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{step.id}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["name"] == "Updated Step"
+
+
+@pytest.mark.asyncio
+async def test_update_step_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-026] 存在しないステップの更新で404。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    request_body = {
+        "name": "Updated Step",
+    }
+
+    # Act
+    response = await client.put(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{uuid.uuid4()}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_step_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-027] 認証なしでのステップ更新失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    session = data["session"]
+    snapshot = data["snapshot"]
+
+    step = await test_data_seeder.create_analysis_step(snapshot=snapshot)
+    await test_data_seeder.db.commit()
+
+    request_body = {"name": "Updated Step"}
+
+    # Act
+    response = await client.put(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{step.id}",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/analysis/session/{session_id}/step/{step_id} - ステップ削除
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_step_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-028] 分析ステップ削除の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    snapshot = data["snapshot"]
+
+    # ステップを作成（最後のステップのみ削除可能）
+    step = await test_data_seeder.create_analysis_step(
+        snapshot=snapshot,
+        name="Step to Delete",
+        step_order=0,
+        step_type="summary",
+        input_ref="original",
+        config={},
+    )
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{step.id}")
+
+    # Assert
+    assert response.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_delete_step_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-029] 存在しないステップの削除で404。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{uuid.uuid4()}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_step_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-030] 認証なしでのステップ削除失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    session = data["session"]
+    snapshot = data["snapshot"]
+
+    step = await test_data_seeder.create_analysis_step(snapshot=snapshot)
+    await test_data_seeder.db.commit()
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/analysis/session/{session.id}/step/{step.id}")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/analysis/{session_id}/chat - チャット実行
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_execute_chat_success(client: AsyncClient, override_auth, test_data_seeder, mock_analysis_agent):
+    """[test_analysis_sessions-031] チャット実行の成功ケース。
+
+    メッセージ送信→エージェント応答→新スナップショット作成→チャット履歴保存を確認。
+    """
+    from unittest.mock import patch
+
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    # 入力ファイルを設定
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(
+        session=session,
+        project_file=project_file,
+        data=[{"年度": "2024", "部門": "営業", "科目": "売上", "値": 100}],
+    )
+    session.input_file_id = analysis_file.id
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"role": "user", "message": "売上データを分析してください"}
+
+    # モックの初期chat_historyをカスタマイズ
+    mock_agent_class, mock_agent = mock_analysis_agent
+    mock_agent.initial_chat_history = [
+        ("system", "あなたは分析アシスタントです。ユーザの質問に答えてください。"),
+    ]
+
+    # Act
+    with patch("app.services.analysis.analysis_session.base.AnalysisAgent", mock_agent_class):
+        response = await client.post(
+            f"/api/v1/project/{project.id}/analysis/session/{session.id}/chat",
+            json=request_body,
+        )
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    # 新しいスナップショットが作成されている
+    assert result["currentSnapshot"] == 1
+    # スナップショット一覧に新しいスナップショットが含まれる
+    assert len(result["snapshotList"]) == 2
+    # 新しいスナップショットにチャット履歴が保存されている
+    new_snapshot = result["snapshotList"][1]
+    assert len(new_snapshot["chat"]) == 3
+    assert new_snapshot["chat"][2]["role"] == "assistant"
+
+
+@pytest.mark.asyncio
+async def test_execute_chat_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_analysis_sessions-033] 認証なしでのチャット実行失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    session = data["session"]
+
+    request_body = {"role": "user", "message": "売上データを分析してください"}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/chat",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_execute_chat_session_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-035] 存在しないセッションへのチャット実行で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"role": "user", "message": "売上データを分析してください"}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{uuid.uuid4()}/chat",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_execute_chat_input_file_not_selected(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-036] 入力ファイル未選択でのチャット実行で404。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    # 入力ファイルを設定しない（input_file_id = None）
+    session.input_file_id = None
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"role": "user", "message": "売上データを分析してください"}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/chat",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_execute_chat_empty_message(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-037] 空メッセージでのチャット実行でエラー。"""
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+
+    # 入力ファイルを設定
+    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+    analysis_file = await test_data_seeder.create_analysis_file(
+        session=session,
+        project_file=project_file,
+        data=[{"年度": "2024", "部門": "営業", "科目": "売上", "値": 100}],
+    )
+    session.input_file_id = analysis_file.id
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    request_body = {"role": "user", "message": ""}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/analysis/session/{session.id}/chat",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code in [400, 422]

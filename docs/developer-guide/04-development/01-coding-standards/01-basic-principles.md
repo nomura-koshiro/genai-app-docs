@@ -144,33 +144,35 @@ class BaseRepository(Generic[ModelType]):
 #### 良い例：責任が分離されている
 
 ```python
-# src/app/services/sample_user.py
-class SampleUserService:
-    """ユーザー関連のビジネスロジック。"""
+# src/app/services/project/project/crud.py
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクト関連のビジネスロジック。"""
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        """新しいユーザーを作成します。"""
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        """新しいプロジェクトを作成します。"""
         # バリデーション
-        existing_user = await self.repository.get_by_email(user_data.email)
-        if existing_user:
-            raise ValidationError("User already exists")
+        existing = await self.project_repo.get_by_code(project_data.code)
+        if existing:
+            raise ValidationError("プロジェクトコードが既に使用されています")
 
-        # パスワードハッシュ化
-        hashed_password = hash_password(user_data.password)
-
-        # ユーザー作成
-        user = await self.repository.create(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
+        # プロジェクト作成
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            created_by=creator_id,
         )
-        return user
 
+        # メンバー追加（別リポジトリに委譲）
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
+        )
 
-# src/app/core/security/password.py
-def hash_password(password: str) -> str:
-    """パスワードをハッシュ化します。"""
-    return pwd_context.hash(password)
+        await self.db.commit()
+        return project
 ```
 
 #### 悪い例：複数の責任が混在

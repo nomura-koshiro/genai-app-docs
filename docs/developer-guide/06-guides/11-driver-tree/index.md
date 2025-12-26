@@ -91,7 +91,7 @@ Driver Tree機能
 
 ### レイヤード構造
 
-```mermaid
+::: mermaid
 graph TB
     Client[クライアント<br/>React/Vue]
     API[API層<br/>FastAPI Router]
@@ -109,11 +109,11 @@ graph TB
     style Service fill:#ce93d8
     style Repo fill:#81c784
     style DB fill:#64b5f6
-```
+:::
 
 ### データモデルリレーション
 
-```mermaid
+::: mermaid
 erDiagram
     DriverTreeNode ||--o{ DriverTree : "is root of"
     DriverTreeNode }o--o{ DriverTree : "is child of"
@@ -151,13 +151,13 @@ erDiagram
         TIMESTAMP created_at
         TIMESTAMP updated_at
     }
-```
+:::
 
 ## データフロー
 
 ### 数式からツリー生成フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -191,11 +191,11 @@ sequenceDiagram
 
     S-->>-API: Dict[str, TreeResponse]
     API-->>-C: 201 Created
-```
+:::
 
 ### カテゴリーベースツリー取得フロー
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI Router
@@ -221,7 +221,7 @@ sequenceDiagram
 
     deactivate S
     deactivate API
-```
+:::
 
 ## 使用方法
 

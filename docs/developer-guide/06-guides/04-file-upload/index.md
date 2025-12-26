@@ -30,7 +30,7 @@
 
 以下の図は、ファイルアップロードの全体的な処理フローを示しています。
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI<br/>Router
@@ -109,7 +109,7 @@ sequenceDiagram
     style S fill:#fff176,stroke:#f57f17,stroke-width:3px,color:#000,stroke-width:3px
     style FR fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000,stroke-width:3px
     style DB fill:#64b5f6,stroke:#01579b,stroke-width:3px,color:#000,stroke-width:3px
-```
+:::
 
 ### 処理フローの詳細
 

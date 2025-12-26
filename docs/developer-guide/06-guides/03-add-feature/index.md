@@ -18,7 +18,7 @@
 タスク管理機能
 ├── モデル層（models/task/task.py）
 ├── リポジトリ層（repositories/task/task.py）
-├── サービス層（services/task/task.py）
+├── サービス層（services/task/__init__.py, crud.py）  ← Facadeパターン
 ├── スキーマ層（schemas/task/task.py）
 ├── API層（api/routes/v1/task/tasks.py）
 ├── マイグレーション（alembic/versions/xxx_add_task_table.py）
@@ -40,9 +40,10 @@ src/app/
 ├── schemas/task/          # タスク機能のスキーマ
 │   ├── __init__.py
 │   └── task.py
-├── services/task/         # タスク機能のサービス
-│   ├── __init__.py
-│   └── task.py
+├── services/task/         # タスク機能のサービス（Facadeパターン）
+│   ├── __init__.py        # TaskService（Facade）
+│   ├── base.py            # 共通ベースクラス
+│   └── crud.py            # TaskCrudService
 └── api/routes/v1/task/    # タスク機能のエンドポイント
     ├── __init__.py
     └── tasks.py

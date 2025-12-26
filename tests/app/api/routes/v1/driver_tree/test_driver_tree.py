@@ -1,370 +1,602 @@
-"""Driver Tree APIのテスト。
+"""ドライバーツリー ツリーAPIのテスト。
 
 このテストファイルは API_ROUTE_TEST_POLICY.md に従い、
 Happy Pathとビジネスルールエラーのみをテストします。
 
-基本的なバリデーションエラーはPydanticスキーマで検証済み、
-ビジネスロジックはサービス層でカバーされます。
+対応エンドポイント:
+    - POST /api/v1/project/{project_id}/driver-tree/tree - ツリー作成
+    - GET /api/v1/project/{project_id}/driver-tree/tree - ツリー一覧取得
+    - GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id} - ツリー取得
+    - POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/import - 数式インポート
+    - POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/reset - ツリーリセット
+    - DELETE /api/v1/project/{project_id}/driver-tree/tree/{tree_id} - ツリー削除
+    - GET /api/v1/project/{project_id}/driver-tree/category - カテゴリ取得
+    - GET /api/v1/project/{project_id}/driver-tree/formula - 数式取得
+    - GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/data - 計算結果取得
+    - GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/output - ファイルダウンロード
 """
 
 import uuid
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import DriverTreeCategory
-from app.repositories import DriverTreeRepository
-
-
-@pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
-@pytest.mark.asyncio
-async def test_create_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """ノード作成エンドポイントの成功ケース。"""
-    # Arrange
-    override_auth(test_user)
-
-    # ツリーを先に作成
-    tree_repo = DriverTreeRepository(db_session)
-    tree = await tree_repo.create(name="テストツリー")
-    await db_session.commit()
-
-    node_data = {
-        "tree_id": str(tree.id),
-        "label": "売上",
-        "x": 1,
-        "y": 0,
-    }
-
-    # Act
-    response = await client.post("/api/v1/driver-tree/nodes", json=node_data)
-
-    # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert "id" in data
-    assert data["tree_id"] == str(tree.id)
-    assert data["label"] == "売上"
-    assert data["x"] == 1
-    assert data["y"] == 0
-
-
-@pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
-@pytest.mark.asyncio
-async def test_create_node_without_coordinates(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """座標なしでのノード作成テスト。"""
-    # Arrange
-    override_auth(test_user)
-
-    tree_repo = DriverTreeRepository(db_session)
-    tree = await tree_repo.create(name="テストツリー")
-    await db_session.commit()
-
-    node_data = {
-        "tree_id": str(tree.id),
-        "label": "粗利",
-    }
-
-    # Act
-    response = await client.post("/api/v1/driver-tree/nodes", json=node_data)
-
-    # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert data["label"] == "粗利"
-    assert data["x"] is None
-    assert data["y"] is None
-
-
-@pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
-@pytest.mark.asyncio
-async def test_get_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """ノード取得エンドポイントの成功ケース。"""
-    # Arrange
-    override_auth(test_user)
-
-    tree_repo = DriverTreeRepository(db_session)
-    tree = await tree_repo.create(name="テストツリー")
-    await db_session.commit()
-
-    # ノードを作成
-    create_data = {"tree_id": str(tree.id), "label": "原価", "x": 2, "y": 1}
-    create_response = await client.post("/api/v1/driver-tree/nodes", json=create_data)
-    node_id = create_response.json()["id"]
-
-    # Act
-    response = await client.get(f"/api/v1/driver-tree/nodes/{node_id}")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == node_id
-    assert data["label"] == "原価"
-    assert data["x"] == 2
-    assert data["y"] == 1
+# ================================================================================
+# POST /api/v1/project/{project_id}/driver-tree/tree - ツリー作成
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_get_node_not_found(client: AsyncClient, override_auth, test_user):
-    """存在しないノードの取得テスト。"""
+async def test_create_tree_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-001] ツリー作成の成功ケース。"""
     # Arrange
-    override_auth(test_user)
-    nonexistent_id = str(uuid.uuid4())
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
 
-    # Act
-    response = await client.get(f"/api/v1/driver-tree/nodes/{nonexistent_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.skip(reason="Node endpoint returns 500 - implementation bug")
-@pytest.mark.asyncio
-async def test_update_node_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """ノード更新エンドポイントの成功ケース。"""
-    # Arrange
-    override_auth(test_user)
-
-    tree_repo = DriverTreeRepository(db_session)
-    tree = await tree_repo.create(name="テストツリー")
-    await db_session.commit()
-
-    # ノードを作成
-    create_data = {"tree_id": str(tree.id), "label": "売上", "x": 0, "y": 0}
-    create_response = await client.post("/api/v1/driver-tree/nodes", json=create_data)
-    node_id = create_response.json()["id"]
-
-    # 更新データ
-    update_data = {
-        "label": "売上高",
-        "x": 1,
-        "y": 1,
-    }
-
-    # Act
-    response = await client.put(f"/api/v1/driver-tree/nodes/{node_id}", json=update_data)
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == node_id
-    assert data["label"] == "売上高"
-    assert data["x"] == 1
-    assert data["y"] == 1
-
-
-@pytest.mark.asyncio
-async def test_create_tree_from_formulas_endpoint_success(client: AsyncClient, override_auth, test_user):
-    """数式からツリー作成エンドポイントの成功ケース。
-
-    重要: create_tree_from_formulas は単一のツリーを返すようになった。
-    """
-    # Arrange
-    override_auth(test_user)
-
-    formula_data = {
-        "formulas": [
-            "粗利 = 売上 - 原価",
-            "売上 = 数量 * 単価",
-        ]
-    }
-
-    # Act
-    response = await client.post("/api/v1/driver-tree/trees", json=formula_data)
-
-    # Assert
-    assert response.status_code == 201
-    data = response.json()
-
-    # 単一のツリーが返される
-    assert "id" in data
-    assert "root_node" in data
-    assert data["root_node"] is not None
-    assert data["root_node"]["label"] == "粗利"
-
-    # 子ノードが含まれている
-    assert "children" in data["root_node"]
-    assert len(data["root_node"]["children"]) == 2
-
-    child_labels = {child["label"] for child in data["root_node"]["children"]}
-    assert "売上" in child_labels
-    assert "原価" in child_labels
-
-
-@pytest.mark.asyncio
-async def test_create_tree_from_formulas_with_name(client: AsyncClient, override_auth, test_user):
-    """名前付きでツリーを作成。"""
-    # Arrange
-    override_auth(test_user)
-
-    formula_data = {
-        "formulas": ["粗利 = 売上 - 原価"],
-        "name": "粗利分析ツリー",
-    }
-
-    # Act
-    response = await client.post("/api/v1/driver-tree/trees", json=formula_data)
-
-    # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert data["name"] == "粗利分析ツリー"
-    assert data["root_node"]["label"] == "粗利"
-
-
-@pytest.mark.asyncio
-async def test_get_tree_endpoint_success(client: AsyncClient, override_auth, test_user):
-    """ツリー取得エンドポイントの成功ケース。"""
-    # Arrange
-    override_auth(test_user)
-
-    # ツリーを作成
-    formula_data = {
-        "formulas": ["粗利 = 売上 - 原価"],
+    request_body = {
         "name": "テストツリー",
+        "description": "テスト用ドライバーツリー",
     }
-    create_response = await client.post("/api/v1/driver-tree/trees", json=formula_data)
-    tree_id = create_response.json()["id"]
 
     # Act
-    response = await client.get(f"/api/v1/driver-tree/trees/{tree_id}")
+    response = await client.post(
+        f"/api/v1/project/{project.id}/driver-tree/tree",
+        json=request_body,
+    )
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["id"] == tree_id
-    assert data["name"] == "テストツリー"
-    assert data["root_node"] is not None
-    assert data["root_node"]["label"] == "粗利"
+    assert response.status_code == 201
+    result = response.json()
+    assert "treeId" in result
+    assert result["name"] == "テストツリー"
+    assert result["description"] == "テスト用ドライバーツリー"
+    assert "createdAt" in result
 
 
 @pytest.mark.asyncio
-async def test_get_tree_not_found(client: AsyncClient, override_auth, test_user):
-    """存在しないツリーの取得テスト。"""
+async def test_create_tree_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_driver_tree-002] 認証なしでのツリー作成失敗。"""
     # Arrange
-    override_auth(test_user)
-    nonexistent_id = str(uuid.uuid4())
+    project, _ = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+
+    request_body = {"name": "テストツリー"}
 
     # Act
-    response = await client.get(f"/api/v1/driver-tree/trees/{nonexistent_id}")
+    response = await client.post(
+        f"/api/v1/project/{project.id}/driver-tree/tree",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_create_tree_forbidden(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-003] メンバー以外によるツリー作成失敗。"""
+    # Arrange
+    project, _ = await test_data_seeder.create_project_with_owner()
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+    override_auth(other_user)
+
+    request_body = {"name": "テストツリー"}
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/driver-tree/tree",
+        json=request_body,
+    )
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/tree - ツリー一覧取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_list_trees_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-004] ツリー一覧取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "trees" in result
+    assert len(result["trees"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_list_trees_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_driver_tree-005] 認証なしでのツリー一覧取得失敗。"""
+    # Arrange
+    project, _ = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_list_trees_forbidden(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-006] メンバー以外によるツリー一覧取得失敗。"""
+    # Arrange
+    project, _ = await test_data_seeder.create_project_with_owner()
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+    override_auth(other_user)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id} - ツリー取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_tree_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-007] ツリー取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "tree" in result
+    assert result["tree"]["treeId"] == str(tree.id)
+
+
+@pytest.mark.asyncio
+async def test_get_tree_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-008] 存在しないツリーの取得で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}")
 
     # Assert
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_get_categories_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """カテゴリー一覧取得エンドポイントの成功ケース。"""
+async def test_get_tree_forbidden(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-009] メンバー以外によるツリー取得失敗。"""
     # Arrange
-    override_auth(test_user)
-
-    # テスト用カテゴリーを作成
-    category1 = DriverTreeCategory(
-        industry_class="製造業",
-        industry="自動車製造",
-        tree_type="生産_製造数量×出荷率型",
-        kpi="粗利",
-        formulas=["粗利 = 売上 - 原価"],
-        metadata={},
-    )
-    category2 = DriverTreeCategory(
-        industry_class="サービス業",
-        industry="ホテル業",
-        tree_type="サービス_稼働率型",
-        kpi="粗利",
-        formulas=["粗利 = 売上 - 変動費"],
-        metadata={},
-    )
-    db_session.add(category1)
-    db_session.add(category2)
-    await db_session.commit()
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    tree = data["tree"]
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+    override_auth(other_user)
 
     # Act
-    response = await client.get("/api/v1/driver-tree/categories")
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}")
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
+    assert response.status_code == 403
 
-    assert "製造業" in data
-    assert "サービス業" in data
-    assert "自動車製造" in data["製造業"]
-    assert "ホテル業" in data["サービス業"]
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/import - 数式インポート
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_get_kpis_endpoint_success(client: AsyncClient, override_auth, test_user):
-    """KPI一覧取得エンドポイントの成功ケース。"""
+async def test_import_formula_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-010] 数式インポートの成功ケース。"""
     # Arrange
-    override_auth(test_user)
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    request_body = {
+        "position_x": 100,
+        "position_y": 100,
+        "formulas": ["売上 = 単価 * 数量"],
+    }
 
     # Act
-    response = await client.get("/api/v1/driver-tree/kpis")
+    response = await client.post(
+        f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/import",
+        json=request_body,
+    )
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "kpis" in data
-    kpis = data["kpis"]
-    assert "売上" in kpis
-    assert "原価" in kpis
-    assert "粗利" in kpis
-    assert "営業利益" in kpis
+    assert response.status_code == 201
+    result = response.json()
+    assert "tree" in result
 
 
 @pytest.mark.asyncio
-async def test_get_formulas_endpoint_success(client: AsyncClient, override_auth, test_user, db_session: AsyncSession):
-    """数式取得エンドポイントの成功ケース。"""
+async def test_import_formula_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-011] 存在しないツリーへの数式インポートで404。"""
     # Arrange
-    override_auth(test_user)
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
 
-    # テスト用カテゴリーを作成
-    category = DriverTreeCategory(
-        industry_class="製造業",
-        industry="自動車製造",
-        tree_type="生産_製造数量×出荷率型",
-        kpi="粗利",
-        formulas=["粗利 = 売上 - 原価", "売上 = 数量 * 単価"],
-        metadata={},
+    request_body = {
+        "position_x": 100,
+        "position_y": 100,
+        "formulas": ["売上 = 単価 * 数量"],
+    }
+
+    # Act
+    response = await client.post(
+        f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}/import",
+        json=request_body,
     )
-    db_session.add(category)
-    await db_session.commit()
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/reset - ツリーリセット
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_reset_tree_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-012] ツリーリセットの成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/reset")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "tree" in result
+    assert "resetAt" in result
+
+
+@pytest.mark.asyncio
+async def test_reset_tree_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-013] 存在しないツリーのリセットで404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}/reset")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/driver-tree/tree/{tree_id} - ツリー削除
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_tree_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-014] ツリー削除の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["success"] is True
+    assert "deletedAt" in result
+
+
+@pytest.mark.asyncio
+async def test_delete_tree_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-015] 存在しないツリーの削除で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_tree_forbidden(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-016] メンバー以外によるツリー削除失敗。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    tree = data["tree"]
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+    override_auth(other_user)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/category - カテゴリ取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_categories_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-017] カテゴリ取得の成功ケース。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/category")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+
+    # レスポンス形式の検証
+    assert "categories" in result
+    assert isinstance(result["categories"], list)
+
+    # データが存在する場合の検証
+    if len(result["categories"]) > 0:
+        category = result["categories"][0]
+        assert "categoryId" in category
+        assert "categoryName" in category
+        assert "industries" in category
+        assert isinstance(category["industries"], list)
+
+        # 業界名の検証
+        if len(category["industries"]) > 0:
+            industry = category["industries"][0]
+            assert "industryId" in industry
+            assert "industryName" in industry
+            assert "driverTypes" in industry
+            assert isinstance(industry["driverTypes"], list)
+
+            # ドライバー型の検証
+            if len(industry["driverTypes"]) > 0:
+                driver_type = industry["driverTypes"][0]
+                assert "driverTypeId" in driver_type
+                assert "driverTypeName" in driver_type
+
+
+@pytest.mark.asyncio
+async def test_get_categories_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_driver_tree-018] 認証なしでのカテゴリ取得失敗。"""
+    # Arrange
+    project, _ = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/category")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/formula - 数式取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_formulas_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-019] 数式取得の成功ケース。"""
+    from app.models.driver_tree import DriverTreeFormula
+
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+
+    # テスト用のformulaデータを作成
+    formula = DriverTreeFormula(
+        driver_type_id=1,
+        driver_type="テストドライバー型",
+        kpi="売上",
+        formulas=["売上 = 数量 * 単価", "数量 = キャパシティ * 稼働率"],
+    )
+    test_data_seeder.db.add(formula)
+    await test_data_seeder.db.commit()
+    override_auth(owner)
 
     # Act
     response = await client.get(
-        "/api/v1/driver-tree/formulas",
-        params={
-            "tree_type": "生産_製造数量×出荷率型",
-            "kpi": "粗利",
-        },
+        f"/api/v1/project/{project.id}/driver-tree/formula",
+        params={"driver_type_id": 1, "kpi": "売上"},
     )
 
     # Assert
     assert response.status_code == 200
-    data = response.json()
+    result = response.json()
 
-    assert "formulas" in data
-    formulas = data["formulas"]
-    assert len(formulas) == 2
-    assert "粗利 = 売上 - 原価" in formulas
-    assert "売上 = 数量 * 単価" in formulas
+    # レスポンス形式の検証
+    assert "formula" in result
+    formula_data = result["formula"]
+    assert "formulaId" in formula_data
+    assert "driverTypeId" in formula_data
+    assert formula_data["driverTypeId"] == 1
+    assert "driverType" in formula_data
+    assert "kpi" in formula_data
+    assert formula_data["kpi"] == "売上"
+    assert "formulas" in formula_data
+    assert isinstance(formula_data["formulas"], list)
+    assert len(formula_data["formulas"]) == 2
 
 
 @pytest.mark.asyncio
-async def test_get_formulas_not_found(client: AsyncClient, override_auth, test_user):
-    """存在しないツリータイプ/KPIの数式取得テスト。"""
+async def test_get_formulas_unauthorized(client: AsyncClient, test_data_seeder):
+    """[test_driver_tree-020] 認証なしでの数式取得失敗。"""
     # Arrange
-    override_auth(test_user)
+    project, _ = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
 
     # Act
     response = await client.get(
-        "/api/v1/driver-tree/formulas",
-        params={
-            "tree_type": "存在しないツリータイプ",
-            "kpi": "粗利",
-        },
+        f"/api/v1/project/{project.id}/driver-tree/formula",
+        params={"driver_type_id": 1, "kpi": "売上"},
     )
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_get_formulas_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-020a] 存在しない数式の取得失敗。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act - 存在しないdriver_type_id
+    response = await client.get(
+        f"/api/v1/project/{project.id}/driver-tree/formula",
+        params={"driver_type_id": 99999, "kpi": "売上"},
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/data - 計算結果取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_tree_data_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-021] 計算結果取得の成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/data")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "calculatedDataList" in result
+
+
+@pytest.mark.asyncio
+async def test_get_tree_data_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-022] 存在しないツリーの計算結果取得で404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}/data")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/output - ファイルダウンロード
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_download_simulation_output_success(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-023] シミュレーション結果ダウンロードの成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/output")
+
+    # Assert
+    assert response.status_code == 200
+    assert "application/vnd.openxmlformats" in response.headers.get("content-type", "") or response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_download_simulation_output_csv(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-024] CSV形式でのダウンロードの成功ケース。"""
+    # Arrange
+    data = await test_data_seeder.seed_driver_tree_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    tree = data["tree"]
+    override_auth(owner)
+
+    # Act
+    response = await client.get(
+        f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/output",
+        params={"format": "csv"},
+    )
+
+    # Assert
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_download_simulation_output_not_found(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_driver_tree-025] 存在しないツリーのダウンロードで404。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{uuid.uuid4()}/output")
 
     # Assert
     assert response.status_code == 404

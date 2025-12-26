@@ -15,169 +15,201 @@
 
 ---
 
-## 基本的なサービス
+## サービス層の構造
+
+サービス層は**Facadeパターン**を採用し、機能ごとにサブサービスに分割されています。
+
+```text
+services/
+├── __init__.py                      # 全サービスの統合エクスポート
+├── storage/                         # Strategyパターンでストレージを抽象化
+├── analysis/
+│   ├── analysis_session/            # 分析セッション（機能別分割）
+│   │   ├── __init__.py              # AnalysisSessionService（Facade）
+│   │   ├── service.py
+│   │   ├── session_crud.py
+│   │   └── ...
+│   └── analysis_template.py
+├── project/
+│   ├── project/                     # プロジェクト管理（機能別分割）
+│   │   ├── __init__.py              # ProjectService（Facade）
+│   │   ├── base.py
+│   │   └── crud.py
+│   ├── project_file/                # ファイル管理（機能別分割）
+│   └── project_member/              # メンバー管理（機能別分割）
+└── user_account/
+    └── user_account/                # ユーザー管理（機能別分割）
+        ├── __init__.py              # UserAccountService（Facade）
+        ├── auth.py
+        └── crud.py
+```
+
+---
+
+## 基本的なサービス（Facadeパターン）
 
 ```python
-# src/app/services/sample_user.py
+# src/app/services/project/project/__init__.py
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.core.exceptions import AuthenticationError, NotFoundError, ValidationError
-from app.core.security import hash_password, verify_password
-from app.models.sample_user import SampleUser
-from app.repositories.sample_user import SampleUserRepository
-from app.schemas.sample_user import SampleUserCreate
+from app.models import Project
+from app.schemas import ProjectCreate, ProjectUpdate
+from app.services.project.project.crud import ProjectCrudService
 
 
-class SampleUserService:
-    """ユーザー関連のビジネスロジック用サービス。"""
+class ProjectService:
+    """プロジェクト管理のビジネスロジックを提供するサービスクラス。
+
+    各機能は専用のサービスクラスに委譲されます（Facadeパターン）。
+    """
 
     def __init__(self, db: AsyncSession):
-        self.repository = SampleUserRepository(db)
+        self.db = db
+        self._crud_service = ProjectCrudService(db)
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        """新しいユーザーを作成。"""
-        # バリデーション
-        existing_user = await self.repository.get_by_email(user_data.email)
-        if existing_user:
-            raise ValidationError(
-                "User already exists",
-                details={"email": user_data.email}
-            )
-
-        existing_username = await self.repository.get_by_username(user_data.username)
-        if existing_username:
-            raise ValidationError(
-                "Username already taken",
-                details={"username": user_data.username}
-            )
-
-        # パスワードハッシュ化
-        hashed_password = hash_password(user_data.password)
-
-        # ユーザー作成
-        user = await self.repository.create(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
-        )
-        return user
-
-    async def authenticate(self, email: str, password: str) -> SampleUser:
-        """ユーザーを認証。"""
-        user = await self.repository.get_by_email(email)
-        if not user:
-            raise AuthenticationError("Invalid email or password")
-
-        if not verify_password(password, user.hashed_password):
-            raise AuthenticationError("Invalid email or password")
-
-        if not user.is_active:
-            raise AuthenticationError("User account is inactive")
-
-        return user
-
-    async def get_user(self, user_id: int) -> SampleUser:
-        """ユーザーを取得。"""
-        user = await self.repository.get(user_id)
-        if not user:
-            raise NotFoundError("User not found", details={"user_id": user_id})
-        return user
-
-    async def update_user(
+    async def create_project(
         self,
-        user_id: int,
-        update_data: dict[str, Any],
-        current_user_roles: list[str],
-    ) -> SampleUser:
-        """ユーザー情報を更新。
+        project_data: ProjectCreate,
+        creator_id: uuid.UUID,
+    ) -> Project:
+        """新しいプロジェクトを作成します。"""
+        return await self._crud_service.create_project(project_data, creator_id)
 
-        このメソッドは、権限チェックとビジネスロジックをカプセル化し、
-        API層からビジネスロジックを分離します（SOLID原則のSRP準拠）。
+    async def get_project(self, project_id: uuid.UUID) -> Project | None:
+        """プロジェクトIDでプロジェクト情報を取得します。"""
+        return await self._crud_service.get_project(project_id)
 
-        Args:
-            user_id: 更新対象ユーザーID
-            update_data: 更新データ（display_name, roles, is_active等）
-            current_user_roles: 実行ユーザーのロール（権限チェック用）
+    async def update_project(
+        self,
+        project_id: uuid.UUID,
+        update_data: ProjectUpdate,
+        user_id: uuid.UUID,
+    ) -> Project:
+        """プロジェクト情報を更新します。"""
+        return await self._crud_service.update_project(project_id, update_data, user_id)
 
-        Returns:
-            更新されたユーザーインスタンス
+    async def delete_project(
+        self,
+        project_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> None:
+        """プロジェクトを削除します。"""
+        return await self._crud_service.delete_project(project_id, user_id)
+```
 
-        Raises:
-            ValidationError: 権限不足（roles/is_activeの更新にSystemAdminが必要）
-            NotFoundError: ユーザーが存在しない
-        """
-        if ("roles" in update_data or "is_active" in update_data):
-            if "SystemAdmin" not in current_user_roles:
-                raise ValidationError(
-                    "rolesまたはis_activeの更新には管理者権限が必要です",
-                    details={"required_role": "SystemAdmin"},
-                )
+---
 
-        user = await self.repository.get(user_id)
-        if not user:
-            raise NotFoundError("User not found", details={"user_id": user_id})
+## サブサービスの実装
 
-        updated_user = await self.repository.update(user, **update_data)
-        return updated_user
+```python
+# src/app/services/project/project/crud.py
+import uuid
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.exceptions import NotFoundError, ValidationError
+from app.models import Project
+from app.repositories import ProjectRepository
+from app.services.project.project.base import ProjectBaseService
 
-    async def count_users(self, is_active: bool | None = None) -> int:
-        """ユーザー総数を取得。
 
-        ページネーションのtotal値として使用します。
-        オプションでアクティブフラグによるフィルタリングが可能です。
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクトのCRUD操作を提供するサービス。"""
 
-        Args:
-            is_active: アクティブフラグフィルタ
-                - True: アクティブユーザーのみ
-                - False: 非アクティブユーザーのみ
-                - None: 全ユーザー（デフォルト）
+    async def create_project(
+        self,
+        project_data: ProjectCreate,
+        creator_id: uuid.UUID,
+    ) -> Project:
+        """新しいプロジェクトを作成します。"""
+        # プロジェクトコードの重複チェック
+        existing = await self.project_repo.get_by_code(project_data.code)
+        if existing:
+            raise ValidationError(
+                "プロジェクトコードが既に使用されています",
+                details={"code": project_data.code}
+            )
 
-        Returns:
-            条件に一致するユーザー総数
-        """
-        if is_active is not None:
-            return await self.repository.count(is_active=is_active)
-        return await self.repository.count()
+        # プロジェクト作成
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            description=project_data.description,
+            created_by=creator_id,
+        )
+
+        # 作成者をOWNERとして追加
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
+        )
+
+        await self.db.commit()
+        return project
 ```
 
 ---
 
 ## 複数リポジトリの調整
 
+ベースクラスで複数のリポジトリを初期化し、サブサービスで利用します。
+
 ```python
-class SessionService:
-    """セッションサービス。"""
+# src/app/services/project/project/base.py
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.repositories import ProjectRepository, ProjectMemberRepository
+
+
+class ProjectBaseService:
+    """プロジェクトサービスの共通ベースクラス。
+
+    複数のリポジトリを初期化し、サブサービスで共有します。
+    """
 
     def __init__(self, db: AsyncSession):
-        self.session_repo = SessionRepository(db)
-        self.message_repo = MessageRepository(db)
-        self.user_repo = SampleUserRepository(db)
+        self.db = db
+        self.project_repo = ProjectRepository(db)
+        self.member_repo = ProjectMemberRepository(db)
+```
 
-    async def create_session_with_message(
+```python
+# src/app/services/project/project_member/crud.py
+class ProjectMemberCrudService(ProjectMemberBaseService):
+    """メンバーのCRUD操作を提供するサービス。"""
+
+    async def add_member(
         self,
-        user_id: int | None,
-        initial_message: str
-    ) -> Session:
-        """セッションを作成し、初期メッセージを追加。"""
-        # ユーザー存在確認（オプション）
-        if user_id:
-            user = await self.user_repo.get(user_id)
-            if not user:
-                raise NotFoundError("User not found")
+        project_id: uuid.UUID,
+        member_data: ProjectMemberCreate,
+        added_by: uuid.UUID,
+    ) -> ProjectMember:
+        """プロジェクトに新しいメンバーを追加します。"""
+        # プロジェクト存在確認
+        project = await self.project_repo.get(project_id)
+        if not project:
+            raise NotFoundError("プロジェクトが見つかりません")
 
-        # セッション作成
-        session = await self.session_repo.create(
-            session_id=str(uuid.uuid4()),
-            user_id=user_id
+        # 権限チェック
+        requester_role = await self._get_user_role(project_id, added_by)
+        if requester_role not in [ProjectRole.OWNER, ProjectRole.ADMIN]:
+            raise ValidationError("メンバー追加の権限がありません")
+
+        # 重複チェック
+        existing = await self.member_repo.get_by_project_and_user(
+            project_id, member_data.user_id
+        )
+        if existing:
+            raise ValidationError("このユーザーは既にメンバーです")
+
+        # メンバー追加
+        member = await self.member_repo.create(
+            project_id=project_id,
+            user_id=member_data.user_id,
+            role=member_data.role,
+            added_by=added_by,
         )
 
-        # 初期メッセージ追加
-        await self.message_repo.create(
-            session_id=session.id,
-            role="user",
-            content=initial_message
-        )
-
-        return session
+        await self.db.commit()
+        return member
 ```
 
 ---

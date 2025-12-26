@@ -126,27 +126,31 @@ APIエンドポイントから実装を読むことで、ユーザーインタ�
 
 ### ステップ5: サービス層のビジネスロジック
 
-サービス層は、ビジネスロジックの中核です。
+サービス層は、ビジネスロジックの中核です。**Facadeパターン**で機能別に分割されています。
 
-1. **services/** - ビジネスロジック層
+1. **services/** - ビジネスロジック層（Facadeパターン）
    - 推奨読み順:
-     1. `services/user_account/user_account.py` - ユーザーアカウントサービス（Azure AD対応）
-        - Azure OIDによるユーザー取得・作成
-        - 最終ログイン情報更新
-        - ユーザー一覧・詳細取得
-     2. `services/analysis/` - 分析機能サービス
-        - `analysis.py` - 分析セッション統合サービス
-        - `chat.py` - AIチャットサービス
-        - `file.py` - ファイル管理サービス
-        - `agent/` - LangGraphエージェントサブシステム（完全実装済み）
-          - `executor.py` - LangGraphエージェント実行エンジン
-          - `steps/` - エージェントステップ（filter, aggregation, transform, summary）
-     3. `services/sample/sample_user.py` - サンプルユーザーサービス（JWT認証用、非推奨）
-        - ユーザー作成、認証
-        - パスワードハッシュ化
-     4. `services/sample/sample_file.py` - サンプルファイルサービス（非推奨）
-        - ファイルアップロード/ダウンロード/削除
-        - MIME型バリデーション
+     1. `services/user_account/user_account/` - ユーザーアカウントサービス
+        - `__init__.py` - UserAccountService（Facade）
+        - `auth.py` - UserAccountAuthService（認証関連）
+        - `crud.py` - UserAccountCrudService（CRUD操作）
+     2. `services/project/` - プロジェクト管理サービス
+        - `project/__init__.py` - ProjectService（Facade）
+        - `project_file/__init__.py` - ProjectFileService（Facade）
+        - `project_member/__init__.py` - ProjectMemberService（Facade）
+     3. `services/analysis/` - 分析機能サービス
+        - `analysis_session/__init__.py` - AnalysisSessionService（Facade）
+        - `analysis_session/service.py` - メインサービス
+        - `analysis_session/session_crud.py` - セッションCRUD
+        - `agent/` - AIエージェント
+     4. `services/driver_tree/` - ドライバーツリーサービス
+        - `driver_tree/__init__.py` - DriverTreeService（Facade）
+        - `driver_tree_file/__init__.py` - DriverTreeFileService
+        - `driver_tree_node/__init__.py` - DriverTreeNodeService（Facade）
+     5. `services/storage/` - ストレージサービス（Strategyパターン）
+        - `__init__.py` - get_storage_service()
+        - `base.py` - StorageService（抽象基底）
+        - `local.py` / `azure.py` - 実装
 
 ### ステップ6: リポジトリ層のデータアクセス
 
@@ -388,15 +392,22 @@ async def create_resource(
         raise HTTPException(status_code=404, detail=str(e))
 ```
 
-### 2. サービス層実装パターン
+### 2. サービス層実装パターン（Facadeパターン）
 
 ```python
+# Facadeクラス（__init__.py）
 class ResourceService:
     def __init__(self, db: AsyncSession):
         self.db = db
-        self.repo = ResourceRepository(db)
+        self._crud_service = ResourceCrudService(db)
 
-    async def create(self, data: ResourceCreate, user_id: int):
+    async def create(self, data: ResourceCreate, user_id: uuid.UUID):
+        """サブサービスに委譲"""
+        return await self._crud_service.create(data, user_id)
+
+# サブサービス（crud.py）
+class ResourceCrudService(ResourceBaseService):
+    async def create(self, data: ResourceCreate, user_id: uuid.UUID):
         # 1. バリデーション
         # 2. ビジネスロジック
         # 3. リポジトリ操作
@@ -478,7 +489,10 @@ class ResourceRepository(BaseRepository[Resource]):
 
 ### Q2: ビジネスロジックはどこにありますか？
 
-**A**: `src/app/services/` ディレクトリにあります。各サービスクラスがビジネスロジックを実装しています。
+**A**: `src/app/services/` ディレクトリにあります。各サービスは**Facadeパターン**で実装され、機能別にサブサービスに分割されています:
+
+- `services/project/project/__init__.py` - ProjectService（Facade）
+- `services/project/project/crud.py` - ProjectCrudService（実装）
 
 ### Q3: データベーススキーマはどこで定義されていますか？
 
@@ -486,29 +500,22 @@ class ResourceRepository(BaseRepository[Resource]):
 
 ### Q4: AI機能の実装はどこですか？
 
-**A**: LangGraphエージェント機能は完全に実装済みです:
+**A**: AIエージェント機能は `src/app/services/analysis/agent/` にあります:
 
-- `src/app/services/analysis/agent/executor.py` - LangGraphエージェント実行エンジン
-- `src/app/services/analysis/agent/steps/` - エージェントステップ（filter, aggregation, transform, summary）
-- `src/app/services/analysis/agent/state/` - 状態管理（データ管理、スナップショット管理）
-- `src/app/services/analysis/agent/utils/tools/` - ツール群（フィルタ、集計、変換、サマリー）
-
-サンプル機能の `src/app/services/sample/sample_agent.py` はエコーバック機能のみで、非推奨です。
+- `agent.py` - エージェント実装
+- `state.py` - 状態管理
+- `utils/` - ユーティリティ（chart.py, tools.py, step.py）
 
 ### Q5: 認証システムはどうなっていますか？
 
-**A**: 2つの認証方式があります:
+**A**: Azure AD認証を使用しています:
 
-1. **JWT認証（非推奨）**:
-   - モデル: `models/sample/sample_user.py`
-   - サービス: `services/sample/sample_user.py`
-   - エンドポイント: `api/routes/v1/sample/sample_users.py`
-
-2. **Azure AD認証（推奨）**:
-   - モデル: `models/user_account/user_account.py`
-   - サービス: `services/user_account/user_account.py`
-   - エンドポイント: `api/routes/v1/user_accounts/user_accounts.py`
-   - 環境変数 `AUTH_MODE` で本番（Azure AD）/開発（モック）を切り替え
+- モデル: `models/user_account/user_account.py`
+- サービス: `services/user_account/user_account/__init__.py`（Facade）
+  - `auth.py` - UserAccountAuthService（認証関連）
+  - `crud.py` - UserAccountCrudService（CRUD操作）
+- エンドポイント: `api/routes/v1/user_accounts/user_accounts.py`
+- 環境変数 `AUTH_MODE` で本番（Azure AD）/開発（モック）を切り替え
 
 ### Q6: テストコードはどこにありますか？
 
@@ -526,9 +533,10 @@ class ResourceRepository(BaseRepository[Resource]):
 重要なポイント:
 
 1. **レイヤードアーキテクチャ** - API → Service → Repository → Model
-2. **依存性注入** - FastAPIのDIシステムを活用
-3. **トランザクション管理** - Repository層で`flush()`、Service層で`commit()`
-4. **セキュリティ** - bcrypt、JWT、ファイルバリデーション
-5. **非同期処理** - asyncpgとasync/awaitパターン
+2. **Facadeパターン** - サービス層で機能別にサブサービスに分割・委譲
+3. **依存性注入** - FastAPIのDIシステムを活用
+4. **トランザクション管理** - Repository層で`flush()`、Service層で`commit()`
+5. **Strategyパターン** - ストレージサービスで環境に応じた実装を切り替え
+6. **非同期処理** - asyncpgとasync/awaitパターン
 
 不明点があれば、各ドキュメントを参照するか、チームメンバーに質問してください。

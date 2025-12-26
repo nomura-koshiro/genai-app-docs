@@ -3,6 +3,7 @@
 このモジュールは、プロジェクトファイル管理のリクエスト/レスポンススキーマを提供します。
 
 主なスキーマ:
+    - ProjectFileUploadRequest: ファイルアップロードリクエスト
     - ProjectFileUploadResponse: ファイルアップロード成功レスポンス
     - ProjectFileResponse: ファイル情報レスポンス（uploader情報含む）
     - ProjectFileListResponse: ファイル一覧レスポンス
@@ -21,12 +22,31 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
 
+from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 from app.schemas.user_account.user_account import UserAccountResponse
 
 
-class ProjectFileUploadResponse(BaseModel):
+class ProjectFileUploadRequest(BaseCamelCaseModel):
+    """ファイルアップロードリクエストスキーマ。
+
+    multipart/form-dataでファイルをアップロードする際のスキーマです。
+    OpenAPIドキュメント生成用に定義しています。
+
+    Attributes:
+        file (bytes): アップロードするファイル（バイナリ）
+
+    Example:
+        >>> # multipart/form-data でファイルをアップロード
+        >>> files = {"file": ("document.pdf", file_content, "application/pdf")}
+        >>> response = await client.post(url, files=files)
+    """
+
+    file: bytes = Field(..., description="アップロードするファイル（バイナリ）")
+
+
+class ProjectFileUploadResponse(BaseCamelCaseModel):
     """ファイルアップロード成功レスポンススキーマ。
 
     ファイルアップロード直後に返却される基本情報を含みます。
@@ -70,7 +90,7 @@ class ProjectFileUploadResponse(BaseModel):
     message: str = Field(default="File uploaded successfully", description="成功メッセージ")
 
 
-class ProjectFileResponse(BaseModel):
+class ProjectFileResponse(BaseCamelCaseORMModel):
     """プロジェクトファイル情報レスポンススキーマ。
 
     アップロード者情報を含む詳細なファイル情報を返却します。
@@ -106,8 +126,6 @@ class ProjectFileResponse(BaseModel):
         - uploaderフィールドはリレーションシップから自動的に解決されます
     """
 
-    model_config = ConfigDict(from_attributes=True)
-
     id: uuid.UUID = Field(..., description="ファイルID（UUID）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     filename: str = Field(..., description="保存ファイル名")
@@ -120,7 +138,7 @@ class ProjectFileResponse(BaseModel):
     uploader: UserAccountResponse | None = Field(default=None, description="アップロード者のユーザー情報")
 
 
-class ProjectFileListResponse(BaseModel):
+class ProjectFileListResponse(BaseCamelCaseModel):
     """プロジェクトファイル一覧レスポンススキーマ。
 
     プロジェクトに属するファイル一覧とメタデータを返却します。
@@ -147,7 +165,7 @@ class ProjectFileListResponse(BaseModel):
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
 
 
-class ProjectFileDeleteResponse(BaseModel):
+class ProjectFileDeleteResponse(BaseCamelCaseModel):
     """ファイル削除成功レスポンススキーマ。
 
     ファイル削除操作の成功を示すレスポンスです。

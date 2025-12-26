@@ -1,74 +1,34 @@
 """分析ファイルモデル。
 
-このモジュールは、分析セッションにアップロードされたファイルを管理するモデルを定義します。
-
-主な機能:
-    - アップロードファイルの基本情報管理
-    - ストレージパスの管理
-    - ファイルメタデータ（サイズ、タイプ）の保存
-    - テーブル軸候補の保存
-
-テーブル設計:
-    - テーブル名: analysis_files
-    - プライマリキー: id (UUID)
-    - 外部キー: session_id (analysis_sessions), uploaded_by (users)
-
-使用例:
-    >>> from app.models.analysis import AnalysisFile
-    >>> file = AnalysisFile(
-    ...     session_id=session_id,
-    ...     uploaded_by=user_id,
-    ...     file_name="sales_data.xlsx",
-    ...     table_name="売上データ",
-    ...     storage_path="analysis/{session_id}/sales_data.csv"
-    ... )
+このモジュールは、分析用のファイルデータを管理するモデルを定義します。
 """
 
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import BigInteger, ForeignKey, Index, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.analysis_session import AnalysisSession
-    from app.models.user_account.user_account import UserAccount
+    from app.models.project.project_file import ProjectFile
 
 
 class AnalysisFile(Base, TimestampMixin):
-    """分析ファイルモデル。
+    """分析ファイル。
 
-    分析セッションにアップロードされたExcel/CSVファイルの情報を管理します。
-    ファイルはBlob Storageに保存され、メタデータはDBに記録されます。
+    プロジェクトファイルから取り込んだ分析用データを管理します。
 
     Attributes:
-        id (UUID): プライマリキー（UUID）
-        session_id (UUID): セッションID（外部キー）
-        uploaded_by (UUID): アップロード者のユーザーID（外部キー）
-        file_name (str): 元のファイル名（例: "sales_data.xlsx"）
-        table_name (str): テーブル名（ユーザー定義）
-        storage_path (str): ストレージパス（Blob Storage上のパス）
-        file_size (int): ファイルサイズ（バイト）
-        content_type (str | None): MIMEタイプ
-        table_axis (list[str] | None): 軸候補のリスト（例: ["地域", "商品"]）
-        file_metadata (dict | None): その他のメタデータ
-            - sheet_name (str): Excelシート名
-            - row_count (int): 行数
-            - column_count (int): 列数
-        is_active (bool): アクティブフラグ
-        created_at (datetime): 作成日時（UTC）
-        updated_at (datetime): 更新日時（UTC）
-
-    Relationships:
-        session (AnalysisSession): 所属セッション
-        uploader (UserAccount): アップロード者
-
-    インデックス:
-        - idx_analysis_files_session: session_id
-        - idx_analysis_files_uploaded_by: uploaded_by
+        id: 主キー（UUID）
+        session_id: セッションID（外部キー）
+        project_file_id: プロジェクトファイルID（外部キー）
+        sheet_name: シート名
+        axis_config: 軸設定（JSONB）
+        data: データ（JSONB）
     """
 
     __tablename__ = "analysis_file"
@@ -77,7 +37,6 @@ class AnalysisFile(Base, TimestampMixin):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
-        comment="ファイルID（主キー）",
     )
 
     session_id: Mapped[uuid.UUID] = mapped_column(
@@ -85,91 +44,46 @@ class AnalysisFile(Base, TimestampMixin):
         ForeignKey("analysis_session.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
-        comment="セッションID（外部キー）",
+        comment="セッションID",
     )
 
-    uploaded_by: Mapped[uuid.UUID] = mapped_column(
+    project_file_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("user_account.id", ondelete="SET NULL"),
-        nullable=True,
+        ForeignKey("project_file.id", ondelete="CASCADE"),
+        nullable=False,
         index=True,
-        comment="アップロードユーザーID（外部キー）",
+        comment="プロジェクトファイルID",
     )
 
-    file_name: Mapped[str] = mapped_column(
+    sheet_name: Mapped[str] = mapped_column(
         String(255),
         nullable=False,
-        comment="元のファイル名",
+        comment="シート名",
     )
 
-    table_name: Mapped[str] = mapped_column(
-        String(255),
-        nullable=False,
-        comment="テーブル名（ユーザー定義）",
-    )
-
-    storage_path: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        comment="Blob Storageの保存パス",
-    )
-
-    file_size: Mapped[int] = mapped_column(
-        BigInteger,
-        nullable=False,
-        comment="ファイルサイズ（バイト）",
-    )
-
-    content_type: Mapped[str | None] = mapped_column(
-        String(100),
-        nullable=True,
-        comment="MIMEタイプ（例: application/vnd.ms-excel）",
-    )
-
-    table_axis: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String),
-        nullable=True,
-        comment="テーブル軸候補（例: ['地域', '商品']）",
-    )
-
-    file_metadata: Mapped[dict[str, Any] | None] = mapped_column(
+    axis_config: Mapped[dict[str, Any]] = mapped_column(
         JSONB,
-        nullable=True,
-        comment="ファイルメタデータ（AnalysisFileMetadataを辞書形式で保存）",
+        nullable=False,
+        comment="軸設定",
     )
 
-    is_active: Mapped[bool] = mapped_column(
-        default=True,
+    data: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB,
         nullable=False,
-        comment="アクティブフラグ",
+        comment="データ",
     )
 
     # リレーションシップ
     session: Mapped["AnalysisSession"] = relationship(
         "AnalysisSession",
+        foreign_keys=[session_id],
         back_populates="files",
     )
 
-    uploader: Mapped["UserAccount"] = relationship(
-        "UserAccount",
-        foreign_keys=[uploaded_by],
-    )
-
-    # インデックス
-    __table_args__ = (
-        Index("idx_analysis_files_session", "session_id"),
-        Index("idx_analysis_files_uploaded_by", "uploaded_by"),
+    project_file: Mapped["ProjectFile"] = relationship(
+        "ProjectFile",
+        back_populates="analysis_files",
     )
 
     def __repr__(self) -> str:
-        """分析ファイルオブジェクトの文字列表現。
-
-        Returns:
-            str: "<AnalysisFile(id=..., file_name=...)>" 形式
-
-        Example:
-            >>> file = AnalysisFile(id=uuid.uuid4(), file_name="sales_data.xlsx")
-            >>> print(repr(file))
-            '<AnalysisFile(id=..., file_name=sales_data.xlsx)>'
-        """
-        return f"<AnalysisFile(id={self.id}, file_name={self.file_name})>"
+        return f"<AnalysisFile(id={self.id}, sheet_name={self.sheet_name})>"

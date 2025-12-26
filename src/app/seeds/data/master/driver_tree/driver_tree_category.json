@@ -1,0 +1,850 @@
+[
+  {
+    "category_id": 1,
+    "category_name": "農業、林業",
+    "industry_id": 1,
+    "industry_name": "農業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 1,
+    "category_name": "農業、林業",
+    "industry_id": 2,
+    "industry_name": "林業",
+    "driver_type_id": 7,
+    "driver_type": "採取数量×出荷率型"
+  },
+  {
+    "category_id": 2,
+    "category_name": "漁業",
+    "industry_id": 3,
+    "industry_name": "漁業（水産養殖除く）",
+    "driver_type_id": 7,
+    "driver_type": "採取数量×出荷率型"
+  },
+  {
+    "category_id": 2,
+    "category_name": "漁業",
+    "industry_id": 4,
+    "industry_name": "水産養殖業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 3,
+    "category_name": "鉱業、採石業、砂利採取業",
+    "industry_id": 5,
+    "industry_name": "鉱業・採石・砂利採取",
+    "driver_type_id": 7,
+    "driver_type": "採取数量×出荷率型"
+  },
+  {
+    "category_id": 4,
+    "category_name": "建設業",
+    "industry_id": 6,
+    "industry_name": "総合工事業",
+    "driver_type_id": 14,
+    "driver_type": "契約数×契約単価型①"
+  },
+  {
+    "category_id": 4,
+    "category_name": "建設業",
+    "industry_id": 7,
+    "industry_name": "職別工事業",
+    "driver_type_id": 14,
+    "driver_type": "契約数×契約単価型①"
+  },
+  {
+    "category_id": 4,
+    "category_name": "建設業",
+    "industry_id": 8,
+    "industry_name": "設備工事業",
+    "driver_type_id": 14,
+    "driver_type": "契約数×契約単価型①"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 9,
+    "industry_name": "食料品製造業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 10,
+    "industry_name": "飲料・たばこ・飼料製造業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 11,
+    "industry_name": "繊維工業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 12,
+    "industry_name": "木材・木製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 13,
+    "industry_name": "家具・装備品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 14,
+    "industry_name": "パルプ・紙・紙加工品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 15,
+    "industry_name": "印刷・同関連",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 16,
+    "industry_name": "化学工業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 17,
+    "industry_name": "石油製品・石炭製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 18,
+    "industry_name": "プラスチック製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 19,
+    "industry_name": "ゴム製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 20,
+    "industry_name": "なめし革・毛皮製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 21,
+    "industry_name": "窯業・土石製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 22,
+    "industry_name": "鉄鋼業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 23,
+    "industry_name": "非鉄金属製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 24,
+    "industry_name": "金属製品製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 25,
+    "industry_name": "はん用機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 26,
+    "industry_name": "生産用機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 27,
+    "industry_name": "業務用機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 28,
+    "industry_name": "電子部品・デバイス製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 29,
+    "industry_name": "電気機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 30,
+    "industry_name": "情報通信機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 31,
+    "industry_name": "輸送用機械器具製造",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 5,
+    "category_name": "製造業",
+    "industry_id": 32,
+    "industry_name": "その他の製造業",
+    "driver_type_id": 8,
+    "driver_type": "生産_製造数量×出荷率型"
+  },
+  {
+    "category_id": 6,
+    "category_name": "電気・ガス・熱供給・水道業",
+    "industry_id": 33,
+    "industry_name": "電気業",
+    "driver_type_id": 18,
+    "driver_type": "利用量×単価型②"
+  },
+  {
+    "category_id": 6,
+    "category_name": "電気・ガス・熱供給・水道業",
+    "industry_id": 34,
+    "industry_name": "ガス業",
+    "driver_type_id": 17,
+    "driver_type": "利用量×単価型①"
+  },
+  {
+    "category_id": 6,
+    "category_name": "電気・ガス・熱供給・水道業",
+    "industry_id": 35,
+    "industry_name": "熱供給業",
+    "driver_type_id": 18,
+    "driver_type": "利用量×単価型②"
+  },
+  {
+    "category_id": 6,
+    "category_name": "電気・ガス・熱供給・水道業",
+    "industry_id": 36,
+    "industry_name": "水道業",
+    "driver_type_id": 17,
+    "driver_type": "利用量×単価型①"
+  },
+  {
+    "category_id": 7,
+    "category_name": "情報通信業",
+    "industry_id": 37,
+    "industry_name": "通信業",
+    "driver_type_id": 13,
+    "driver_type": "契約数×契約期間型②"
+  },
+  {
+    "category_id": 7,
+    "category_name": "情報通信業",
+    "industry_id": 38,
+    "industry_name": "放送業",
+    "driver_type_id": 19,
+    "driver_type": "インプレッション数×単価型①"
+  },
+  {
+    "category_id": 7,
+    "category_name": "情報通信業",
+    "industry_id": 39,
+    "industry_name": "情報サービス業",
+    "driver_type_id": 13,
+    "driver_type": "契約数×契約期間型②"
+  },
+  {
+    "category_id": 7,
+    "category_name": "情報通信業",
+    "industry_id": 40,
+    "industry_name": "インターネット附随サービス",
+    "driver_type_id": 20,
+    "driver_type": "インプレッション数×単価型②"
+  },
+  {
+    "category_id": 7,
+    "category_name": "情報通信業",
+    "industry_id": 41,
+    "industry_name": "映像・音声・文字情報制作",
+    "driver_type_id": 16,
+    "driver_type": "契約数×契約単価型③"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 42,
+    "industry_name": "鉄道業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 43,
+    "industry_name": "道路旅客運送業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 44,
+    "industry_name": "道路貨物運送業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 45,
+    "industry_name": "水運業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 46,
+    "industry_name": "航空運輸業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 47,
+    "industry_name": "倉庫業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 48,
+    "industry_name": "運輸附帯サービス",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 8,
+    "category_name": "運輸業、郵便業",
+    "industry_id": 49,
+    "industry_name": "郵便業",
+    "driver_type_id": 4,
+    "driver_type": "輸送可能量×充填率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 50,
+    "industry_name": "各種商品卸売業",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 51,
+    "industry_name": "繊維・衣服等卸売",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 52,
+    "industry_name": "飲食料品卸売",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 53,
+    "industry_name": "建材・鉱物・金属卸売",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 54,
+    "industry_name": "機械器具卸売",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 55,
+    "industry_name": "その他の卸売業",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 56,
+    "industry_name": "各種商品小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 57,
+    "industry_name": "繊維・衣服小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 58,
+    "industry_name": "飲食料品小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 59,
+    "industry_name": "機械器具小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 60,
+    "industry_name": "その他の小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 9,
+    "category_name": "卸売業、小売業",
+    "industry_id": 61,
+    "industry_name": "無店舗小売業",
+    "driver_type_id": 10,
+    "driver_type": "店舗数×来客数×CVR×単価型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 62,
+    "industry_name": "銀行業",
+    "driver_type_id": 24,
+    "driver_type": "貸出額×利率型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 62,
+    "industry_name": "銀行業",
+    "driver_type_id": 21,
+    "driver_type": "決済額×手数料割合型①"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 62,
+    "industry_name": "銀行業",
+    "driver_type_id": 23,
+    "driver_type": "運用額×手数料割合型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 63,
+    "industry_name": "協同組織金融業",
+    "driver_type_id": 24,
+    "driver_type": "貸出額×利率型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 63,
+    "industry_name": "協同組織金融業",
+    "driver_type_id": 23,
+    "driver_type": "運用額×手数料割合型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 64,
+    "industry_name": "貸金・クレジットカード",
+    "driver_type_id": 22,
+    "driver_type": "決済額×手数料割合型②"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 65,
+    "industry_name": "金融商品取引業",
+    "driver_type_id": 23,
+    "driver_type": "運用額×手数料割合型"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 66,
+    "industry_name": "補助的金融業等",
+    "driver_type_id": 21,
+    "driver_type": "決済額×手数料割合型①"
+  },
+  {
+    "category_id": 10,
+    "category_name": "金融業、保険業",
+    "industry_id": 67,
+    "industry_name": "保険業",
+    "driver_type_id": 12,
+    "driver_type": "契約数×契約期間型①"
+  },
+  {
+    "category_id": 11,
+    "category_name": "不動産業、物品賃貸業",
+    "industry_id": 68,
+    "industry_name": "不動産取引業",
+    "driver_type_id": 9,
+    "driver_type": "仕入数量×出荷率型"
+  },
+  {
+    "category_id": 11,
+    "category_name": "不動産業、物品賃貸業",
+    "industry_id": 68,
+    "industry_name": "不動産取引業",
+    "driver_type_id": 21,
+    "driver_type": "決済額×手数料割合型①"
+  },
+  {
+    "category_id": 11,
+    "category_name": "不動産業、物品賃貸業",
+    "industry_id": 69,
+    "industry_name": "不動産賃貸・管理",
+    "driver_type_id": 2,
+    "driver_type": "キャパシティ×稼働率型②"
+  },
+  {
+    "category_id": 11,
+    "category_name": "不動産業、物品賃貸業",
+    "industry_id": 70,
+    "industry_name": "物品賃貸業",
+    "driver_type_id": 1,
+    "driver_type": "キャパシティ×稼働率型①"
+  },
+  {
+    "category_id": 11,
+    "category_name": "不動産業、物品賃貸業",
+    "industry_id": 70,
+    "industry_name": "物品賃貸業",
+    "driver_type_id": 24,
+    "driver_type": "貸出額×利率型"
+  },
+  {
+    "category_id": 12,
+    "category_name": "学術研究、専門・技術サービス業",
+    "industry_id": 71,
+    "industry_name": "学術・開発研究機関",
+    "driver_type_id": 15,
+    "driver_type": "契約数×契約単価型②"
+  },
+  {
+    "category_id": 12,
+    "category_name": "学術研究、専門・技術サービス業",
+    "industry_id": 72,
+    "industry_name": "専門サービス業（他に分類されないもの）",
+    "driver_type_id": 5,
+    "driver_type": "人材数×稼働率型①"
+  },
+  {
+    "category_id": 12,
+    "category_name": "学術研究、専門・技術サービス業",
+    "industry_id": 73,
+    "industry_name": "広告業",
+    "driver_type_id": 16,
+    "driver_type": "契約数×契約単価型③"
+  },
+  {
+    "category_id": 12,
+    "category_name": "学術研究、専門・技術サービス業",
+    "industry_id": 74,
+    "industry_name": "技術サービス業（他に分類されないもの）",
+    "driver_type_id": 15,
+    "driver_type": "契約数×契約単価型②"
+  },
+  {
+    "category_id": 13,
+    "category_name": "宿泊業、飲食サービス業",
+    "industry_id": 75,
+    "industry_name": "宿泊業",
+    "driver_type_id": 1,
+    "driver_type": "キャパシティ×稼働率型①"
+  },
+  {
+    "category_id": 13,
+    "category_name": "宿泊業、飲食サービス業",
+    "industry_id": 76,
+    "industry_name": "飲食店",
+    "driver_type_id": 3,
+    "driver_type": "キャパシティ×稼働率×回転率型"
+  },
+  {
+    "category_id": 13,
+    "category_name": "宿泊業、飲食サービス業",
+    "industry_id": 77,
+    "industry_name": "持ち帰り・配達飲食",
+    "driver_type_id": 11,
+    "driver_type": "店舗数×来客数×単価型"
+  },
+  {
+    "category_id": 14,
+    "category_name": "生活関連サービス業、娯楽業",
+    "industry_id": 78,
+    "industry_name": "洗濯・理容・美容・浴場",
+    "driver_type_id": 3,
+    "driver_type": "キャパシティ×稼働率×回転率型"
+  },
+  {
+    "category_id": 14,
+    "category_name": "生活関連サービス業、娯楽業",
+    "industry_id": 79,
+    "industry_name": "その他の生活関連サービス業",
+    "driver_type_id": 21,
+    "driver_type": "決済額×手数料割合型①"
+  },
+  {
+    "category_id": 14,
+    "category_name": "生活関連サービス業、娯楽業",
+    "industry_id": 80,
+    "industry_name": "娯楽業",
+    "driver_type_id": 11,
+    "driver_type": "店舗数×来客数×単価型"
+  },
+  {
+    "category_id": 15,
+    "category_name": "教育、学習支援業",
+    "industry_id": 81,
+    "industry_name": "学校教育",
+    "driver_type_id": 15,
+    "driver_type": "契約数×契約単価型②"
+  },
+  {
+    "category_id": 15,
+    "category_name": "教育、学習支援業",
+    "industry_id": 82,
+    "industry_name": "その他教育・学習支援",
+    "driver_type_id": 15,
+    "driver_type": "契約数×契約単価型②"
+  },
+  {
+    "category_id": 16,
+    "category_name": "医療、福祉",
+    "industry_id": 83,
+    "industry_name": "医療業",
+    "driver_type_id": 5,
+    "driver_type": "人材数×稼働率型①"
+  },
+  {
+    "category_id": 16,
+    "category_name": "医療、福祉",
+    "industry_id": 84,
+    "industry_name": "保健衛生",
+    "driver_type_id": 15,
+    "driver_type": "契約数×契約単価型②"
+  },
+  {
+    "category_id": 16,
+    "category_name": "医療、福祉",
+    "industry_id": 85,
+    "industry_name": "社会保険・福祉・介護",
+    "driver_type_id": 6,
+    "driver_type": "人材数×稼働率型②"
+  },
+  {
+    "category_id": 17,
+    "category_name": "複合サービス事業",
+    "industry_id": 86,
+    "industry_name": "郵便局",
+    "driver_type_id": 24,
+    "driver_type": "貸出額×利率型"
+  },
+  {
+    "category_id": 17,
+    "category_name": "複合サービス事業",
+    "industry_id": 86,
+    "industry_name": "郵便局",
+    "driver_type_id": 12,
+    "driver_type": "契約数×契約期間型①"
+  },
+  {
+    "category_id": 17,
+    "category_name": "複合サービス事業",
+    "industry_id": 87,
+    "industry_name": "協同組合",
+    "driver_type_id": 12,
+    "driver_type": "契約数×契約期間型①"
+  },
+  {
+    "category_id": 17,
+    "category_name": "複合サービス事業",
+    "industry_id": 87,
+    "industry_name": "協同組合",
+    "driver_type_id": 24,
+    "driver_type": "貸出額×利率型"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 88,
+    "industry_name": "廃棄物処理業",
+    "driver_type_id": 18,
+    "driver_type": "利用量×単価型②"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 89,
+    "industry_name": "自動車整備業",
+    "driver_type_id": 14,
+    "driver_type": "契約数×契約単価型①"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 90,
+    "industry_name": "機械等修理業",
+    "driver_type_id": 14,
+    "driver_type": "契約数×契約単価型①"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 91,
+    "industry_name": "職業紹介・労働者派遣",
+    "driver_type_id": 16,
+    "driver_type": "契約数×契約単価型③"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 92,
+    "industry_name": "その他の事業サービス業",
+    "driver_type_id": 13,
+    "driver_type": "契約数×契約期間型②"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 93,
+    "industry_name": "政治・経済・文化団体",
+    "driver_type_id": 13,
+    "driver_type": "契約数×契約期間型②"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 94,
+    "industry_name": "宗教",
+    "driver_type_id": 13,
+    "driver_type": "契約数×契約期間型②"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 95,
+    "industry_name": "その他のサービス業",
+    "driver_type_id": 16,
+    "driver_type": "契約数×契約単価型③"
+  },
+  {
+    "category_id": 18,
+    "category_name": "サービス業（他に分類されないもの）",
+    "industry_id": 96,
+    "industry_name": "外国公務",
+    "driver_type_id": 99,
+    "driver_type": "売上_原価_販管費の概念が存在しない"
+  },
+  {
+    "category_id": 19,
+    "category_name": "公務（他に分類されるものを除く）",
+    "industry_id": 97,
+    "industry_name": "国家公務",
+    "driver_type_id": 99,
+    "driver_type": "売上_原価_販管費の概念が存在しない"
+  },
+  {
+    "category_id": 19,
+    "category_name": "公務（他に分類されるものを除く）",
+    "industry_id": 98,
+    "industry_name": "地方公務",
+    "driver_type_id": 99,
+    "driver_type": "売上_原価_販管費の概念が存在しない"
+  },
+  {
+    "category_id": 20,
+    "category_name": "分類不能の産業",
+    "industry_id": 99,
+    "industry_name": "分類不能の産業",
+    "driver_type_id": 99,
+    "driver_type": "売上_原価_販管費の概念が存在しない"
+  }
+]

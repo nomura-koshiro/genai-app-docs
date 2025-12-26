@@ -386,7 +386,7 @@ async def get_current_active_user(
 
 依存関係グラフ:
 
-```mermaid
+::: mermaid
 graph TD
     A[HTTPリクエスト] --> B[FastAPI Router]
 
@@ -422,7 +422,7 @@ graph TD
     style C3 fill:#aed581,stroke:#33691e,stroke-width:3px,color:#000
     style C4 fill:#ffb74d,stroke:#e65100,stroke-width:3px,color:#000
     style E fill:#4db6ac,stroke:#004d40,stroke-width:3px,color:#000
-```
+:::
 
 この図から、各依存関係が階層的に解決され、最終的にハンドラー関数に注入される様子が分かります。
 

@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_process_time_header_added(client: AsyncClient):
-    """X-Process-Timeヘッダーが追加されることを確認。"""
+    """[test_logging-001] X-Process-Timeヘッダーが追加されることを確認。"""
     response = await client.get("/health")
 
     assert response.status_code == 200
@@ -23,7 +23,7 @@ async def test_process_time_header_added(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_process_time_on_api_endpoint(client: AsyncClient):
-    """APIエンドポイントでもX-Process-Timeが追加されることを確認。"""
+    """[test_logging-002] APIエンドポイントでもX-Process-Timeが追加されることを確認。"""
     response = await client.get("/")
 
     assert response.status_code == 200
@@ -34,7 +34,7 @@ async def test_process_time_on_api_endpoint(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_logging_on_successful_request(client: AsyncClient):
-    """正常なリクエストでログが記録されることを確認（ヘッダーで間接的に検証）。"""
+    """[test_logging-003] 正常なリクエストでログが記録されることを確認（ヘッダーで間接的に検証）。"""
     response = await client.get("/")
 
     # ログミドルウェアが動作していれば、X-Process-Timeが追加される
@@ -43,7 +43,7 @@ async def test_logging_on_successful_request(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_logging_on_post_request(client: AsyncClient):
-    """POSTリクエストでもログとヘッダーが正しく処理されることを確認。"""
+    """[test_logging-004] POSTリクエストでもログとヘッダーが正しく処理されることを確認。"""
     # エラーになるPOSTリクエスト（Method Not Allowed）
     response = await client.post("/health")
 
@@ -53,7 +53,7 @@ async def test_logging_on_post_request(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_logging_on_error_response(client: AsyncClient):
-    """エラーレスポンスでもX-Process-Timeが追加されることを確認。"""
+    """[test_logging-005] エラーレスポンスでもX-Process-Timeが追加されることを確認。"""
     response = await client.get("/nonexistent")
 
     assert response.status_code == 404
@@ -63,7 +63,7 @@ async def test_logging_on_error_response(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_process_time_increases_with_complexity(client: AsyncClient):
-    """複雑な処理ほど処理時間が増加することを確認（相対的な比較）。"""
+    """[test_logging-006] 複雑な処理ほど処理時間が増加することを確認（相対的な比較）。"""
     # シンプルなヘルスチェック
     health_response = await client.get("/health")
     health_time = float(health_response.headers["X-Process-Time"])

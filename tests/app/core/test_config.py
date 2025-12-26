@@ -27,7 +27,7 @@ class TestDevAuthProductionValidation:
     """開発モード認証の本番環境混入防止テスト。"""
 
     def test_production_with_dev_auth_raises_error(self):
-        """本番環境で開発モード認証が有効な場合にエラーを発生させる。
+        """[test_config-001] 本番環境で開発モード認証が有効な場合にエラーを発生させる。
 
         セキュリティリスク防止のため、ENVIRONMENT=production かつ
         AUTH_MODE=development の組み合わせは禁止される。
@@ -52,7 +52,7 @@ class TestDevAuthProductionValidation:
                 Settings()
 
     def test_production_with_production_auth_success(self):
-        """本番環境で本番モード認証を使用する場合は正常に動作する。"""
+        """[test_config-002] 本番環境で本番モード認証を使用する場合は正常に動作する。"""
         with patch.dict(
             os.environ,
             {
@@ -73,7 +73,7 @@ class TestDevAuthProductionValidation:
             assert settings.AUTH_MODE == "production"
 
     def test_development_with_dev_auth_success(self):
-        """開発環境では開発モード認証を許可する。"""
+        """[test_config-003] 開発環境では開発モード認証を許可する。"""
         with patch.dict(
             os.environ,
             {
@@ -87,7 +87,7 @@ class TestDevAuthProductionValidation:
             assert settings.AUTH_MODE == "development"
 
     def test_staging_with_dev_auth_success(self):
-        """ステージング環境では開発モード認証を許可する。"""
+        """[test_config-004] ステージング環境では開発モード認証を許可する。"""
         with patch.dict(
             os.environ,
             {
@@ -105,7 +105,7 @@ class TestSecretKeyValidation:
     """SECRET_KEY の本番環境バリデーションテスト。"""
 
     def test_production_without_secret_key_raises_error(self):
-        """本番環境でSECRET_KEYが未設定の場合にエラーを発生させる。"""
+        """[test_config-005] 本番環境でSECRET_KEYが未設定の場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {
@@ -128,7 +128,7 @@ class TestSecretKeyValidation:
                 Settings(_env_file=None)
 
     def test_production_with_default_secret_key_raises_error(self):
-        """本番環境でデフォルトSECRET_KEYを使用した場合にエラーを発生させる。"""
+        """[test_config-006] 本番環境でデフォルトSECRET_KEYを使用した場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {
@@ -155,7 +155,7 @@ class TestAllowedOriginsValidation:
     """ALLOWED_ORIGINS の本番環境バリデーションテスト。"""
 
     def test_production_without_allowed_origins_raises_error(self):
-        """本番環境でALLOWED_ORIGINSが未設定の場合にエラーを発生させる。"""
+        """[test_config-007] 本番環境でALLOWED_ORIGINSが未設定の場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {
@@ -178,7 +178,7 @@ class TestAllowedOriginsValidation:
                 Settings(_env_file=None)
 
     def test_production_with_wildcard_cors_raises_error(self):
-        """本番環境でワイルドカードCORSを使用した場合にエラーを発生させる。"""
+        """[test_config-008] 本番環境でワイルドカードCORSを使用した場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {
@@ -205,7 +205,7 @@ class TestAzureAdValidation:
     """Azure AD設定の本番モードバリデーションテスト。"""
 
     def test_production_auth_without_tenant_id_raises_error(self):
-        """本番モード認証でAZURE_TENANT_IDが未設定の場合にエラーを発生させる。"""
+        """[test_config-009] 本番モード認証でAZURE_TENANT_IDが未設定の場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {
@@ -227,7 +227,7 @@ class TestAzureAdValidation:
                 Settings()
 
     def test_production_auth_without_client_id_raises_error(self):
-        """本番モード認証でAZURE_CLIENT_IDが未設定の場合にエラーを発生させる。"""
+        """[test_config-010] 本番モード認証でAZURE_CLIENT_IDが未設定の場合にエラーを発生させる。"""
         with patch.dict(
             os.environ,
             {

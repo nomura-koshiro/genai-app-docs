@@ -10,6 +10,8 @@
     ├── ValidationError (422) - バリデーションエラー
     ├── AuthenticationError (401) - 認証失敗
     ├── AuthorizationError (403) - 権限不足
+    ├── PayloadTooLargeError (413) - ペイロードサイズ超過
+    ├── UnsupportedMediaTypeError (415) - 非対応ファイルタイプ
     ├── DatabaseError (500) - データベース操作エラー
     └── ExternalServiceError (502) - 外部サービスエラー
 
@@ -222,6 +224,68 @@ class AuthorizationError(AppException):
         details: dict[str, Any] | None = None,
     ):
         super().__init__(message, status_code=403, details=details)
+
+
+class PayloadTooLargeError(AppException):
+    """ペイロードサイズが制限を超過した場合に発生する例外（HTTPステータス: 413）。
+
+    この例外は、アップロードされたファイルやリクエストボディのサイズが
+    許可された最大サイズを超えた場合に発生させます。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Payload too large"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: サイズ、最大サイズを含める
+
+    Example:
+        >>> # ペイロードサイズ超過
+        >>> raise PayloadTooLargeError(
+        ...     "File size exceeds maximum allowed size of 50MB",
+        ...     details={"size": 52428800, "max_size": 52428800}
+        ... )
+
+    Note:
+        - クライアントに413レスポンスが返されます
+        - detailsにサイズと最大サイズを含めてユーザーに通知します
+    """
+
+    def __init__(
+        self,
+        message: str = "Payload too large",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(message, status_code=413, details=details)
+
+
+class UnsupportedMediaTypeError(AppException):
+    """サポートされていないメディアタイプの場合に発生する例外（HTTPステータス: 415）。
+
+    この例外は、アップロードされたファイルの形式やメディアタイプが
+    サポートされていない場合に発生させます。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Unsupported media type"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: 受信したメディアタイプ、サポートされているメディアタイプを含める
+
+    Example:
+        >>> # サポートされていないファイル形式
+        >>> raise UnsupportedMediaTypeError(
+        ...     "File type .txt is not supported",
+        ...     details={"received": ".txt", "supported": [".xlsx", ".xls"]}
+        ... )
+
+    Note:
+        - クライアントに415レスポンスが返されます
+        - detailsにサポートされている形式を含めてユーザーに通知します
+    """
+
+    def __init__(
+        self,
+        message: str = "Unsupported media type",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(message, status_code=415, details=details)
 
 
 class DatabaseError(AppException):

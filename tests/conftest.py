@@ -3,6 +3,7 @@
 import asyncio
 import os
 from collections.abc import AsyncGenerator
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -13,6 +14,10 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.main import app
 from app.models.base import Base
+from tests.fixtures.excel_helper import create_multi_sheet_excel_bytes
+
+# ストレージサービスのモックパス（統一: app.services.storage.get_storage_service）
+STORAGE_SERVICE_MOCK_PATH = "app.services.storage.get_storage_service"
 
 # passlibのbcryptバグチェックをスキップ（テスト環境でのエラー回避）
 os.environ["PASSLIB_SKIP_BCRYPT_BUG_TESTS"] = "1"
@@ -128,18 +133,100 @@ async def db_session(db_engine) -> AsyncGenerator[AsyncSession]:
 
 
 @pytest.fixture(scope="function")
-async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient]:
-    """テスト用HTTPクライアント。"""
+def mock_storage_service():
+    """モックストレージサービスを提供するフィクスチャ。
+
+    テスト用のExcelファイルを返すモックを作成します。
+
+    Returns:
+        AsyncMock: モック化されたストレージサービス
+    """
+    storage_mock = AsyncMock()
+    # デフォルトでテスト用Excelファイルを返す
+    storage_mock.download.return_value = create_multi_sheet_excel_bytes()
+    storage_mock.upload.return_value = True
+    storage_mock.exists.return_value = True
+    storage_mock.delete.return_value = True
+    return storage_mock
+
+
+@pytest.fixture(scope="function")
+def mock_analysis_agent():
+    """モック分析エージェントを提供するフィクスチャ。
+
+    AnalysisAgentのモックを作成します。
+    テスト内でchat_historyやall_stepsをカスタマイズ可能です。
+
+    Returns:
+        tuple: (mock_agent_class, mock_agent_instance)
+
+    使用例:
+        def test_example(client, mock_analysis_agent):
+            mock_class, mock_instance = mock_analysis_agent
+            mock_instance.state.chat_history = [("user", "msg"), ("assistant", "response")]
+            mock_instance.state.all_steps = []
+            with patch("app.services.analysis.analysis_session.service.AnalysisAgent", mock_class):
+                response = await client.post(...)
+    """
+    from unittest.mock import MagicMock
+
+    mock_agent = MagicMock()
+
+    def chat_side_effect(user_message):
+        # userの発言を履歴に追加
+        if not hasattr(mock_agent.state, "chat_history") or mock_agent.state.chat_history is None:
+            mock_agent.state.chat_history = []
+        mock_agent.state.chat_history.append(("user", user_message))
+        # assistantの返答を履歴に追加
+        mock_agent.state.chat_history.append(("assistant", "分析を開始します。"))
+        return "分析を開始します。"
+
+    mock_agent.chat.side_effect = chat_side_effect
+
+    # デフォルトのchat_historyとall_stepsはstateにセットされる
+    def agent_init(state):
+        # テストが事前に初期チャット履歴やall_stepsを指定している場合はそれをstateに反映
+        if hasattr(mock_agent, "initial_chat_history"):
+            try:
+                state.chat_history = list(mock_agent.initial_chat_history)
+            except Exception:
+                state.chat_history = mock_agent.initial_chat_history
+        if hasattr(mock_agent, "initial_all_steps"):
+            try:
+                state.all_steps = list(mock_agent.initial_all_steps)
+            except Exception:
+                state.all_steps = mock_agent.initial_all_steps
+        # stateをmock_agent.stateとして保持
+        mock_agent.state = state
+        return mock_agent
+
+    mock_agent_class = MagicMock(side_effect=agent_init)
+    return mock_agent_class, mock_agent
+
+
+@pytest.fixture(scope="function")
+async def client(db_session: AsyncSession, mock_storage_service) -> AsyncGenerator[AsyncClient]:
+    """テスト用HTTPクライアント。
+
+    Note:
+        mock_storage_serviceは自動的にストレージサービスとして注入されます。
+        テスト内でモックの戻り値を変更したい場合は、mock_storage_serviceフィクスチャを
+        直接引数として受け取り、return_valueを変更してください。
+    """
 
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
-        yield test_client
+    # ストレージサービスをモック（統一パス: app.services.storage.get_storage_service）
+    with patch(STORAGE_SERVICE_MOCK_PATH, return_value=mock_storage_service):
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as test_client:
+            yield test_client
 
     app.dependency_overrides.clear()
+    # 非同期操作の完了を待機（Connection._cancel警告を防止）
+    await asyncio.sleep(0.1)
 
 
 # サンプルデータフィクスチャ
@@ -200,7 +287,7 @@ def override_auth(request):
     Yields:
         callable: ユーザーオブジェクトを受け取り、認証をオーバーライドする関数
     """
-    from app.api.core.dependencies import get_current_active_user_azure
+    from app.api.core.dependencies import get_current_active_user_account
     from app.main import app
 
     def _override(user):
@@ -212,7 +299,7 @@ def override_auth(request):
         Returns:
             User: 渡されたユーザーオブジェクト（チェーン可能）
         """
-        app.dependency_overrides[get_current_active_user_azure] = lambda: user
+        app.dependency_overrides[get_current_active_user_account] = lambda: user
         return user
 
     yield _override
@@ -292,3 +379,110 @@ async def seeded_templates(db_session):
     result = await seed_templates(db_session, clear_existing=True)
 
     return result
+
+
+# =============================================================================
+# テストデータシーダー関連フィクスチャ
+# =============================================================================
+
+
+@pytest.fixture
+def test_data_seeder(db_session):
+    """テストデータシーダーを提供。
+
+    使用例:
+        async def test_example(test_data_seeder):
+            user = await test_data_seeder.create_user(display_name="Test")
+            project, owner = await test_data_seeder.create_project_with_owner()
+    """
+    from tests.fixtures.seeders import TestDataSeeder
+
+    return TestDataSeeder(db_session)
+
+
+@pytest.fixture
+async def basic_test_data(test_data_seeder):
+    """基本的なテストデータセット（admin, owner, members, project）。
+
+    使用例:
+        async def test_example(basic_test_data):
+            admin = basic_test_data["admin"]
+            project = basic_test_data["project"]
+    """
+    return await test_data_seeder.seed_basic_dataset()
+
+
+@pytest.fixture
+async def admin_user(test_data_seeder):
+    """管理者ユーザーを作成。"""
+    user = await test_data_seeder.create_admin_user()
+    await test_data_seeder.db.commit()
+    return user
+
+
+@pytest.fixture
+async def regular_user(test_data_seeder):
+    """一般ユーザーを作成。"""
+    user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
+    return user
+
+
+@pytest.fixture
+async def project_with_owner(test_data_seeder):
+    """オーナー付きプロジェクトを作成。
+
+    Returns:
+        tuple[Project, UserAccount]: (project, owner)
+    """
+    project, owner = await test_data_seeder.create_project_with_owner()
+    await test_data_seeder.db.commit()
+    return project, owner
+
+
+@pytest.fixture
+async def project_with_members(test_data_seeder):
+    """複数メンバーを持つプロジェクトを作成。
+
+    Returns:
+        dict: {project, owner, moderator, member, viewer}
+    """
+    from app.models import ProjectRole
+
+    owner = await test_data_seeder.create_user(display_name="Owner")
+    project = await test_data_seeder.create_project(
+        name="Project with Members",
+        created_by=owner.id,
+    )
+
+    # 各ロールのメンバーを作成
+    await test_data_seeder.create_member(project=project, user=owner, role=ProjectRole.PROJECT_MANAGER)
+
+    moderator = await test_data_seeder.create_user(display_name="Moderator")
+    await test_data_seeder.create_member(project=project, user=moderator, role=ProjectRole.PROJECT_MODERATOR, added_by=owner.id)
+
+    member = await test_data_seeder.create_user(display_name="Member")
+    await test_data_seeder.create_member(project=project, user=member, role=ProjectRole.MEMBER, added_by=owner.id)
+
+    viewer = await test_data_seeder.create_user(display_name="Viewer")
+    await test_data_seeder.create_member(project=project, user=viewer, role=ProjectRole.VIEWER, added_by=owner.id)
+
+    await test_data_seeder.db.commit()
+
+    return {
+        "project": project,
+        "owner": owner,
+        "moderator": moderator,
+        "member": member,
+        "viewer": viewer,
+    }
+
+
+@pytest.fixture
+async def analysis_session_data(test_data_seeder):
+    """分析セッション用テストデータを作成。
+
+    Returns:
+        dict: {project, owner, validation, issue, session, snapshot}
+    """
+    return await test_data_seeder.seed_analysis_session_dataset()

@@ -1,7 +1,6 @@
-"""DriverTreeNodeリポジトリ。
+"""ドライバーツリーノードリポジトリ。
 
-このモジュールは、DriverTreeNodeモデルのデータアクセスを提供します。
-木構造の親子関係を考慮したCRUD操作をサポートします。
+このモジュールは、DriverTreeNodeモデルに特化したデータベース操作を提供します。
 """
 
 import uuid
@@ -10,161 +9,71 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import DriverTreeNode
+from app.core.logging import get_logger
+from app.models.driver_tree import DriverTreeNode
 from app.repositories.base import BaseRepository
+
+logger = get_logger(__name__)
 
 
 class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
-    """DriverTreeNodeリポジトリ。
+    """DriverTreeNodeモデル用のリポジトリクラス。
 
-    木構造のノードに対するデータアクセスを提供します。
-
-    Args:
-        db: データベースセッション
-
-    Example:
-        >>> repo = DriverTreeNodeRepository(db)
-        >>> # ルートノード作成
-        >>> root = await repo.create(tree_id=tree_id, label="粗利")
-        >>> # 子ノード作成
-        >>> child = await repo.create(
-        ...     tree_id=tree_id,
-        ...     label="売上",
-        ...     parent_id=root.id,
-        ...     operator="-"
-        ... )
+    BaseRepositoryの共通CRUD操作に加えて、
+    ノード管理に特化したクエリメソッドを提供します。
     """
 
     def __init__(self, db: AsyncSession):
-        """リポジトリを初期化します。
+        """ノードリポジトリを初期化します。
 
         Args:
-            db: データベースセッション
+            db: SQLAlchemyの非同期データベースセッション
         """
         super().__init__(DriverTreeNode, db)
 
-    async def create(
-        self,
-        tree_id: uuid.UUID,
-        label: str,
-        parent_id: uuid.UUID | None = None,
-        operator: str | None = None,
-        x: int | None = None,
-        y: int | None = None,
-    ) -> DriverTreeNode:
-        """ノードを作成します。
+    async def get_with_relations(self, node_id: uuid.UUID) -> DriverTreeNode | None:
+        """リレーションシップを含めてノードを取得します。
 
         Args:
-            tree_id: 所属するツリーのID
-            label: ノードのラベル
-            parent_id: 親ノードID（Noneの場合はルートノード）
-            operator: 親ノードとの演算子
-            x: X座標
-            y: Y座標
+            node_id: ノードID
 
         Returns:
-            DriverTreeNode: 作成されたノード
-
-        Example:
-            >>> # ルートノード
-            >>> root = await repo.create(tree_id=tree_id, label="粗利")
-            >>> # 子ノード
-            >>> child = await repo.create(
-            ...     tree_id=tree_id,
-            ...     label="売上",
-            ...     parent_id=root.id,
-            ...     operator="-"
-            ... )
-        """
-        node = DriverTreeNode(
-            tree_id=tree_id,
-            label=label,
-            parent_id=parent_id,
-            operator=operator,
-            x=x,
-            y=y,
-        )
-        self.db.add(node)
-        await self.db.flush()
-        await self.db.refresh(node)
-        return node
-
-    async def find_by_tree_id(self, tree_id: uuid.UUID) -> list[DriverTreeNode]:
-        """指定されたツリーに属するすべてのノードを取得します。
-
-        Args:
-            tree_id: ツリーID
-
-        Returns:
-            list[DriverTreeNode]: ノードのリスト
-
-        Example:
-            >>> nodes = await repo.find_by_tree_id(tree_id)
-        """
-        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id))
-        return list(result.scalars().all())
-
-    async def find_root_by_tree_id(self, tree_id: uuid.UUID) -> DriverTreeNode | None:
-        """指定されたツリーのルートノードを取得します。
-
-        Args:
-            tree_id: ツリーID
-
-        Returns:
-            DriverTreeNode | None: ルートノード、または None
-
-        Example:
-            >>> root = await repo.find_root_by_tree_id(tree_id)
+            DriverTreeNode | None: ノード（データフレーム、施策含む）
         """
         result = await self.db.execute(
-            select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id).where(DriverTreeNode.parent_id.is_(None))
+            select(DriverTreeNode)
+            .where(DriverTreeNode.id == node_id)
+            .options(
+                selectinload(DriverTreeNode.data_frame),
+                selectinload(DriverTreeNode.policies),
+            )
         )
         return result.scalar_one_or_none()
 
-    async def find_children(self, parent_id: uuid.UUID) -> list[DriverTreeNode]:
-        """指定された親ノードの子ノードを取得します。
+    async def list_by_type(self, node_type: str) -> list[DriverTreeNode]:
+        """ノードタイプでノード一覧を取得します。
 
         Args:
-            parent_id: 親ノードID
+            node_type: ノードタイプ（計算/入力/定数）
 
         Returns:
-            list[DriverTreeNode]: 子ノードのリスト
-
-        Example:
-            >>> children = await repo.find_children(parent_id)
+            list[DriverTreeNode]: ノード一覧
         """
-        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.parent_id == parent_id))
+        result = await self.db.execute(
+            select(DriverTreeNode).where(DriverTreeNode.node_type == node_type).order_by(DriverTreeNode.created_at.desc())
+        )
         return list(result.scalars().all())
 
-    async def get_with_children(self, id: uuid.UUID) -> DriverTreeNode | None:
-        """ノードを子ノードと共に取得します（再帰的）。
+    async def get_with_policies(self, node_id: uuid.UUID) -> DriverTreeNode | None:
+        """施策一覧を含めてノードを取得します。
 
         Args:
-            id: ノードID
+            node_id: ノードID
 
         Returns:
-            DriverTreeNode | None: ノード、または None
-
-        Example:
-            >>> node = await repo.get_with_children(node_id)
-            >>> for child in node.children:
-            ...     print(child.label)
+            DriverTreeNode | None: ノード（施策含む）
         """
-        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.id == id).options(selectinload(DriverTreeNode.children)))
-        return result.scalar_one_or_none()
-
-    async def find_by_label_and_tree(self, tree_id: uuid.UUID, label: str) -> DriverTreeNode | None:
-        """ツリー内でラベルからノードを検索します。
-
-        Args:
-            tree_id: ツリーID
-            label: ノードのラベル
-
-        Returns:
-            DriverTreeNode | None: 見つかったノード、または None
-
-        Example:
-            >>> node = await repo.find_by_label_and_tree(tree_id, "粗利")
-        """
-        result = await self.db.execute(select(DriverTreeNode).where(DriverTreeNode.tree_id == tree_id).where(DriverTreeNode.label == label))
+        result = await self.db.execute(
+            select(DriverTreeNode).where(DriverTreeNode.id == node_id).options(selectinload(DriverTreeNode.policies))
+        )
         return result.scalar_one_or_none()

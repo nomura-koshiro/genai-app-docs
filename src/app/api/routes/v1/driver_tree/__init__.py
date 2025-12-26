@@ -1,23 +1,42 @@
-"""Driver Tree API v1 エンドポイント。
+"""ドライバーツリー API v1 エンドポイント。
 
-このパッケージには、Driver Tree（KPIツリー）機能用のエンドポイントが含まれています。
+このパッケージには、ドライバーツリー機能用のエンドポイントが含まれています。
 
-提供される機能:
-    - Driver Treeの作成・取得・削除
-    - ツリーノードの追加・更新・削除
-    - KPI計算式の管理
-    - KPI一覧の取得
+提供されるルーター:
+    - driver_tree_files_router: ファイル管理（アップロード、シート選択、カラム設定）
+    - driver_tree_trees_router: ツリー管理（作成、更新、削除、一覧取得）
+    - driver_tree_nodes_router: ノード管理（作成、更新、削除、並び替え）
+
+主な機能:
+    ファイル:
+        - Excelファイルのアップロード
+        - シートの選択
+        - データカラムの設定
+
+    ツリー:
+        - ドライバーツリーの作成・更新・削除
+        - ツリー一覧の取得
+        - ツリー詳細の取得
+        - ツリーのコピー
+
+    ノード:
+        - ノードの作成・更新・削除
+        - ノードの並び替え
+        - 子ノードの追加
+        - 数式・施策の設定
 
 使用例:
-    >>> # Driver Tree作成
-    >>> POST /api/v1/driver-trees
-    >>> {"project_id": "...", "name": "売上KPIツリー"}
+    >>> # ファイルアップロード
+    >>> POST /api/v1/driver-tree/file
+    >>> Content-Type: multipart/form-data
     >>>
-    >>> # ノード追加
-    >>> POST /api/v1/driver-trees/{tree_id}/nodes
-    >>> {"name": "売上高", "node_type": "kpi"}
+    >>> # ツリー作成
+    >>> POST /api/v1/driver-tree/tree
+    >>> {"name": "売上分析ツリー", "project_id": "..."}
 """
 
-from app.api.routes.v1.driver_tree.driver_tree import driver_tree_router
+from app.api.routes.v1.driver_tree.driver_tree import driver_tree_trees_router
+from app.api.routes.v1.driver_tree.driver_tree_file import driver_tree_files_router
+from app.api.routes.v1.driver_tree.driver_tree_node import driver_tree_nodes_router
 
-__all__ = ["driver_tree_router"]
+__all__ = ["driver_tree_files_router", "driver_tree_trees_router", "driver_tree_nodes_router"]

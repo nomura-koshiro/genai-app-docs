@@ -1,118 +1,149 @@
-"""Driver Tree機能用のPydanticスキーマ定義。
-
-このモジュールは、ドライバーツリー機能に関連する
-リクエスト/レスポンススキーマを定義します。
-
-主なスキーマ:
-    - DriverTreeNodeCreate: ノード作成リクエスト
-    - DriverTreeNodeUpdate: ノード更新リクエスト
-    - DriverTreeNodeResponse: ノードレスポンス（木構造）
-    - DriverTreeResponse: ツリーレスポンス
-    - DriverTreeFormulaCreateRequest: 数式からツリー作成リクエスト
-    - DriverTreeCategoryResponse: カテゴリーレスポンス
-
-使用例:
-    >>> from app.schemas.driver_tree.driver_tree import DriverTreeNodeCreate
-    >>>
-    >>> # ルートノード作成
-    >>> root = DriverTreeNodeCreate(
-    ...     tree_id=tree_id,
-    ...     label="粗利",
-    ...     x=0,
-    ...     y=0
-    ... )
-"""
-
 import uuid
-from typing import Any
+from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from app.schemas.base import BaseCamelCaseModel
+from app.schemas.driver_tree.common import CategoryInfo, DriverTreeInfo, DriverTreeNodeCalculatedData, FormulaInfo
 
 
-class DriverTreeNodeCreate(BaseModel):
-    """ノード作成リクエスト。
+class DriverTreeListItem(BaseCamelCaseModel):
+    """ツリー一覧アイテム。
 
     Attributes:
-        tree_id: 所属するツリーのID
-        label: ノードのラベル（KPI名や計算要素名）
-        parent_id: 親ノードID（Noneの場合はルートノード）
-        operator: 親ノードとの演算子（+, -, *, /, %など）
-        x: X座標（ツリー表示用）
-        y: Y座標（ツリー表示用）
+        tree_id: uuid - ツリーID
+        name: str - ツリー名
+        description: str - 説明
+        created_at: datetime - 作成日時
+        updated_at: datetime - 更新日時
+
     """
 
-    tree_id: uuid.UUID = Field(..., description="所属するツリーのID")
-    label: str = Field(..., min_length=1, max_length=100, description="ノードのラベル")
-    parent_id: uuid.UUID | None = Field(default=None, description="親ノードID（Noneの場合はルートノード）")
-    operator: str | None = Field(default=None, max_length=10, description="親ノードとの演算子")
-    x: int | None = Field(default=None, ge=0, description="X座標")
-    y: int | None = Field(default=None, ge=0, description="Y座標")
+    tree_id: uuid.UUID = Field(..., description="ツリーID")
+    name: str = Field(..., description="ツリー名")
+    description: str | None = Field(default=None, description="説明")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
 
 
-class DriverTreeNodeUpdate(BaseModel):
-    """ノード更新リクエスト。"""
-
-    label: str | None = Field(default=None, min_length=1, max_length=100, description="ノードのラベル")
-    parent_id: uuid.UUID | None = Field(default=None, description="親ノードID")
-    operator: str | None = Field(default=None, max_length=10, description="演算子")
-    x: int | None = Field(default=None, ge=0, description="X座標")
-    y: int | None = Field(default=None, ge=0, description="Y座標")
+# Request
 
 
-class DriverTreeNodeResponse(BaseModel):
-    """ノードレスポンス（木構造）。"""
+class DriverTreeCreateTreeRequest(BaseCamelCaseModel):
+    """ツリー作成リクエスト。
 
-    id: uuid.UUID = Field(..., description="ノードID")
-    tree_id: uuid.UUID = Field(..., description="所属するツリーのID")
-    label: str = Field(..., description="ノードのラベル")
-    parent_id: uuid.UUID | None = Field(default=None, description="親ノードID")
-    operator: str | None = Field(default=None, description="演算子")
-    x: int | None = Field(default=None, description="X座標")
-    y: int | None = Field(default=None, description="Y座標")
-    children: list["DriverTreeNodeResponse"] = Field(default_factory=list, description="子ノードのリスト")
+    Request Body:
+        - name: str - ツリー名（必須）
+        - description: str - 説明（オプション）
+    """
 
-    model_config = ConfigDict(from_attributes=True)
+    name: str = Field(..., description="ツリー名")
+    description: str | None = Field(default=None, description="説明")
 
 
-class DriverTreeResponse(BaseModel):
-    """ツリーレスポンス。"""
+class DriverTreeImportFormulaRequest(BaseCamelCaseModel):
+    """数式/データインポート
 
-    id: uuid.UUID = Field(..., description="ツリーID")
-    name: str | None = Field(default=None, description="ツリー名")
-    root_node_id: uuid.UUID | None = Field(default=None, description="ルートノードID")
-    root_node: DriverTreeNodeResponse | None = Field(default=None, description="ルートノード（木構造全体を含む）")
+    Request Body:
+        - position_x: int - ルートノードX座標
+        - position_y: int - ルートノードY座標
+        - formulas: list[str] - 数式リスト
+        - sheet_id: uuid - 入力シートID(オプション)
+    """
 
-    model_config = ConfigDict(from_attributes=True)
-
-
-class DriverTreeFormulaCreateRequest(BaseModel):
-    """数式からツリー作成リクエスト。"""
-
-    name: str | None = Field(default=None, max_length=200, description="ツリー名")
-    formulas: list[str] = Field(..., min_length=1, description="数式のリスト")
+    position_x: int = Field(..., description="ルートノードX座標")
+    position_y: int = Field(..., description="ルートノードY座標")
+    formulas: list[str] = Field(..., description="数式リスト")
+    sheet_id: uuid.UUID | None = Field(default=None, description="入力シートID")
 
 
-class DriverTreeCategoryResponse(BaseModel):
-    """カテゴリーレスポンス。"""
-
-    id: uuid.UUID = Field(..., description="カテゴリーID")
-    industry_class: str = Field(..., description="業種大分類")
-    industry: str = Field(..., description="業種")
-    tree_type: str = Field(..., description="ツリータイプ")
-    kpi: str = Field(..., description="KPI名")
-    formulas: list[str] = Field(..., description="数式のリスト")
-    category_metadata: dict[str, Any] = Field(default_factory=dict, description="メタデータ")
-
-    model_config = ConfigDict(from_attributes=True)
+# Response
 
 
-class DriverTreeKPIListResponse(BaseModel):
-    """KPI一覧レスポンス。"""
+class DriverTreeCreateTreeResponse(BaseCamelCaseModel):
+    """ツリー作成レスポンス。
 
-    kpis: list[str] = Field(..., description="KPI名のリスト")
+    Response:
+        - tree_id: uuid - ツリーID
+        - name: str - ツリー名
+        - description: str - 説明
+        - created_at: datetime - 作成日時
+    """
+
+    tree_id: uuid.UUID = Field(..., description="ツリーID")
+    name: str = Field(..., description="ツリー名")
+    description: str | None = Field(default=None, description="説明")
+    created_at: datetime = Field(..., description="作成日時")
 
 
-class DriverTreeFormulaResponse(BaseModel):
-    """数式レスポンス。"""
+class DriverTreeListResponse(BaseCamelCaseModel):
+    """ツリー一覧レスポンス。
 
-    formulas: list[str] = Field(..., description="数式のリスト")
+    Response:
+        - trees: list[dict] - ツリー一覧
+    """
+
+    trees: list[DriverTreeListItem] = Field(default_factory=list, description="ツリー一覧")
+
+
+class DriverTreeGetTreeResponse(BaseCamelCaseModel):
+    """ツリー取得レスポンス。
+
+    Response:
+        - tree: DriverTreeInfo - ツリー詳細情報
+    """
+
+    tree: DriverTreeInfo = Field(..., description="ツリー詳細情報")
+
+
+class DriverTreeResetResponse(BaseCamelCaseModel):
+    """ツリーリセットレスポンス。
+
+    Response:
+        - tree: dict - リセット後のツリー全体構造
+        - reset_at: datetime - リセット日時
+    """
+
+    tree: DriverTreeInfo = Field(..., description="リセット後のツリー全体構造")
+    reset_at: datetime = Field(..., description="リセット日時")
+
+
+class DriverTreeDeleteResponse(BaseCamelCaseModel):
+    """ツリー削除レスポンス。
+
+    Response:
+        - success: bool - 成功フラグ
+        - deleted_at: datetime - 削除日時
+    """
+
+    success: bool = Field(..., description="成功フラグ")
+    deleted_at: datetime = Field(..., description="削除日時")
+
+
+class DriverTreeCalculatedDataResponse(BaseCamelCaseModel):
+    """計算ノードの計算データ取得レスポンス。
+    Response:
+        - calculated_data_list: list[DriverTreeNodeCalculatedData] - 計算ノードの計算データ一覧
+    """
+
+    calculated_data_list: list[DriverTreeNodeCalculatedData] = Field(..., description="計算ノードの計算データ一覧")
+
+
+class DriverTreeCategoryListResponse(BaseCamelCaseModel):
+    """ドライバーツリーカテゴリ一覧レスポンス。
+
+    Response:
+        - categories: list[CategoryInfo] - 業界分類リスト
+    """
+
+    categories: list[CategoryInfo] = Field(default_factory=list, description="業界分類リスト")
+
+
+class DriverTreeFormulaGetResponse(BaseCamelCaseModel):
+    """ドライバーツリー数式取得レスポンス。
+
+    Response:
+        - formula: FormulaInfo - 数式情報
+    """
+
+    formula: FormulaInfo = Field(..., description="数式情報")

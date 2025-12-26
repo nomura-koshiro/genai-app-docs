@@ -1,29 +1,34 @@
-"""分析API v1 エンドポイント。
+"""分析 API v1 エンドポイント。
 
-このパッケージには、データ分析機能用のエンドポイントが含まれています。
+このパッケージには、分析機能用のエンドポイントが含まれています。
 
 提供されるルーター:
-    - analysis_router: 分析セッション管理、ファイルアップロード、ステップ実行、チャット
-    - analysis_templates_router: 分析テンプレート管理（施策・課題テンプレート）
+    - analysis_templates_router: 分析テンプレート管理（課題カタログ取得）
+    - analysis_sessions_router: 分析セッション管理（作成、更新、削除、一覧取得）
 
 主な機能:
-    - 分析セッションの作成・管理
-    - CSVファイルのアップロードと解析
-    - フィルタ、集計、変換、サマリーステップの実行
-    - AIエージェントとのチャット
-    - 分析テンプレートの管理
+    テンプレート:
+        - 課題カタログ一覧の取得
+        - 課題詳細の取得
+
+    セッション:
+        - 分析セッションの作成・更新・削除
+        - セッション一覧の取得
+        - セッション詳細の取得
+        - ステップの作成・更新・削除
+        - スナップショットの保存・取得
+        - ファイルのアップロード・削除
 
 使用例:
-    >>> # 分析セッション作成
-    >>> POST /api/v1/analysis/sessions
-    >>> {"project_id": "...", "validation_config": {...}}
+    >>> # 課題カタログ取得
+    >>> GET /api/v1/analysis/templates
     >>>
-    >>> # ファイルアップロード
-    >>> POST /api/v1/analysis/sessions/{session_id}/files
-    >>> {"file_name": "data.csv", "file_data": "base64..."}
+    >>> # セッション作成
+    >>> POST /api/v1/analysis/sessions
+    >>> {"project_id": "...", "issue_id": "..."}
 """
 
-from app.api.routes.v1.analysis.analysis import analysis_router
-from app.api.routes.v1.analysis.analysis_templates import analysis_templates_router
+from app.api.routes.v1.analysis.analysis_session import analysis_sessions_router
+from app.api.routes.v1.analysis.analysis_template import analysis_templates_router
 
-__all__ = ["analysis_router", "analysis_templates_router"]
+__all__ = ["analysis_templates_router", "analysis_sessions_router"]

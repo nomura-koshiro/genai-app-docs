@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_metrics_endpoint_exists(client: AsyncClient):
-    """/metricsエンドポイントが存在し、アクセス可能であることを確認。"""
+    """[test_metrics-001] /metricsエンドポイントが存在し、アクセス可能であることを確認。"""
     response = await client.get("/metrics")
 
     assert response.status_code == 200
@@ -20,7 +20,7 @@ async def test_metrics_endpoint_exists(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_contain_http_requests(client: AsyncClient):
-    """メトリクスにHTTPリクエスト数が含まれることを確認。"""
+    """[test_metrics-002] メトリクスにHTTPリクエスト数が含まれることを確認。"""
     # 先にリクエストを発行してメトリクスを生成
     await client.get("/health")
 
@@ -34,7 +34,7 @@ async def test_metrics_contain_http_requests(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_contain_request_duration(client: AsyncClient):
-    """メトリクスにリクエスト処理時間が含まれることを確認。"""
+    """[test_metrics-003] メトリクスにリクエスト処理時間が含まれることを確認。"""
     # リクエストを発行
     await client.get("/health")
 
@@ -48,7 +48,7 @@ async def test_metrics_contain_request_duration(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_updated_after_requests(client: AsyncClient):
-    """リクエスト後にメトリクスが更新されることを確認。"""
+    """[test_metrics-004] リクエスト後にメトリクスが更新されることを確認。"""
     # 新しいリクエストを複数発行
     await client.get("/health")
     await client.get("/")
@@ -65,7 +65,7 @@ async def test_metrics_updated_after_requests(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_format_is_prometheus(client: AsyncClient):
-    """メトリクスがPrometheus形式であることを確認。"""
+    """[test_metrics-005] メトリクスがPrometheus形式であることを確認。"""
     response = await client.get("/metrics")
     content = response.text
 
@@ -78,7 +78,7 @@ async def test_metrics_format_is_prometheus(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_include_method_labels(client: AsyncClient):
-    """メトリクスにHTTPメソッドラベルが含まれることを確認。"""
+    """[test_metrics-006] メトリクスにHTTPメソッドラベルが含まれることを確認。"""
     # 異なるメソッドでリクエスト
     await client.get("/health")
     await client.post("/health")  # Method Not Allowed
@@ -93,7 +93,7 @@ async def test_metrics_include_method_labels(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_metrics_include_status_code_labels(client: AsyncClient):
-    """メトリクスにステータスコードラベルが含まれることを確認。"""
+    """[test_metrics-007] メトリクスにステータスコードラベルが含まれることを確認。"""
     # 成功とエラーのリクエストを発行
     await client.get("/health")  # 200
     await client.get("/nonexistent")  # 404

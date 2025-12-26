@@ -5,6 +5,14 @@ Happy Pathとビジネスルールエラーのみをテストします。
 
 基本的なバリデーションエラーはPydanticスキーマで検証済み、
 ビジネスロジックはサービス層でカバーされます。
+
+対応エンドポイント:
+    - POST /api/v1/project - プロジェクト作成
+    - GET /api/v1/project - プロジェクト一覧取得
+    - GET /api/v1/project/{project_id} - プロジェクト詳細取得
+    - GET /api/v1/project/code/{code} - プロジェクトコード検索
+    - PATCH /api/v1/project/{project_id} - プロジェクト更新
+    - DELETE /api/v1/project/{project_id} - プロジェクト削除
 """
 
 import uuid
@@ -12,30 +20,16 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-from app.models import UserAccount
-
-
-@pytest.fixture
-async def mock_current_user(db_session):
-    """モック認証ユーザー（DB保存済み）。"""
-    user = UserAccount(
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email="test@example.com",
-        display_name="Test User",
-        is_active=True,
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-    return user
+# ================================================================================
+# POST /api/v1/project - プロジェクト作成
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_create_project_endpoint_success(client: AsyncClient, override_auth, mock_current_user):
-    """プロジェクト作成エンドポイントの成功ケース。"""
+async def test_create_project_success(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-001] プロジェクト作成の成功ケース。"""
     # Arrange
-    override_auth(mock_current_user)
-
+    override_auth(regular_user)
     project_data = {
         "name": "Test Project",
         "code": f"TEST-{uuid.uuid4().hex[:6]}",
@@ -43,7 +37,7 @@ async def test_create_project_endpoint_success(client: AsyncClient, override_aut
     }
 
     # Act
-    response = await client.post("/api/v1/projects", json=project_data)
+    response = await client.post("/api/v1/project", json=project_data)
 
     # Assert
     assert response.status_code == 201
@@ -51,149 +45,308 @@ async def test_create_project_endpoint_success(client: AsyncClient, override_aut
     assert "id" in data
     assert data["name"] == project_data["name"]
     assert data["code"] == project_data["code"]
-    assert data["description"] == project_data["description"]
+    assert data["isActive"] is True
+    assert data["createdBy"] == str(regular_user.id)
 
 
 @pytest.mark.asyncio
-async def test_create_project_duplicate_code(client: AsyncClient, override_auth, mock_current_user):
-    """重複コードでのプロジェクト作成失敗のテスト。"""
+async def test_create_project_duplicate_code(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-002] 重複コードでのプロジェクト作成失敗。"""
     # Arrange
-    override_auth(mock_current_user)
-
+    override_auth(regular_user)
     unique_code = f"DUP-{uuid.uuid4().hex[:6]}"
-    project_data = {
-        "name": "First Project",
-        "code": unique_code,
-        "description": "First project",
-    }
 
     # 最初のプロジェクトを作成
-    await client.post("/api/v1/projects", json=project_data)
+    first_project = {"name": "First Project", "code": unique_code}
+    await client.post("/api/v1/project", json=first_project)
 
     # Act - 同じコードで2回目の作成を試みる
-    duplicate_project = {
-        "name": "Duplicate Project",
-        "code": unique_code,
-        "description": "Duplicate project",
-    }
-    response = await client.post("/api/v1/projects", json=duplicate_project)
+    duplicate_project = {"name": "Duplicate Project", "code": unique_code}
+    response = await client.post("/api/v1/project", json=duplicate_project)
 
     # Assert
-    assert response.status_code == 422  # Validation error for duplicate code
+    assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_unauthorized_access(client: AsyncClient):
-    """認証なしでのアクセステスト。"""
-    # Act - 認証なしでプロジェクト作成を試みる
-    project_data = {
-        "name": "Unauthorized Project",
-        "code": f"UNAUTH-{uuid.uuid4().hex[:6]}",
-        "description": "Unauthorized project",
-    }
-    response = await client.post("/api/v1/projects", json=project_data)
+async def test_create_project_unauthorized(client: AsyncClient):
+    """[test_projects-003] 認証なしでのプロジェクト作成失敗。"""
+    # Act
+    project_data = {"name": "Unauthorized", "code": f"UNAUTH-{uuid.uuid4().hex[:6]}"}
+    response = await client.post("/api/v1/project", json=project_data)
 
-    # Assert - 認証エラー
+    # Assert
     assert response.status_code in [401, 403]
 
 
+# ================================================================================
+# GET /api/v1/project - プロジェクト一覧取得
+# ================================================================================
+
+
 @pytest.mark.asyncio
-async def test_list_projects_endpoint(client: AsyncClient, override_auth, mock_current_user):
-    """プロジェクト一覧取得エンドポイントのテスト。"""
+async def test_list_projects_success(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-004] プロジェクト一覧取得の成功ケース。"""
     # Arrange
-    override_auth(mock_current_user)
+    override_auth(regular_user)
 
-    # プロジェクトを作成
-    project1 = {
-        "name": "List Project 1",
-        "code": f"LIST1-{uuid.uuid4().hex[:6]}",
-        "description": "List project 1",
-    }
-    project2 = {
-        "name": "List Project 2",
-        "code": f"LIST2-{uuid.uuid4().hex[:6]}",
-        "description": "List project 2",
-    }
-
-    await client.post("/api/v1/projects", json=project1)
-    await client.post("/api/v1/projects", json=project2)
+    # プロジェクトを作成（作成者は自動的にメンバーになる）
+    for i in range(2):
+        await client.post(
+            "/api/v1/project",
+            json={"name": f"List Project {i}", "code": f"LIST{i}-{uuid.uuid4().hex[:6]}"},
+        )
 
     # Act
-    response = await client.get("/api/v1/projects")
+    response = await client.get("/api/v1/project")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    assert len(data) >= 2
+    assert "projects" in data
+    assert "total" in data
+    assert len(data["projects"]) >= 2
 
 
 @pytest.mark.asyncio
-async def test_list_projects_with_pagination(client: AsyncClient, override_auth, mock_current_user):
-    """ページネーション付きプロジェクト一覧取得のテスト。"""
+async def test_list_projects_with_pagination(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-005] ページネーション付きプロジェクト一覧取得。"""
     # Arrange
-    override_auth(mock_current_user)
+    override_auth(regular_user)
 
-    # プロジェクトを複数作成
     for i in range(5):
-        project_data = {
-            "name": f"Pagination Project {i}",
-            "code": f"PAGE{i}-{uuid.uuid4().hex[:6]}",
-            "description": f"Pagination project {i}",
-        }
-        await client.post("/api/v1/projects", json=project_data)
+        await client.post(
+            "/api/v1/project",
+            json={"name": f"Page Project {i}", "code": f"PAGE{i}-{uuid.uuid4().hex[:6]}"},
+        )
 
-    # Act - ページネーション付きで取得
-    response = await client.get("/api/v1/projects?skip=0&limit=3")
+    # Act
+    response = await client.get("/api/v1/project?skip=0&limit=3")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert isinstance(data, list)
-    # 少なくとも3件は取得できる
-    assert len(data) >= 3
+    assert data["skip"] == 0
+    assert data["limit"] == 3
 
 
 @pytest.mark.asyncio
-async def test_get_project_not_found(client: AsyncClient, override_auth, mock_current_user):
-    """存在しないプロジェクトの取得テスト。"""
+async def test_list_projects_with_active_filter(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-006] アクティブフィルタ付きプロジェクト一覧取得。"""
     # Arrange
-    override_auth(mock_current_user)
+    override_auth(regular_user)
+    await client.post(
+        "/api/v1/project",
+        json={"name": "Active Project", "code": f"ACTIVE-{uuid.uuid4().hex[:6]}"},
+    )
 
+    # Act
+    response = await client.get("/api/v1/project?is_active=true")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    for project in data["projects"]:
+        assert project["isActive"] is True
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id} - プロジェクト詳細取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_project_success(client: AsyncClient, override_auth, project_with_owner):
+    """[test_projects-007] プロジェクト詳細取得の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(project.id)
+    assert data["name"] == project.name
+
+
+@pytest.mark.asyncio
+async def test_get_project_not_found(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-008] 存在しないプロジェクトの取得。"""
+    # Arrange
+    override_auth(regular_user)
     nonexistent_id = str(uuid.uuid4())
 
     # Act
-    response = await client.get(f"/api/v1/projects/{nonexistent_id}")
+    response = await client.get(f"/api/v1/project/{nonexistent_id}")
 
     # Assert
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_update_project_endpoint(client: AsyncClient, override_auth, mock_current_user):
-    """プロジェクト更新エンドポイントのテスト。"""
+async def test_get_project_no_access(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_projects-009] メンバーでないプロジェクトへのアクセス拒否。"""
     # Arrange
-    override_auth(mock_current_user)
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
 
-    # プロジェクトを作成
-    project_data = {
-        "name": "Original Name",
-        "code": f"UPD-{uuid.uuid4().hex[:6]}",
-        "description": "Original description",
-    }
-    create_response = await client.post("/api/v1/projects", json=project_data)
-    created_project = create_response.json()
-    project_id = created_project["id"]
+    override_auth(other_user)
 
-    # Act - 更新
-    update_data = {
-        "name": "Updated Name",
-        "description": "Updated description",
-    }
-    response = await client.patch(f"/api/v1/projects/{project_id}", json=update_data)
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/code/{code} - プロジェクトコード検索
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_project_by_code_success(client: AsyncClient, override_auth, project_with_owner):
+    """[test_projects-010] コードによるプロジェクト検索の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/code/{project.code}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["code"] == project.code
+
+
+@pytest.mark.asyncio
+async def test_get_project_by_code_not_found(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-011] 存在しないコードでの検索。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/project/code/NONEXISTENT-CODE")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# PATCH /api/v1/project/{project_id} - プロジェクト更新
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_update_project_success(client: AsyncClient, override_auth, project_with_owner):
+    """[test_projects-012] プロジェクト更新の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    update_data = {"name": "Updated Name", "description": "Updated description"}
+
+    # Act
+    response = await client.patch(f"/api/v1/project/{project.id}", json=update_data)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert data["name"] == "Updated Name"
     assert data["description"] == "Updated description"
+
+
+@pytest.mark.asyncio
+async def test_update_project_not_found(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-013] 存在しないプロジェクトの更新。"""
+    # Arrange
+    override_auth(regular_user)
+    nonexistent_id = str(uuid.uuid4())
+
+    # Act
+    response = await client.patch(f"/api/v1/project/{nonexistent_id}", json={"name": "Updated"})
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_project_no_permission(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_projects-014] 権限のないユーザーによるプロジェクト更新の拒否。"""
+    # Arrange
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+
+    override_auth(other_user)
+
+    # Act
+    response = await client.patch(f"/api/v1/project/{project.id}", json={"name": "Unauthorized"})
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id} - プロジェクト削除
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_project_success(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-015] プロジェクト削除の成功ケース。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # プロジェクト作成
+    create_response = await client.post(
+        "/api/v1/project",
+        json={"name": "Delete Project", "code": f"DEL-{uuid.uuid4().hex[:6]}"},
+    )
+    project_id = create_response.json()["id"]
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project_id}")
+
+    # Assert
+    assert response.status_code == 204
+
+    # 削除確認
+    get_response = await client.get(f"/api/v1/project/{project_id}")
+    assert get_response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_project_not_found(client: AsyncClient, override_auth, regular_user):
+    """[test_projects-016] 存在しないプロジェクトの削除。"""
+    # Arrange
+    override_auth(regular_user)
+    nonexistent_id = str(uuid.uuid4())
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{nonexistent_id}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_delete_project_no_permission(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_projects-017] 作成者以外によるプロジェクト削除の拒否。"""
+    # Arrange
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
+
+    override_auth(other_user)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}")
+
+    # Assert
+    assert response.status_code == 403

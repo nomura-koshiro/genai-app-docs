@@ -18,6 +18,6 @@
     >>> {"full_name": "新しい名前"}
 """
 
-from app.api.routes.v1.user_accounts.user_accounts import user_accounts_router
+from app.api.routes.v1.user_accounts.user_account import user_accounts_router
 
 __all__ = ["user_accounts_router"]

@@ -45,10 +45,14 @@ src/app/
 │   ├── base.py          # 基底クラス
 │   ├── user.py          # ユーザーリポジトリ
 │   └── session.py       # セッションリポジトリ
-├── services/            # 複数のサービスを含む
-│   ├── user.py          # ユーザーサービス
-│   ├── session.py       # セッションサービス
-│   └── file.py          # ファイルサービス
+├── services/            # 複数のサービスを含む（Facadeパターン）
+│   ├── project/         # プロジェクト機能
+│   │   ├── project/     # ProjectService（Facade）
+│   │   ├── project_file/# ProjectFileService（Facade）
+│   │   └── project_member/ # ProjectMemberService（Facade）
+│   ├── user_account/    # ユーザー管理
+│   │   └── user_account/ # UserAccountService（Facade）
+│   └── storage/         # ストレージ抽象化（Strategyパターン）
 ├── schemas/             # 複数のスキーマを含む
 │   ├── common.py        # 共通スキーマ
 │   ├── user.py          # ユーザースキーマ
@@ -66,11 +70,11 @@ src/app/
 
 | ファイルタイプ | 命名例 | 説明 |
 |--------------|--------|------|
-| モデル | `user.py`, `session.py` | エンティティ名（単数形） |
-| スキーマ | `user.py`, `agent.py` | エンティティ名（単数形） |
-| サービス | `user.py`, `file.py` | エンティティ名（単数形） |
-| リポジトリ | `user.py`, `session.py` | エンティティ名（単数形） |
-| APIルート | `users.py`, `agents.py` | エンドポイント名（通常複数形） |
+| モデル | `user.py`, `project.py` | エンティティ名（単数形） |
+| スキーマ | `user.py`, `project.py` | エンティティ名（単数形） |
+| サービス | `project/` (ディレクトリ), `crud.py`, `base.py` | 機能ディレクトリ + サブモジュール |
+| リポジトリ | `user.py`, `project.py` | エンティティ名（単数形） |
+| APIルート | `users.py`, `projects.py` | エンドポイント名（通常複数形） |
 | ユーティリティ | `security.py`, `logging.py` | 機能名 |
 | 設定 | `config.py`, `database.py` | 目的名 |
 
@@ -386,7 +390,8 @@ models/user_account/
 | エンティティ（レガシー） | `SampleUser`, `SampleSession` | サンプル/レガシーモデル |
 | エンティティ（実機能） | `Project`, `AnalysisFile`, `DriverTreeNode` | 実際の機能モデル |
 | スキーマ | `SampleUserCreate`, `ProjectCreate`, `AnalysisFileResponse` | Pydanticスキーマ |
-| サービス | `UserService`, `ProjectService`, `AnalysisService` | ビジネスロジック |
+| サービス（Facade） | `ProjectService`, `UserAccountService`, `DriverTreeService` | Facadeサービス |
+| サービス（サブ） | `ProjectCrudService`, `ProjectBaseService` | サブサービス |
 | リポジトリ | `UserRepository`, `ProjectRepository` | データアクセス |
 | 例外 | `ValidationError`, `AuthenticationError`, `NotFoundError` | カスタム例外 |
 | ミドルウェア | `ErrorHandlerMiddleware`, `LoggingMiddleware` | ミドルウェア |
@@ -433,14 +438,19 @@ class SampleUserResponse(SampleUserBase):
     created_at: datetime
 
 
-# ✅ サービス
-class SampleUserService:
-    """ユーザーサービス。"""
-    pass
+# ✅ サービス（Facadeパターン）
+class ProjectService:
+    """プロジェクトサービス（Facade）。"""
+
+    def __init__(self, db: AsyncSession):
+        self._crud_service = ProjectCrudService(db)
+
+    async def create_project(self, ...) -> Project:
+        return await self._crud_service.create_project(...)
 
 
-class SessionService:
-    """セッションサービス。"""
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクトCRUD操作のサブサービス。"""
     pass
 
 

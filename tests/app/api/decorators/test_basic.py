@@ -28,7 +28,7 @@ class TestMeasurePerformance:
 
     @pytest.mark.asyncio
     async def test_performance_measurement(self):
-        """実行時間が測定されログに記録されることをテスト。"""
+        """[test_basic-001] 実行時間が測定されログに記録されることをテスト。"""
 
         @measure_performance
         async def test_func():
@@ -52,7 +52,7 @@ class TestLogExecution:
 
     @pytest.mark.asyncio
     async def test_basic_logging(self):
-        """基本的なログ記録がされることをテスト。"""
+        """[test_basic-002] 基本的なログ記録がされることをテスト。"""
 
         @log_execution(level="info")
         async def test_func():
@@ -73,7 +73,7 @@ class TestAsyncTimeout:
 
     @pytest.mark.asyncio
     async def test_successful_execution_within_timeout(self):
-        """タイムアウト時間内に正常終了する場合、結果が返却されることをテスト。"""
+        """[test_basic-003] タイムアウト時間内に正常終了する場合、結果が返却されることをテスト。"""
 
         @async_timeout(1.0)
         async def test_func():
@@ -85,7 +85,7 @@ class TestAsyncTimeout:
 
     @pytest.mark.asyncio
     async def test_timeout_raises_validation_error(self):
-        """タイムアウト時にValidationErrorが送出されることをテスト。"""
+        """[test_basic-004] タイムアウト時にValidationErrorが送出されることをテスト。"""
 
         @async_timeout(0.1)
         async def test_func():

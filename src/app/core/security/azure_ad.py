@@ -166,7 +166,7 @@ async def get_current_azure_user(
         ...     }
     """
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Azure AD authentication failed")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Azure AD認証に失敗しました")
     return user
 
 

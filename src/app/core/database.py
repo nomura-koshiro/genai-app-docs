@@ -55,7 +55,9 @@ Note:
 """
 
 from collections.abc import AsyncGenerator
+from urllib.parse import urlparse, urlunparse
 
+from azure.identity import DefaultAzureCredential
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
@@ -64,9 +66,58 @@ from app.models.base import Base
 
 logger = get_logger(__name__)
 
+
+def get_database_url() -> str:
+    """環境に応じたDATABASE_URLを取得します.
+
+    Azure Managed Identity が有効な場合、トークンを取得してパスワード部分に設定します。
+    ローカル環境では通常のパスワード認証を使用します。
+
+    Returns:
+        str: データベース接続URL
+    """
+    if not settings.USE_MANAGED_IDENTITY:
+        logger.info("データベース接続: パスワード認証を使用")
+        return settings.DATABASE_URL
+
+    logger.info("データベース接続: Azure Managed Identity を使用")
+
+    try:
+        # トークン取得
+        credential = DefaultAzureCredential(managed_identity_client_id=settings.AZURE_CLIENT_ID)
+        token = credential.get_token("https://ossrdbms-aad.database.windows.net/.default")
+
+        # URLをパース
+        parsed = urlparse(settings.DATABASE_URL)
+
+        # パスワード部分にトークンを設定
+        # 形式: postgresql+asyncpg://username:token@host:port/database
+        netloc = f"{parsed.username}:{token.token}@{parsed.hostname}"
+        if parsed.port:
+            netloc += f":{parsed.port}"
+
+        # URL再構築
+        db_url = urlunparse(parsed._replace(netloc=netloc))
+
+        logger.info(
+            "マネージドIDトークン取得成功",
+            username=parsed.username,
+            host=parsed.hostname,
+        )
+        return db_url
+
+    except Exception as e:
+        logger.error(
+            "マネージドIDトークン取得失敗",
+            error=str(e),
+            exc_info=True,
+        )
+        raise
+
+
 # 非同期エンジンを作成（環境別の接続プール設定）
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    get_database_url(),
     echo=settings.DEBUG,
     future=True,
     pool_pre_ping=settings.DB_POOL_PRE_PING,  # 接続前のPINGチェック

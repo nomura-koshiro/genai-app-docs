@@ -26,14 +26,16 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
 # ================================================================================
 # プロジェクトスキーマ
 # ================================================================================
 
 
-class ProjectBase(BaseModel):
+class ProjectBase(BaseCamelCaseModel):
     """ベースプロジェクトスキーマ。
 
     プロジェクトの基本情報を定義します。
@@ -70,7 +72,7 @@ class ProjectCreate(ProjectBase):
     pass
 
 
-class ProjectUpdate(BaseModel):
+class ProjectUpdate(BaseCamelCaseModel):
     """プロジェクト更新リクエストスキーマ。
 
     プロジェクト情報の更新時に使用します。
@@ -96,16 +98,16 @@ class ProjectUpdate(BaseModel):
     is_active: bool | None = Field(default=None, description="アクティブフラグ")
 
 
-class ProjectResponse(ProjectBase):
+class ProjectResponse(BaseCamelCaseORMModel):
     """プロジェクト情報レスポンススキーマ。
 
     APIレスポンスでプロジェクト情報を返す際に使用します。
 
     Attributes:
         id (uuid.UUID): プロジェクトID（UUID）
-        name (str): プロジェクト名（ProjectBaseから継承）
-        code (str): プロジェクトコード（ProjectBaseから継承）
-        description (str | None): プロジェクト説明（ProjectBaseから継承）
+        name (str): プロジェクト名
+        code (str): プロジェクトコード
+        description (str | None): プロジェクト説明
         is_active (bool): アクティブフラグ
         created_by (uuid.UUID | None): 作成者のユーザーID
         created_at (datetime): 作成日時
@@ -129,9 +131,36 @@ class ProjectResponse(ProjectBase):
     """
 
     id: uuid.UUID = Field(..., description="プロジェクトID（UUID）")
+    name: str = Field(..., min_length=1, max_length=255, description="プロジェクト名")
+    code: str = Field(..., min_length=1, max_length=50, description="プロジェクトコード（一意識別子）")
+    description: str | None = Field(default=None, description="プロジェクト説明")
     is_active: bool = Field(..., description="アクティブフラグ")
     created_by: uuid.UUID | None = Field(default=None, description="作成者のユーザーID")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 
-    model_config = ConfigDict(from_attributes=True)
+
+class ProjectListResponse(BaseCamelCaseModel):
+    """プロジェクト一覧レスポンススキーマ。
+
+    プロジェクト一覧APIのレスポンス形式を定義します。
+
+    Attributes:
+        projects (list[ProjectResponse]): プロジェクトリスト
+        total (int): 総件数
+        skip (int): スキップ数（オフセット）
+        limit (int): 取得件数
+
+    Example:
+        >>> response = ProjectListResponse(
+        ...     projects=[project1, project2, project3],
+        ...     total=100,
+        ...     skip=0,
+        ...     limit=10
+        ... )
+    """
+
+    projects: list[ProjectResponse] = Field(..., description="プロジェクトリスト")
+    total: int = Field(..., description="総件数")
+    skip: int = Field(..., description="スキップ数（オフセット）")
+    limit: int = Field(..., description="取得件数")

@@ -6,7 +6,7 @@ JWT、OAuth2、パスワードハッシュを使用した認証について説�
 
 以下の図は、ログインから認証済みリクエストまでの全体的な流れを示しています。
 
-```mermaid
+::: mermaid
 sequenceDiagram
     participant C as クライアント
     participant API as FastAPI<br/>Router
@@ -62,7 +62,7 @@ sequenceDiagram
     style UR fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
     style DB fill:#64b5f6,stroke:#01579b,stroke-width:3px,color:#000
     style SEC fill:#f06292,stroke:#880e4f,stroke-width:3px,color:#000
-```
+:::
 
 **認証フローの詳細**:
 

@@ -532,7 +532,7 @@ result = app.invoke({
 
 以下の図は、LangGraphを使用したAI Agentの処理フローを示しています。
 
-```mermaid
+::: mermaid
 graph TB
     Start([ユーザーメッセージ]) --> Router{メッセージ<br/>ルーティング}
 
@@ -596,7 +596,7 @@ graph TB
     style End1 fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
     style End2 fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
     style End3 fill:#81c784,stroke:#1b5e20,stroke-width:3px,color:#000
-```
+:::
 
 **Agentプロセスの詳細**:
 

@@ -48,7 +48,10 @@
       "module": "pytest",
       "args": [
         "tests",
-        "-v"
+        "-v",
+        "--cov=src/app",
+        "--cov-report=term-missing",
+        "--cov-report=html"
       ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",

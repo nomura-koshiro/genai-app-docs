@@ -269,6 +269,12 @@ class Settings(BaseSettings):
         description="アカウントロック時間（時間）",
     )
 
+    # マネージド ID認証設定
+    USE_MANAGED_IDENTITY: bool = Field(
+        default=False,
+        description="Azure Managed Identity を使用した認証を有効化",
+    )
+
     # データベース設定（PostgreSQL）
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/app_db"
 

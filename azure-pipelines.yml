@@ -1,0 +1,121 @@
+trigger:
+  branches:
+    include:
+      - main
+      - development
+      - feature/add-azure-managed-id-auth
+
+variables:
+  # Shared global variables
+  - template: .azure/pipelines/variables/common.yml
+
+  - name: projectRoot
+    value: "$(System.DefaultWorkingDirectory)"
+  - name: azureSubscription
+    value: "PJ925-Azure-ServiceConnection"
+
+stages:
+  # ============================================================
+  # BUILD → Test → Lint → Build Image → Push to DEV ACR
+  # ============================================================
+  - stage: Build
+    displayName: "Build, Test & Push Image"
+    jobs:
+      - template: .azure/pipelines/templates/build-template.yml
+        parameters:
+          pythonVersion: $(pythonVersion)
+          azureSubscription: $(azureSubscription)
+          AcrName: $(DevAcrName) # From common.yml
+          ImageRepo: $(ImageRepository)
+
+  # ============================================================
+  # DEPLOY DEV
+  # ============================================================
+  - stage: DeployToDev
+    dependsOn: Build
+    displayName: "Deploy to Development"
+    # condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/development'))
+
+    variables:
+      - template: .azure/pipelines/variables/dev.yml
+      - group: Back-dev
+
+    jobs:
+      - deployment: DeployDev
+        environment: dev
+        displayName: "Deploy to Dev ACA"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: .azure/pipelines/templates/deploy-template.yml
+                  parameters:
+                    environmentName: "development"
+                    azureSubscription: $(azureSubscription)
+                    AcrName: $(AcrName)
+                    ImageRepo: $(ImageRepository)
+
+  # ============================================================
+  # IMAGE PROMOTION DEV → PROD (ACR Import)
+  # ============================================================
+  - stage: PromoteImageToProd
+    dependsOn: Build
+    displayName: "Promote image from Dev ACR → Prod ACR"
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+    variables:
+      - template: .azure/pipelines/variables/prod.yml
+
+    jobs:
+      - job: Promote
+        displayName: "Import image into PROD ACR"
+        pool:
+          vmImage: ubuntu-latest
+        steps:
+          - task: AzureCLI@2
+            displayName: "ACR Import Image"
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                set -e
+                DEV_ACR="$(DevAcrName)"
+                PROD_ACR="$(AcrName)"
+                IMAGE_REPO="$(ImageRepository)"
+                IMAGE_TAG="$(Build.BuildId)"
+
+                echo "🔁 Importing image from ${DEV_ACR}.azurecr.io to ${PROD_ACR}.azurecr.io"
+                az acr import \
+                  --name $PROD_ACR \
+                  --force \
+                  --source ${DEV_ACR}.azurecr.io/${IMAGE_REPO}:${IMAGE_TAG} \
+                  --image ${IMAGE_REPO}:${IMAGE_TAG}
+
+                echo "##vso[task.setvariable variable=ProdImageName]${PROD_ACR}.azurecr.io/${IMAGE_REPO}:${IMAGE_TAG}"
+
+  # ============================================================
+  # DEPLOY PROD
+  # ============================================================
+  - stage: DeployToProd
+    dependsOn: PromoteImageToProd
+    displayName: "Deploy to Production"
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+
+    variables:
+      - template: .azure/pipelines/variables/prod.yml
+
+    jobs:
+      - deployment: DeployProd
+        environment: prod
+        displayName: "Deploy to Production ACA"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - template: .azure/pipelines/templates/deploy-template.yml
+                  parameters:
+                    environmentName: "production"
+                    azureSubscription: $(azureSubscription)
+                    AcrName: $(AcrName)
+                    ImageRepo: $(ImageRepository)

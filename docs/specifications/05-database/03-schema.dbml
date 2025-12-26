@@ -1,0 +1,392 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+
+// User and Project部分 --------------------------
+Table user_account{
+  id uuid [primary key]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table project_member{
+  id uuid [primary key]
+  user_id uuid [not null]
+  project_id uuid [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table project{
+  id uuid [primary key]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table project_file{
+  id uuid [primary key]
+  project_id uuid [not null]
+  name varchar [not null]
+  file blob [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+// 個別分析部分 ----------------------------------
+Table analysis_validation_master{
+  id uuid [primary key]
+  name varchar [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  validation_order integer [not null]
+}
+
+Table analysis_issue_master{
+  id uuid [primary key]
+  validation_id uuid [not null]
+  name varchar [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  description text
+  agent_prompt text
+  initial_msg text
+  dummy_hint text
+  dummy_input blob
+  issue_order integer [not null]
+}
+
+Table analysis_graph_axis_master{
+  id uuid [primary key]
+  issue_id uuid [not null]
+  name varchar [not null]
+  option varchar [not null]
+  multiple bool [not null]
+  axis_order integer [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table analysis_dummy_formula_master{
+  id uuid [primary key]
+  issue_id uuid [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  name varchar [not null]
+  value varchar [not null]
+  formula_order integer [not null]
+}
+
+Table analysis_dummy_chart_master{
+  id uuid [primary key]
+  issue_id uuid [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  chart blob [not null]
+  chart_order integer [not null]
+}
+
+Table analysis_file {
+  id uuid [pk, default: `gen_random_uuid()`]
+  session_id uuid [not null]
+  project_file_id uuid [not null]
+  sheet_name varchar(255) [not null]
+  axis_config jsonb [not null]
+  data jsonb [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table analysis_session{
+  id uuid [primary key]
+  issue_id uuid [not null]
+  creator_id uuid [not null]
+  project_id uuid [not null]
+  input_file_id uuid
+  current_snapshot integer [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table analysis_snapshot{
+  id uuid [primary key]
+  session_id uuid [not null]
+  snapshot_order integer [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table analysis_chat{
+  id uuid [primary key]
+  snapshot_id uuid [not null]
+  chat_order integer [not null]
+  role varchar [not null]
+  message text
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table analysis_step{
+  id uuid [primary key]
+  snapshot_id uuid [not null]
+  config jsonb [not null]
+  name varchar [not null]
+  step_order integer [not null]
+  type varchar [not null]
+  input varchar [not null]
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  //result_formula text 再計算すれば再現できます
+  //result_chart text 再計算すれば再現できます
+  //result_table text 再計算すれば再現できます
+}
+
+// // 以下、step configをjsonbではなく、テーブルで定義場合の定義 ----
+// Table analysis_step_summary_config{
+//   id uuid [primary key]
+//   graph_type varchar
+//   graph_title text
+//   graph_config text
+//   table_display bool [not null]
+//   table_name text
+// }
+
+// Table analysis_step_summary_config_formula{
+//   id uuid [primary key]
+//   config_id uuid [not null]
+//   name text [not null]
+//   type varchar [not null]
+//   formula_order integer [not null]
+//   subject_1 varchar [not null]
+//   subject_2 varchar
+//   unit varchar
+//   coefficient float [not null]
+// }
+
+// Table analysis_step_filter_config{
+//   id uuid [primary key]
+//   numeric_type varchar
+//   numeric_range_min float
+//   numeric_range_max float
+//   numeric_range_include_min bool
+//   numeric_range_include_max bool
+//   numeric_topk_k integer
+//   numeric_topk_asc bool
+//   numeric_percent_min float
+//   numeric_percent_max float
+//   table_exclude_include bool
+//   table_axis text // validation なし
+//   table_name text // validation なし
+// }
+
+// Table analysis_step_filter_config_category{
+//   id uuid [primary key]
+//   config_id uuid [not null]
+//   category_order integer [not null] // validation なし
+//   axis text [not null] // validation なし
+//   value text
+// }
+
+// Table analysis_step_aggregation_config{
+//   id uuid [primary key]
+//   axis text [not null] // validation なし
+// }
+
+// Table analysis_step_aggregation_config_value{
+//   id uuid [primary key]
+//   config_id uuid [not null]
+//   name text [not null]
+//   type varchar [not null]
+//   value_order integer [not null]
+//   operand_1 text [not null]  // validation なし
+//   operand_2 text  // validation なし
+// }
+
+
+// Table analysis_step_transform_config{
+//   id uuid [primary key]
+// }
+
+// Table analysis_step_transform_config_value{
+//   id uuid [primary key]
+//   config_id uuid [not null]
+//   name text [not null]
+//   value_order integer [not null]
+//   type varchar [not null]
+//   operation varchar [not null]
+//   constant float
+//   copy_from text // validation なし
+//   trans_from text // validation なし
+//   trans_json text
+//   calculation_type varchar
+//   calculation_operand_1_constant bool
+//   calculation_operand_1_value float // validation なし
+//   calculation_operand_1_axis text
+//   calculation_operand_2_constant bool
+//   calculation_operand_2_value float // validation なし
+//   calculation_operand_2_axis text
+// }
+
+
+// ドライバーツリー部分 --------------------------
+Table driver_tree_category {
+  id int [pk, increment, note: '主キー（自動採番）']
+  category_id int [not null, note: '業界分類ID']
+  category_name varchar(255) [not null, note: '業界分類']
+  industry_id int [not null, note: '業界名ID']
+  industry_name varchar(255) [not null, note: '業界名']
+  driver_type_id int [not null, note: 'ドライバー型ID（1-24）']
+  driver_type_name varchar(255) [not null, note: 'ドライバー型']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    industry_name [name: 'ix_category_industry']
+    driver_type_id [name: 'ix_category_driver']
+  }
+}
+
+Table driver_tree {
+  id uuid [pk, default: `gen_random_uuid()`]
+  project_id uuid [not null]
+  name varchar(255) [not null, note: 'ツリー名']
+  description text [not null, default: '', note: '説明']
+  root_node_id uuid
+  formula_id uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    project_id
+  }
+}
+
+Table driver_tree_formula {
+  id uuid [pk, default: `gen_random_uuid()`]
+  driver_type_id int [not null, note: 'ドライバー型ID（1-24）']
+  driver_type varchar(255) [not null, note: 'ドライバー型']
+  kpi varchar(50) [not null, note: 'KPI']
+  formulas jsonb [not null, note: '数式リスト']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    (driver_type_id, kpi) [unique, name: 'uq_driver_kpi']
+    (driver_type_id, kpi) [name: 'ix_formula_driver_kpi']
+  }
+}
+
+Table driver_tree_relationship {
+  id uuid [pk, default: `gen_random_uuid()`]
+  driver_tree_id uuid [not null]
+  parent_node_id uuid [not null]
+  operator char(1)
+  indexes {
+    driver_tree_id
+    parent_node_id
+  }
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table driver_tree_relationship_child {
+  id uuid [pk, default: `gen_random_uuid()`]
+  relationship_id uuid [not null]
+  child_node_id uuid [not null]
+  order_index int [default: 0, note: 'ノードの順番を保持']
+  indexes {
+    relationship_id
+    child_node_id
+    (relationship_id, order_index)
+  }
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table driver_tree_node {
+  id uuid [pk, default: `gen_random_uuid()`]
+  label varchar(255) [not null]
+  position_x int [default: 0]
+  position_y int [default: 0]
+  node_type varchar(50) [not null, note: '計算/入力/定数']
+  data_frame_id uuid
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table driver_tree_file {
+  id uuid [pk, default: `gen_random_uuid()`]
+  project_file_id uuid [not null]
+  sheet_name varchar(255) [not null]
+  axis_config jsonb [not null, note: '推移/軸/値/利用しない']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table driver_tree_data_frame {
+  id uuid [pk, default: `gen_random_uuid()`]
+  driver_tree_file_id uuid [not null]
+  column_name varchar(255) [not null]
+  data jsonb // cache役割
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+
+Table driver_tree_policy {
+  id uuid [pk, default: `gen_random_uuid()`]
+  node_id uuid [not null]
+  label varchar(255) [not null]
+  value float [not null, default: 0]
+  indexes {
+    node_id
+  }
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+// Project Member部分
+Ref user_member: user_account.id < project_member.user_id
+Ref member_project: project.id < project_member.project_id
+Ref project_projectFile: project.id < project_file.project_id
+
+// 個別分析マスタ部分
+Ref analysisValidation_analysisIssue: analysis_validation_master.id < analysis_issue_master.validation_id
+Ref analysisIssue_analysisGraphAxis: analysis_issue_master.id < analysis_graph_axis_master.issue_id
+Ref analysisIssue_analysisDummyFormula: analysis_issue_master.id < analysis_dummy_formula_master.issue_id
+Ref analysisIssue_analysisDummyChart: analysis_issue_master.id < analysis_dummy_chart_master.issue_id
+Ref analysisIssue_analysisSession: analysis_issue_master.id < analysis_session.issue_id
+// 個別分析Project部分
+Ref user_analysisSession: user_account.id < analysis_session.creator_id
+Ref project_analysisSession: project.id < analysis_session.project_id
+// 個別分析file部分
+Ref projectFile_analysisSession: project_file.id < analysis_file.project_file_id
+Ref: analysis_file.session_id > analysis_session.id
+Ref: analysis_session.input_file_id - analysis_file.id
+// 個別分析snapshot部分
+Ref analysisSession_analysisSnapshot: analysis_session.id < analysis_snapshot.session_id
+Ref analysisSnapshot_analysisChat: analysis_snapshot.id < analysis_chat.snapshot_id
+Ref analysisSnapshot_analysisStep: analysis_snapshot.id < analysis_step.snapshot_id
+// // 個別分析step部分
+// Ref: analysis_step_summary_config.id - analysis_step.summary_config_id
+// Ref: analysis_step_filter_config.id - analysis_step.filter_config_id
+// Ref: analysis_step_aggregation_config.id - analysis_step.aggregation_config_id
+// Ref: analysis_step_transform_config.id - analysis_step.transform_config_id
+// // 個別分析step config部分
+// Ref: analysis_step_summary_config.id < analysis_step_summary_config_formula.config_id
+// Ref: analysis_step_filter_config.id < analysis_step_filter_config_category.config_id
+// Ref: analysis_step_aggregation_config.id < analysis_step_aggregation_config_value.config_id
+// Ref: analysis_step_transform_config.id < analysis_step_transform_config_value.config_id
+
+// ドライバーツリー主幹部分
+Ref driver_tree_root: driver_tree.root_node_id - driver_tree_node.id
+Ref driver_tree_formula_ref: driver_tree.formula_id - driver_tree_formula.id
+// ドライバーツリーカテゴリ部分
+Ref category_formula: driver_tree_category.driver_type_id < driver_tree_formula.driver_type_id
+// ドライバーツリーリレーションシップ部分
+Ref tree_children: driver_tree_relationship.driver_tree_id > driver_tree.id [delete: cascade]
+Ref parent_node: driver_tree_relationship.parent_node_id - driver_tree_node.id
+Ref child_node: driver_tree_relationship_child.child_node_id - driver_tree_node.id
+Ref parent_child: driver_tree_relationship.id < driver_tree_relationship_child.relationship_id [delete: cascade]
+// ドライバーツリーノード部分
+Ref node_policy_group: driver_tree_node.id < driver_tree_policy.node_id [delete: cascade]
+// ドライバーツリーファイル部分
+Ref file_data: driver_tree_data_frame.driver_tree_file_id > driver_tree_file.id
+Ref node_data: driver_tree_node.data_frame_id - driver_tree_data_frame.id
+Ref: project_file.id < driver_tree_file.project_file_id

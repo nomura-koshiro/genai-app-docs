@@ -26,17 +26,14 @@ from app.api.middlewares import (
 )
 from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
-    analysis_router,
+    analysis_sessions_router,
     analysis_templates_router,
-    driver_tree_router,
-    ppt_generator_router,
+    driver_tree_files_router,
+    driver_tree_nodes_router,
+    driver_tree_trees_router,
     project_files_router,
     project_members_router,
     projects_router,
-    sample_agents_router,
-    sample_files_router,
-    sample_sessions_router,
-    sample_users_router,
     user_accounts_router,
 )
 from app.core.config import settings
@@ -80,7 +77,7 @@ def create_app() -> FastAPI:
         - ミドルウェアの実行順序は登録の逆順です（後に追加したものが先に実行される）
         - lifespanコンテキストマネージャーでアプリの起動・終了処理を管理しています
     """
-    # ✨ 追加: Swagger UIのOAuth設定（本番モードのみ）
+    # Swagger UIのOAuth設定（本番モードのみ）
     swagger_ui_init_oauth = None
     if settings.AUTH_MODE == "production":
         swagger_ui_init_oauth = {
@@ -92,8 +89,10 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.VERSION,
+        # レスポンスでcamelCaseを使用（alias_generatorで設定されたエイリアスを使用）
+        response_model_by_alias=True,
         description=f"""
-    # AIエージェントアプリケーション API
+    # camp-backend
 
     LangChain/LangGraphを使用したAIエージェントアプリケーションのバックエンドAPI。
 
@@ -114,6 +113,18 @@ def create_app() -> FastAPI:
     ほとんどのエンドポイントはゲストアクセス可能ですが、一部の機能では認証が必要です。
     認証が必要な場合は、`Authorization: Bearer <token>` ヘッダーを含めてください。
 
+    ### 開発環境での認証方法
+
+    詳細は [クイックスタートガイド](docs/developer-guide/01-getting-started/05-quick-start.md) を参照してください。
+
+    1. 右上の **「Authorize」** ボタンをクリック
+    2. トークンに `mock-access-token-dev-12345` を入力
+    3. **「Authorize」** をクリック
+
+    ※ 初回は `.\\scripts\\start-postgres.ps1` でDB起動後、
+    `uv run python scripts/setup_dev_admin.py` を実行して
+    開発ユーザー（SystemAdmin権限付き）を作成してください。
+
     ## レート制限
 
     APIリクエストは100リクエスト/分に制限されています。
@@ -126,7 +137,7 @@ def create_app() -> FastAPI:
         swagger_ui_init_oauth=swagger_ui_init_oauth,
         contact={
             "name": "開発チーム",
-            "email": "nomura.koshiro@gmail.com",
+            "email": "koshiro.nomura@accenture.com",
         },
         license_info={
             "name": "MIT",
@@ -159,59 +170,32 @@ def create_app() -> FastAPI:
     # （X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, HSTS）
     app.add_middleware(SecurityHeadersMiddleware)
 
-    # APIバージョニング付きルーターを登録
-    app.include_router(sample_users_router, prefix="/api/v1/sample-users", tags=["sample-users"])
-    app.include_router(sample_agents_router, prefix="/api/v1/sample-agents", tags=["sample-agents"])
-    app.include_router(sample_sessions_router, prefix="/api/v1/sample-sessions", tags=["sample-sessions"])
-    app.include_router(sample_files_router, prefix="/api/v1/sample-files", tags=["sample-files"])
-
     # Azure AD認証用ユーザー管理API
-    app.include_router(user_accounts_router, prefix="/api/v1/user_accounts", tags=["user_accounts"])
+    app.include_router(user_accounts_router, prefix="/api/v1", tags=["user_account"])
 
     # プロジェクト管理API
-    app.include_router(projects_router, prefix="/api/v1/projects", tags=["projects"])
+    app.include_router(projects_router, prefix="/api/v1", tags=["project"])
 
     # プロジェクトメンバー管理API
-    app.include_router(
-        project_members_router,
-        prefix="/api/v1/projects/{project_id}/members",
-        tags=["project-members"],
-    )
+    app.include_router(project_members_router, prefix="/api/v1", tags=["project-member"])
 
     # プロジェクトファイル管理API
-    app.include_router(
-        project_files_router,
-        prefix="/api/v1",
-        tags=["project-files"],
-    )
+    app.include_router(project_files_router, prefix="/api/v1", tags=["project-file"])
 
-    # データ分析API
-    app.include_router(
-        analysis_router,
-        prefix="/api/v1/analysis",
-        tags=["analysis"],
-    )
+    # Analysis API - テンプレート
+    app.include_router(analysis_templates_router, prefix="/api/v1", tags=["analysis-template"])
 
-    # Analysis Templates API
-    app.include_router(
-        analysis_templates_router,
-        prefix="/api/v1/analysis/templates",
-        tags=["analysis-templates"],
-    )
+    # Analysis API - セッション
+    app.include_router(analysis_sessions_router, prefix="/api/v1", tags=["analysis-session"])
 
-    # PPT Generator API
-    app.include_router(
-        ppt_generator_router,
-        prefix="/api/v1/ppt",
-        tags=["ppt-generator"],
-    )
+    # Driver Tree API - ファイル管理
+    app.include_router(driver_tree_files_router, prefix="/api/v1", tags=["driver-tree-file"])
 
-    # Driver Tree API
-    app.include_router(
-        driver_tree_router,
-        prefix="/api/v1/driver-tree",
-        tags=["driver-tree"],
-    )
+    # Driver Tree API - ツリー管理
+    app.include_router(driver_tree_trees_router, prefix="/api/v1", tags=["driver-tree"])
+
+    # Driver Tree API - ノード管理
+    app.include_router(driver_tree_nodes_router, prefix="/api/v1", tags=["driver-tree-node"])
 
     # 基本エンドポイントを登録
     app.include_router(root_router, tags=["root"])

@@ -14,7 +14,7 @@ class TestAccessToken:
     """JWTアクセストークンのテストクラス。"""
 
     def test_create_access_token_success(self):
-        """アクセストークンの生成が成功すること。"""
+        """[test_jwt-001] アクセストークンの生成が成功すること。"""
         # Arrange
         data = {"sub": "1"}
 
@@ -29,7 +29,7 @@ class TestAccessToken:
         assert token.count(".") == 2
 
     def test_create_access_token_with_custom_expiration(self):
-        """カスタム有効期限でトークンを生成できること。"""
+        """[test_jwt-002] カスタム有効期限でトークンを生成できること。"""
         # Arrange
         data = {"sub": "1"}
         expires_delta = timedelta(hours=1)
@@ -44,7 +44,7 @@ class TestAccessToken:
         assert payload["sub"] == "1"
 
     def test_create_access_token_with_additional_claims(self):
-        """追加のクレームを含むトークンを生成できること。"""
+        """[test_jwt-003] 追加のクレームを含むトークンを生成できること。"""
         # Arrange
         data = {"sub": "1", "role": "admin", "username": "testuser"}
 
@@ -59,7 +59,7 @@ class TestAccessToken:
         assert payload["username"] == "testuser"
 
     def test_decode_access_token_success(self):
-        """有効なトークンのデコードが成功すること。"""
+        """[test_jwt-004] 有効なトークンのデコードが成功すること。"""
         # Arrange
         data = {"sub": "123"}
         token = create_access_token(data)
@@ -75,11 +75,15 @@ class TestAccessToken:
         assert payload["type"] == "access"
 
     def test_decode_access_token_invalid_signature(self):
-        """署名が不正なトークンのデコードが失敗すること。"""
+        """[test_jwt-005] 署名が不正なトークンのデコードが失敗すること。"""
         # Arrange
-        # 正しいトークンを生成して、最後の文字を変更（署名を破壊）
+        # 正しいトークンを生成して、署名部分を別の文字列に置き換える
         token = create_access_token({"sub": "1"})
-        invalid_token = token[:-1] + ("A" if token[-1] != "A" else "B")
+        # JWTは header.payload.signature 形式
+        parts = token.split(".")
+        # 署名部分を明確に無効な文字列に置き換える
+        invalid_signature = "invalid_signature_12345"
+        invalid_token = f"{parts[0]}.{parts[1]}.{invalid_signature}"
 
         # Act
         payload = decode_access_token(invalid_token)
@@ -88,7 +92,7 @@ class TestAccessToken:
         assert payload is None
 
     def test_decode_access_token_expired(self):
-        """有効期限切れトークンのデコードが失敗すること。"""
+        """[test_jwt-006] 有効期限切れトークンのデコードが失敗すること。"""
         # Arrange
         data = {"sub": "1"}
         # 有効期限を過去に設定（-1秒）
@@ -101,7 +105,7 @@ class TestAccessToken:
         assert payload is None
 
     def test_decode_access_token_malformed(self):
-        """不正な形式のトークンのデコードが失敗すること。"""
+        """[test_jwt-007] 不正な形式のトークンのデコードが失敗すること。"""
         # Arrange
         invalid_token = "not.a.valid.jwt.token"
 
@@ -112,7 +116,7 @@ class TestAccessToken:
         assert payload is None
 
     def test_decode_access_token_missing_sub(self):
-        """subフィールドがないトークンのデコードが失敗すること。"""
+        """[test_jwt-008] subフィールドがないトークンのデコードが失敗すること。"""
         # Arrange
         # subフィールドなしでトークン生成は可能だが、デコード時に検証される
         from datetime import UTC, datetime
@@ -140,7 +144,7 @@ class TestRefreshToken:
     """JWTリフレッシュトークンのテストクラス。"""
 
     def test_create_refresh_token_success(self):
-        """リフレッシュトークンの生成が成功すること。"""
+        """[test_jwt-009] リフレッシュトークンの生成が成功すること。"""
         # Arrange
         data = {"sub": "1"}
 
@@ -153,7 +157,7 @@ class TestRefreshToken:
         assert len(token) > 0
 
     def test_decode_refresh_token_success(self):
-        """有効なリフレッシュトークンのデコードが成功すること。"""
+        """[test_jwt-010] 有効なリフレッシュトークンのデコードが成功すること。"""
         # Arrange
         data = {"sub": "1"}
         token = create_refresh_token(data)
@@ -167,7 +171,7 @@ class TestRefreshToken:
         assert payload["type"] == "refresh"
 
     def test_decode_refresh_token_wrong_type(self):
-        """アクセストークンをリフレッシュトークンとしてデコードすると失敗すること。"""
+        """[test_jwt-011] アクセストークンをリフレッシュトークンとしてデコードすると失敗すること。"""
         # Arrange
         token = create_access_token({"sub": "1"})
 
@@ -178,7 +182,7 @@ class TestRefreshToken:
         assert payload is None  # typeが"access"なので失敗
 
     def test_decode_refresh_token_invalid(self):
-        """不正なリフレッシュトークンのデコードが失敗すること。"""
+        """[test_jwt-012] 不正なリフレッシュトークンのデコードが失敗すること。"""
         # Arrange
         invalid_token = "invalid.refresh.token"
 
@@ -189,7 +193,7 @@ class TestRefreshToken:
         assert payload is None
 
     def test_refresh_token_longer_expiration(self):
-        """リフレッシュトークンの有効期限がアクセストークンより長いこと。"""
+        """[test_jwt-013] リフレッシュトークンの有効期限がアクセストークンより長いこと。"""
         # Arrange
         data = {"sub": "1"}
         access_token = create_access_token(data)

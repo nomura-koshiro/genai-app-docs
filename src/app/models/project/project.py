@@ -33,6 +33,7 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.analysis.analysis_session import AnalysisSession
+    from app.models.driver_tree.driver_tree import DriverTree
     from app.models.project.project_file import ProjectFile
     from app.models.project.project_member import ProjectMember
 
@@ -112,6 +113,12 @@ class Project(Base, TimestampMixin):
 
     analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(
         "AnalysisSession",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
+    driver_trees: Mapped[list["DriverTree"]] = relationship(
+        "DriverTree",
         back_populates="project",
         cascade="all, delete-orphan",
     )

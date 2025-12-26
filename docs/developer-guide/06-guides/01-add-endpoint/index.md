@@ -130,31 +130,28 @@ class ProductListResponse(BaseModel):
 - Create/Update/Responseで分ける（責務の分離）
 - `from_attributes = True`でORMモデルからの変換を有効化
 
-### ステップ 2: サービスクラスの作成
+### ステップ 2: サービスクラスの作成（Facadeパターン）
 
-既にモデルとリポジトリがある場合、`src/app/services/product/product.py`を作成：
+既にモデルとリポジトリがある場合、`src/app/services/product/`ディレクトリを作成：
 
 ```python
-"""商品ビジネスロジック用サービス。"""
+# src/app/services/product/__init__.py（Facadeクラス）
+"""商品管理サービス。"""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError, ValidationError
-from app.models.product.product import Product
-from app.repositories.product.product import ProductRepository
-from app.schemas.product.product import ProductCreate, ProductUpdate
+from app.services.product.crud import ProductCrudService
 
 
 class ProductService:
-    """商品関連のビジネスロジック用サービス。"""
+    """商品管理のビジネスロジックを提供するサービスクラス。
+
+    各機能は専用のサービスクラスに委譲されます（Facadeパターン）。
+    """
 
     def __init__(self, db: AsyncSession):
-        """商品サービスを初期化します。
-
-        Args:
-            db: データベースセッション
-        """
-        self.repository = ProductRepository(db)
+        self.db = db
+        self._crud_service = ProductCrudService(db)
 
     async def create_product(self, product_data: ProductCreate) -> Product:
         """新しい商品を作成します。

@@ -252,7 +252,7 @@ DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/camp_backend_
 SECRET_KEY=your-secret-key-here-min-32-characters-long
 
 # 環境
-ENVIRONMENT=local
+ENVIRONMENT=development
 
 # デバッグモード
 DEBUG=true

@@ -13,31 +13,26 @@
 
 ## ステップ6: サービスの作成
 
-`src/app/services/task.py`を作成：
+サービス層はFacadeパターンで実装します。`src/app/services/task/`ディレクトリを作成：
 
 ```python
-"""タスクビジネスロジック用サービス。"""
-
-from datetime import datetime, timezone
+# src/app/services/task/__init__.py（Facadeクラス）
+"""タスク管理サービス。"""
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError, PermissionDeniedError, ValidationError
-from app.models.task import Task, TaskStatus
-from app.repositories.task import TaskRepository
-from app.schemas.task import TaskCreate, TaskStatsResponse, TaskUpdate
+from app.services.task.crud import TaskCrudService
 
 
 class TaskService:
-    """タスク関連のビジネスロジック用サービス。"""
+    """タスク管理のビジネスロジックを提供するサービスクラス。
+
+    各機能は専用のサービスクラスに委譲されます（Facadeパターン）。
+    """
 
     def __init__(self, db: AsyncSession):
-        """タスクサービスを初期化します。
-
-        Args:
-            db: データベースセッション
-        """
-        self.repository = TaskRepository(db)
+        self.db = db
+        self._crud_service = TaskCrudService(db)
 
     async def create_task(self, user_id: int, task_data: TaskCreate) -> Task:
         """新しいタスクを作成します。

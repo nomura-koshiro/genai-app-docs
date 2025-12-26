@@ -1,410 +1,466 @@
-"""Project Members API Endpointのテスト。
+"""プロジェクトメンバーAPIのテスト。
 
 このテストファイルは API_ROUTE_TEST_POLICY.md に従い、
 Happy Pathとビジネスルールエラーのみをテストします。
 
 基本的なバリデーションエラーはPydanticスキーマで検証済み、
 ビジネスロジックはサービス層でカバーされます。
+
+対応エンドポイント:
+    - GET /api/v1/project/{project_id}/member - メンバー一覧取得
+    - GET /api/v1/project/{project_id}/member/me - 自分のロール取得
+    - POST /api/v1/project/{project_id}/member - メンバー追加
+    - POST /api/v1/project/{project_id}/member/bulk - メンバー複数人追加
+    - PATCH /api/v1/project/{project_id}/member/{member_id} - ロール更新
+    - DELETE /api/v1/project/{project_id}/member/{member_id} - メンバー削除
+    - DELETE /api/v1/project/{project_id}/member/me - プロジェクト退出
 """
+
+import uuid
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 
-from app.models import Project, ProjectMember, ProjectRole, UserAccount
+from app.models import ProjectMember
 
-
-@pytest.fixture
-async def api_test_users(db_session):
-    """API テスト用ユーザーを作成。"""
-    users = []
-    for i in range(5):
-        user = UserAccount(
-            azure_oid=f"api-test-oid-{i}",
-            email=f"apiuser{i}@company.com",
-            display_name=f"API User {i}",
-        )
-        db_session.add(user)
-        users.append(user)
-    await db_session.commit()
-    for user in users:
-        await db_session.refresh(user)
-    return users
-
-
-@pytest.fixture
-async def api_test_project_with_owner(db_session, api_test_users):
-    """API テスト用プロジェクト（OWNER付き）を作成。"""
-    project = Project(
-        name="API Test Project",
-        code="API-TEST-001",
-        description="Test project for API tests",
-        created_by=api_test_users[0].id,
-    )
-    db_session.add(project)
-    await db_session.flush()
-
-    # api_test_users[0]をOWNERとして追加
-    owner_member = ProjectMember(
-        project_id=project.id,
-        user_id=api_test_users[0].id,
-        role=ProjectRole.PROJECT_MANAGER,
-        added_by=api_test_users[0].id,
-    )
-    db_session.add(owner_member)
-    await db_session.commit()
-    await db_session.refresh(project)
-    return project
+# ================================================================================
+# GET /api/v1/project/{project_id}/member - メンバー一覧取得
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_add_member_success(
-    client: AsyncClient,
-    override_auth,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """メンバー追加API成功テスト。"""
+async def test_get_project_members_success(client: AsyncClient, override_auth, project_with_members):
+    """[test_project_members-001] メンバー一覧取得の成功ケース。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
-
-    payload = {
-        "user_id": str(api_test_users[1].id),
-        "role": "member",
-    }
+    data = project_with_members
+    override_auth(data["owner"])
 
     # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members",
-        json=payload,
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.get(f"/api/v1/project/{data['project'].id}/member")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "members" in result
+    assert "total" in result
+    assert result["total"] == 4  # owner + moderator + member + viewer
+    for member in result["members"]:
+        assert "id" in member
+        assert "userId" in member
+        assert "role" in member
+
+
+@pytest.mark.asyncio
+async def test_get_project_members_with_pagination(client: AsyncClient, override_auth, project_with_members):
+    """[test_project_members-002] ページネーション付きメンバー一覧取得。"""
+    # Arrange
+    data = project_with_members
+    override_auth(data["owner"])
+
+    # Act
+    response = await client.get(f"/api/v1/project/{data['project'].id}/member?skip=0&limit=2")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert len(result["members"]) == 2
+    assert result["total"] == 4
+
+
+@pytest.mark.asyncio
+async def test_get_project_members_unauthorized(client: AsyncClient, project_with_owner):
+    """[test_project_members-003] 認証なしでのメンバー一覧取得失敗。"""
+    # Arrange
+    project, _ = project_with_owner
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/member")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/member/me - 自分のロール取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_my_role_success(client: AsyncClient, override_auth, project_with_owner):
+    """[test_project_members-004] 自分のロール取得の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/member/me")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["projectId"] == str(project.id)
+    assert data["userId"] == str(owner.id)
+    assert data["role"] == "project_manager"
+
+
+@pytest.mark.asyncio
+async def test_get_my_role_not_member(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_project_members-005] メンバーでないユーザーのロール取得（404エラー）。"""
+    # Arrange
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
+
+    override_auth(other_user)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/member/me")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/member - メンバー追加
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_add_member_success(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_project_members-006] メンバー追加の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    new_user = await test_data_seeder.create_user(display_name="New Member")
+    await test_data_seeder.db.commit()
+
+    override_auth(owner)
+    payload = {"user_id": str(new_user.id), "role": "member"}
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/member", json=payload)
 
     # Assert
     assert response.status_code == 201
     data = response.json()
-    assert data["project_id"] == str(project.id)
-    assert data["user_id"] == str(api_test_users[1].id)
+    assert data["projectId"] == str(project.id)
+    assert data["userId"] == str(new_user.id)
     assert data["role"] == "member"
-    assert "user" in data  # ユーザー情報が含まれる
 
 
 @pytest.mark.asyncio
-async def test_add_member_unauthorized(
-    client: AsyncClient,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """未認証でのメンバー追加APIテスト（403エラー）。"""
+async def test_add_member_duplicate(client: AsyncClient, override_auth, project_with_members):
+    """[test_project_members-007] 既存メンバーの追加（422エラー）。"""
     # Arrange
-    project = api_test_project_with_owner
-    payload = {
-        "user_id": str(api_test_users[1].id),
-        "role": "member",
-    }
+    data = project_with_members
+    override_auth(data["owner"])
+
+    payload = {"user_id": str(data["member"].id), "role": "member"}
 
     # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members",
-        json=payload,
-    )
+    response = await client.post(f"/api/v1/project/{data['project'].id}/member", json=payload)
+
+    # Assert
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_add_member_unauthorized(client: AsyncClient, project_with_owner, test_data_seeder):
+    """[test_project_members-008] 認証なしでのメンバー追加失敗。"""
+    # Arrange
+    project, _ = project_with_owner
+    new_user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
+
+    payload = {"user_id": str(new_user.id), "role": "member"}
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/member", json=payload)
 
     # Assert
     assert response.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_get_project_members_success(
-    client: AsyncClient,
-    override_auth,
-    db_session,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """プロジェクトメンバー一覧取得API成功テスト。"""
+async def test_add_member_no_permission(client: AsyncClient, override_auth, project_with_members, test_data_seeder):
+    """[test_project_members-009] 権限のないユーザーによるメンバー追加（403エラー）。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
+    data = project_with_members
+    new_user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
 
-    # メンバーを追加
-    for i in range(1, 4):
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=api_test_users[i].id,
-            role=ProjectRole.MEMBER,
-            added_by=api_test_users[0].id,
-        )
-        db_session.add(member)
-    await db_session.commit()
+    # 一般メンバーでメンバー追加を試みる
+    override_auth(data["member"])
+    payload = {"user_id": str(new_user.id), "role": "member"}
 
     # Act
-    response = await client.get(
-        f"/api/v1/projects/{project.id}/members",
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.post(f"/api/v1/project/{data['project'].id}/member", json=payload)
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "members" in data
-    assert "total" in data
-    assert "project_id" in data
-    # OWNER (PROJECT_MANAGER) + 3 MEMBER
-    assert data["total"] == 4
-    assert len(data["members"]) == 4
-    # 各メンバーに必須フィールドがあることを確認
-    for member in data["members"]:
-        assert "id" in member
-        assert "user_id" in member
-        assert "role" in member
-        assert "user" in member
+    assert response.status_code == 403
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/member/bulk - メンバー複数人追加
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_get_project_members_pagination(
-    client: AsyncClient,
-    override_auth,
-    db_session,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """プロジェクトメンバー一覧取得APIページネーションテスト。"""
+async def test_add_members_bulk_success(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_project_members-010] メンバー複数人追加の成功ケース。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
+    project, owner = project_with_owner
+    users = [await test_data_seeder.create_user(display_name=f"Bulk User {i}") for i in range(3)]
+    await test_data_seeder.db.commit()
 
-    # メンバーを追加
-    for i in range(1, 5):
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=api_test_users[i].id,
-            role=ProjectRole.MEMBER,
-            added_by=api_test_users[0].id,
-        )
-        db_session.add(member)
-    await db_session.commit()
+    override_auth(owner)
+    payload = {
+        "members": [
+            {"user_id": str(users[0].id), "role": "member"},
+            {"user_id": str(users[1].id), "role": "viewer"},
+            {"user_id": str(users[2].id), "role": "project_moderator"},
+        ]
+    }
 
     # Act
-    response = await client.get(
-        f"/api/v1/projects/{project.id}/members?skip=0&limit=2",
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.post(f"/api/v1/project/{project.id}/member/bulk", json=payload)
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
-    assert "members" in data
-    assert "total" in data
-    assert len(data["members"]) == 2
-    # OWNER (PROJECT_MANAGER) + 4 MEMBER = 5
-    assert data["total"] == 5
-    # 各メンバーに必須フィールドがあることを確認
-    for member in data["members"]:
-        assert "id" in member
-        assert "user_id" in member
-        assert "role" in member
-        assert "user" in member
+    assert data["totalRequested"] == 3
+    assert data["totalAdded"] == 3
+    assert data["totalFailed"] == 0
 
 
 @pytest.mark.asyncio
-async def test_update_member_role_success(
-    client: AsyncClient,
-    override_auth,
-    db_session,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """メンバーロール更新API成功テスト。"""
+async def test_add_members_bulk_partial_success(client: AsyncClient, override_auth, project_with_members, test_data_seeder):
+    """[test_project_members-011] メンバー複数人追加の部分成功（一部重複）。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
+    data = project_with_members
+    new_user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
 
-    # MEMBERを追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=api_test_users[1].id,
-        role=ProjectRole.MEMBER,
-        added_by=api_test_users[0].id,
+    override_auth(data["owner"])
+    payload = {
+        "members": [
+            {"user_id": str(data["member"].id), "role": "member"},  # 重複
+            {"user_id": str(new_user.id), "role": "viewer"},  # 成功
+        ]
+    }
+
+    # Act
+    response = await client.post(f"/api/v1/project/{data['project'].id}/member/bulk", json=payload)
+
+    # Assert
+    assert response.status_code == 201
+    result = response.json()
+    assert result["totalRequested"] == 2
+    assert result["totalAdded"] == 1
+    assert result["totalFailed"] == 1
+
+
+@pytest.mark.asyncio
+async def test_add_members_bulk_empty_list(client: AsyncClient, override_auth, project_with_owner):
+    """[test_project_members-012] 空リストでのメンバー複数人追加（422エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # Act
+    response = await client.post(f"/api/v1/project/{project.id}/member/bulk", json={"members": []})
+
+    # Assert
+    assert response.status_code == 422
+
+
+# ================================================================================
+# PATCH /api/v1/project/{project_id}/member/{member_id} - ロール更新
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_update_member_role_success(client: AsyncClient, override_auth, project_with_members, db_session):
+    """[test_project_members-013] メンバーロール更新の成功ケース。"""
+    # Arrange
+    data = project_with_members
+    override_auth(data["owner"])
+
+    # memberのmember_idを取得
+    result = await db_session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == data["project"].id,
+            ProjectMember.user_id == data["member"].id,
+        )
     )
-    db_session.add(member)
-    await db_session.commit()
-    member_id = member.id
-
-    payload = {"role": "project_moderator"}
+    member_record = result.scalar_one()
 
     # Act
     response = await client.patch(
-        f"/api/v1/projects/{project.id}/members/{member_id}",
-        json=payload,
-        headers={"Authorization": "Bearer mock-token"},
+        f"/api/v1/project/{data['project'].id}/member/{member_record.id}",
+        json={"role": "project_moderator"},
     )
 
     # Assert
     assert response.status_code == 200
-    data = response.json()
-    assert data["role"] == "project_moderator"
+    result_data = response.json()
+    assert result_data["role"] == "project_moderator"
 
 
-@pytest.mark.skip(reason="Bulk endpoint or validation issue - needs investigation")
 @pytest.mark.asyncio
-async def test_leave_project_last_owner(
-    client: AsyncClient,
-    override_auth,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """最後のOWNERのプロジェクト退出APIテスト（422エラー）。"""
+async def test_update_member_role_not_found(client: AsyncClient, override_auth, project_with_owner):
+    """[test_project_members-014] 存在しないメンバーのロール更新（404エラー）。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])  # OWNER
+    project, owner = project_with_owner
+    override_auth(owner)
+    nonexistent_id = str(uuid.uuid4())
 
     # Act
-    response = await client.delete(
-        f"/api/v1/projects/{project.id}/members/me",
-        headers={"Authorization": "Bearer mock-token"},
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/member/{nonexistent_id}",
+        json={"role": "member"},
+    )
+
+    # Assert
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_update_last_manager_role(client: AsyncClient, override_auth, project_with_owner, db_session):
+    """[test_project_members-015] 最後のPROJECT_MANAGERのロール変更（422エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # ownerのmember_idを取得
+    result = await db_session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == owner.id,
+        )
+    )
+    owner_member = result.scalar_one()
+
+    # Act
+    response = await client.patch(
+        f"/api/v1/project/{project.id}/member/{owner_member.id}",
+        json={"role": "member"},
     )
 
     # Assert
     assert response.status_code == 422
-    data = response.json()
-    assert "PROJECT_MANAGER" in str(data.get("detail", "")) or "最低1人" in str(data.get("detail", ""))
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/member/{member_id} - メンバー削除
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_add_members_bulk_success(
-    client: AsyncClient,
-    override_auth,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """メンバー複数人追加API成功テスト。"""
+async def test_remove_member_success(client: AsyncClient, override_auth, project_with_members, db_session):
+    """[test_project_members-016] メンバー削除の成功ケース。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
+    data = project_with_members
+    override_auth(data["owner"])
 
-    payload = {
-        "members": [
-            {"user_id": str(api_test_users[1].id), "role": "member"},
-            {"user_id": str(api_test_users[2].id), "role": "viewer"},
-            {"user_id": str(api_test_users[3].id), "role": "project_moderator"},
-        ]
-    }
+    # viewerのmember_idを取得
+    result = await db_session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == data["project"].id,
+            ProjectMember.user_id == data["viewer"].id,
+        )
+    )
+    viewer_member = result.scalar_one()
 
     # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members/bulk",
-        json=payload,
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.delete(f"/api/v1/project/{data['project'].id}/member/{viewer_member.id}")
 
     # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert data["project_id"] == str(project.id)
-    assert data["total_requested"] == 3
-    assert data["total_added"] == 3
-    assert data["total_failed"] == 0
-    assert len(data["added"]) == 3
-    assert len(data["failed"]) == 0
+    assert response.status_code == 204
 
 
 @pytest.mark.asyncio
-async def test_add_members_bulk_partial_success(
-    client: AsyncClient,
-    override_auth,
-    db_session,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """メンバー複数人追加API部分成功テスト（一部重複）。"""
+async def test_remove_member_not_found(client: AsyncClient, override_auth, project_with_owner):
+    """[test_project_members-017] 存在しないメンバーの削除（404エラー）。"""
     # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
-
-    # user[1]を既存メンバーとして追加
-    existing_member = ProjectMember(
-        project_id=project.id,
-        user_id=api_test_users[1].id,
-        role=ProjectRole.MEMBER,
-        added_by=api_test_users[0].id,
-    )
-    db_session.add(existing_member)
-    await db_session.commit()
-
-    payload = {
-        "members": [
-            {"user_id": str(api_test_users[1].id), "role": "member"},  # 重複
-            {"user_id": str(api_test_users[2].id), "role": "viewer"},  # 成功
-            {"user_id": str(api_test_users[3].id), "role": "project_moderator"},  # 成功
-        ]
-    }
+    project, owner = project_with_owner
+    override_auth(owner)
+    nonexistent_id = str(uuid.uuid4())
 
     # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members/bulk",
-        json=payload,
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.delete(f"/api/v1/project/{project.id}/member/{nonexistent_id}")
 
     # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert data["project_id"] == str(project.id)
-    assert data["total_requested"] == 3
-    assert data["total_added"] == 2
-    assert data["total_failed"] == 1
-    assert len(data["added"]) == 2
-    assert len(data["failed"]) == 1
-    # 失敗したメンバーの確認
-    assert data["failed"][0]["user_id"] == str(api_test_users[1].id)
-    assert "既に" in data["failed"][0]["error"]
+    assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_add_members_bulk_unauthorized(
-    client: AsyncClient,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """未認証でのメンバー複数人追加APIテスト（403エラー）。"""
+async def test_remove_self_not_allowed(client: AsyncClient, override_auth, project_with_owner, db_session):
+    """[test_project_members-018] 自分自身の削除（422エラー、退出を使用すべき）。"""
     # Arrange
-    project = api_test_project_with_owner
-    payload = {
-        "members": [
-            {"user_id": str(api_test_users[1].id), "role": "member"},
-        ]
-    }
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    result = await db_session.execute(
+        select(ProjectMember).where(
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == owner.id,
+        )
+    )
+    owner_member = result.scalar_one()
 
     # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members/bulk",
-        json=payload,
-    )
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_add_members_bulk_empty_list(
-    client: AsyncClient,
-    override_auth,
-    api_test_project_with_owner,
-    api_test_users,
-):
-    """メンバー複数人追加API空リストテスト（422エラー）。"""
-    # Arrange
-    project = api_test_project_with_owner
-    override_auth(api_test_users[0])
-
-    payload = {"members": []}
-
-    # Act
-    response = await client.post(
-        f"/api/v1/projects/{project.id}/members/bulk",
-        json=payload,
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.delete(f"/api/v1/project/{project.id}/member/{owner_member.id}")
 
     # Assert
     assert response.status_code == 422
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/member/me - プロジェクト退出
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_leave_project_success(client: AsyncClient, override_auth, project_with_members):
+    """[test_project_members-019] プロジェクト退出の成功ケース。"""
+    # Arrange
+    data = project_with_members
+    override_auth(data["member"])
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{data['project'].id}/member/me")
+
+    # Assert
+    assert response.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_leave_project_last_manager(client: AsyncClient, override_auth, project_with_owner):
+    """[test_project_members-020] 最後のPROJECT_MANAGERのプロジェクト退出（422エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/member/me")
+
+    # Assert
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_leave_project_not_member(client: AsyncClient, override_auth, project_with_owner, test_data_seeder):
+    """[test_project_members-021] メンバーでないユーザーのプロジェクト退出（404エラー）。"""
+    # Arrange
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user()
+    await test_data_seeder.db.commit()
+
+    override_auth(other_user)
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/member/me")
+
+    # Assert
+    assert response.status_code == 404

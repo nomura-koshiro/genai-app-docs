@@ -1,350 +1,636 @@
-"""Driver Tree API。
+"""ドライバーツリー ツリー管理APIエンドポイント。
 
-このモジュールは、ドライバーツリー機能のRESTful APIエンドポイントを提供します。
+このモジュールは、ドライバーツリーのツリー管理に関するAPIエンドポイントを定義します。
+
+主な機能:
+    - 新規ツリー作成（POST /api/v1/project/{project_id}/driver-tree/tree）
+    - ツリー一覧取得（GET /api/v1/project/{project_id}/driver-tree/tree）
+    - ツリー取得（GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}）
+    - 数式/データインポート（POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/import）
+    - ツリーリセット（POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/reset）
+    - ツリー削除（DELETE /api/v1/project/{project_id}/driver-tree/tree/{tree_id}）
+    - 業界分類/業界/ドライバーツリー型/KPI選択肢取得（GET /api/v1/project/{project_id}/driver-tree/category）
+    - 数式取得（GET /api/v1/project/{project_id}/driver-tree/formula）
+    - ドライバーツリー計算結果取得（GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/data）
+    - シミュレーションファイルダウンロード（GET /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/output）
 """
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Query, status
+from fastapi.responses import StreamingResponse
 
-from app.api.core import CurrentUserAzureDep, get_db
-from app.api.decorators import async_timeout, handle_service_errors
+from app.api.core import DriverTreeServiceDep, ProjectMemberDep
+from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
-from app.schemas import (
-    DriverTreeFormulaCreateRequest,
-    DriverTreeFormulaResponse,
-    DriverTreeKPIListResponse,
-    DriverTreeNodeCreate,
-    DriverTreeNodeResponse,
-    DriverTreeNodeUpdate,
-    DriverTreeResponse,
+from app.schemas.driver_tree import (
+    DriverTreeCalculatedDataResponse,
+    DriverTreeCategoryListResponse,
+    DriverTreeCreateTreeRequest,
+    DriverTreeCreateTreeResponse,
+    DriverTreeDeleteResponse,
+    DriverTreeFormulaGetResponse,
+    DriverTreeGetTreeResponse,
+    DriverTreeImportFormulaRequest,
+    DriverTreeInfo,
+    DriverTreeListResponse,
+    DriverTreeResetResponse,
 )
-from app.services import DriverTreeService
 
 logger = get_logger(__name__)
 
-driver_tree_router = APIRouter()
-
-
-def get_driver_tree_service(db: AsyncSession = Depends(get_db)) -> DriverTreeService:
-    """Driver Treeサービスを取得します。
-
-    Args:
-        db: データベースセッション
-
-    Returns:
-        DriverTreeService: Driver Treeサービス
-    """
-    return DriverTreeService(db)
+driver_tree_trees_router = APIRouter()
 
 
 # ================================================================================
-# POST Endpoints
+# ツリー CRUD
 # ================================================================================
 
 
-@driver_tree_router.post("/nodes", response_model=DriverTreeNodeResponse, status_code=status.HTTP_201_CREATED)
+@driver_tree_trees_router.post(
+    "/project/{project_id}/driver-tree/tree",
+    response_model=DriverTreeCreateTreeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="新規ツリー作成",
+    description="""
+    新規ツリーを作成します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+
+    リクエストボディ:
+        - DriverTreeCreateTreeRequest: ドライバーツリー作成リクエスト
+            - name (str): ツリー名（必須）
+            - description (str): 説明（オプション）
+
+    レスポンス:
+        - DriverTreeCreateTreeResponse: ドライバーツリー作成レスポンス
+            - tree_id (uuid): ツリーID
+            - name (str): ツリー名
+            - description (str): 説明
+            - created_at (datetime): 作成日時
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+    """,
+)
 @handle_service_errors
-async def create_node(
-    node_data: DriverTreeNodeCreate,
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeNodeResponse:
-    """ノードを作成します。
-
-    Args:
-        node_data: ノード作成リクエスト
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        NodeResponse: 作成されたノード
-    """
+async def create_tree(
+    project_id: uuid.UUID,
+    tree_data: DriverTreeCreateTreeRequest,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeCreateTreeResponse:
+    """新規ツリーを作成します。"""
     logger.info(
-        "ノード作成リクエスト",
-        tree_id=str(node_data.tree_id),
-        label=node_data.label,
-        user_id=str(current_user.id),
-        action="create_driver_tree_node",
+        "新規ツリー作成リクエスト",
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        tree_name=tree_data.name,
+        action="create_tree",
     )
 
-    node = await driver_tree_service.create_node(
-        tree_id=node_data.tree_id,
-        label=node_data.label,
-        parent_id=node_data.parent_id,
-        operator=node_data.operator,
-        x=node_data.x,
-        y=node_data.y,
-    )
-
-    logger.info(
-        "ノードを作成しました",
-        node_id=str(node.id),
-        label=node.label,
-    )
-
-    return DriverTreeNodeResponse.model_validate(node)
-
-
-# ================================================================================
-# GET Endpoints
-# ================================================================================
-
-
-@driver_tree_router.get("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
-@handle_service_errors
-async def get_node(
-    node_id: uuid.UUID,
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeNodeResponse:
-    """ノードを取得します。
-
-    Args:
-        node_id: ノードID
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        NodeResponse: ノード
-    """
-    logger.info(
-        "ノード取得リクエスト",
-        node_id=str(node_id),
-        user_id=str(current_user.id),
-        action="get_driver_tree_node",
-    )
-
-    node = await driver_tree_service.get_node(node_id)
-
-    logger.info(
-        "ノードを取得しました",
-        node_id=str(node.id),
-        label=node.label,
-    )
-
-    return DriverTreeNodeResponse.model_validate(node)
-
-
-# ================================================================================
-# PUT Endpoints
-# ================================================================================
-
-
-@driver_tree_router.put("/nodes/{node_id}", response_model=DriverTreeNodeResponse)
-@handle_service_errors
-async def update_node(
-    node_id: uuid.UUID,
-    node_data: DriverTreeNodeUpdate,
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeNodeResponse:
-    """ノードを更新します。
-
-    Args:
-        node_id: ノードID
-        node_data: ノード更新リクエスト
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        NodeResponse: 更新されたノード
-    """
-    logger.info(
-        "ノード更新リクエスト",
-        node_id=str(node_id),
-        user_id=str(current_user.id),
-        action="update_driver_tree_node",
-    )
-
-    node = await driver_tree_service.update_node(
-        node_id=node_id,
-        label=node_data.label,
-        parent_id=node_data.parent_id,
-        operator=node_data.operator,
-        x=node_data.x,
-        y=node_data.y,
-    )
-
-    logger.info(
-        "ノードを更新しました",
-        node_id=str(node.id),
-        label=node.label,
-    )
-
-    return DriverTreeNodeResponse.model_validate(node)
-
-
-@driver_tree_router.post("/trees", response_model=DriverTreeResponse, status_code=status.HTTP_201_CREATED)
-@handle_service_errors
-@async_timeout(60.0)
-async def create_tree_from_formulas(
-    formula_data: DriverTreeFormulaCreateRequest,
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeResponse:
-    """数式からツリーを作成します。
-
-    Args:
-        formula_data: 数式作成リクエスト
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        TreeResponse: 作成されたツリー
-    """
-    logger.info(
-        "ツリー作成リクエスト",
-        formula_count=len(formula_data.formulas),
-        tree_name=formula_data.name,
-        user_id=str(current_user.id),
-        action="create_driver_tree_from_formulas",
-    )
-
-    tree = await driver_tree_service.create_tree_from_formulas(
-        formulas=formula_data.formulas,
-        tree_name=formula_data.name,
+    tree = await tree_service.create_tree(
+        project_id=project_id,
+        name=tree_data.name,
+        description=tree_data.description,
+        user_id=member.user_id,
     )
 
     logger.info(
         "ツリーを作成しました",
-        tree_id=str(tree.id),
-        tree_name=tree.name,
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        tree_name=tree_data.name,
     )
 
-    return await driver_tree_service.get_tree_response(tree.id)
+    return DriverTreeCreateTreeResponse(**tree)
 
 
-@driver_tree_router.get("/trees/{tree_id}", response_model=DriverTreeResponse)
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/tree",
+    response_model=DriverTreeListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ツリー一覧取得",
+    description="""
+    ツリーの一覧を取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+
+    レスポンス:
+        - DriverTreeListResponse: ドライバーツリー一覧レスポンス
+            - trees (list): ツリー一覧
+                - tree_id (uuid): ツリーID
+                - name (str): ツリー名
+                - description (str): 説明
+                - created_at (datetime): 作成日時
+                - updated_at (datetime): 更新日時
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+    """,
+)
+@handle_service_errors
+async def list_trees(
+    project_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeListResponse:
+    """ツリー一覧を取得します。"""
+    logger.info(
+        "ツリー一覧取得リクエスト",
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        action="list_trees",
+    )
+
+    result = await tree_service.list_trees(project_id, member.user_id)
+
+    logger.info(
+        "ツリー一覧を取得しました",
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        count=len(result.get("trees", [])),
+    )
+
+    return DriverTreeListResponse(**result)
+
+
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/tree/{tree_id}",
+    response_model=DriverTreeGetTreeResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ツリー取得",
+    description="""
+    ツリーの全体構造を取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    レスポンス:
+        - DriverTreeGetTreeResponse: ドライバーツリー取得レスポンス
+            - tree_id (uuid): ツリーID
+            - name (str): ツリー名
+            - description (str): 説明
+            - root (dict): ルートノード
+            - nodes (list): ノード情報リスト
+            - relationship (list): 関係リスト
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
 @handle_service_errors
 async def get_tree(
+    project_id: uuid.UUID,
     tree_id: uuid.UUID,
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeResponse:
-    """ツリーを取得します。
-
-    Args:
-        tree_id: ツリーID
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        TreeResponse: ツリー
-    """
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeGetTreeResponse:
+    """ツリーを取得します。"""
     logger.info(
         "ツリー取得リクエスト",
+        user_id=str(member.user_id),
         tree_id=str(tree_id),
-        user_id=str(current_user.id),
-        action="get_driver_tree",
+        action="get_tree",
     )
 
-    response = await driver_tree_service.get_tree_response(tree_id)
+    tree = await tree_service.get_tree(project_id, tree_id, member.user_id)
 
     logger.info(
         "ツリーを取得しました",
+        user_id=str(member.user_id),
         tree_id=str(tree_id),
-        tree_name=response.name,
     )
 
-    return response
+    return DriverTreeGetTreeResponse(tree=DriverTreeInfo.model_validate(tree))
 
 
-@driver_tree_router.get("/categories")
+@driver_tree_trees_router.post(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/import",
+    response_model=DriverTreeGetTreeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="数式/データインポート",
+    description="""
+    ツリーに数式データをインポートします。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    リクエストボディ:
+        - DriverTreeImportFormulaRequest: 数式インポートリクエスト
+            - position_x (int): ルートノードX座標
+            - position_y (int): ルートノードY座標
+            - formulas (list[str]): 数式リスト
+            - sheet_id (uuid): 入力シートID（オプション）
+
+    レスポンス:
+        - DriverTreeGetTreeResponse: ドライバーツリー取得レスポンス（ツリー全体の最新構造）
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def import_formula(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    import_data: DriverTreeImportFormulaRequest,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeGetTreeResponse:
+    """数式をインポートします。"""
+    logger.info(
+        "数式/データインポートリクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        formula_count=len(import_data.formulas),
+        action="import_formula",
+    )
+
+    tree = await tree_service.import_formula(
+        project_id=project_id,
+        tree_id=tree_id,
+        position_x=import_data.position_x,
+        position_y=import_data.position_y,
+        formulas=import_data.formulas,
+        sheet_id=import_data.sheet_id,
+        user_id=member.user_id,
+    )
+
+    logger.info(
+        "数式をインポートしました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        formula_count=len(import_data.formulas),
+    )
+
+    return DriverTreeGetTreeResponse(tree=DriverTreeInfo.model_validate(tree))
+
+
+@driver_tree_trees_router.post(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/reset",
+    response_model=DriverTreeResetResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ツリーリセット",
+    description="""
+    ツリーを初期状態にリセットします。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    レスポンス:
+        - DriverTreeResetResponse: ドライバーツリーリセットレスポンス
+            - tree (dict): リセット後のツリー全体構造
+            - reset_at (datetime): リセット日時
+
+    ステータスコード:
+        - 200: リセット成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def reset_tree(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeResetResponse:
+    """ツリーをリセットします。"""
+    logger.info(
+        "ツリーリセットリクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        action="reset_tree",
+    )
+
+    result = await tree_service.reset_tree(project_id, tree_id, member.user_id)
+
+    logger.info(
+        "ツリーをリセットしました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+    )
+
+    return DriverTreeResetResponse(**result)
+
+
+@driver_tree_trees_router.delete(
+    "/project/{project_id}/driver-tree/tree/{tree_id}",
+    response_model=DriverTreeDeleteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ツリー削除",
+    description="""
+    ツリーを完全に削除します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    レスポンス:
+        - DriverTreeDeleteResponse: ドライバーツリー削除レスポンス
+            - success (bool): 成功フラグ
+            - deleted_at (datetime): 削除日時
+
+    ステータスコード:
+        - 200: 削除成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def delete_tree(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeDeleteResponse:
+    """ツリーを削除します。"""
+    logger.info(
+        "ツリー削除リクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        action="delete_tree",
+    )
+
+    result = await tree_service.delete_tree(project_id, tree_id, member.user_id)
+
+    logger.info(
+        "ツリーを削除しました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+    )
+
+    return DriverTreeDeleteResponse(**result)
+
+
+# ================================================================================
+# マスタデータ取得
+# ================================================================================
+
+
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/category",
+    response_model=DriverTreeCategoryListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="業界分類一覧取得",
+    description="""
+    業界分類・業界名・ドライバー型の階層構造を取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+
+    レスポンス:
+        - DriverTreeCategoryListResponse: カテゴリ一覧レスポンス
+            - categories: 業界分類リスト
+                - category_id: int - 業界分類ID
+                - category_name: str - 業界分類名
+                - industries: 業界名リスト
+                    - industry_id: int - 業界名ID
+                    - industry_name: str - 業界名
+                    - driver_types: ドライバー型リスト
+                        - driver_type_id: int - ドライバー型ID
+                        - driver_type: str - ドライバー型名
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+    """,
+)
 @handle_service_errors
 async def get_categories(
-    current_user: CurrentUserAzureDep,
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> dict[str, dict[str, list[str]]]:
-    """カテゴリー一覧を取得します。
-
-    Args:
-        current_user: 現在のユーザー
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        dict: カテゴリーの辞書
-    """
+    project_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeCategoryListResponse:
+    """業界分類一覧を取得します。"""
     logger.info(
-        "カテゴリー一覧取得リクエスト",
-        user_id=str(current_user.id),
-        action="get_driver_tree_categories",
+        "業界分類一覧取得リクエスト",
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        action="get_categories",
     )
 
-    categories = await driver_tree_service.get_categories()
+    result = await tree_service.get_categories(project_id, member.user_id)
 
     logger.info(
-        "カテゴリー一覧を取得しました",
-        category_count=len(categories),
+        "業界分類一覧を取得しました",
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        category_count=len(result.get("categories", [])),
     )
 
-    return categories
+    return DriverTreeCategoryListResponse(**result)
 
 
-@driver_tree_router.get("/kpis", response_model=DriverTreeKPIListResponse)
-@handle_service_errors
-async def get_kpis(
-    current_user: CurrentUserAzureDep,
-) -> DriverTreeKPIListResponse:
-    """KPI一覧を取得します。
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/formula",
+    response_model=DriverTreeFormulaGetResponse,
+    status_code=status.HTTP_200_OK,
+    summary="数式取得",
+    description="""
+    指定されたドライバー型とKPIに対応する数式を取得します。
 
-    Args:
-        current_user: 現在のユーザー
+    **認証が必要です。**
 
-    Returns:
-        KPIListResponse: KPI一覧
-    """
-    logger.info(
-        "KPI一覧取得リクエスト",
-        user_id=str(current_user.id),
-        action="get_driver_tree_kpis",
-    )
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
 
-    kpis = ["売上", "原価", "販管費", "粗利", "営業利益", "EBITDA"]
+    クエリパラメータ:
+        - driver_type_id: int - ドライバー型ID（必須）
+        - kpi: str - KPI（売上 | 原価 | 販管費 | 粗利 | 営業利益 | EBITDA 、必須）
 
-    logger.info(
-        "KPI一覧を取得しました",
-        kpi_count=len(kpis),
-    )
+    レスポンス:
+        - DriverTreeFormulaGetResponse: 数式取得レスポンス
+            - formula: 数式情報
+                - formula_id: uuid - 数式ID
+                - driver_type_id: int - ドライバー型ID
+                - driver_type: str - ドライバー型名
+                - kpi: str - KPI
+                - formulas: list[str] - 数式リスト
 
-    return DriverTreeKPIListResponse(kpis=kpis)
-
-
-@driver_tree_router.get("/formulas", response_model=DriverTreeFormulaResponse)
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: 数式が見つからない
+    """,
+)
 @handle_service_errors
 async def get_formulas(
-    current_user: CurrentUserAzureDep,
-    tree_type: str = Query(..., description="ツリータイプ"),
-    kpi: str = Query(..., description="KPI名"),
-    driver_tree_service: DriverTreeService = Depends(get_driver_tree_service),
-) -> DriverTreeFormulaResponse:
-    """指定されたツリータイプとKPIの数式を取得します。
-
-    Args:
-        current_user: 現在のユーザー
-        tree_type: ツリータイプ
-        kpi: KPI名
-        driver_tree_service: Driver Treeサービス
-
-    Returns:
-        FormulaResponse: 数式レスポンス
-    """
+    project_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+    driver_type_id: int = Query(..., description="ドライバー型ID"),
+    kpi: str = Query(..., description="KPI（売上 | 原価 | 販管費 | 粗利 | 営業利益 | EBITDA）"),
+) -> DriverTreeFormulaGetResponse:
+    """数式を取得します。"""
     logger.info(
         "数式取得リクエスト",
-        tree_type=tree_type,
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        driver_type_id=driver_type_id,
         kpi=kpi,
-        user_id=str(current_user.id),
-        action="get_driver_tree_formulas",
+        action="get_formulas",
     )
 
-    formulas = await driver_tree_service.get_formulas(tree_type, kpi)
+    result = await tree_service.get_formulas(project_id, driver_type_id, kpi, member.user_id)
 
     logger.info(
         "数式を取得しました",
-        tree_type=tree_type,
+        user_id=str(member.user_id),
+        project_id=str(project_id),
+        driver_type_id=driver_type_id,
         kpi=kpi,
-        formula_count=len(formulas),
     )
 
-    return DriverTreeFormulaResponse(formulas=formulas)
+    return DriverTreeFormulaGetResponse(**result)
+
+
+# ================================================================================
+# 計算・出力
+# ================================================================================
+
+
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/data",
+    response_model=DriverTreeCalculatedDataResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ドライバーツリー計算結果取得",
+    description="""
+    ツリー全体の計算を実行し結果を取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    レスポンス:
+        - DriverTreeCalculatedDataResponse: 計算結果レスポンス
+            - calculated_data_list (list): 計算データ一覧
+                - node_id (uuid): ノードID
+                - label (str): ノード名
+                - columns (list[str]): カラム名リスト
+                - records (list): データレコード
+
+    ステータスコード:
+        - 200: 計算成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+        - 422: 計算エラー（数式エラー、データ不足等）
+    """,
+)
+@handle_service_errors
+async def get_tree_data(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeCalculatedDataResponse:
+    """ツリー計算結果を取得します。"""
+    logger.info(
+        "ドライバーツリー計算結果取得リクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        action="get_tree_data",
+    )
+
+    result = await tree_service.get_tree_data(project_id, tree_id, member.user_id)
+
+    logger.info(
+        "ドライバーツリー計算結果を取得しました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+    )
+
+    return DriverTreeCalculatedDataResponse(**result)
+
+
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/output",
+    status_code=status.HTTP_200_OK,
+    summary="シミュレーションファイルダウンロード",
+    description="""
+    シミュレーション結果をExcel/CSV形式でエクスポートします。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    クエリパラメータ:
+        - format: str - 出力形式（"xlsx"|"csv"、デフォルト: "xlsx"）
+
+    レスポンス:
+        - Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+        - File: シミュレーション結果ファイル
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def download_simulation_output(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+    format: str = Query("xlsx", description="出力形式（xlsx|csv）"),
+) -> StreamingResponse:
+    """シミュレーション結果をダウンロードします。"""
+    logger.info(
+        "シミュレーションファイルダウンロードリクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        format=format,
+        action="download_simulation_output",
+    )
+
+    file_stream = await tree_service.download_simulation_output(project_id, tree_id, format, member.user_id)
+
+    logger.info(
+        "シミュレーションファイルをダウンロードしました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        format=format,
+    )
+
+    return file_stream

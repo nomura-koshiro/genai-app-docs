@@ -1,36 +1,33 @@
 """アプリケーション全体で使用される共通Pydanticスキーマ。
 
 このモジュールは、複数のエンドポイントで共通利用されるスキーマを定義します。
-エラーレスポンス、ヘルスチェック、ページネーション等の汎用的な機能を提供します。
+エラーレスポンス、ヘルスチェック等の汎用的な機能を提供します。
 
 主なスキーマ:
     - MessageResponse: 汎用メッセージレスポンス
-    - ErrorResponse: エラー情報レスポンス
+    - ProblemDetails: RFC 9457準拠エラーレスポンス
     - HealthResponse: ヘルスチェックレスポンス
-    - PaginationParams: ページネーションリクエストパラメータ
-    - PaginatedResponse: ページネーション付きレスポンス
 
 使用方法:
-    >>> from app.schemas.common import ErrorResponse, PaginationParams
+    >>> from app.schemas.common import ProblemDetails, MessageResponse
     >>> from fastapi import HTTPException
     >>>
     >>> # エラーレスポンス
-    >>> error = ErrorResponse(
-    ...     error="Resource not found",
-    ...     details={"resource_id": "123"}
+    >>> error = ProblemDetails(
+    ...     title="Not Found",
+    ...     status=404,
+    ...     detail="Resource not found"
     ... )
-    >>>
-    >>> # ページネーション
-    >>> params = PaginationParams(skip=0, limit=10)
 """
 
 from datetime import UTC, datetime
-from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import BaseCamelCaseModel
 
 
-class MessageResponse(BaseModel):
+class MessageResponse(BaseCamelCaseModel):
     """汎用メッセージレスポンススキーマ。
 
     シンプルな成功メッセージを返す際に使用します。
@@ -47,7 +44,7 @@ class MessageResponse(BaseModel):
     message: str = Field(..., description="レスポンスメッセージ")
 
 
-class ProblemDetails(BaseModel):
+class ProblemDetails(BaseCamelCaseModel):
     """RFC 9457 Problem Details for HTTP APIs準拠のエラースキーマ。
 
     HTTPエラーレスポンスの標準形式を提供します。
@@ -104,7 +101,7 @@ class ProblemDetails(BaseModel):
     model_config = {"extra": "allow"}  # RFC 9457は追加フィールドを許可
 
 
-class HealthResponse(BaseModel):
+class HealthResponse(BaseCamelCaseModel):
     """ヘルスチェックレスポンススキーマ。
 
     アプリケーションの正常性を確認するためのレスポンスです。
@@ -129,61 +126,3 @@ class HealthResponse(BaseModel):
     status: str = Field(..., description="ヘルスステータス")
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC), description="チェック時刻")
     version: str = Field(..., description="アプリケーションバージョン")
-
-
-class PaginationParams(BaseModel):
-    """ページネーションリクエストパラメータスキーマ。
-
-    リスト取得APIでのページング制御に使用します。
-
-    Attributes:
-        skip (int): スキップするアイテム数（オフセット、デフォルト: 0）
-            - 最小値: 0
-        limit (int): 返却する最大アイテム数（デフォルト: 100）
-            - 最小値: 1
-            - 最大値: 1000
-
-    Example:
-        >>> # 最初の10件取得
-        >>> params = PaginationParams(skip=0, limit=10)
-        >>>
-        >>> # 11件目から20件目まで取得
-        >>> params = PaginationParams(skip=10, limit=10)
-
-    Note:
-        - limitは1000件までに制限されています
-        - 大量データ取得時はページングを使用してください
-    """
-
-    skip: int = Field(0, ge=0, description="スキップするアイテム数")
-    limit: int = Field(100, ge=1, le=1000, description="返却する最大アイテム数")
-
-
-class PaginatedResponse(BaseModel):
-    """汎用ページネーションレスポンススキーマ。
-
-    ページング付きのリストレスポンスに使用します。
-
-    Attributes:
-        total (int): 総アイテム数（フィルタ適用後）
-        skip (int): スキップされたアイテム数
-        limit (int): 返却された最大アイテム数
-        items (list[Any]): アイテムリスト
-
-    Example:
-        >>> response = PaginatedResponse(
-        ...     total=100,
-        ...     skip=0,
-        ...     limit=10,
-        ...     items=[{"id": 1}, {"id": 2}, ...]
-        ... )
-
-    Note:
-        - 実際の使用時はitemsの型を具体的なモデルに置き換えてください
-        - 例: list[UserAccountResponse], list[FileInfo]
-    """
-
-    total: int = Field(..., ge=0, description="総アイテム数")
-    skip: int = Field(..., ge=0, description="スキップしたアイテム数")
-    limit: int = Field(..., ge=1, description="返却された最大アイテム数")
-    items: list[Any] = Field(..., description="アイテムリスト")

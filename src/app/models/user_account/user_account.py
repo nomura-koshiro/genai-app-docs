@@ -132,7 +132,7 @@ class UserAccount(Base, TimestampMixin):
 
     analysis_sessions: Mapped[list["AnalysisSession"]] = relationship(
         "AnalysisSession",
-        foreign_keys="[AnalysisSession.created_by]",
+        foreign_keys="[AnalysisSession.creator_id]",
         back_populates="creator",
     )
 
@@ -170,6 +170,22 @@ class UserAccount(Base, TimestampMixin):
             True
         """
         return self.has_system_role(SystemUserRole.SYSTEM_ADMIN)
+
+    @property
+    def is_superuser(self) -> bool:
+        """スーパーユーザー（システム管理者）かどうかをチェックします。
+
+        rolesに "SystemAdmin" が含まれているかをチェックします。
+
+        Returns:
+            bool: スーパーユーザーの場合True
+
+        Example:
+            >>> user = UserAccount(roles=["SystemAdmin", "User"])
+            >>> user.is_superuser
+            True
+        """
+        return "SystemAdmin" in (self.roles or [])
 
     def __repr__(self) -> str:
         """ユーザーオブジェクトの文字列表現。

@@ -4,35 +4,33 @@
 """
 
 from app.api.routes.v1.analysis import (
-    analysis_router,
+    analysis_sessions_router,
     analysis_templates_router,
 )
-from app.api.routes.v1.driver_tree import driver_tree_router
-from app.api.routes.v1.ppt_generator import ppt_generator_router
+from app.api.routes.v1.driver_tree import (
+    driver_tree_files_router,
+    driver_tree_nodes_router,
+    driver_tree_trees_router,
+)
 from app.api.routes.v1.project import (
     project_files_router,
     project_members_router,
     projects_router,
 )
-from app.api.routes.v1.sample import (
-    sample_agents_router,
-    sample_files_router,
-    sample_sessions_router,
-    sample_users_router,
-)
 from app.api.routes.v1.user_accounts import user_accounts_router
 
 __all__ = [
-    "analysis_router",
+    # Analysis API
+    "analysis_sessions_router",
     "analysis_templates_router",
-    "driver_tree_router",
-    "ppt_generator_router",
+    # Driver Tree API
+    "driver_tree_files_router",
+    "driver_tree_nodes_router",
+    "driver_tree_trees_router",
+    # Project API
     "project_files_router",
     "project_members_router",
     "projects_router",
-    "sample_agents_router",
-    "sample_files_router",
-    "sample_sessions_router",
-    "sample_users_router",
+    # User Account API
     "user_accounts_router",
 ]

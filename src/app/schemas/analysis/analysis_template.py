@@ -1,359 +1,625 @@
-"""分析テンプレート管理のPydanticスキーマ。
-
-このモジュールは、分析テンプレートとチャートデータの
-すべてのリクエスト/レスポンススキーマを定義します。
-
-主なスキーマ:
-    テンプレート:
-        - AnalysisTemplateBase: 基本テンプレート情報
-        - AnalysisTemplateCreate: テンプレート作成リクエスト
-        - AnalysisTemplateUpdate: テンプレート更新リクエスト
-        - AnalysisTemplateResponse: テンプレート情報レスポンス
-        - AnalysisTemplateDetailResponse: チャートデータを含む詳細レスポンス
-
-    チャート:
-        - AnalysisTemplateChartBase: 基本チャート情報
-        - AnalysisTemplateChartCreate: チャート作成リクエスト
-        - AnalysisTemplateChartResponse: チャート情報レスポンス
-
-    初期軸設定:
-        - AnalysisInitialAxisConfig: UI初期軸設定
-        - AnalysisInitialAxisList: 初期軸設定のリスト
-
-使用方法:
-    >>> from app.schemas.analysis.template import AnalysisTemplateCreate
-    >>>
-    >>> # テンプレート作成
-    >>> template = AnalysisTemplateCreate(
-    ...     policy="市場拡大",
-    ...     issue="新規参入",
-    ...     description="新規市場への参入効果を分析します",
-    ...     agent_prompt="...",
-    ...     initial_msg="分析を開始します",
-    ...     initial_axis=[{"name": "横軸", "option": "科目", "multiple": False}]
-    ... )
-"""
-
 import uuid
 from datetime import datetime
-from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import Field
+
+from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
+
 
 # ================================================================================
-# 初期軸設定スキーマ
+# 施策スキーマ
 # ================================================================================
+class AnalysisValidationBase(BaseCamelCaseModel):
+    """分析施策ベーススキーマ。
 
-
-class AnalysisInitialAxisConfig(BaseModel):
-    """初期軸設定スキーマ。
-
-    UIで表示する軸の初期設定を定義します。
+    施策の基本情報を定義します。
 
     Attributes:
-        name (str): 軸名（例: "横軸", "色分け"）
-        option (str): 初期選択カラム名
-        multiple (bool): 複数選択可能か
+        name (str): 施策名
+        validation_order (int): 表示順序
 
     Example:
-        >>> axis_config = AnalysisInitialAxisConfig(
-        ...     name="横軸",
-        ...     option="科目",
-        ...     multiple=False
+        >>> validation = AnalysisValidationBase(
+        ...     name="市場拡大",
+        ...     validation_order=1
         ... )
     """
 
-    model_config = ConfigDict(frozen=False)
-
-    name: str = Field(..., description="軸名")
-    option: str = Field(..., description="初期選択カラム名")
-    multiple: bool = Field(False, description="複数選択可能か")
+    name: str = Field(..., max_length=200, description="施策名")
+    validation_order: int = Field(..., description="表示順序")
 
 
-# 初期軸設定の型定義
-AnalysisInitialAxisList = list[AnalysisInitialAxisConfig]
+class AnalysisValidationCreate(AnalysisValidationBase):
+    """分析施策作成スキーマ。
 
-
-# ================================================================================
-# Plotlyチャートデータスキーマ
-# ================================================================================
-
-
-class AnalysisPlotlyChartData(BaseModel):
-    """Plotlyチャートデータの基本構造スキーマ。
-
-    Plotly形式のチャートデータ（data, layout, config）を定義します。
-    Plotlyの完全な型定義は複雑すぎるため、最低限の構造検証のみ行います。
-
-    Attributes:
-        data (list[dict[str, Any]]): チャート系列データ（必須）
-        layout (dict[str, Any] | None): レイアウト設定（タイトル、軸設定など）
-        config (dict[str, Any] | None): チャート設定（ツールバー表示など）
+    新規施策作成時の入力データを定義します。
 
     Example:
-        >>> chart = AnalysisPlotlyChartData(
-        ...     data=[
-        ...         {
-        ...             "type": "bar",
-        ...             "x": ["A", "B", "C"],
-        ...             "y": [1, 2, 3],
-        ...             "name": "売上"
-        ...         }
-        ...     ],
-        ...     layout={
-        ...         "title": "売上推移",
-        ...         "xaxis": {"title": "カテゴリ"},
-        ...         "yaxis": {"title": "金額"}
-        ...     }
-        ... )
-
-    Note:
-        - `extra='allow'`により、Plotlyの拡張フィールドも許可
-        - 最低限 `data` フィールドが必須で、空でないことを保証
-    """
-
-    model_config = ConfigDict(extra="allow", frozen=False)
-
-    data: list[dict[str, Any]] = Field(..., description="チャート系列データ", min_length=1)
-    layout: dict[str, Any] | None = Field(default=None, description="レイアウト設定")
-    config: dict[str, Any] | None = Field(default=None, description="チャート設定")
-
-
-# ================================================================================
-# 分析テンプレートチャートスキーマ
-# ================================================================================
-
-
-class AnalysisTemplateChartBase(BaseModel):
-    """ベース分析テンプレートチャートスキーマ。
-
-    チャートの基本情報を定義します。
-
-    Attributes:
-        chart_name (str): チャート名
-        chart_data (dict[str, Any]): Plotlyチャートデータ
-        chart_order (int): 表示順序
-        chart_type (str | None): チャートタイプ
-    """
-
-    chart_name: str = Field(..., max_length=500, description="チャート名（ファイル名由来）")
-    chart_data: dict[str, Any] = Field(..., description="Plotly形式のチャートデータ")
-    chart_order: int = Field(default=0, description="チャート表示順序")
-    chart_type: str | None = Field(default=None, max_length=50, description="チャートタイプ（bar, line, pie等）")
-
-
-class AnalysisTemplateChartCreate(AnalysisTemplateChartBase):
-    """チャート作成リクエストスキーマ。
-
-    新規チャート作成時に必要な情報を定義します。
-
-    Attributes:
-        template_id (uuid.UUID): 所属するテンプレートID
-
-    Example:
-        >>> chart = AnalysisTemplateChartCreate(
-        ...     template_id=uuid.uuid4(),
-        ...     chart_name="利益改善効果グラフ",
-        ...     chart_data={"data": [...], "layout": {...}},
-        ...     chart_type="scatter"
-        ... )
-    """
-
-    template_id: uuid.UUID = Field(..., description="テンプレートID")
-
-
-class AnalysisTemplateChartResponse(AnalysisTemplateChartBase):
-    """チャート情報レスポンススキーマ。
-
-    チャート情報のAPI応答形式を定義します。
-
-    Attributes:
-        id (uuid.UUID): チャートID
-        template_id (uuid.UUID): 所属するテンプレートID
-        created_at (datetime): 作成日時
-        updated_at (datetime): 更新日時
-
-    Example:
-        >>> {
-        ...     "id": "123e4567-e89b-12d3-a456-426614174000",
-        ...     "template_id": "223e4567-e89b-12d3-a456-426614174000",
-        ...     "chart_name": "利益改善効果グラフ",
-        ...     "chart_data": {"data": [...], "layout": {...}},
-        ...     "chart_order": 0,
-        ...     "chart_type": "scatter",
-        ...     "created_at": "2025-01-01T00:00:00Z",
-        ...     "updated_at": "2025-01-01T00:00:00Z"
-        ... }
-    """
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID = Field(..., description="チャートID")
-    template_id: uuid.UUID = Field(..., description="テンプレートID")
-    created_at: datetime = Field(..., description="作成日時")
-    updated_at: datetime = Field(..., description="更新日時")
-
-
-# ================================================================================
-# 分析テンプレートスキーマ
-# ================================================================================
-
-
-class AnalysisTemplateBase(BaseModel):
-    """ベース分析テンプレートスキーマ。
-
-    テンプレートの基本情報を定義します。
-
-    Attributes:
-        policy (str): 施策名
-        issue (str): 課題名
-        description (str): テンプレート説明
-        agent_prompt (str): AIエージェント用プロンプト
-        initial_msg (str): 初期メッセージ
-        initial_axis (list[dict[str, Any]]): 初期軸設定
-        dummy_formula (list[dict[str, Any]] | None): ダミー計算式
-        dummy_input (list[str] | None): ダミー入力データ
-        dummy_hint (str | None): ダミーヒント
-        is_active (bool): アクティブフラグ
-        display_order (int): 表示順序
-    """
-
-    policy: str = Field(..., max_length=200, description="施策名")
-    issue: str = Field(..., max_length=500, description="課題名")
-    description: str = Field(..., description="テンプレートの説明")
-    agent_prompt: str = Field(..., description="AIエージェント用のプロンプト")
-    initial_msg: str = Field(..., description="初期メッセージ")
-    initial_axis: list[dict[str, Any]] = Field(default_factory=list, description="初期軸設定（論理型: InitialAxisList）")
-    dummy_formula: list[dict[str, Any]] | None = Field(default=None, description="ダミー計算式")
-    dummy_input: list[str] | None = Field(default=None, description="ダミー入力データ")
-    dummy_hint: str | None = Field(default=None, description="ダミーヒント")
-    is_active: bool = Field(default=True, description="アクティブフラグ")
-    display_order: int = Field(default=0, description="表示順序")
-
-
-class AnalysisTemplateCreate(AnalysisTemplateBase):
-    """テンプレート作成リクエストスキーマ。
-
-    新規テンプレート作成時に必要な情報を定義します。
-
-    Example:
-        >>> template = AnalysisTemplateCreate(
-        ...     policy="市場拡大",
-        ...     issue="新規参入",
-        ...     description="新規市場への参入効果を分析します",
-        ...     agent_prompt="...",
-        ...     initial_msg="分析を開始します",
-        ...     initial_axis=[
-        ...         {"name": "横軸", "option": "科目", "multiple": False}
-        ...     ]
+        >>> validation_create = AnalysisValidationCreate(
+        ...     name="市場拡大",
+        ...     validation_order=1
         ... )
     """
 
     pass
 
 
-class AnalysisTemplateUpdate(BaseModel):
-    """テンプレート更新リクエストスキーマ。
+class AnalysisValidationUpdate(BaseCamelCaseModel):
+    """分析施策更新スキーマ。
 
-    テンプレート情報の部分更新に使用します。
-    すべてのフィールドはOptionalです。
+    施策更新時の入力データを定義します。
+
+    Attributes:
+        name (str | None): 施策名
+        validation_order (int | None): 表示順序
 
     Example:
-        >>> update = AnalysisTemplateUpdate(
-        ...     description="更新された説明文",
-        ...     is_active=False
+        >>> validation_update = AnalysisValidationUpdate(
+        ...     name="市場拡大",
+        ...     validation_order=1
         ... )
     """
 
-    policy: str | None = Field(default=None, max_length=200, description="施策名")
-    issue: str | None = Field(default=None, max_length=500, description="課題名")
-    description: str | None = Field(default=None, description="テンプレートの説明")
-    agent_prompt: str | None = Field(default=None, description="AIエージェント用のプロンプト")
-    initial_msg: str | None = Field(default=None, description="初期メッセージ")
-    initial_axis: list[dict[str, Any]] | None = Field(default=None, description="初期軸設定（論理型: InitialAxisList）")
-    dummy_formula: list[dict[str, Any]] | None = Field(default=None, description="ダミー計算式")
-    dummy_input: list[str] | None = Field(default=None, description="ダミー入力データ")
-    dummy_hint: str | None = Field(default=None, description="ダミーヒント")
-    is_active: bool | None = Field(default=None, description="アクティブフラグ")
-    display_order: int | None = Field(default=None, description="表示順序")
+    name: str | None = Field(default=None, max_length=200, description="施策名")
+    validation_order: int | None = Field(default=None, description="表示順序")
 
 
-class AnalysisTemplateResponse(AnalysisTemplateBase):
-    """テンプレート情報レスポンススキーマ。
+class AnalysisValidationResponse(BaseCamelCaseORMModel):
+    """分析施策レスポンススキーマ。
 
-    テンプレート情報のAPI応答形式を定義します（チャートデータは含まない）。
+    施策情報の API レスポンスを定義します。
 
     Attributes:
-        id (uuid.UUID): テンプレートID
+        id (uuid.UUID): 施策ID
+        name (str): 施策名
+        validation_order (int): 表示順序
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
 
     Example:
         >>> {
         ...     "id": "123e4567-e89b-12d3-a456-426614174000",
-        ...     "policy": "市場拡大",
-        ...     "issue": "新規参入",
-        ...     "description": "新規市場への参入効果を分析します",
-        ...     "agent_prompt": "...",
-        ...     "initial_msg": "分析を開始します",
-        ...     "initial_axis": [{"name": "横軸", "option": "科目", "multiple": false}],
-        ...     "dummy_formula": null,
-        ...     "dummy_input": null,
-        ...     "dummy_hint": null,
-        ...     "is_active": true,
-        ...     "display_order": 0,
+        ...     "name": "市場拡大",
+        ...     "validation_order": 1,
         ...     "created_at": "2025-01-01T00:00:00Z",
         ...     "updated_at": "2025-01-01T00:00:00Z"
         ... }
     """
 
-    model_config = ConfigDict(from_attributes=True)
-
-    id: uuid.UUID = Field(..., description="テンプレートID")
+    id: uuid.UUID = Field(..., description="施策ID")
+    name: str = Field(..., max_length=200, description="施策名")
+    validation_order: int = Field(..., description="表示順序")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 
 
-class AnalysisTemplateDetailResponse(AnalysisTemplateResponse):
-    """テンプレート詳細レスポンススキーマ。
+# ================================================================================
+# グラフ軸設定スキーマ
+# ================================================================================
+class AnalysisGraphAxisBase(BaseCamelCaseModel):
+    """グラフ軸設定ベーススキーマ。
 
-    チャートデータを含むテンプレート詳細情報のAPI応答形式を定義します。
+    UIで表示する軸の設定を定義します。
 
     Attributes:
-        charts (list[AnalysisTemplateChartResponse]): 関連するチャートデータのリスト
+        name (str): 軸名(例: "横軸", "色分け")
+        option (str): '科目'または'軸'のいずれか
+        multiple (bool): 複数選択可能か
+        axis_order (int): 軸の表示順序
+
+    Example:
+        >>> axis = AnalysisGraphAxisBase(
+        ...     name="横軸",
+        ...     option="科目",
+        ...     multiple=False,
+        ...     axis_order=1
+        ... )
+    """
+
+    name: str = Field(..., max_length=200, description="軸名、例: '横軸', '色分け'")
+    option: str = Field(..., max_length=50, description="'科目'または'軸'のいずれか")
+    multiple: bool = Field(default=False, description="複数選択可能か")
+    axis_order: int = Field(..., description="軸の表示順序")
+
+
+class AnalysisGraphAxisCreate(AnalysisGraphAxisBase):
+    """グラフ軸設定作成スキーマ。
+
+    新規軸設定追加用に必要な情報を定義します。
+
+    Attributes:
+        issue_id (uuid.UUID): 所属する課題ID
+
+    Example:
+        >>> axis_create = AnalysisGraphAxisCreate(
+        ...     issue_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174000"),
+        ...     name="横軸",
+        ...     option="科目",
+        ...     multiple=False,
+        ...     axis_order=1
+        ... )
+    """
+
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+
+
+class AnalysisGraphAxisUpdate(BaseCamelCaseModel):
+    """グラフ軸設定更新スキーマ。
+
+    軸設定更新用に必要な情報を定義します。
+
+    Attributes:
+        name (str | None): 軸名(例: "横軸", "色分け")
+        option (str | None): '科目'または'軸'のいずれか
+        multiple (bool | None): 複数選択可能か
+        axis_order (int | None): 軸の表示順序
+    Example:
+        >>> axis_update = AnalysisGraphAxisUpdate(
+        ...     name="横軸",
+        ...     option="科目",
+        ...     multiple=False,
+        ...     axis_order=1
+        ... )
+    """
+
+    name: str | None = Field(default=None, max_length=200, description="軸名、例: '横軸', '色分け'")
+    option: str | None = Field(default=None, max_length=50, description="'科目'または'軸'のいずれか")
+    multiple: bool | None = Field(default=None, description="複数選択可能か")
+    axis_order: int | None = Field(default=None, description="軸の表示順序")
+
+
+class AnalysisGraphAxisResponse(BaseCamelCaseORMModel):
+    """グラフ軸設定レスポンススキーマ。
+
+    軸設定の API レスポンスを定義します。
+
+    Attributes:
+        id (uuid.UUID): 軸設定ID
+        name (str): 軸名
+        option (str): '科目'または'軸'のいずれか
+        multiple (bool): 複数選択可能か
+        axis_order (int): 軸の表示順序
+        issue_id (uuid.UUID): 所属する課題ID
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
 
     Example:
         >>> {
         ...     "id": "123e4567-e89b-12d3-a456-426614174000",
-        ...     "policy": "市場拡大",
-        ...     "issue": "新規参入",
-        ...     "description": "新規市場への参入効果を分析します",
-        ...     "agent_prompt": "...",
-        ...     "initial_msg": "分析を開始します",
-        ...     "initial_axis": [...],
-        ...     "dummy_formula": [...],
-        ...     "dummy_input": [...],
-        ...     "dummy_hint": "...",
-        ...     "is_active": true,
-        ...     "display_order": 0,
+        ...     "issue_id": "223e4567-e89b-12d3-a456-426614174000",
+        ...     "name": "横軸",
+        ...     "option": "科目",
+        ...     "multiple": false,
+        ...     "axis_order": 1,
         ...     "created_at": "2025-01-01T00:00:00Z",
-        ...     "updated_at": "2025-01-01T00:00:00Z",
-        ...     "charts": [
-        ...         {
-        ...             "id": "223e4567-e89b-12d3-a456-426614174000",
-        ...             "template_id": "123e4567-e89b-12d3-a456-426614174000",
-        ...             "chart_name": "利益改善効果グラフ",
-        ...             "chart_data": {"data": [...], "layout": {...}},
-        ...             "chart_order": 0,
-        ...             "chart_type": "scatter",
-        ...             "created_at": "2025-01-01T00:00:00Z",
-        ...             "updated_at": "2025-01-01T00:00:00Z"
-        ...         }
-        ...     ]
+        ...     "updated_at": "2025-01-01T00:00:00Z"
         ... }
     """
 
-    charts: list[AnalysisTemplateChartResponse] = Field(
-        default_factory=list,
-        description="関連するチャートデータのリスト",
-    )
+    id: uuid.UUID = Field(..., description="軸設定ID")
+    name: str = Field(..., max_length=200, description="軸名、例: '横軸', '色分け'")
+    option: str = Field(..., max_length=50, description="'科目'または'軸'のいずれか")
+    multiple: bool = Field(default=False, description="複数選択可能か")
+    axis_order: int = Field(..., description="軸の表示順序")
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
+
+
+# ================================================================================
+# ダミー計算式スキーマ
+# ================================================================================
+class AnalysisDummyFormulaBase(BaseCamelCaseModel):
+    """ダミー計算式ベーススキーマ。
+
+    ダミー出力計算式の名前と値を定義します。
+
+    Attributes:
+        name (str): 計算式名(例: "平均売上")
+        value (str): 計算結果と単位を含む文字列(例: "5000円")
+        formula_order (int): 計算式の表示順序
+
+    Example:
+        >>> formula = AnalysisDummyFormulaBase(
+        ...     name="平均売上",
+        ...     value="5000円",
+        ...     formula_order=1
+        ... )
+    """
+
+    name: str = Field(..., description="計算式名、例: '平均売上'")
+    value: str = Field(..., description="計算結果と単位を含む文字列、例: '5000円'")
+    formula_order: int = Field(..., description="計算式の表示順序")
+
+
+class AnalysisDummyFormulaCreate(AnalysisDummyFormulaBase):
+    """ダミー計算式作成スキーマ。
+
+    新規計算式追加用に必要な情報を定義します。
+
+    Attributes:
+        issue_id (uuid.UUID): 所属する課題ID
+
+    Example:
+        >>> formula_create = AnalysisDummyFormulaCreate(
+        ...     issue_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174000"),
+        ...     name="平均売上",
+        ...     value="5000円",
+        ...     formula_order=1
+        ... )
+    """
+
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+
+
+class AnalysisDummyFormulaUpdate(BaseCamelCaseModel):
+    """ダミー計算式更新スキーマ。
+
+    計算式更新用に必要な情報を定義します。
+
+    Attributes:
+        name (str | None): 計算式名(例: "平均売上")
+        value (str | None): 計算結果と単位を含む文字列(例: "5000円")
+        formula_order (int | None): 計算式の表示順序
+    Example:
+        >>> formula_update = AnalysisDummyFormulaUpdate(
+        ...     name="平均売上",
+        ...     value="5000円",
+        ...     formula_order=1
+        ... )
+    """
+
+    name: str | None = Field(default=None, description="計算式名、例: '平均売上'")
+    value: str | None = Field(default=None, description="計算結果と単位を含む文字列、例: '5000円'")
+    formula_order: int | None = Field(default=None, description="計算式の表示順序")
+
+
+class AnalysisDummyFormulaResponse(BaseCamelCaseORMModel):
+    """ダミー計算式レスポンススキーマ。
+
+    計算式情報の API レスポンスを定義します。
+
+    Attributes:
+        id (uuid.UUID): 計算式ID
+        name (str): 計算式名
+        value (str): 計算結果と単位を含む文字列
+        formula_order (int): 計算式の表示順序
+        issue_id (uuid.UUID): 所属する課題ID
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
+
+    Example:
+        >>> {
+        ...     "id": "123e4567-e89b-12d3-a456-426614174000",
+        ...     "issue_id": "223e4567-e89b-12d3-a456-426614174000",
+        ...     "name": "平均売上",
+        ...     "value": "5000円",
+        ...     "formula_order": 1,
+        ...     "created_at": "2025-01-01T00:00:00Z",
+        ...     "updated_at": "2025-01-01T00:00:00Z"
+        ... }
+    """
+
+    id: uuid.UUID = Field(..., description="計算式ID")
+    name: str = Field(..., description="計算式名、例: '平均売上'")
+    value: str = Field(..., description="計算結果と単位を含む文字列、例: '5000円'")
+    formula_order: int = Field(..., description="計算式の表示順序")
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
+
+
+# ================================================================================
+# ダミーチャートスキーマ
+# ================================================================================
+class AnalysisDummyChartBase(BaseCamelCaseModel):
+    """ダミーチャートベーススキーマ。
+
+    Plotly チャートデータを blob として保存します。
+
+    Attributes:
+        chart (dict): チャートデータ(Plotly JSON)
+        chart_order (int): チャートの表示順序
+
+    Example:
+        >>> chart = AnalysisDummyChartBase(
+        ...     chart={"data": [...], "layout": {...}},
+        ...     chart_order=1
+        ... )
+    """
+
+    chart: dict = Field(..., description="チャートデータ(Plotly JSON)")
+    chart_order: int = Field(..., description="チャートの表示順序")
+
+
+class AnalysisDummyChartCreate(AnalysisDummyChartBase):
+    """ダミーチャート作成スキーマ。
+
+    新規チャート追加用に必要な情報を定義します。
+
+    Attributes:
+        issue_id (uuid.UUID): 所属する課題ID
+
+    Example:
+        >>> chart_create = AnalysisDummyChartCreate(
+        ...     issue_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174000"),
+        ...     chart=b'{"data": [...]}',
+        ...     chart_order=1
+        ... )
+    """
+
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+
+
+class AnalysisDummyChartUpdate(BaseCamelCaseModel):
+    """ダミーチャート更新スキーマ。
+
+    チャート更新用に必要な情報を定義します。
+
+    Attributes:
+        chart (dict | None): チャートデータ(Plotly JSON)
+        chart_order (int | None): チャートの表示順序
+    Example:
+        >>> chart_update = AnalysisDummyChartUpdate(
+        ...     chart=b'{"data": [...]}',
+        ...     chart_order=1
+        ... )
+    """
+
+    chart: dict | None = Field(default=None, description="チャートデータ(Plotly JSON)")
+    chart_order: int | None = Field(default=None, description="チャートの表示順序")
+
+
+class AnalysisDummyChartResponse(BaseCamelCaseORMModel):
+    """ダミーチャートレスポンススキーマ。
+
+    チャート情報の API レスポンスを定義します。
+
+    Attributes:
+        id (uuid.UUID): チャートID
+        chart (dict): チャートデータ(Plotly JSON)
+        chart_order (int): チャートの表示順序
+        issue_id (uuid.UUID): 所属する課題ID
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
+
+    Example:
+        >>> {
+        ...     "id": "123e4567-e89b-12d3-a456-426614174000",
+        ...     "issue_id": "223e4567-e89b-12d3-a456-426614174000",
+        ...     "chart": "eyJkYXRhIjogWy4uLl19",  // Base64エンコード
+        ...     "chart_order": 1,
+        ...     "created_at": "2025-01-01T00:00:00Z",
+        ...     "updated_at": "2025-01-01T00:00:00Z"
+        ... }
+    """
+
+    id: uuid.UUID = Field(..., description="チャートID")
+    chart: dict = Field(..., description="チャートデータ(Plotly JSON)")
+    chart_order: int = Field(..., description="チャートの表示順序")
+    issue_id: uuid.UUID = Field(..., description="課題ID")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
+
+
+# ================================================================================
+# 分析課題スキーマ
+# ================================================================================
+class AnalysisIssueBase(BaseCamelCaseModel):
+    """ベース分析課題スキーマ。
+
+    課題の基本情報を定義します。
+
+    Attributes:
+        name (str): 課題名
+        description (str | None): 課題説明
+        agent_prompt (str | None): AIエージェント用プロンプト
+        initial_msg (str | None): 初期メッセージ
+        dummy_input (list[dict] | None): ダミー入力データ(pandas.to_dict, orient='records')形式
+        dummy_hint (str | None): ダミーヒント
+        issue_order (int): 表示順序
+
+    Example:
+        >>> issue = AnalysisIssueBase(
+        ...     name="新規参入",
+        ...     description="新規市場への参入効果を分析します",
+        ...     agent_prompt="...",
+        ...     initial_msg="分析を開始します",
+        ...     dummy_input=[{"店舗名": "A店", "売上": 1000, "地域": "東京"}],
+        ...     dummy_hint="年度ごとの売上データを入力してください。",
+        ...     issue_order=1
+        ... )
+    """
+
+    name: str = Field(..., max_length=255, description="課題名")
+    description: str | None = Field(default=None, description="課題の説明")
+    agent_prompt: str | None = Field(default=None, description="AIエージェント用のプロンプト")
+    initial_msg: str | None = Field(default=None, description="初期メッセージ")
+    dummy_input: list[dict] | None = Field(default=None, description="ダミー入力データ(pandas.to_dict, orient='records')形式")
+    dummy_hint: str | None = Field(default=None, description="ダミー入力ヒント")
+    issue_order: int = Field(default=0, description="表示順序")
+
+
+class AnalysisIssueCreate(AnalysisIssueBase):
+    """分析課題作成スキーマ。
+
+    新規課題作成用に必要な情報を定義します。
+
+    Attributes:
+        validation_id (uuid.UUID): 親の施策ID
+        name (str): 課題名
+        description (str | None): 課題説明
+        agent_prompt (str | None): AIエージェント用プロンプト
+        initial_msg (str | None): 初期メッセージ
+        dummy_input (list[dict] | None): ダミー入力データ(pandas.to_dict, orient='records')形式
+        dummy_hint (str | None): ダミーヒント
+        issue_order (int): 表示順序
+
+    Example:
+        >>> issue_create = AnalysisIssueCreate(
+        ...     validation_id=uuid.UUID("123e4567-e89b-12d3-a456-426614174000"),
+        ...     name="新規参入",
+        ...     description="新規市場への参入効果を分析します",
+        ...     agent_prompt="...",
+        ...     initial_msg="分析を開始します",
+        ...     dummy_input=[{"店舗名": "A店", "売上": 1000, "地域": "東京"}],
+        ...     dummy_hint="年度ごとの売上データを入力してください。",
+        ...     issue_order=1
+        ... )
+    """
+
+    validation_id: uuid.UUID = Field(..., description="施策ID")
+
+
+class AnalysisIssueUpdate(BaseCamelCaseModel):
+    """分析課題更新スキーマ。
+
+    課題更新用に必要な情報を定義します。
+
+    Attributes:
+        name (str | None): 課題名
+        description (str | None): 課題説明
+        agent_prompt (str | None): AIエージェント用プロンプト
+        initial_msg (str | None): 初期メッセージ
+        dummy_input (list | None): ダミー入力データ(pandas.to_dict, orient='records')形式
+        dummy_hint (str | None): ダミーヒント
+        issue_order (int | None): 表示順序
+    Example:
+        >>> issue_update = AnalysisIssueUpdate(
+        ...     name="新規参入",
+        ...     description="新規市場への参入効果を分析します",
+        ...     agent_prompt="...",
+        ...     initial_msg="分析を開始します",
+        ...     dummy_input=[{"店舗名": "A店", "売上": 1000, "地域": "東京"}],
+        ...     dummy_hint="年度ごとの売上データを入力してください。",
+        ...     issue_order=1
+        ... )
+    """
+
+    name: str | None = Field(default=None, max_length=255, description="課題名")
+    description: str | None = Field(default=None, description="課題の説明")
+    agent_prompt: str | None = Field(default=None, description="AIエージェント用のプロンプト")
+    initial_msg: str | None = Field(default=None, description="初期メッセージ")
+    dummy_input: list[dict] | None = Field(default=None, description="ダミー入力データ(バイナリ)")
+    dummy_hint: str | None = Field(default=None, description="ダミー入力ヒント")
+    issue_order: int | None = Field(default=None, description="表示順序")
+
+
+class AnalysisIssueCatalogResponse(BaseCamelCaseORMModel):
+    """課題カタログレスポンススキーマ。
+
+    一覧表示用、基本情報のみ(詳細・ダミーデータ含まず)。
+
+    Attributes:
+        id (uuid.UUID): 課題ID
+        validation_id (uuid.UUID): 施策ID
+        validation (str): 施策名(結合データ)
+        validation_order (int): 施策表示順序(結合データ)
+        name (str): 課題名
+        issue_order (int): 表示順序
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
+
+    Example:
+        >>> {
+        ...     "id": "123e4567-e89b-12d3-a456-426614174000",
+        ...     "validation_id": "223e4567-e89b-12d3-a456-426614174000",
+        ...     "validation": "市場拡大",
+        ...     "validation_order": 1,
+        ...     "name": "新規参入",
+        ...     "issue_order": 1,
+        ...     "created_at": "2025-01-01T00:00:00Z",
+        ...     "updated_at": "2025-01-01T00:00:00Z"
+        ... }
+    """
+
+    validation_id: uuid.UUID = Field(..., description="施策ID")
+    validation: str = Field(..., description="施策名(結合データ)")
+    validation_order: int = Field(..., description="施策表示順序(結合データ)")
+    id: uuid.UUID = Field(..., description="課題ID")
+    name: str = Field(..., description="課題名")
+    issue_order: int = Field(..., description="表示順序")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")
+
+
+class AnalysisIssueCatalogListResponse(BaseCamelCaseModel):
+    """課題カタログ一覧レスポンススキーマ。
+
+    課題カタログ一覧APIのレスポンス形式を定義します。
+
+    Attributes:
+        issues (list[AnalysisIssueCatalogResponse]): 課題カタログリスト
+        total (int): 総件数
+
+    Example:
+        >>> response = AnalysisIssueCatalogListResponse(
+        ...     issues=[issue1, issue2, issue3],
+        ...     total=3
+        ... )
+    """
+
+    issues: list[AnalysisIssueCatalogResponse] = Field(..., description="課題カタログリスト")
+    total: int = Field(..., description="総件数")
+
+
+class AnalysisIssueDetailResponse(BaseCamelCaseORMModel):
+    """課題詳細情報レスポンススキーマ。
+
+    詳細情報、初期軸設定、ダミーデータを含む。
+
+    Attributes:
+        id (uuid.UUID): 課題ID
+        name (str): 課題名
+        description (str | None): 課題説明
+        agent_prompt (str | None): AIエージェント用プロンプト
+        initial_msg (str | None): 初期メッセージ
+        dummy_input (list[dict] | None): ダミー入力データ
+        dummy_hint (str | None): ダミーヒント
+        issue_order (int): 表示順序
+        validation_id (uuid.UUID): 施策ID
+        validation (str): 施策名(結合データ)
+        validation_order (int): 施策表示順序(結合データ)
+        initial_axis (list[AnalysisGraphAxisResponse]): 初期軸設定(結合データ)
+        dummy_formula (list[AnalysisDummyFormulaResponse]): ダミー計算式(結合データ)
+        dummy_chart (list[AnalysisDummyChartResponse]): ダミーチャート(結合データ)
+        created_at (datetime): 作成日時
+        updated_at (datetime): 更新日時
+
+    Example:
+        >>> {
+        ...     "id": "123e4567-e89b-12d3-a456-426614174000",
+        ...     "validation_id": "223e4567-e89b-12d3-a456-426614174000",
+        ...     "validation": "市場拡大",
+        ...     "validation_order": 1,
+        ...     "name": "新規参入",
+        ...     "description": "新規市場への参入効果を分析します",
+        ...     "agent_prompt": "あなたは優秀なデータ分析アシスタントです。...",
+        ...     "initial_msg": "分析を開始します",
+        ...     "dummy_input": [{"店舗名": "A店", "売上": 1000, "地域": "東京"}],
+        ...     "dummy_hint": "年度ごとの売上データを入力してください。",
+        ...     "issue_order": 1,
+        ...     "initial_axis": [{name: "...", option: "...", multiple: false}, ...],
+        ...     "dummy_formula": [{name: "...", value: "...", formula_order: 0}, ...],
+        ...     "dummy_chart": ["plotly instance json", ...],
+        ...     "created_at": "2025-01-01T00:00:00Z",
+        ...     "updated_at": "2025-01-01T00:00:00Z"
+        ... }
+    """
+
+    id: uuid.UUID = Field(..., description="課題ID")
+    name: str = Field(..., max_length=255, description="課題名")
+    description: str | None = Field(default=None, description="課題の説明")
+    agent_prompt: str | None = Field(default=None, description="AIエージェント用のプロンプト")
+    initial_msg: str | None = Field(default=None, description="初期メッセージ")
+    dummy_input: list[dict] | None = Field(default=None, description="ダミー入力データ(pandas.to_dict, orient='records')形式")
+    dummy_hint: str | None = Field(default=None, description="ダミー入力ヒント")
+    issue_order: int = Field(default=0, description="表示順序")
+    validation_id: uuid.UUID = Field(..., description="施策ID")
+    validation: str = Field(..., description="施策名(結合データ)")
+    validation_order: int = Field(..., description="施策表示順序(結合データ)")
+    initial_axis: list[AnalysisGraphAxisResponse] = Field(default_factory=list, description="初期軸設定(結合データ)")
+    dummy_formula: list[AnalysisDummyFormulaResponse] = Field(default_factory=list, description="ダミー計算式(結合データ)")
+    dummy_chart: list[AnalysisDummyChartResponse] = Field(default_factory=list, description="ダミーチャート(結合データ)")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")

@@ -1,10 +1,17 @@
-"""プロジェクトファイルAPIエンドポイントのテスト。
+"""プロジェクトファイルAPIのテスト。
 
 このテストファイルは API_ROUTE_TEST_POLICY.md に従い、
 Happy Pathとビジネスルールエラーのみをテストします。
 
 基本的なバリデーションエラーはPydanticスキーマで検証済み、
 ビジネスロジックはサービス層でカバーされます。
+
+対応エンドポイント:
+    - GET /api/v1/project/{project_id}/file - ファイル一覧取得
+    - GET /api/v1/project/{project_id}/file/{file_id} - ファイル情報取得
+    - GET /api/v1/project/{project_id}/file/{file_id}/download - ファイルダウンロード
+    - POST /api/v1/project/{project_id}/file - ファイルアップロード
+    - DELETE /api/v1/project/{project_id}/file/{file_id} - ファイル削除
 """
 
 import uuid
@@ -14,106 +21,90 @@ from unittest.mock import patch
 import pytest
 from httpx import AsyncClient
 
-from app.models import Project, ProjectMember, ProjectRole, UserAccount
+
+@pytest.fixture
+def mock_storage_path(tmp_path):
+    """ストレージパスをtmp_pathにパッチするfixture。
+
+    Usage:
+        with mock_storage_path:
+            # ファイル操作を実行
+    """
+    return patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path))
+
+
+# ================================================================================
+# POST /api/v1/project/{project_id}/file - ファイルアップロード
+# ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_upload_file_success(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
-    """ファイルアップロードAPIの成功テスト。"""
+async def test_upload_file_success(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_path,
+):
+    """[test_project_files-001] ファイルアップロードの成功ケース。"""
     # Arrange
-    user = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="API Upload Project",
-        code="APIUPLOAD-001",
-    )
-    db_session.add(user)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(user)
-    await db_session.refresh(project)
-
-    # メンバーとして追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=user.id,
-        role=ProjectRole.MEMBER,
-    )
-    db_session.add(member)
-    await db_session.commit()
-
-    # 認証をモック
-    override_auth(user)
-
-    # Act
-    file_content = b"Test file content"
+    project, owner = project_with_owner
+    override_auth(owner)
+    file_content = b"Test file content for upload"
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
 
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
+    # Act
+    with mock_storage_path:
         response = await client.post(
-            f"/api/v1/projects/{project.id}/files",
+            f"/api/v1/project/{project.id}/file",
             files=files,
-            headers={"Authorization": "Bearer mock-token"},
         )
 
     # Assert
     assert response.status_code == 201
     data = response.json()
     assert data["filename"] == "test.pdf"
-    assert data["original_filename"] == "test.pdf"
-    assert data["file_size"] == len(file_content)
-    assert data["message"] == "File uploaded successfully"
+    assert data["originalFilename"] == "test.pdf"
+    assert data["fileSize"] == len(file_content)
+    assert "id" in data
+    assert "message" in data
 
 
 @pytest.mark.asyncio
 async def test_upload_file_unauthorized(client: AsyncClient):
-    """認証なしでのファイルアップロード失敗テスト。"""
+    """[test_project_files-002] 認証なしでのファイルアップロード失敗。"""
     # Arrange
     project_id = uuid.uuid4()
     file_content = b"Test file"
     files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
 
     # Act
-    response = await client.post(f"/api/v1/projects/{project_id}/files", files=files)
+    response = await client.post(f"/api/v1/project/{project_id}/file", files=files)
 
     # Assert
     assert response.status_code == 403
 
 
 @pytest.mark.asyncio
-async def test_upload_file_not_member(client: AsyncClient, override_auth, db_session, mock_azure_user):
-    """非メンバーのファイルアップロード失敗テスト。"""
+async def test_upload_file_not_member(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    test_data_seeder,
+):
+    """[test_project_files-003] 非メンバーによるファイルアップロード失敗。"""
     # Arrange
-    user = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="Non Member Upload Project",
-        code="NONMEMBERUP-001",
-    )
-    db_session.add(user)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(user)
-    await db_session.refresh(project)
-    # メンバーとして追加しない
+    project, _ = project_with_owner
+    other_user = await test_data_seeder.create_user(display_name="Other User")
+    await test_data_seeder.db.commit()
 
-    # 認証をモック
-    override_auth(user)
-
-    # Act
+    override_auth(other_user)
     file_content = b"Test file"
     files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
 
+    # Act
     response = await client.post(
-        f"/api/v1/projects/{project.id}/files",
+        f"/api/v1/project/{project.id}/file",
         files=files,
-        headers={"Authorization": "Bearer mock-token"},
     )
 
     # Assert
@@ -121,108 +112,94 @@ async def test_upload_file_not_member(client: AsyncClient, override_auth, db_ses
 
 
 @pytest.mark.asyncio
-async def test_list_files(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
-    """ファイル一覧取得APIのテスト。"""
+async def test_upload_file_viewer_not_allowed(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    mock_storage_path,
+):
+    """[test_project_files-004] VIEWERロールによるファイルアップロード失敗。"""
     # Arrange
-    user = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="List Files Project",
-        code="LISTFILES-001",
-    )
-    db_session.add(user)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(user)
-    await db_session.refresh(project)
+    data = project_with_members
+    override_auth(data["viewer"])
+    file_content = b"Test file"
+    files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
 
-    # メンバーとして追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=user.id,
-        role=ProjectRole.MEMBER,
-    )
-    db_session.add(member)
-    await db_session.commit()
+    # Act
+    with mock_storage_path:
+        response = await client.post(
+            f"/api/v1/project/{data['project'].id}/file",
+            files=files,
+        )
 
-    # 認証をモック
-    override_auth(user)
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/file - ファイル一覧取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_list_files_success(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_path,
+):
+    """[test_project_files-005] ファイル一覧取得の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
 
     # ファイルをアップロード
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
+    with mock_storage_path:
         for i in range(2):
-            file_content = f"File {i}".encode()
+            file_content = f"File content {i}".encode()
             files = {"file": (f"test{i}.txt", BytesIO(file_content), "text/plain")}
             await client.post(
-                f"/api/v1/projects/{project.id}/files",
+                f"/api/v1/project/{project.id}/file",
                 files=files,
-                headers={"Authorization": "Bearer mock-token"},
             )
 
     # Act
-    response = await client.get(
-        f"/api/v1/projects/{project.id}/files",
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.get(f"/api/v1/project/{project.id}/file")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
+    assert "files" in data
+    assert "total" in data
+    assert "projectId" in data
     assert len(data["files"]) == 2
     assert data["total"] == 2
-    assert data["project_id"] == str(project.id)
 
 
 @pytest.mark.asyncio
-async def test_list_files_with_pagination(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
-    """ファイル一覧取得APIのページネーションテスト。"""
+async def test_list_files_with_pagination(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_path,
+):
+    """[test_project_files-006] ページネーション付きファイル一覧取得。"""
     # Arrange
-    user = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="Page Files Project",
-        code="PAGEFILES-001",
-    )
-    db_session.add(user)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(user)
-    await db_session.refresh(project)
-
-    # メンバーとして追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=user.id,
-        role=ProjectRole.MEMBER,
-    )
-    db_session.add(member)
-    await db_session.commit()
-
-    # 認証をモック
-    override_auth(user)
+    project, owner = project_with_owner
+    override_auth(owner)
 
     # 5つのファイルをアップロード
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
+    with mock_storage_path:
         for i in range(5):
             file_content = f"File {i}".encode()
             files = {"file": (f"page{i}.txt", BytesIO(file_content), "text/plain")}
             await client.post(
-                f"/api/v1/projects/{project.id}/files",
+                f"/api/v1/project/{project.id}/file",
                 files=files,
-                headers={"Authorization": "Bearer mock-token"},
             )
 
     # Act
-    response = await client.get(
-        f"/api/v1/projects/{project.id}/files?skip=0&limit=2",
-        headers={"Authorization": "Bearer mock-token"},
-    )
+    response = await client.get(f"/api/v1/project/{project.id}/file?skip=0&limit=2")
 
     # Assert
     assert response.status_code == 200
@@ -232,109 +209,246 @@ async def test_list_files_with_pagination(client: AsyncClient, override_auth, db
 
 
 @pytest.mark.asyncio
-async def test_get_file_not_found(client: AsyncClient, override_auth, db_session, mock_azure_user):
-    """存在しないファイル取得APIのテスト。"""
+async def test_list_files_unauthorized(client: AsyncClient):
+    """[test_project_files-007] 認証なしでのファイル一覧取得失敗。"""
     # Arrange
-    user = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="Not Found File Project",
-        code="NOTFOUNDFILE-001",
-    )
-    db_session.add(user)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(user)
-    await db_session.refresh(project)
-
-    # メンバーとして追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=user.id,
-        role=ProjectRole.VIEWER,
-    )
-    db_session.add(member)
-    await db_session.commit()
-
-    # 認証をモック
-    override_auth(user)
+    project_id = uuid.uuid4()
 
     # Act
-    non_existent_id = uuid.uuid4()
-    response = await client.get(
-        f"/api/v1/projects/{project.id}/files/{non_existent_id}",
-        headers={"Authorization": "Bearer mock-token"},
+    response = await client.get(f"/api/v1/project/{project_id}/file")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/file/{file_id} - ファイル情報取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_file_success(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_path,
+):
+    """[test_project_files-008] ファイル情報取得の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    # ファイルをアップロード
+    with mock_storage_path:
+        file_content = b"Get file test content"
+        files = {"file": ("gettest.txt", BytesIO(file_content), "text/plain")}
+        upload_response = await client.post(
+            f"/api/v1/project/{project.id}/file",
+            files=files,
+        )
+        file_id = upload_response.json()["id"]
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/file/{file_id}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == file_id
+    assert data["filename"] == "gettest.txt"
+
+
+@pytest.mark.asyncio
+async def test_get_file_not_found(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+):
+    """[test_project_files-009] 存在しないファイルの取得（404エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+    nonexistent_id = uuid.uuid4()
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/file/{nonexistent_id}")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# GET /api/v1/project/{project_id}/file/{file_id}/download - ファイルダウンロード
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_download_file_success(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_service,
+    tmp_path,
+):
+    """[test_project_files-010] ファイルダウンロードの成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+    file_content = b"Download test content"
+
+    # 一時ファイルを作成してモックストレージに設定
+    temp_file = tmp_path / "download_test.txt"
+    temp_file.write_bytes(file_content)
+    mock_storage_service.download_to_temp_file.return_value = str(temp_file)
+
+    # ファイルをアップロード
+    files = {"file": ("download.txt", BytesIO(file_content), "text/plain")}
+    upload_response = await client.post(
+        f"/api/v1/project/{project.id}/file",
+        files=files,
     )
+    file_id = upload_response.json()["id"]
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/file/{file_id}/download")
+
+    # Assert
+    assert response.status_code == 200
+    assert response.content == file_content
+
+
+@pytest.mark.asyncio
+async def test_download_file_not_found(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+):
+    """[test_project_files-011] 存在しないファイルのダウンロード（404エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+    nonexistent_id = uuid.uuid4()
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/file/{nonexistent_id}/download")
+
+    # Assert
+    assert response.status_code == 404
+
+
+# ================================================================================
+# DELETE /api/v1/project/{project_id}/file/{file_id} - ファイル削除
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_delete_file_by_uploader(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+    mock_storage_path,
+):
+    """[test_project_files-012] アップロード者によるファイル削除の成功ケース。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+
+    with mock_storage_path:
+        file_content = b"Delete test"
+        files = {"file": ("delete.txt", BytesIO(file_content), "text/plain")}
+        upload_response = await client.post(
+            f"/api/v1/project/{project.id}/file",
+            files=files,
+        )
+        file_id = upload_response.json()["id"]
+
+        # Act
+        response = await client.delete(f"/api/v1/project/{project.id}/file/{file_id}")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["fileId"] == file_id
+
+
+@pytest.mark.asyncio
+async def test_delete_file_by_manager(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    mock_storage_path,
+):
+    """[test_project_files-013] PROJECT_MANAGERによる他者のファイル削除の成功ケース。"""
+    # Arrange
+    data = project_with_members
+
+    # memberでファイルをアップロード
+    override_auth(data["member"])
+
+    with mock_storage_path:
+        file_content = b"Manager delete test"
+        files = {"file": ("managerdel.txt", BytesIO(file_content), "text/plain")}
+        upload_response = await client.post(
+            f"/api/v1/project/{data['project'].id}/file",
+            files=files,
+        )
+        file_id = upload_response.json()["id"]
+
+        # Act - PROJECT_MANAGERで削除
+        override_auth(data["owner"])
+        response = await client.delete(f"/api/v1/project/{data['project'].id}/file/{file_id}")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["fileId"] == file_id
+
+
+@pytest.mark.asyncio
+async def test_delete_file_not_found(
+    client: AsyncClient,
+    override_auth,
+    project_with_owner,
+):
+    """[test_project_files-014] 存在しないファイルの削除（404エラー）。"""
+    # Arrange
+    project, owner = project_with_owner
+    override_auth(owner)
+    nonexistent_id = uuid.uuid4()
+
+    # Act
+    response = await client.delete(f"/api/v1/project/{project.id}/file/{nonexistent_id}")
 
     # Assert
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
-async def test_delete_file_by_admin(client: AsyncClient, override_auth, db_session, tmp_path, mock_azure_user):
-    """ADMINによる他人のファイル削除APIのテスト。"""
+async def test_delete_file_no_permission(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    mock_storage_path,
+):
+    """[test_project_files-015] 権限のないユーザーによるファイル削除失敗。"""
     # Arrange
-    uploader = UserAccount(
-        azure_oid="uploader-api-oid",
-        email="uploaderapi@company.com",
-        display_name="Uploader API",
-    )
-    admin = UserAccount(
-        azure_oid=mock_azure_user["oid"],
-        email=mock_azure_user["email"],
-        display_name=mock_azure_user["name"],
-    )
-    project = Project(
-        name="Admin Delete File Project",
-        code="ADMINDELFILE-001",
-    )
-    db_session.add(uploader)
-    db_session.add(admin)
-    db_session.add(project)
-    await db_session.commit()
-    await db_session.refresh(uploader)
-    await db_session.refresh(admin)
-    await db_session.refresh(project)
+    data = project_with_members
 
-    # uploaderをMEMBER、adminをADMINとして追加
-    uploader_member = ProjectMember(
-        project_id=project.id,
-        user_id=uploader.id,
-        role=ProjectRole.MEMBER,
-    )
-    admin_member = ProjectMember(
-        project_id=project.id,
-        user_id=admin.id,
-        role=ProjectRole.PROJECT_MANAGER,
-    )
-    db_session.add(uploader_member)
-    db_session.add(admin_member)
-    await db_session.commit()
+    # PROJECT_MANAGERでファイルをアップロード
+    override_auth(data["owner"])
 
-    # uploaderでログインしてファイルをアップロード
-    override_auth(uploader)
-
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        file_content = b"Admin delete test"
-        files = {"file": ("admindel.txt", BytesIO(file_content), "text/plain")}
+    with mock_storage_path:
+        file_content = b"Permission test"
+        files = {"file": ("perm.txt", BytesIO(file_content), "text/plain")}
         upload_response = await client.post(
-            f"/api/v1/projects/{project.id}/files",
+            f"/api/v1/project/{data['project'].id}/file",
             files=files,
-            headers={"Authorization": "Bearer mock-token"},
         )
         file_id = upload_response.json()["id"]
 
-    # Act - adminで削除
-    override_auth(admin)
-
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        response = await client.delete(
-            f"/api/v1/projects/{project.id}/files/{file_id}",
-            headers={"Authorization": "Bearer mock-token"},
-        )
+        # Act - VIEWERで削除を試みる
+        override_auth(data["viewer"])
+        response = await client.delete(f"/api/v1/project/{data['project'].id}/file/{file_id}")
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == 403

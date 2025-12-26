@@ -24,36 +24,45 @@
 #### 実装例
 
 ```python
-# src/app/services/sample_user.py
-class SampleUserService:
-    """ユーザーのビジネスロジック専用サービス。"""
+# src/app/services/project/project/crud.py
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクトのビジネスロジック専用サービス。"""
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        """ユーザー作成のビジネスロジックのみを担当。"""
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        """プロジェクト作成のビジネスロジックのみを担当。"""
         # バリデーション
-        existing_user = await self.repository.get_by_email(user_data.email)
-        if existing_user:
-            raise ValidationError("User already exists")
-
-        # パスワードハッシュ化（セキュリティモジュールに委譲）
-        hashed_password = hash_password(user_data.password)
+        existing = await self.project_repo.get_by_code(project_data.code)
+        if existing:
+            raise ValidationError("プロジェクトコードが既に使用されています")
 
         # データ永続化（リポジトリに委譲）
-        user = await self.repository.create(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            description=project_data.description,
+            created_by=creator_id,
         )
-        return user
+
+        # メンバー追加（別リポジトリに委譲）
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
+        )
+
+        await self.db.commit()
+        return project
 
 
-# src/app/repositories/sample_user.py
-class SampleUserRepository(BaseRepository[SampleUser]):
-    """ユーザーのデータアクセス専用リポジトリ。"""
+# src/app/repositories/project/project.py
+class ProjectRepository(BaseRepository[Project]):
+    """プロジェクトのデータアクセス専用リポジトリ。"""
 
-    async def get_by_email(self, email: str) -> SampleUser | None:
+    async def get_by_code(self, code: str) -> Project | None:
         """データアクセスロジックのみを担当。"""
-        query = select(SampleUser).where(SampleUser.email == email)
+        query = select(Project).where(Project.code == code)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 ```
@@ -133,15 +142,15 @@ class BaseRepository(Generic[ModelType]):
 
 
 # 派生クラスは基底クラスと同じ動作を保証
-class SampleUserRepository(BaseRepository[SampleUser]):
+class ProjectRepository(BaseRepository[Project]):
     pass
 
-class SampleSessionRepository(BaseRepository[Session]):
+class UserAccountRepository(BaseRepository[UserAccount]):
     pass
 
 
 # どのリポジトリも同じように使用可能
-async def get_entity(repo: BaseRepository[Any], entity_id: int):
+async def get_entity(repo: BaseRepository[Any], entity_id: uuid.UUID):
     """どのリポジトリでも同じように動作する。"""
     return await repo.get(entity_id)
 ```
@@ -156,37 +165,37 @@ async def get_entity(repo: BaseRepository[Any], entity_id: int):
 # 悪い例：1つの大きなインターフェース
 class UserManager(ABC):
     @abstractmethod
-    async def create_user(self, data: SampleUserCreate) -> SampleUser: pass
+    async def create_user(self, data: UserAccountCreate) -> UserAccount: pass
 
     @abstractmethod
-    async def authenticate_user(self, email: str, password: str) -> SampleUser: pass
+    async def authenticate_user(self, email: str, password: str) -> UserAccount: pass
 
     @abstractmethod
-    async def send_welcome_email(self, user: SampleUser) -> None: pass
+    async def send_welcome_email(self, user: UserAccount) -> None: pass
 
     @abstractmethod
-    async def generate_report(self, user_id: int) -> Report: pass
+    async def generate_report(self, user_id: uuid.UUID) -> Report: pass
 
 
 # 良い例：小さなインターフェースに分離
 class UserCreator(ABC):
     @abstractmethod
-    async def create_user(self, data: SampleUserCreate) -> SampleUser: pass
+    async def create_user(self, data: UserAccountCreate) -> UserAccount: pass
 
 
 class UserAuthenticator(ABC):
     @abstractmethod
-    async def authenticate(self, email: str, password: str) -> SampleUser: pass
+    async def authenticate(self, email: str, password: str) -> UserAccount: pass
 
 
 class EmailSender(ABC):
     @abstractmethod
-    async def send_welcome_email(self, user: SampleUser) -> None: pass
+    async def send_welcome_email(self, user: UserAccount) -> None: pass
 
 
 class ReportGenerator(ABC):
     @abstractmethod
-    async def generate_report(self, user_id: int) -> Report: pass
+    async def generate_report(self, user_id: uuid.UUID) -> Report: pass
 ```
 
 ### D - Dependency Inversion Principle（依存性逆転の原則）
@@ -199,23 +208,24 @@ class ReportGenerator(ABC):
 # src/app/api/dependencies.py
 # 依存性注入を使用して抽象に依存
 
-def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
-    """SampleUserServiceを注入。具体的な実装は隠蔽。"""
-    return SampleUserService(db)
+def get_project_service(db: DatabaseDep) -> ProjectService:
+    """ProjectServiceを注入。具体的な実装は隠蔽。"""
+    return ProjectService(db)
 
 
-SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
+ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
 
 
-# src/app/api/routes/sample_users.py
-@router.post("/users", response_model=SampleUserResponse)
-async def create_user(
-    user_data: SampleUserCreate,
-    user_service: SampleUserServiceDep,  # 抽象に依存、具体的な実装は知らない
-) -> SampleUserResponse:
+# src/app/api/routes/v1/projects.py
+@router.post("/", response_model=ProjectResponse)
+async def create_project(
+    project_data: ProjectCreate,
+    project_service: ProjectServiceDep,  # 抽象に依存、具体的な実装は知らない
+    current_user: CurrentUserDep,
+) -> ProjectResponse:
     """APIルートは具体的な実装ではなく、抽象（インターフェース）に依存。"""
-    user = await user_service.create_user(user_data)
-    return SampleUserResponse.model_validate(sample_user)
+    project = await project_service.create_project(project_data, current_user.id)
+    return ProjectResponse.model_validate(project)
 ```
 
 ---
@@ -263,27 +273,31 @@ async def create_user(
 ```python
 # ✅ 良い例：外側が内側に依存
 # API Layer -> Service Layer
-@router.post("/users")
-async def create_user(
-    user_data: SampleUserCreate,
-    user_service: SampleUserServiceDep,  # サービス層に依存
+@router.post("/")
+async def create_project(
+    project_data: ProjectCreate,
+    project_service: ProjectServiceDep,  # サービス層に依存
+    current_user: CurrentUserDep,
 ):
-    return await user_service.create_user(user_data)
+    return await project_service.create_project(project_data, current_user.id)
 
 
-# Service Layer -> Repository Layer
-class SampleUserService:
+# Service Layer -> Repository Layer（Facadeパターン）
+# src/app/services/project/project/__init__.py
+class ProjectService:
     def __init__(self, db: AsyncSession):
-        self.repository = SampleUserRepository(db)  # リポジトリ層に依存
+        self._crud_service = ProjectCrudService(db)  # サブサービスに委譲
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        return await self.repository.create(...)
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        return await self._crud_service.create_project(project_data, creator_id)
 
 
 # ❌ 悪い例：内側が外側に依存
-class SampleUser(Base):
+class Project(Base):
     # モデルがAPIレスポンスを知っている（悪い）
-    def to_api_response(self) -> SampleUserResponse:
+    def to_api_response(self) -> ProjectResponse:
         pass
 ```
 
@@ -292,23 +306,23 @@ class SampleUser(Base):
 #### 1. Model Layer（最も内側）
 
 ```python
-# src/app/models/sample_user.py
+# src/app/models/project/project.py
 from sqlalchemy.orm import Mapped, mapped_column
 
-class SampleUser(Base):
+class Project(Base):
     """純粋なドメインモデル。ビジネスルールのみを持つ。"""
 
-    __tablename__ = "sample_users"
+    __tablename__ = "projects"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True)
-    username: Mapped[str] = mapped_column(String(50), unique=True)
-    hashed_password: Mapped[str] = mapped_column(String(255))
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255))
+    code: Mapped[str] = mapped_column(String(50), unique=True)
+    description: Mapped[str | None] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # リレーションシップ
-    sessions: Mapped[list["SampleSession"]] = relationship(
-        "Session", back_populates="user", cascade="all, delete-orphan"
+    members: Mapped[list["ProjectMember"]] = relationship(
+        "ProjectMember", back_populates="project", cascade="all, delete-orphan"
     )
 ```
 
@@ -327,24 +341,28 @@ class SampleUser(Base):
 #### 2. Repository Layer
 
 ```python
-# src/app/repositories/sample_user.py
-class SampleUserRepository(BaseRepository[SampleUser]):
+# src/app/repositories/project/project.py
+class ProjectRepository(BaseRepository[Project]):
     """データアクセスの抽象化。"""
 
     def __init__(self, db: AsyncSession):
-        super().__init__(SampleUser, db)
+        super().__init__(Project, db)
 
-    async def get_by_email(self, email: str) -> SampleUser | None:
-        """メールアドレスでユーザーを検索。"""
-        query = select(SampleUser).where(SampleUser.email == email)
+    async def get_by_code(self, code: str) -> Project | None:
+        """プロジェクトコードでプロジェクトを検索。"""
+        query = select(Project).where(Project.code == code)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> SampleUser | None:
-        """ユーザー名でユーザーを検索。"""
-        query = select(SampleUser).where(SampleUser.username == username)
+    async def get_user_projects(self, user_id: uuid.UUID) -> list[Project]:
+        """ユーザーが所属するプロジェクト一覧を取得。"""
+        query = (
+            select(Project)
+            .join(ProjectMember)
+            .where(ProjectMember.user_id == user_id)
+        )
         result = await self.db.execute(query)
-        return result.scalar_one_or_none()
+        return list(result.scalars().all())
 ```
 
 **責務**:
@@ -358,51 +376,52 @@ class SampleUserRepository(BaseRepository[SampleUser]):
 - HTTPリクエスト/レスポンス
 - ビジネスロジック（それはサービス層の仕事）
 
-#### 3. Service Layer
+#### 3. Service Layer（Facadeパターン）
 
 ```python
-# src/app/services/sample_user.py
-class SampleUserService:
-    """ビジネスロジックのオーケストレーション。"""
+# src/app/services/project/project/__init__.py（Facade）
+class ProjectService:
+    """ビジネスロジックのオーケストレーション（Facade）。"""
 
     def __init__(self, db: AsyncSession):
-        self.repository = SampleUserRepository(db)
+        self.db = db
+        self._crud_service = ProjectCrudService(db)
 
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        """ユーザー作成のビジネスロジック。"""
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
+        """サブサービスに委譲。"""
+        return await self._crud_service.create_project(project_data, creator_id)
+
+
+# src/app/services/project/project/crud.py（サブサービス）
+class ProjectCrudService(ProjectBaseService):
+    """プロジェクト作成のビジネスロジック。"""
+
+    async def create_project(
+        self, project_data: ProjectCreate, creator_id: uuid.UUID
+    ) -> Project:
         # バリデーション
-        existing_user = await self.repository.get_by_email(user_data.email)
-        if existing_user:
-            raise ValidationError("User already exists")
+        existing = await self.project_repo.get_by_code(project_data.code)
+        if existing:
+            raise ValidationError("プロジェクトコードが既に使用されています")
 
-        existing_username = await self.repository.get_by_username(user_data.username)
-        if existing_username:
-            raise ValidationError("Username already taken")
-
-        # パスワードハッシュ化
-        hashed_password = hash_password(user_data.password)
-
-        # ユーザー作成
-        user = await self.repository.create(
-            email=user_data.email,
-            username=user_data.username,
-            hashed_password=hashed_password,
+        # プロジェクト作成
+        project = await self.project_repo.create(
+            name=project_data.name,
+            code=project_data.code,
+            created_by=creator_id,
         )
-        return user
 
-    async def authenticate(self, email: str, password: str) -> SampleUser:
-        """認証ビジネスロジック。"""
-        user = await self.repository.get_by_email(email)
-        if not user:
-            raise AuthenticationError("Invalid email or password")
+        # メンバー追加
+        await self.member_repo.create(
+            project_id=project.id,
+            user_id=creator_id,
+            role=ProjectRole.OWNER,
+        )
 
-        if not verify_password(password, user.hashed_password):
-            raise AuthenticationError("Invalid email or password")
-
-        if not user.is_active:
-            raise AuthenticationError("User account is inactive")
-
-        return user
+        await self.db.commit()
+        return project
 ```
 
 **責務**:
@@ -415,35 +434,27 @@ class SampleUserService:
 #### 4. API Layer（最も外側）
 
 ```python
-# src/app/api/routes/sample_users.py
-@router.post("/register", response_model=SampleUserResponse)
-async def register(
-    user_data: SampleUserCreate,
-    user_service: SampleUserServiceDep,
-) -> SampleUserResponse:
-    """ユーザー登録エンドポイント。"""
-    user = await user_service.create_user(user_data)
-    return SampleUserResponse.model_validate(sample_user)
+# src/app/api/routes/v1/projects.py
+@router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
+async def create_project(
+    project_data: ProjectCreate,
+    project_service: ProjectServiceDep,
+    current_user: CurrentUserDep,
+) -> ProjectResponse:
+    """プロジェクト作成エンドポイント。"""
+    project = await project_service.create_project(project_data, current_user.id)
+    return ProjectResponse.model_validate(project)
 
 
-@router.post("/login", response_model=Token)
-async def login(
-    login_data: SampleUserLogin,
-    user_service: SampleUserServiceDep,
-) -> Token:
-    """ログインエンドポイント。"""
-    user = await user_service.authenticate(
-        login_data.email,
-        login_data.password
-    )
-
-    # トークン生成
-    access_token = create_access_token(
-        data={"sub": str(user.id)},
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    )
-
-    return Token(access_token=access_token, token_type="bearer")
+@router.get("/{project_id}", response_model=ProjectResponse)
+async def get_project(
+    project_id: uuid.UUID,
+    project_service: ProjectServiceDep,
+    current_user: CurrentUserDep,
+) -> ProjectResponse:
+    """プロジェクト詳細取得エンドポイント。"""
+    project = await project_service.get_project(project_id)
+    return ProjectResponse.model_validate(project)
 ```
 
 **責務**:
@@ -484,19 +495,26 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 DatabaseDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-# サービスの依存性
-def get_sample_user_service(db: DatabaseDep) -> SampleUserService:
-    return SampleUserService(db)
+# サービスの依存性（Facadeサービス）
+def get_project_service(db: DatabaseDep) -> ProjectService:
+    return ProjectService(db)
 
 
-SampleUserServiceDep = Annotated[SampleUserService, Depends(get_sample_user_service)]
+ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
+
+
+def get_user_account_service(db: DatabaseDep) -> UserAccountService:
+    return UserAccountService(db)
+
+
+UserAccountServiceDep = Annotated[UserAccountService, Depends(get_user_account_service)]
 
 
 # 認証の依存性
 async def get_current_user(
     authorization: str | None = Header(None),
-    user_service: SampleUserServiceDep = None,
-) -> SampleUser:
+    user_service: UserAccountServiceDep = None,
+) -> UserAccount:
     if not authorization:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
@@ -509,37 +527,37 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Invalid token")
 
     user_id = payload.get("sub")
-    user = await user_service.get_user(int(user_id))
+    user = await user_service.get_user(uuid.UUID(user_id))
     return user
 
 
-CurrentSampleUserDep = Annotated[SampleUser, Depends(get_current_user)]
+CurrentUserDep = Annotated[UserAccount, Depends(get_current_user)]
 ```
 
 ### 使用例
 
 ```python
 # エンドポイントで依存性を注入
-@router.get("/me", response_model=SampleUserResponse)
+@router.get("/me", response_model=UserAccountResponse)
 async def get_current_user_info(
-    current_user: CurrentSampleUserDep,
-) -> SampleUserResponse:
+    current_user: CurrentUserDep,
+) -> UserAccountResponse:
     """現在のユーザー情報を取得。依存性注入により自動的に認証が行われる。"""
-    return SampleUserResponse.model_validate(current_user)
+    return UserAccountResponse.model_validate(current_user)
 
 
-@router.post("/sessions", response_model=SessionResponse)
-async def create_session(
-    session_data: SessionCreate,
-    current_user: CurrentSampleUserDep,
-    session_service: SampleSessionServiceDep,
-) -> SessionResponse:
+@router.post("/", response_model=ProjectResponse)
+async def create_project(
+    project_data: ProjectCreate,
+    current_user: CurrentUserDep,
+    project_service: ProjectServiceDep,
+) -> ProjectResponse:
     """複数の依存性を注入。"""
-    session = await session_service.create_session(
-        user_id=current_user.id,
-        metadata=session_data.metadata
+    project = await project_service.create_project(
+        project_data=project_data,
+        creator_id=current_user.id,
     )
-    return SessionResponse.model_validate(session)
+    return ProjectResponse.model_validate(project)
 ```
 
 ### 依存性注入の利点
@@ -570,53 +588,53 @@ async def create_session(
 
 ```python
 # ❌ 悪い例：サービス層でHTTPレスポンスを作成
-class SampleUserService:
-    async def create_user(self, user_data: SampleUserCreate) -> dict:
-        user = await self.repository.create(...)
+class ProjectCrudService:
+    async def create_project(self, project_data: ProjectCreate) -> dict:
+        project = await self.project_repo.create(...)
         # HTTPレスポンスはAPI層の責務（悪い）
         return {
             "status": "success",
-            "data": {"id": user.id, "email": user.email}
+            "data": {"id": str(project.id), "name": project.name}
         }
 
 # ✅ 良い例：サービス層はドメインオブジェクトを返す
-class SampleUserService:
-    async def create_user(self, user_data: SampleUserCreate) -> SampleUser:
-        return await self.repository.create(...)
+class ProjectCrudService:
+    async def create_project(self, project_data: ProjectCreate) -> Project:
+        return await self.project_repo.create(...)
 ```
 
 ### 間違い2: 内側の層が外側の層に依存
 
 ```python
 # ❌ 悪い例：モデルがAPIスキーマを知っている
-class SampleUser(Base):
-    def to_response(self) -> SampleUserResponse:
-        return SampleUserResponse(...)
+class Project(Base):
+    def to_response(self) -> ProjectResponse:
+        return ProjectResponse(...)
 
 # ✅ 良い例：外側の層（API）が内側を知る
-@router.get("/users/{user_id}")
-async def get_user(user_id: int, user_service: SampleUserServiceDep):
-    user = await user_service.get_user(user_id)
-    return SampleUserResponse.model_validate(sample_user)  # API層で変換
+@router.get("/{project_id}")
+async def get_project(project_id: uuid.UUID, project_service: ProjectServiceDep):
+    project = await project_service.get_project(project_id)
+    return ProjectResponse.model_validate(project)  # API層で変換
 ```
 
 ### 間違い3: ビジネスロジックをリポジトリに配置
 
 ```python
 # ❌ 悪い例：リポジトリにビジネスロジック
-class SampleUserRepository:
-    async def create_user_with_validation(self, user_data: SampleUserCreate):
+class ProjectRepository:
+    async def create_with_validation(self, project_data: ProjectCreate):
         # バリデーションはサービス層の責務（悪い）
-        if await self.get_by_email(user_data.email):
-            raise ValidationError("User exists")
+        if await self.get_by_code(project_data.code):
+            raise ValidationError("Project code exists")
         return await self.create(...)
 
-# ✅ 良い例：ビジネスロジックはサービス層
-class SampleUserService:
-    async def create_user(self, user_data: SampleUserCreate):
-        if await self.repository.get_by_email(user_data.email):
-            raise ValidationError("User exists")
-        return await self.repository.create(...)
+# ✅ 良い例：ビジネスロジックはサービス層（サブサービス）
+class ProjectCrudService(ProjectBaseService):
+    async def create_project(self, project_data: ProjectCreate, creator_id: uuid.UUID):
+        if await self.project_repo.get_by_code(project_data.code):
+            raise ValidationError("Project code exists")
+        return await self.project_repo.create(...)
 ```
 
 ---

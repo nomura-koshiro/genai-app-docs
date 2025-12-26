@@ -141,10 +141,11 @@ function Start-PostgreSQLIfNeeded {
         $LOGFILE = "$env:USERPROFILE\scoop\apps\postgresql\current\logfile"
 
         Write-Host "PostgreSQLが起動していません。起動中..." -ForegroundColor $YELLOW
-        Start-Process -FilePath "pg_ctl" -ArgumentList "-D", $PGDATA, "-l", $LOGFILE, "-w", "start" -NoNewWindow -Wait
+        # pg_ctlをバックグラウンドで起動（-wなしで即座に戻る）
+        Start-Process -FilePath "pg_ctl" -ArgumentList "-D", $PGDATA, "-l", $LOGFILE, "start" -NoNewWindow
 
         # 起動確認（リトライ）
-        $retries = 10
+        $retries = 20
         $connected = $false
         for ($i = 0; $i -lt $retries; $i++) {
             Start-Sleep -Milliseconds 500
@@ -158,7 +159,7 @@ function Start-PostgreSQLIfNeeded {
             Show-Success "PostgreSQLが正常に起動しました"
             return $true
         } else {
-            Show-Warning "PostgreSQLはまだ起動中の可能性があります。接続失敗時はログを確認してください。"
+            Show-Warning "PostgreSQLの起動に失敗しました。ログを確認してください: $LOGFILE"
             return $false
         }
     } else {

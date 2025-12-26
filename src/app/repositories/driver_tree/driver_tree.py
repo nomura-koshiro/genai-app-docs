@@ -1,6 +1,6 @@
-"""DriverTreeリポジトリ。
+"""ドライバーツリーリポジトリ。
 
-このモジュールは、DriverTreeモデルのデータアクセスを提供します。
+このモジュールは、DriverTreeモデルに特化したデータベース操作を提供します。
 """
 
 import uuid
@@ -9,135 +9,79 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models import DriverTree
+from app.core.logging import get_logger
+from app.models.driver_tree import DriverTree
 from app.repositories.base import BaseRepository
+
+logger = get_logger(__name__)
 
 
 class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
-    """DriverTreeリポジトリ。
+    """DriverTreeモデル用のリポジトリクラス。
 
-    ツリーと関連ノードに対するデータアクセスを提供します。
-
-    Args:
-        db: データベースセッション
-
-    Example:
-        >>> repo = DriverTreeRepository(db)
-        >>> tree = await repo.create(name="粗利分析")
+    BaseRepositoryの共通CRUD操作に加えて、
+    ドライバーツリー管理に特化したクエリメソッドを提供します。
     """
 
     def __init__(self, db: AsyncSession):
-        """リポジトリを初期化します。
+        """ドライバーツリーリポジトリを初期化します。
 
         Args:
-            db: データベースセッション
+            db: SQLAlchemyの非同期データベースセッション
         """
         super().__init__(DriverTree, db)
 
-    async def create(
-        self,
-        name: str | None = None,
-        root_node_id: uuid.UUID | None = None,
-    ) -> DriverTree:
-        """ツリーを作成します。
+    async def get_with_relations(self, tree_id: uuid.UUID) -> DriverTree | None:
+        """リレーションシップを含めてツリーを取得します。
 
         Args:
-            name: ツリー名（任意）
-            root_node_id: ルートノードID（任意、後で設定可能）
+            tree_id: ツリーID
 
         Returns:
-            DriverTree: 作成されたツリー
-
-        Example:
-            >>> tree = await repo.create(name="粗利分析")
-        """
-        tree = DriverTree(name=name, root_node_id=root_node_id)
-        self.db.add(tree)
-        await self.db.flush()
-        await self.db.refresh(tree)
-        return tree
-
-    async def get_with_nodes(self, id: uuid.UUID) -> DriverTree | None:
-        """ツリーをすべてのノードと共に取得します。
-
-        Args:
-            id: ツリーID
-
-        Returns:
-            DriverTree | None: ツリー、または None
-
-        Example:
-            >>> tree = await repo.get_with_nodes(tree_id)
-            >>> print(len(tree.nodes))
+            DriverTree | None: ツリー（ルートノード、リレーションシップ含む）
         """
         result = await self.db.execute(
             select(DriverTree)
-            .where(DriverTree.id == id)
+            .where(DriverTree.id == tree_id)
             .options(
-                selectinload(DriverTree.nodes),
                 selectinload(DriverTree.root_node),
+                selectinload(DriverTree.relationships),
+                selectinload(DriverTree.formula),
             )
         )
         return result.scalar_one_or_none()
 
-    async def get_with_tree_structure(self, id: uuid.UUID) -> DriverTree | None:
-        """ツリーを木構造（ルートノードと再帰的な子ノード）と共に取得します。
+    async def list_by_project(
+        self,
+        project_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[DriverTree]:
+        """プロジェクトに属するツリー一覧を取得します。
 
         Args:
-            id: ツリーID
+            project_id: プロジェクトID
+            skip: スキップするレコード数
+            limit: 取得する最大レコード数
 
         Returns:
-            DriverTree | None: ツリー、または None
-
-        Example:
-            >>> tree = await repo.get_with_tree_structure(tree_id)
-            >>> if tree.root_node:
-            ...     print(tree.root_node.label)
-            ...     for child in tree.root_node.children:
-            ...         print(f"  - {child.label}")
+            list[DriverTree]: ツリー一覧（作成日時降順）
         """
         result = await self.db.execute(
-            select(DriverTree)
-            .where(DriverTree.id == id)
-            .options(selectinload(DriverTree.root_node).selectinload(DriverTree.root_node.property.mapper.class_.children))
+            select(DriverTree).where(DriverTree.project_id == project_id).order_by(DriverTree.created_at.desc()).offset(skip).limit(limit)
         )
-        tree = result.scalar_one_or_none()
+        return list(result.scalars().all())
 
-        # 再帰的に子ノードをロード
-        if tree and tree.root_node:
-            await self._load_children_recursive(tree.root_node)
-
-        return tree
-
-    async def _load_children_recursive(self, node) -> None:
-        """ノードの子を再帰的にロードします（内部メソッド）。
+    async def count_by_project(self, project_id: uuid.UUID) -> int:
+        """プロジェクトに属するツリー数を取得します。
 
         Args:
-            node: ノード
-        """
-        # 子ノードをロード
-        await self.db.refresh(node, ["children"])
-
-        # 各子ノードについて再帰的にロード
-        for child in node.children:
-            await self._load_children_recursive(child)
-
-    async def update_root_node(self, tree_id: uuid.UUID, root_node_id: uuid.UUID) -> DriverTree | None:
-        """ツリーのルートノードを更新します。
-
-        Args:
-            tree_id: ツリーID
-            root_node_id: 新しいルートノードID
+            project_id: プロジェクトID
 
         Returns:
-            DriverTree | None: 更新されたツリー、または None
-
-        Example:
-            >>> tree = await repo.update_root_node(tree_id, new_root_id)
+            int: ツリー数
         """
-        tree = await self.get(tree_id)
-        if tree:
-            tree.root_node_id = root_node_id
-            await self.db.flush()
-            await self.db.refresh(tree)
-        return tree
+        from sqlalchemy import func
+
+        result = await self.db.execute(select(func.count()).select_from(DriverTree).where(DriverTree.project_id == project_id))
+        return result.scalar_one()

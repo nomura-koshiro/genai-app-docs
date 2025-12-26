@@ -10,7 +10,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_security_headers_on_root(client: AsyncClient):
-    """ルートエンドポイントにセキュリティヘッダーが追加されることを確認。"""
+    """[test_security_headers-001] ルートエンドポイントにセキュリティヘッダーが追加されることを確認。"""
     response = await client.get("/")
 
     # 基本的なセキュリティヘッダーの存在を確認
@@ -26,7 +26,7 @@ async def test_security_headers_on_root(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_security_headers_on_health(client: AsyncClient):
-    """ヘルスチェックエンドポイントにセキュリティヘッダーが追加されることを確認。"""
+    """[test_security_headers-002] ヘルスチェックエンドポイントにセキュリティヘッダーが追加されることを確認。"""
     response = await client.get("/health")
 
     # すべてのエンドポイントにセキュリティヘッダーが追加される
@@ -37,7 +37,7 @@ async def test_security_headers_on_health(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_hsts_header_present(client: AsyncClient):
-    """HSTSヘッダーが追加されることを確認（本番環境のみ）。"""
+    """[test_security_headers-003] HSTSヘッダーが追加されることを確認（本番環境のみ）。"""
     response = await client.get("/")
 
     # 開発環境ではHSTSヘッダーは追加されない（DEBUG=Trueのため）
@@ -57,7 +57,7 @@ async def test_hsts_header_present(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_security_headers_on_api_endpoints(client: AsyncClient):
-    """APIエンドポイントにもセキュリティヘッダーが追加されることを確認。"""
+    """[test_security_headers-004] APIエンドポイントにもセキュリティヘッダーが追加されることを確認。"""
     # ユーザー作成エンドポイントにPOST
     response = await client.post(
         "/api/v1/users",

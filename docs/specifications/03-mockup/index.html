@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAMPシステム - ワイヤーフレーム</title>
+    <link rel="stylesheet" href="design-system.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">CAMP</div>
+            <div class="header-search" id="header-search">
+                <input type="text" class="header-search-input" id="global-search-input" placeholder="プロジェクト、セッション、ファイルを検索..." autocomplete="off">
+                <span class="header-search-icon">🔍</span>
+                <kbd class="search-shortcut">Ctrl+K</kbd>
+                <!-- 検索結果ドロップダウン -->
+                <div class="search-dropdown" id="search-dropdown">
+                    <div class="search-dropdown-header">
+                        <span class="search-dropdown-title">検索結果</span>
+                        <span class="search-dropdown-count" id="search-result-count">0件</span>
+                    </div>
+                    <div class="search-dropdown-body" id="search-results">
+                        <!-- 検索結果がここに表示される -->
+                    </div>
+                    <div class="search-dropdown-empty" id="search-empty" style="display: none;">
+                        <div class="search-empty-icon">🔍</div>
+                        <div class="search-empty-text">検索結果が見つかりませんでした</div>
+                    </div>
+                    <div class="search-dropdown-footer">
+                        <span class="search-hint"><kbd>↑</kbd><kbd>↓</kbd> で移動</span>
+                        <span class="search-hint"><kbd>Enter</kbd> で選択</span>
+                        <span class="search-hint"><kbd>Esc</kbd> で閉じる</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="header-right">
+            <!-- 通知ボタン -->
+            <div class="header-dropdown">
+                <button class="icon-btn" id="notification-btn" title="通知">
+                    <span class="icon">🔔</span>
+                    <span class="badge">3</span>
+                </button>
+                <!-- 通知パネル -->
+                <div class="dropdown-panel notification-panel" id="notification-panel">
+                    <div class="dropdown-header">
+                        <span class="dropdown-title">通知</span>
+                        <button class="btn btn-link btn-xs">すべて既読にする</button>
+                    </div>
+                    <div class="dropdown-body">
+                        <div class="notification-item unread">
+                            <div class="notification-icon">👥</div>
+                            <div class="notification-content">
+                                <div class="notification-text">新しいメンバー「佐藤 次郎」が売上分析プロジェクトに追加されました</div>
+                                <div class="notification-time">5分前</div>
+                            </div>
+                        </div>
+                        <div class="notification-item unread">
+                            <div class="notification-icon">✅</div>
+                            <div class="notification-content">
+                                <div class="notification-text">Q4売上分析セッションの処理が完了しました</div>
+                                <div class="notification-time">15分前</div>
+                            </div>
+                        </div>
+                        <div class="notification-item unread">
+                            <div class="notification-icon">📄</div>
+                            <div class="notification-content">
+                                <div class="notification-text">新しいファイル「sales_data.xlsx」がアップロードされました</div>
+                                <div class="notification-time">1時間前</div>
+                            </div>
+                        </div>
+                        <div class="notification-item">
+                            <div class="notification-icon">🌳</div>
+                            <div class="notification-content">
+                                <div class="notification-text">売上ドライバーツリーが更新されました</div>
+                                <div class="notification-time">3時間前</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dropdown-footer">
+                        <a href="#" class="dropdown-footer-link">すべての通知を見る</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ユーザーメニュー -->
+            <div class="header-dropdown">
+                <div class="user-menu" id="user-menu-btn">
+                    <span class="user-avatar">👤</span>
+                    <span class="user-name">山田 太郎</span>
+                    <span class="dropdown-icon">▼</span>
+                </div>
+                <!-- ユーザードロップダウン -->
+                <div class="dropdown-panel user-dropdown" id="user-dropdown">
+                    <div class="user-dropdown-header">
+                        <div class="user-dropdown-avatar">👤</div>
+                        <div class="user-dropdown-info">
+                            <div class="user-dropdown-name">山田 太郎</div>
+                            <div class="user-dropdown-email">yamada@example.com</div>
+                        </div>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-menu-item">
+                            <span class="dropdown-menu-icon">👤</span>
+                            <span>プロフィール</span>
+                        </a>
+                        <a href="#" class="dropdown-menu-item">
+                            <span class="dropdown-menu-icon">⚙️</span>
+                            <span>設定</span>
+                        </a>
+                        <a href="#" class="dropdown-menu-item">
+                            <span class="dropdown-menu-icon">❓</span>
+                            <span>ヘルプ</span>
+                        </a>
+                    </div>
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-menu">
+                        <a href="#" class="dropdown-menu-item text-danger">
+                            <span class="dropdown-menu-icon">🚪</span>
+                            <span>ログアウト</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ローディングオーバーレイ -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner spinner-lg"></div>
+        <div class="loading-text">読み込み中...</div>
+    </div>
+
+    <!-- トースト通知コンテナ -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <div class="main-container">
+        <!-- サイドバー -->
+        <aside class="sidebar" id="sidebar">
+            <nav class="sidebar-nav">
+                <!-- ダッシュボード -->
+                <div class="nav-section">
+                    <div class="nav-section-title">ダッシュボード</div>
+                    <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                        <span class="nav-icon">🏠</span>
+                        <span class="nav-text">ホーム</span>
+                    </a>
+                </div>
+
+                <!-- プロジェクト管理 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">プロジェクト管理</div>
+                    <a href="#projects" class="nav-item" data-page="projects">
+                        <span class="nav-icon">📁</span>
+                        <span class="nav-text">プロジェクト一覧</span>
+                    </a>
+                    <a href="#project-new" class="nav-item" data-page="project-new">
+                        <span class="nav-icon">➕</span>
+                        <span class="nav-text">プロジェクト作成</span>
+                    </a>
+                </div>
+
+                <!-- 個別施策分析 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">個別施策分析</div>
+                    <a href="#sessions" class="nav-item" data-page="sessions">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-text">分析セッション一覧</span>
+                    </a>
+                    <a href="#session-new" class="nav-item" data-page="session-new">
+                        <span class="nav-icon">➕</span>
+                        <span class="nav-text">新規セッション作成</span>
+                    </a>
+                </div>
+
+                <!-- ドライバーツリー -->
+                <div class="nav-section">
+                    <div class="nav-section-title">ドライバーツリー</div>
+                    <a href="#trees" class="nav-item" data-page="trees">
+                        <span class="nav-icon">🌳</span>
+                        <span class="nav-text">ツリー一覧</span>
+                    </a>
+                    <a href="#tree-new" class="nav-item" data-page="tree-new">
+                        <span class="nav-icon">➕</span>
+                        <span class="nav-text">新規ツリー作成</span>
+                    </a>
+                    <a href="#categories" class="nav-item" data-page="categories">
+                        <span class="nav-icon">🏷️</span>
+                        <span class="nav-text">カテゴリマスタ</span>
+                    </a>
+                </div>
+
+                <!-- ファイル管理 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">ファイル管理</div>
+                    <a href="#files" class="nav-item" data-page="files">
+                        <span class="nav-icon">📄</span>
+                        <span class="nav-text">ファイル一覧</span>
+                    </a>
+                    <a href="#upload" class="nav-item" data-page="upload">
+                        <span class="nav-icon">⬆️</span>
+                        <span class="nav-text">アップロード</span>
+                    </a>
+                </div>
+
+                <!-- システム管理 -->
+                <div class="nav-section">
+                    <div class="nav-section-title">システム管理</div>
+                    <a href="#users" class="nav-item" data-page="users">
+                        <span class="nav-icon">👤</span>
+                        <span class="nav-text">ユーザー管理</span>
+                    </a>
+                    <a href="#roles" class="nav-item" data-page="roles">
+                        <span class="nav-icon">🔐</span>
+                        <span class="nav-text">ロール管理</span>
+                    </a>
+                    <a href="#verifications" class="nav-item" data-page="verifications">
+                        <span class="nav-icon">✅</span>
+                        <span class="nav-text">検証カテゴリ</span>
+                    </a>
+                    <a href="#issues" class="nav-item" data-page="issues">
+                        <span class="nav-icon">📋</span>
+                        <span class="nav-text">課題マスタ</span>
+                    </a>
+                </div>
+
+                <!-- 認証（デモ用） -->
+                <div class="nav-section">
+                    <div class="nav-section-title">認証（デモ用）</div>
+                    <a href="#login" class="nav-item" data-page="login">
+                        <span class="nav-icon">🔑</span>
+                        <span class="nav-text">ログイン画面</span>
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- メインコンテンツ -->
+        <main class="main-content">
+            <!-- ページコンテンツはここに動的に表示 -->
+            <div id="page-content">
+                <!-- デフォルト: ダッシュボード -->
+            </div>
+        </main>
+    </div>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>&copy; 2025 CAMP System. All rights reserved.</p>
+    </footer>
+
+    <!-- ページテンプレート（分割ファイル） -->
+    <script src="pages/auth.js"></script>
+    <script src="pages/dashboard.js"></script>
+    <script src="pages/projects.js"></script>
+    <script src="pages/sessions.js"></script>
+    <script src="pages/trees.js"></script>
+    <script src="pages/files.js"></script>
+    <script src="pages/admin.js"></script>
+    <script src="pages/masters.js"></script>
+    <script src="pages/index.js"></script>
+
+    <!-- アプリケーションスクリプト -->
+    <script src="app.js"></script>
+</body>
+</html>

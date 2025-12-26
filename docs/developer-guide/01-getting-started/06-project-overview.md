@@ -100,40 +100,41 @@ src/app/
    - Azure ADトークン検証（認証ミドルウェア）
    - リクエストボディをバリデーション (Pydanticスキーマ)
                    ↓
-3. サービス層 (services/project_service.py)
+3. サービス層 (services/project/project/__init__.py → crud.py)
+   - ProjectService（Facade）→ ProjectCrudService に委譲
    - プロジェクトコード重複チェック
    - トランザクション管理
-   - プロジェクトメンバーシップ作成（作成者をPROJECT_MANAGERとして追加）
+   - プロジェクトメンバーシップ作成（作成者をOWNERとして追加）
                    ↓
-4. リポジトリ層 (repositories/project_repository.py)
+4. リポジトリ層 (repositories/project/project.py)
    - データベースにINSERT
                    ↓
-5. モデル層 (models/project/project.py, models/project/member.py)
+5. モデル層 (models/project/project.py, models/project/project_member.py)
    - projectsテーブルとproject_membersテーブルに保存
                    ↓
 6. レスポンス ← 201 Created + プロジェクト情報
 ```
 
-### 例2: ユーザー登録（レガシー機能、JWT認証）
+### 例2: ユーザー認証（Azure AD）
 
 ```text
-1. クライアント → POST /api/v1/sample-users/register
+1. クライアント → GET /api/v1/user-accounts/me
+   - Authorizationヘッダー: Bearer <Azure AD token>
                    ↓
-2. API層 (routes/v1/sample/sample_users.py)
-   - リクエストボディをバリデーション (Pydanticスキーマ)
+2. API層 (routes/v1/user_accounts/user_accounts.py)
+   - Azure ADトークン検証
                    ↓
-3. サービス層 (services/sample_user_service.py)
-   - パスワード強度チェック
-   - パスワードをbcryptでハッシュ化
-   - メールアドレス重複チェック
+3. サービス層 (services/user_account/user_account/__init__.py → auth.py)
+   - UserAccountService（Facade）→ UserAccountAuthService に委譲
+   - Azure OIDでユーザー取得または作成
                    ↓
-4. リポジトリ層 (repositories/sample_user_repository.py)
-   - データベースにINSERT
+4. リポジトリ層 (repositories/user_account/user_account.py)
+   - データベースからSELECT/INSERT
                    ↓
-5. モデル層 (models/sample/sample_user.py)
-   - sample_usersテーブルに保存
+5. モデル層 (models/user_account/user_account.py)
+   - user_accountsテーブル
                    ↓
-6. レスポンス ← 201 Created + ユーザー情報（パスワード除く）
+6. レスポンス ← 200 OK + ユーザー情報
 ```
 
 ---

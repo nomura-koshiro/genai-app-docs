@@ -102,7 +102,7 @@ def create_access_token(
         - HTTPS環境での使用を強く推奨します
     """
     if jwt is None:
-        raise ImportError("python-jose is required for JWT token creation")
+        raise ImportError("JWTトークン生成にはpython-joseライブラリが必要です")
 
     to_encode = data.copy()
     if expires_delta:
@@ -181,7 +181,7 @@ def decode_access_token(token: str) -> dict[str, Any] | None:
         - セキュリティ上、クライアントには詳細なエラーを返さないでください
     """
     if jwt is None:
-        raise ImportError("python-jose is required for JWT token decoding")
+        raise ImportError("JWTトークンデコードにはpython-joseライブラリが必要です")
 
     try:
         payload = jwt.decode(
@@ -226,7 +226,7 @@ def create_refresh_token(data: dict[str, Any]) -> str:
         str: エンコードされたリフレッシュトークン文字列
     """
     if jwt is None:
-        raise ImportError("python-jose is required for JWT token creation")
+        raise ImportError("JWTトークン生成にはpython-joseライブラリが必要です")
 
     to_encode = data.copy()
     # リフレッシュトークンの有効期限: 設定ファイルから取得
@@ -257,7 +257,7 @@ def decode_refresh_token(token: str) -> dict[str, Any] | None:
         dict[str, Any] | None: デコードされたトークンペイロード、無効な場合はNone
     """
     if jwt is None:
-        raise ImportError("python-jose is required for JWT token decoding")
+        raise ImportError("JWTトークンデコードにはpython-joseライブラリが必要です")
 
     try:
         payload = jwt.decode(
