@@ -40,7 +40,7 @@ from app.api.core import CurrentUserAccountDep, UserServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
-from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountUpdate
+from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
 
 logger = get_logger(__name__)
 
@@ -323,6 +323,213 @@ async def update_current_user(
         user_id=current_user.id,
         update_data=update_dict,
         current_user_roles=current_user.roles,
+    )
+
+    return UserAccountResponse.model_validate(updated_user)
+
+
+@user_accounts_router.patch(
+    "/user_account/{user_id}/activate",
+    response_model=UserAccountResponse,
+    summary="ユーザー有効化",
+    description="""
+    ユーザーを有効化します（管理者専用）。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - user_id: uuid - ユーザーID（必須）
+
+    レスポンス:
+        - UserAccountResponse: 有効化されたユーザー情報
+
+    ステータスコード:
+        - 200: 有効化成功
+        - 401: 認証されていない
+        - 403: 権限不足
+        - 404: リソースが見つからない
+    """,
+)
+@handle_service_errors
+async def activate_user(
+    user_id: uuid.UUID,
+    user_service: UserServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> UserAccountResponse:
+    """ユーザーを有効化します（管理者専用）。"""
+    # ロールチェック: SystemAdminが必要
+    if "SystemAdmin" not in current_user.roles:
+        logger.warning(
+            "管理者権限がないユーザーがユーザー有効化を試行",
+            admin_user_id=str(current_user.id),
+            target_user_id=str(user_id),
+            roles=current_user.roles,
+        )
+        raise ValidationError(
+            "管理者権限が必要です",
+            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+        )
+
+    logger.info(
+        "ユーザー有効化",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(user_id),
+        action="activate_user",
+    )
+
+    updated_user = await user_service.activate_user(user_id)
+
+    logger.info(
+        "ユーザーを有効化しました",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(updated_user.id),
+        email=updated_user.email,
+    )
+
+    return UserAccountResponse.model_validate(updated_user)
+
+
+@user_accounts_router.patch(
+    "/user_account/{user_id}/deactivate",
+    response_model=UserAccountResponse,
+    summary="ユーザー無効化",
+    description="""
+    ユーザーを無効化します（管理者専用）。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - user_id: uuid - ユーザーID（必須）
+
+    レスポンス:
+        - UserAccountResponse: 無効化されたユーザー情報
+
+    ステータスコード:
+        - 200: 無効化成功
+        - 401: 認証されていない
+        - 403: 権限不足
+        - 404: リソースが見つからない
+    """,
+)
+@handle_service_errors
+async def deactivate_user(
+    user_id: uuid.UUID,
+    user_service: UserServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> UserAccountResponse:
+    """ユーザーを無効化します（管理者専用）。"""
+    # ロールチェック: SystemAdminが必要
+    if "SystemAdmin" not in current_user.roles:
+        logger.warning(
+            "管理者権限がないユーザーがユーザー無効化を試行",
+            admin_user_id=str(current_user.id),
+            target_user_id=str(user_id),
+            roles=current_user.roles,
+        )
+        raise ValidationError(
+            "管理者権限が必要です",
+            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+        )
+
+    # 自己無効化チェック
+    if current_user.id == user_id:
+        logger.warning(
+            "ユーザーが自分自身を無効化しようとしました",
+            user_id=str(current_user.id),
+            email=current_user.email,
+        )
+        raise ValidationError(
+            "自分自身を無効化することはできません",
+            details={"user_id": str(user_id)},
+        )
+
+    logger.info(
+        "ユーザー無効化",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(user_id),
+        action="deactivate_user",
+    )
+
+    updated_user = await user_service.deactivate_user(user_id)
+
+    logger.info(
+        "ユーザーを無効化しました",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(updated_user.id),
+        email=updated_user.email,
+    )
+
+    return UserAccountResponse.model_validate(updated_user)
+
+
+# ================================================================================
+# PUT Endpoints
+# ================================================================================
+
+
+@user_accounts_router.put(
+    "/user_account/{user_id}/role",
+    response_model=UserAccountResponse,
+    summary="ユーザーロール更新",
+    description="""
+    ユーザーのシステムロールを更新します（管理者専用）。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - user_id: uuid - ユーザーID（必須）
+
+    リクエストボディ:
+        - UserAccountRoleUpdate: ロール更新データ
+            - roles: list[str] - 新しいシステムロール
+
+    レスポンス:
+        - UserAccountResponse: ロールが更新されたユーザー情報
+
+    ステータスコード:
+        - 200: 更新成功
+        - 401: 認証されていない
+        - 403: 権限不足
+        - 404: リソースが見つからない
+    """,
+)
+@handle_service_errors
+async def update_user_role(
+    user_id: uuid.UUID,
+    role_data: UserAccountRoleUpdate,
+    user_service: UserServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> UserAccountResponse:
+    """ユーザーのシステムロールを更新します（管理者専用）。"""
+    # ロールチェック: SystemAdminが必要
+    if "SystemAdmin" not in current_user.roles:
+        logger.warning(
+            "管理者権限がないユーザーがユーザーロール更新を試行",
+            admin_user_id=str(current_user.id),
+            target_user_id=str(user_id),
+            roles=current_user.roles,
+        )
+        raise ValidationError(
+            "管理者権限が必要です",
+            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+        )
+
+    logger.info(
+        "ユーザーロール更新",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(user_id),
+        new_roles=role_data.roles,
+        action="update_user_role",
+    )
+
+    updated_user = await user_service.update_user_role(user_id, role_data.roles)
+
+    logger.info(
+        "ユーザーロールを更新しました",
+        admin_user_id=str(current_user.id),
+        target_user_id=str(updated_user.id),
+        email=updated_user.email,
+        new_roles=updated_user.roles,
     )
 
     return UserAccountResponse.model_validate(updated_user)

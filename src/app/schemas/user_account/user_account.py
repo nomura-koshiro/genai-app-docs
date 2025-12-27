@@ -166,3 +166,24 @@ class UserAccountListResponse(BaseCamelCaseModel):
     total: int = Field(..., description="総件数")
     skip: int = Field(..., description="スキップ数（オフセット）")
     limit: int = Field(..., description="取得件数")
+
+
+class UserAccountRoleUpdate(BaseCamelCaseModel):
+    """ユーザーロール更新リクエストスキーマ。
+
+    管理者がユーザーのシステムロールを更新する際に使用します。
+
+    Attributes:
+        roles (list[str]): 新しいシステムロール
+
+    Example:
+        >>> update = UserAccountRoleUpdate(
+        ...     roles=["SystemAdmin", "User"]
+        ... )
+
+    Note:
+        - 管理者権限が必要です
+        - 有効なロール: "SystemAdmin", "User"
+    """
+
+    roles: list[str] = Field(..., description="システムレベルのロール", min_length=1)

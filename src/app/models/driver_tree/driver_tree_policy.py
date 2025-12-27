@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Float, ForeignKey, Index, String
+from sqlalchemy import Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -55,6 +55,31 @@ class DriverTreePolicy(Base, TimestampMixin):
         default=0,
         nullable=False,
         comment="施策値",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="施策説明",
+    )
+
+    cost: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+        comment="コスト",
+    )
+
+    duration_months: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+        comment="実施期間（月）",
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        default="planned",
+        nullable=False,
+        comment="状態（planned/in_progress/completed）",
     )
 
     # リレーションシップ

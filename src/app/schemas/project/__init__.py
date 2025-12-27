@@ -36,8 +36,10 @@
 
 from app.schemas.project.project import (
     ProjectCreate,
+    ProjectDetailResponse,
     ProjectListResponse,
     ProjectResponse,
+    ProjectStatsResponse,
     ProjectUpdate,
 )
 from app.schemas.project.project_file import (
@@ -61,8 +63,10 @@ from app.schemas.project.project_member import (
 
 __all__ = [
     "ProjectCreate",
+    "ProjectDetailResponse",
     "ProjectListResponse",
     "ProjectResponse",
+    "ProjectStatsResponse",
     "ProjectUpdate",
     "ProjectFileDeleteResponse",
     "ProjectFileListResponse",

@@ -8,6 +8,7 @@ from app.schemas.driver_tree.common import (
     DriverTreeNodeInfo,
     DriverTreeNodePolicyInfo,
     DriverTreeNodeTypeEnum,
+    DriverTreePolicyStatusEnum,
 )
 
 
@@ -55,10 +56,21 @@ class DriverTreeNodePolicyCreateRequest(BaseCamelCaseModel):
     Request Body:
         - name: str - 施策名
         - value: float - 施策値
+        - description: str | None - 施策説明（オプション）
+        - cost: float | None - コスト（オプション）
+        - duration_months: int | None - 実施期間（月）（オプション）
+        - status: str - 状態（オプション、デフォルト: planned）
     """
 
     name: str = Field(..., description="施策名")
     value: float = Field(..., description="施策値")
+    description: str | None = Field(default=None, description="施策説明")
+    cost: float | None = Field(default=None, description="コスト")
+    duration_months: int | None = Field(default=None, description="実施期間（月）")
+    status: DriverTreePolicyStatusEnum = Field(
+        default=DriverTreePolicyStatusEnum.PLANNED,
+        description="状態（planned/in_progress/completed）",
+    )
 
 
 class DriverTreeNodePolicyUpdateRequest(BaseCamelCaseModel):
@@ -67,10 +79,18 @@ class DriverTreeNodePolicyUpdateRequest(BaseCamelCaseModel):
     Request Body:
         - name: str - 施策名(オプション)
         - value: float - 施策値(オプション)
+        - description: str | None - 施策説明（オプション）
+        - cost: float | None - コスト（オプション）
+        - duration_months: int | None - 実施期間（月）（オプション）
+        - status: str - 状態（オプション）
     """
 
     name: str | None = Field(default=None, description="施策名")
     value: float | None = Field(default=None, description="施策値")
+    description: str | None = Field(default=None, description="施策説明")
+    cost: float | None = Field(default=None, description="コスト")
+    duration_months: int | None = Field(default=None, description="実施期間（月）")
+    status: DriverTreePolicyStatusEnum | None = Field(default=None, description="状態")
 
 
 # Response

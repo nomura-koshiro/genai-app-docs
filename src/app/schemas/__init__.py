@@ -107,6 +107,7 @@ from app.schemas.project.project_member import (
 from app.schemas.user_account.user_account import (
     UserAccountListResponse,
     UserAccountResponse,
+    UserAccountRoleUpdate,
     UserAccountUpdate,
 )
 
@@ -177,5 +178,6 @@ __all__ = [
     # ユーザースキーマ
     "UserAccountListResponse",
     "UserAccountResponse",
+    "UserAccountRoleUpdate",
     "UserAccountUpdate",
 ]

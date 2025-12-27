@@ -144,6 +144,20 @@ class DriverTreeInfo(BaseCamelCaseModel):
     relationship: list[DriverTreeRelationshipInfo]
 
 
+class DriverTreePolicyStatusEnum(str, Enum):
+    """施策状態。
+
+    Values:
+        PLANNED: 計画中
+        IN_PROGRESS: 実施中
+        COMPLETED: 完了
+    """
+
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+
+
 class DriverTreeNodePolicyInfo(BaseCamelCaseModel):
     """施策情報
 
@@ -151,11 +165,19 @@ class DriverTreeNodePolicyInfo(BaseCamelCaseModel):
         - policy_id: uuid - 施策ID
         - name: str - 施策名
         - value: float - 施策値
+        - description: str | None - 施策説明
+        - cost: float | None - コスト
+        - duration_months: int | None - 実施期間（月）
+        - status: str - 状態（planned/in_progress/completed）
     """
 
     policy_id: uuid.UUID = Field(..., description="施策ID")
     name: str = Field(..., description="施策名")
     value: float = Field(..., description="施策値")
+    description: str | None = Field(default=None, description="施策説明")
+    cost: float | None = Field(default=None, description="コスト")
+    duration_months: int | None = Field(default=None, description="実施期間（月）")
+    status: DriverTreePolicyStatusEnum = Field(default=DriverTreePolicyStatusEnum.PLANNED, description="状態")
 
 
 class DriverTreeColumnInfo(BaseCamelCaseModel):

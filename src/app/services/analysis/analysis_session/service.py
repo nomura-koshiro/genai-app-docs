@@ -94,6 +94,15 @@ class AnalysisSessionService:
         """分析セッションを削除します。"""
         return await self._crud_service.delete_session(project_id, session_id)
 
+    async def duplicate_session(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+        creator_id: uuid.UUID,
+    ) -> AnalysisSessionDetailResponse:
+        """分析セッションを複製します。"""
+        return await self._crud_service.duplicate_session(project_id, session_id, creator_id)
+
     # ================================================================================
     # ファイル操作
     # ================================================================================

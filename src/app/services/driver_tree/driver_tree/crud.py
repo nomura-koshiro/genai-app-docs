@@ -430,3 +430,118 @@ class DriverTreeCrudService(DriverTreeServiceBase):
             "success": True,
             "deleted_at": deleted_at,
         }
+
+    @transactional
+    async def duplicate_tree(
+        self,
+        project_id: uuid.UUID,
+        tree_id: uuid.UUID,
+        user_id: uuid.UUID,
+        new_name: str | None = None,
+    ) -> dict[str, Any]:
+        """ドライバーツリーを複製します。
+
+        ツリーとその関連データ（ノード、リレーションシップ）を深いコピーで複製します。
+
+        Note:
+            権限チェックはルーター層の ProjectMemberDep で行われます。
+
+        Args:
+            project_id: プロジェクトID
+            tree_id: 複製元ツリーID
+            user_id: 複製実行者のユーザーID
+            new_name: 新しいツリー名（オプション、未指定の場合は「(コピー)」を追加）
+
+        Returns:
+            dict[str, Any]: 複製されたツリー情報
+
+        Raises:
+            NotFoundError: ツリーが見つからない場合
+        """
+        logger.info(
+            "ツリーを複製中",
+            tree_id=str(tree_id),
+            user_id=str(user_id),
+        )
+
+        original_tree = await self._get_tree_with_validation(project_id, tree_id)
+
+        # 新しいツリー名を生成
+        duplicated_name = new_name or f"{original_tree.name} (コピー)"
+
+        # 新しいツリーを作成
+        new_tree = await self.tree_repository.create(
+            project_id=project_id,
+            name=duplicated_name,
+            description=original_tree.description,
+            root_node_id=None,
+            formula_id=original_tree.formula_id,
+            status=original_tree.status if hasattr(original_tree, "status") else "draft",
+        )
+
+        # ノードIDのマッピング（元ID -> 新ID）
+        node_id_mapping: dict[uuid.UUID, uuid.UUID] = {}
+
+        # 元ツリーの全ノードを取得（リレーションシップから収集）
+        original_nodes = set()
+        for relationship in original_tree.relationships:
+            original_nodes.add(relationship.parent_node_id)
+            for child in relationship.children:
+                original_nodes.add(child.child_node_id)
+
+        # ルートノードも含める
+        if original_tree.root_node_id:
+            original_nodes.add(original_tree.root_node_id)
+
+        # ノードを複製
+        for node_id in original_nodes:
+            original_node = await self.node_repository.get(node_id)
+            if original_node:
+                new_node = await self.node_repository.create(
+                    label=original_node.label,
+                    node_type=original_node.node_type,
+                    position_x=original_node.position_x,
+                    position_y=original_node.position_y,
+                    value=original_node.value,
+                    source_cell=original_node.source_cell,
+                )
+                node_id_mapping[node_id] = new_node.id
+
+        # ルートノードを更新
+        if original_tree.root_node_id and original_tree.root_node_id in node_id_mapping:
+            await self.tree_repository.update(
+                new_tree,
+                root_node_id=node_id_mapping[original_tree.root_node_id],
+            )
+
+        # リレーションシップを複製
+        for relationship in original_tree.relationships:
+            if relationship.parent_node_id in node_id_mapping:
+                new_relationship = DriverTreeRelationship(
+                    driver_tree_id=new_tree.id,
+                    parent_node_id=node_id_mapping[relationship.parent_node_id],
+                    operator=relationship.operator,
+                )
+                self.db.add(new_relationship)
+                await self.db.flush()
+                await self.db.refresh(new_relationship)
+
+                # 子ノードをリレーションシップに追加
+                for child in relationship.children:
+                    if child.child_node_id in node_id_mapping:
+                        child_rel = DriverTreeRelationshipChild(
+                            relationship_id=new_relationship.id,
+                            child_node_id=node_id_mapping[child.child_node_id],
+                            order_index=child.order_index,
+                        )
+                        self.db.add(child_rel)
+
+                await self.db.flush()
+
+        logger.info(
+            "ツリーを複製しました",
+            original_tree_id=str(tree_id),
+            new_tree_id=str(new_tree.id),
+        )
+
+        return await self._build_tree_response(new_tree)

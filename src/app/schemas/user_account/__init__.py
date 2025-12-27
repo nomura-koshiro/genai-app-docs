@@ -13,6 +13,11 @@
     >>> # API経由でユーザー情報を更新
 """
 
-from app.schemas.user_account.user_account import UserAccountListResponse, UserAccountResponse, UserAccountUpdate
+from app.schemas.user_account.user_account import (
+    UserAccountListResponse,
+    UserAccountResponse,
+    UserAccountRoleUpdate,
+    UserAccountUpdate,
+)
 
-__all__ = ["UserAccountListResponse", "UserAccountResponse", "UserAccountUpdate"]
+__all__ = ["UserAccountListResponse", "UserAccountResponse", "UserAccountRoleUpdate", "UserAccountUpdate"]

@@ -499,6 +499,71 @@ async def delete_session(
     )
 
 
+@analysis_sessions_router.post(
+    "/project/{project_id}/analysis/session/{session_id}/duplicate",
+    response_model=AnalysisSessionDetailResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="分析セッション複製",
+    description="""
+    指定されたIDの分析セッションを複製します。
+
+    **認証が必要です。**
+    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**
+
+    セッションとその関連データ（スナップショット、ステップ、チャット、ファイル）を
+    深いコピーで複製します。
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - session_id: uuid - 複製元セッションID（必須）
+
+    レスポンス:
+        - AnalysisSessionDetailResponse: 複製されたセッション詳細
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: セッションが見つからない
+    """,
+)
+@handle_service_errors
+async def duplicate_session(
+    member: ProjectMemberDep,
+    session_service: AnalysisSessionServiceDep,
+    project_id: uuid.UUID = Path(..., description="プロジェクトID"),
+    session_id: uuid.UUID = Path(..., description="複製元セッションID"),
+) -> AnalysisSessionDetailResponse:
+    """分析セッションを複製します。
+
+    Args:
+        member (ProjectMemberDep): プロジェクトメンバー（権限チェック済み）
+        session_service (AnalysisSessionServiceDep): 分析セッションサービス
+        project_id (uuid.UUID): プロジェクトID
+        session_id (uuid.UUID): 複製元セッションID
+
+    Returns:
+        AnalysisSessionDetailResponse: 複製されたセッション詳細
+    """
+    logger.info(
+        "分析セッション複製リクエスト",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        action="duplicate_session",
+    )
+
+    duplicated = await session_service.duplicate_session(project_id, session_id, member.user_id)
+
+    logger.info(
+        "分析セッションを複製しました",
+        user_id=str(member.user_id),
+        original_session_id=str(session_id),
+        new_session_id=str(duplicated.id),
+    )
+
+    return duplicated
+
+
 # ================================================================================
 # ファイル管理
 # ================================================================================

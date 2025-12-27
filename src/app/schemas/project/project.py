@@ -24,7 +24,7 @@
 """
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import Field
 
@@ -60,16 +60,21 @@ class ProjectCreate(ProjectBase):
         name (str): プロジェクト名（ProjectBaseから継承）
         code (str): プロジェクトコード（ProjectBaseから継承）
         description (str | None): プロジェクト説明（ProjectBaseから継承）
+        start_date (date | None): プロジェクト開始日（オプション）
+        end_date (date | None): プロジェクト終了日（オプション）
 
     Example:
         >>> project = ProjectCreate(
         ...     name="AI Development Project",
         ...     code="AI-001",
-        ...     description="Project for AI model development"
+        ...     description="Project for AI model development",
+        ...     start_date=date(2024, 1, 1),
+        ...     end_date=date(2024, 12, 31)
         ... )
     """
 
-    pass
+    start_date: date | None = Field(default=None, description="プロジェクト開始日")
+    end_date: date | None = Field(default=None, description="プロジェクト終了日")
 
 
 class ProjectUpdate(BaseCamelCaseModel):
@@ -81,11 +86,15 @@ class ProjectUpdate(BaseCamelCaseModel):
         name (str | None): プロジェクト名（オプション）
         description (str | None): プロジェクト説明（オプション）
         is_active (bool | None): アクティブフラグ（オプション）
+        start_date (date | None): プロジェクト開始日（オプション）
+        end_date (date | None): プロジェクト終了日（オプション）
 
     Example:
         >>> update = ProjectUpdate(
         ...     name="Updated Project Name",
-        ...     description="Updated description"
+        ...     description="Updated description",
+        ...     start_date=date(2024, 2, 1),
+        ...     end_date=date(2025, 1, 31)
         ... )
 
     Note:
@@ -96,6 +105,26 @@ class ProjectUpdate(BaseCamelCaseModel):
     name: str | None = Field(default=None, max_length=255, description="プロジェクト名")
     description: str | None = Field(default=None, description="プロジェクト説明")
     is_active: bool | None = Field(default=None, description="アクティブフラグ")
+    start_date: date | None = Field(default=None, description="プロジェクト開始日")
+    end_date: date | None = Field(default=None, description="プロジェクト終了日")
+
+
+class ProjectStatsResponse(BaseCamelCaseModel):
+    """プロジェクト統計情報スキーマ。
+
+    プロジェクトの統計情報を定義します。
+
+    Attributes:
+        member_count (int): メンバー数
+        file_count (int): ファイル数
+        session_count (int): 分析セッション数
+        tree_count (int): ドライバーツリー数
+    """
+
+    member_count: int = Field(default=0, description="メンバー数")
+    file_count: int = Field(default=0, description="ファイル数")
+    session_count: int = Field(default=0, description="分析セッション数")
+    tree_count: int = Field(default=0, description="ドライバーツリー数")
 
 
 class ProjectResponse(BaseCamelCaseORMModel):
@@ -110,6 +139,8 @@ class ProjectResponse(BaseCamelCaseORMModel):
         description (str | None): プロジェクト説明
         is_active (bool): アクティブフラグ
         created_by (uuid.UUID | None): 作成者のユーザーID
+        start_date (date | None): プロジェクト開始日
+        end_date (date | None): プロジェクト終了日
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
 
@@ -122,6 +153,8 @@ class ProjectResponse(BaseCamelCaseORMModel):
         ...     description="AI development project",
         ...     is_active=True,
         ...     created_by=uuid.uuid4(),
+        ...     start_date=date(2024, 1, 1),
+        ...     end_date=date(2024, 12, 31),
         ...     created_at=datetime.now(UTC),
         ...     updated_at=datetime.now(UTC)
         ... )
@@ -136,8 +169,22 @@ class ProjectResponse(BaseCamelCaseORMModel):
     description: str | None = Field(default=None, description="プロジェクト説明")
     is_active: bool = Field(..., description="アクティブフラグ")
     created_by: uuid.UUID | None = Field(default=None, description="作成者のユーザーID")
+    start_date: date | None = Field(default=None, description="プロジェクト開始日")
+    end_date: date | None = Field(default=None, description="プロジェクト終了日")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
+
+
+class ProjectDetailResponse(ProjectResponse):
+    """プロジェクト詳細レスポンススキーマ。
+
+    プロジェクト詳細APIで統計情報を含めて返す際に使用します。
+
+    Attributes:
+        stats (ProjectStatsResponse | None): プロジェクト統計情報
+    """
+
+    stats: ProjectStatsResponse | None = Field(default=None, description="プロジェクト統計情報")
 
 
 class ProjectListResponse(BaseCamelCaseModel):

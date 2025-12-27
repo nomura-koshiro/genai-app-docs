@@ -281,3 +281,117 @@ class UserAccountCrudService(UserAccountServiceBase):
         )
 
         return True
+
+    @measure_performance
+    @transactional
+    async def activate_user(self, user_id: uuid.UUID) -> UserAccount:
+        """ユーザーを有効化します。
+
+        Args:
+            user_id: 有効化対象ユーザーID
+
+        Returns:
+            UserAccount: 有効化されたユーザーモデルインスタンス
+
+        Raises:
+            NotFoundError: ユーザーが存在しない
+        """
+        logger.info(
+            "ユーザーを有効化中",
+            user_id=str(user_id),
+            action="activate_user",
+        )
+
+        # ユーザー取得
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            logger.warning("ユーザーが見つかりません", user_id=str(user_id))
+            raise NotFoundError("ユーザーが見つかりません", details={"user_id": str(user_id)})
+
+        # 有効化実行
+        updated_user = await self.repository.update(user, is_active=True)
+
+        logger.info(
+            "ユーザーを有効化しました",
+            user_id=str(updated_user.id),
+            email=updated_user.email,
+        )
+
+        return updated_user
+
+    @measure_performance
+    @transactional
+    async def deactivate_user(self, user_id: uuid.UUID) -> UserAccount:
+        """ユーザーを無効化します。
+
+        Args:
+            user_id: 無効化対象ユーザーID
+
+        Returns:
+            UserAccount: 無効化されたユーザーモデルインスタンス
+
+        Raises:
+            NotFoundError: ユーザーが存在しない
+        """
+        logger.info(
+            "ユーザーを無効化中",
+            user_id=str(user_id),
+            action="deactivate_user",
+        )
+
+        # ユーザー取得
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            logger.warning("ユーザーが見つかりません", user_id=str(user_id))
+            raise NotFoundError("ユーザーが見つかりません", details={"user_id": str(user_id)})
+
+        # 無効化実行
+        updated_user = await self.repository.update(user, is_active=False)
+
+        logger.info(
+            "ユーザーを無効化しました",
+            user_id=str(updated_user.id),
+            email=updated_user.email,
+        )
+
+        return updated_user
+
+    @measure_performance
+    @transactional
+    async def update_user_role(self, user_id: uuid.UUID, roles: list[str]) -> UserAccount:
+        """ユーザーのロールを更新します。
+
+        Args:
+            user_id: ロール更新対象ユーザーID
+            roles: 新しいロールリスト
+
+        Returns:
+            UserAccount: ロールが更新されたユーザーモデルインスタンス
+
+        Raises:
+            NotFoundError: ユーザーが存在しない
+        """
+        logger.info(
+            "ユーザーロールを更新中",
+            user_id=str(user_id),
+            new_roles=roles,
+            action="update_user_role",
+        )
+
+        # ユーザー取得
+        user = await self.repository.get_by_id(user_id)
+        if not user:
+            logger.warning("ユーザーが見つかりません", user_id=str(user_id))
+            raise NotFoundError("ユーザーが見つかりません", details={"user_id": str(user_id)})
+
+        # ロール更新実行
+        updated_user = await self.repository.update(user, roles=roles)
+
+        logger.info(
+            "ユーザーロールを更新しました",
+            user_id=str(updated_user.id),
+            email=updated_user.email,
+            new_roles=updated_user.roles,
+        )
+
+        return updated_user

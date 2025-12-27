@@ -393,6 +393,60 @@ async def delete_tree(
     return DriverTreeDeleteResponse(**result)
 
 
+@driver_tree_trees_router.post(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/duplicate",
+    response_model=DriverTreeGetTreeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="ツリー複製",
+    description="""
+    指定されたIDのドライバーツリーを複製します。
+
+    **認証が必要です。**
+    **プロジェクトメンバーのみアクセス可能です。**
+
+    ツリーとその関連データ（ノード、リレーションシップ）を深いコピーで複製します。
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - 複製元ツリーID（必須）
+
+    レスポンス:
+        - DriverTreeGetTreeResponse: 複製されたツリー情報
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def duplicate_tree(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,
+    tree_service: DriverTreeServiceDep,
+) -> DriverTreeGetTreeResponse:
+    """ドライバーツリーを複製します。"""
+    logger.info(
+        "ツリー複製リクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        action="duplicate_tree",
+    )
+
+    result = await tree_service.duplicate_tree(project_id, tree_id, member.user_id)
+
+    logger.info(
+        "ツリーを複製しました",
+        user_id=str(member.user_id),
+        original_tree_id=str(tree_id),
+        new_tree_id=str(result.get("tree_id")),
+    )
+
+    return DriverTreeGetTreeResponse(tree=DriverTreeInfo.model_validate(result))
+
+
 # ================================================================================
 # マスタデータ取得
 # ================================================================================

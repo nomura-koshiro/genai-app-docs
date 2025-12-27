@@ -106,6 +106,16 @@ class DriverTreeService:
         """ツリーを完全に削除します。"""
         return await self._crud_service.delete_tree(project_id, tree_id, user_id)
 
+    async def duplicate_tree(
+        self,
+        project_id: uuid.UUID,
+        tree_id: uuid.UUID,
+        user_id: uuid.UUID,
+        new_name: str | None = None,
+    ) -> dict[str, Any]:
+        """ドライバーツリーを複製します。"""
+        return await self._crud_service.duplicate_tree(project_id, tree_id, user_id, new_name)
+
     # ================================================================================
     # マスタデータ取得
     # ================================================================================

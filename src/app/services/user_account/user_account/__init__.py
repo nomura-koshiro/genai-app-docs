@@ -100,5 +100,17 @@ class UserAccountService:
         """ユーザーを削除します。"""
         return await self._crud_service.delete_user(user_id)
 
+    async def activate_user(self, user_id: uuid.UUID) -> UserAccount:
+        """ユーザーを有効化します。"""
+        return await self._crud_service.activate_user(user_id)
+
+    async def deactivate_user(self, user_id: uuid.UUID) -> UserAccount:
+        """ユーザーを無効化します。"""
+        return await self._crud_service.deactivate_user(user_id)
+
+    async def update_user_role(self, user_id: uuid.UUID, roles: list[str]) -> UserAccount:
+        """ユーザーのロールを更新します。"""
+        return await self._crud_service.update_user_role(user_id, roles)
+
 
 __all__ = ["UserAccountService"]
