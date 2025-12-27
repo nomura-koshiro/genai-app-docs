@@ -67,7 +67,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             )
 
         # 最新スナップショットを取得
-        snapshot = await self.snapshot_repository.get_by_order(session_id, session.current_snapshot)
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        snapshot = await self.snapshot_repository.get_by_order(session_id, current_snapshot_order)
         if not snapshot:
             return AnalysisSessionResultListResponse(results=[], total=0)
 
@@ -125,7 +126,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
         agent.chat(user_message)
 
         # 新しいsnapshotを作成し、今のstateを保存
-        new_snapshot_order = session.current_snapshot + 1
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        new_snapshot_order = current_snapshot_order + 1
         new_snapshot = await self.snapshot_repository.create(
             session_id=session_id,
             snapshot_order=new_snapshot_order,
@@ -254,7 +256,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             )
 
         # 現在のスナップショットを取得
-        snapshot = await self.snapshot_repository.get_by_order(session_id, session.current_snapshot)
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        snapshot = await self.snapshot_repository.get_by_order(session_id, current_snapshot_order)
         if not snapshot:
             return []
 
@@ -310,7 +313,7 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
                 id=snap.id,
                 snapshot_order=snap.snapshot_order,
                 parent_snapshot_id=snap.parent_snapshot_id if hasattr(snap, "parent_snapshot_id") else None,
-                chat_list=[
+                chat=[
                     AnalysisChatResponse(
                         id=chat.id,
                         chat_order=chat.chat_order,
@@ -322,7 +325,7 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
                     )
                     for chat in (snap.chats or [])
                 ],
-                step_list=[
+                step=[
                     AnalysisStepResponse(
                         id=step.id,
                         name=step.name,
@@ -380,11 +383,12 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             )
 
         # 現在のスナップショットを取得
-        current_snapshot = await self.snapshot_repository.get_by_order(session_id, session.current_snapshot)
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        current_snapshot = await self.snapshot_repository.get_by_order(session_id, current_snapshot_order)
         parent_snapshot_id = current_snapshot.id if current_snapshot else None
 
         # 新しいスナップショットを作成
-        new_snapshot_order = session.current_snapshot + 1
+        new_snapshot_order = current_snapshot_order + 1
         new_snapshot = await self.snapshot_repository.create(
             session_id=session_id,
             snapshot_order=new_snapshot_order,
@@ -426,7 +430,7 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             id=new_snapshot_with_relations.id,
             snapshot_order=new_snapshot_with_relations.snapshot_order,
             parent_snapshot_id=parent_snapshot_id,
-            chat_list=[
+            chat=[
                 AnalysisChatResponse(
                     id=chat.id,
                     chat_order=chat.chat_order,
@@ -438,7 +442,7 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
                 )
                 for chat in (new_snapshot_with_relations.chats or [])
             ],
-            step_list=[
+            step=[
                 AnalysisStepResponse(
                     id=step.id,
                     name=step.name,
@@ -457,4 +461,60 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             ],
             created_at=new_snapshot_with_relations.created_at,
             updated_at=new_snapshot_with_relations.updated_at,
+        )
+
+    @transactional
+    async def delete_chat_message(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+        chat_id: uuid.UUID,
+    ) -> None:
+        """チャットメッセージを削除します。
+
+        現在のスナップショットに関連付けられたチャットメッセージを削除します。
+
+        Note:
+            権限チェックはルーター層の ProjectMemberDep で行われます。
+
+        Args:
+            project_id: プロジェクトID
+            session_id: セッションID
+            chat_id: チャットID
+
+        Raises:
+            NotFoundError: セッションまたはチャットが見つからない場合
+        """
+        # セッションを取得
+        session = await self.session_repository.get(session_id)
+        if not session or session.project_id != project_id:
+            raise NotFoundError(
+                "Session not found",
+                details={"session_id": str(session_id)},
+            )
+
+        # チャットを取得
+        chat = await self.chat_repository.get(chat_id)
+        if not chat:
+            raise NotFoundError(
+                "Chat message not found",
+                details={"chat_id": str(chat_id)},
+            )
+
+        # 現在のスナップショットを取得
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        snapshot = await self.snapshot_repository.get_by_order(session_id, current_snapshot_order)
+        if not snapshot or chat.snapshot_id != snapshot.id:
+            raise ValidationError(
+                "Chat message does not belong to current snapshot",
+                details={"chat_id": str(chat_id), "current_snapshot": current_snapshot_order},
+            )
+
+        # チャットを削除
+        await self.chat_repository.delete(chat.id)
+
+        logger.info(
+            "チャットメッセージを削除しました",
+            chat_id=str(chat_id),
+            session_id=str(session_id),
         )

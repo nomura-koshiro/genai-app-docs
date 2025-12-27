@@ -75,7 +75,8 @@ class AnalysisSessionServiceBase:
             AnalysisSessionDetailResponse: セッション詳細レスポンス
         """
         snapshot_responses = []
-        for snap_idx, snap in enumerate(snapshots):
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        for snap in snapshots:
             chat_responses = [
                 AnalysisChatResponse(
                     id=chat.id,
@@ -88,7 +89,7 @@ class AnalysisSessionServiceBase:
                 for chat in snap.chats
             ]
             step_responses = []
-            if snap_idx == session.current_snapshot and session.input_file_id is not None:
+            if snap.snapshot_order == current_snapshot_order and session.input_file_id is not None:
                 state = self._build_state(session, snapshots, files)
             else:
                 state = None
@@ -156,12 +157,13 @@ class AnalysisSessionServiceBase:
             for f in files
         ]
 
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
         return AnalysisSessionDetailResponse(
             id=session.id,
             project_id=session.project_id,
             issue_id=session.issue_id,
             creator_id=session.creator_id,
-            current_snapshot=session.current_snapshot,
+            current_snapshot=current_snapshot_order,
             input_file_id=session.input_file_id,
             snapshot_list=snapshot_responses,
             file_list=file_responses,
@@ -211,19 +213,20 @@ class AnalysisSessionServiceBase:
                 details={"file_id": str(session.input_file_id)},
             )
         # snapshotの存在確認
-        if session.current_snapshot >= len(snapshots):
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        if current_snapshot_order >= len(snapshots):
             raise NotFoundError(
                 "Current snapshot not found",
                 details={
                     "session_id": str(session_id),
-                    "current_snapshot": session.current_snapshot,
+                    "current_snapshot": current_snapshot_order,
                 },
             )
 
         # stateを初期化
         input_data_rows = input_file
         input_file_data = pd.DataFrame.from_records(input_data_rows)
-        snapshot = snapshots[session.current_snapshot]
+        snapshot = snapshots[current_snapshot_order]
         step_list = []
         for step in snapshot.steps:
             step_list.append(

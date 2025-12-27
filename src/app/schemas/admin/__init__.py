@@ -1,6 +1,6 @@
 """管理機能のPydanticスキーマ。
 
-このモジュールは、管理機能（カテゴリ、検証、課題マスタ、ロール）のスキーマを提供します。
+このモジュールは、管理機能（カテゴリ、検証、課題マスタ、ロール、グラフ軸）のスキーマを提供します。
 """
 
 from app.schemas.admin.category import (
@@ -8,6 +8,9 @@ from app.schemas.admin.category import (
     DriverTreeCategoryListResponse,
     DriverTreeCategoryResponse,
     DriverTreeCategoryUpdate,
+)
+from app.schemas.admin.graph_axis import (
+    AnalysisGraphAxisListResponse,
 )
 from app.schemas.admin.issue import (
     AnalysisIssueCreate,
@@ -34,6 +37,8 @@ __all__ = [
     "DriverTreeCategoryListResponse",
     "DriverTreeCategoryResponse",
     "DriverTreeCategoryUpdate",
+    # Graph Axis
+    "AnalysisGraphAxisListResponse",
     # Issue
     "AnalysisIssueCreate",
     "AnalysisIssueListResponse",

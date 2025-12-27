@@ -181,6 +181,15 @@ class AnalysisSessionService:
         """セッションのチャットメッセージ履歴を取得します。"""
         return await self._analysis_service.get_chat_messages(project_id, session_id, skip, limit)
 
+    async def delete_chat_message(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+        chat_id: uuid.UUID,
+    ) -> None:
+        """チャットメッセージを削除します。"""
+        return await self._analysis_service.delete_chat_message(project_id, session_id, chat_id)
+
     # ================================================================================
     # スナップショット操作
     # ================================================================================

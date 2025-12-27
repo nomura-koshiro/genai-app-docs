@@ -58,7 +58,12 @@ class ProjectFileCrudService(ProjectFileServiceBase):
 
     @measure_performance
     async def list_project_files(
-        self, project_id: uuid.UUID, requester_id: uuid.UUID, skip: int = 0, limit: int = 100
+        self,
+        project_id: uuid.UUID,
+        requester_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        mime_type: str | None = None,
     ) -> tuple[list[ProjectFile], int]:
         """プロジェクトのファイル一覧を取得します。
 
@@ -67,6 +72,7 @@ class ProjectFileCrudService(ProjectFileServiceBase):
             requester_id: リクエスター（ユーザー）ID
             skip: スキップするレコード数
             limit: 取得する最大レコード数
+            mime_type: MIMEタイプでフィルタ（部分一致、例: "image/", "application/pdf"）
 
         Returns:
             tuple[list[ProjectFile], int]: ファイルリストと総件数のタプル
@@ -74,7 +80,13 @@ class ProjectFileCrudService(ProjectFileServiceBase):
         Raises:
             AuthorizationError: 権限が不足している場合
         """
-        logger.debug("ファイル一覧取得", project_id=str(project_id), skip=skip, limit=limit)
+        logger.debug(
+            "ファイル一覧取得",
+            project_id=str(project_id),
+            skip=skip,
+            limit=limit,
+            mime_type=mime_type,
+        )
 
         # 権限チェック（VIEWER以上）
         await self._check_member_role(
@@ -83,8 +95,8 @@ class ProjectFileCrudService(ProjectFileServiceBase):
             [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
         )
 
-        files = await self.repository.list_by_project(project_id, skip, limit)
-        total = await self.repository.count_by_project(project_id)
+        files = await self.repository.list_by_project(project_id, skip, limit, mime_type)
+        total = await self.repository.count_by_project_with_filter(project_id, mime_type)
 
         logger.debug("ファイル一覧取得完了", count=len(files), total=total)
 
@@ -197,7 +209,7 @@ class ProjectFileCrudService(ProjectFileServiceBase):
                 FileUsageItem(
                     usage_type="analysis_session",
                     target_id=session.id,
-                    target_name=session.name or f"セッション {session.id}",
+                    target_name=session.issue.name if session.issue else f"セッション {session.id}",
                     sheet_name=analysis_file.sheet_name,
                     used_at=analysis_file.created_at,
                 )

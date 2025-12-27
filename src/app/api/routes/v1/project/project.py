@@ -35,7 +35,7 @@ from app.api.core import CurrentUserAccountDep, ProjectServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
-from app.schemas import ProjectCreate, ProjectListResponse, ProjectResponse, ProjectUpdate
+from app.schemas import ProjectCreate, ProjectDetailResponse, ProjectListResponse, ProjectResponse, ProjectUpdate
 
 logger = get_logger(__name__)
 
@@ -117,7 +117,7 @@ async def list_projects(
 
 @projects_router.get(
     "/project/{project_id}",
-    response_model=ProjectResponse,
+    response_model=ProjectDetailResponse,
     summary="プロジェクト詳細取得",
     description="""
     プロジェクト情報を取得します（メンバーのみ）。
@@ -128,19 +128,28 @@ async def list_projects(
         - project_id: uuid - プロジェクトID（必須）
 
     レスポンス:
-        - ProjectResponse: プロジェクト情報
+        - ProjectDetailResponse: プロジェクト詳細情報
             - id (uuid): プロジェクトID
             - name (str): プロジェクト名
             - code (str): プロジェクトコード
             - description (str): プロジェクト説明
             - is_active (bool): アクティブフラグ
             - created_by (uuid): 作成者のユーザーID
+            - start_date (date | None): プロジェクト開始日
+            - end_date (date | None): プロジェクト終了日
             - created_at (datetime): 作成日時
             - updated_at (datetime): 更新日時
+            - stats (ProjectStatsResponse): プロジェクト統計情報
+                - member_count (int): メンバー数
+                - file_count (int): ファイル数
+                - session_count (int): 分析セッション数
+                - tree_count (int): ドライバーツリー数
 
     ステータスコード:
         - 200: 成功
         - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: プロジェクトが見つからない
     """,
 )
 @handle_service_errors
@@ -148,7 +157,7 @@ async def get_project(
     project_id: uuid.UUID,
     project_service: ProjectServiceDep,
     current_user: CurrentUserAccountDep,
-) -> ProjectResponse:
+) -> ProjectDetailResponse:
     """プロジェクト情報を取得します（メンバーのみ）。"""
     logger.info(
         "プロジェクト詳細取得",
@@ -186,6 +195,9 @@ async def get_project(
             details={"project_id": str(project_id)},
         )
 
+    # 統計情報を取得
+    stats = await project_service.get_project_stats(project_id)
+
     logger.info(
         "プロジェクト詳細を取得しました",
         user_id=str(current_user.id),
@@ -193,7 +205,12 @@ async def get_project(
         project_code=project.code,
     )
 
-    return ProjectResponse.model_validate(project)
+    # ProjectDetailResponseを構築
+    project_response = ProjectResponse.model_validate(project)
+    return ProjectDetailResponse(
+        **project_response.model_dump(),
+        stats=stats,
+    )
 
 
 @projects_router.get(

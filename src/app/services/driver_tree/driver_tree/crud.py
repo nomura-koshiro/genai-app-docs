@@ -14,6 +14,7 @@ from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.models.driver_tree import (
     DriverTree,
+    DriverTreePolicy,
     DriverTreeRelationship,
     DriverTreeRelationshipChild,
 )
@@ -493,7 +494,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
         if original_tree.root_node_id:
             original_nodes.add(original_tree.root_node_id)
 
-        # ノードを複製
+        # ノードを複製（施策も含む）
         for node_id in original_nodes:
             original_node = await self.node_repository.get(node_id)
             if original_node:
@@ -502,10 +503,23 @@ class DriverTreeCrudService(DriverTreeServiceBase):
                     node_type=original_node.node_type,
                     position_x=original_node.position_x,
                     position_y=original_node.position_y,
-                    value=original_node.value,
-                    source_cell=original_node.source_cell,
+                    data_frame_id=original_node.data_frame_id,
                 )
                 node_id_mapping[node_id] = new_node.id
+
+                # ノードに紐づく施策（ポリシー）を複製
+                original_policies = await self.policy_repository.list_by_node(node_id)
+                for policy in original_policies:
+                    new_policy = DriverTreePolicy(
+                        node_id=new_node.id,
+                        label=policy.label,
+                        value=policy.value,
+                        description=policy.description,
+                        cost=policy.cost,
+                        duration_months=policy.duration_months,
+                        status=policy.status,
+                    )
+                    self.db.add(new_policy)
 
         # ルートノードを更新
         if original_tree.root_node_id and original_tree.root_node_id in node_id_mapping:

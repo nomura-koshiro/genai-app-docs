@@ -132,7 +132,8 @@
       "Bash(git check-ignore:*)",
       "Bash(timeout 120 uv run python -m pytest:*)",
       "Bash(do echo \"=== $file ===\" grep -n \"^# ====\" \"$file\")",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(timeout 120 uv run python:*)"
     ],
     "deny": [],
     "ask": []

@@ -19,7 +19,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Project
-from app.schemas import ProjectCreate, ProjectUpdate
+from app.schemas import ProjectCreate, ProjectStatsResponse, ProjectUpdate
 from app.services.project.project.crud import ProjectCrudService
 
 
@@ -101,6 +101,13 @@ class ProjectService:
     ) -> bool:
         """ユーザーがプロジェクトにアクセスできるかチェックします。"""
         return await self._crud_service.check_user_access(project_id, user_id)
+
+    async def get_project_stats(
+        self,
+        project_id: uuid.UUID,
+    ) -> ProjectStatsResponse:
+        """プロジェクトの統計情報を取得します。"""
+        return await self._crud_service.get_project_stats(project_id)
 
 
 __all__ = ["ProjectService"]

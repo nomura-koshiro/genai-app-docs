@@ -65,6 +65,8 @@ user_accounts_router = APIRouter()
     クエリパラメータ:
         - skip: int - スキップ数（デフォルト: 0）
         - limit: int - 取得件数（デフォルト: 100）
+        - azure_oid: str | None - Azure AD Object IDで検索（完全一致）
+        - email: str | None - メールアドレスで検索（完全一致）
 
     レスポンス:
         - UserAccountListResponse: ユーザー一覧レスポンス
@@ -84,6 +86,8 @@ async def list_users(
     current_user: CurrentUserAccountDep,
     skip: int = Query(0, ge=0, description="スキップするレコード数"),
     limit: int = Query(100, ge=1, le=1000, description="取得する最大レコード数"),
+    azure_oid: str | None = Query(None, description="Azure AD Object IDで検索（完全一致）"),
+    email: str | None = Query(None, description="メールアドレスで検索（完全一致）"),
 ) -> UserAccountListResponse:
     """ユーザー一覧を取得します（管理者専用）。"""
     # ロールチェック: SystemAdminが必要
@@ -104,14 +108,32 @@ async def list_users(
         admin_user_id=str(current_user.id),
         skip=skip,
         limit=limit,
+        azure_oid=azure_oid,
+        email_filter=email,
         action="list_users",
     )
 
-    # ユーザー一覧を取得
-    users = await user_service.list_users(skip=skip, limit=limit)
-
-    # 総件数を正確に取得
-    total = await user_service.count_users()
+    # Azure OIDまたはメールアドレスで検索
+    if azure_oid:
+        try:
+            user = await user_service.get_user_by_azure_oid(azure_oid)
+            users = [user]
+            total = 1
+        except NotFoundError:
+            users = []
+            total = 0
+    elif email:
+        try:
+            user = await user_service.get_user_by_email(email)
+            users = [user]
+            total = 1
+        except NotFoundError:
+            users = []
+            total = 0
+    else:
+        # 通常の一覧取得
+        users = await user_service.list_users(skip=skip, limit=limit)
+        total = await user_service.count_users()
 
     logger.info(
         "ユーザー一覧を取得しました",

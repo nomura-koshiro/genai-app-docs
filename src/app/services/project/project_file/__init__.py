@@ -56,10 +56,15 @@ class ProjectFileService:
         return await self._crud_service.get_file(file_id, requester_id)
 
     async def list_project_files(
-        self, project_id: uuid.UUID, requester_id: uuid.UUID, skip: int = 0, limit: int = 100
+        self,
+        project_id: uuid.UUID,
+        requester_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        mime_type: str | None = None,
     ) -> tuple[list[ProjectFile], int]:
         """プロジェクトのファイル一覧を取得します。"""
-        return await self._crud_service.list_project_files(project_id, requester_id, skip, limit)
+        return await self._crud_service.list_project_files(project_id, requester_id, skip, limit, mime_type)
 
     async def delete_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> bool:
         """ファイルを削除します。"""

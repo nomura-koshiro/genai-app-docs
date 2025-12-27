@@ -70,8 +70,9 @@ class AnalysisSessionStepService(AnalysisSessionServiceBase):
         new_step = state.all_steps[-1]
 
         # dbに保存
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
         created_step = await self.step_repository.create(
-            snapshot_id=session.snapshots[session.current_snapshot].id,
+            snapshot_id=session.snapshots[current_snapshot_order].id,
             name=step_name,
             step_order=len(state.all_steps) - 1,  # 最後のインデックス
             type=step_type,
@@ -139,9 +140,10 @@ class AnalysisSessionStepService(AnalysisSessionServiceBase):
         session = await self._get_session_with_full_relations(session_id)
 
         # ステップを探す
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
         target_step = None
         step_index = -1
-        for step in session.snapshots[session.current_snapshot].steps:
+        for step in session.snapshots[current_snapshot_order].steps:
             if step.id == step_id:
                 target_step = step
                 step_index = step.step_order
@@ -249,7 +251,8 @@ class AnalysisSessionStepService(AnalysisSessionServiceBase):
                 break
         if snap_idx == -1 or step_idx == -1:
             raise NotFoundError("ステップが見つかりません")
-        if snap_idx != session.current_snapshot:
+        current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
+        if snap_idx != current_snapshot_order:
             raise ValueError("現在のスナップショットのステップのみ削除できます")
         if step_idx != len(session.snapshots[snap_idx].steps) - 1:
             raise ValueError("スナップショットの最後のステップのみ削除できます")

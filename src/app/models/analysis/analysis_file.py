@@ -15,6 +15,7 @@ from app.models.base import Base, TimestampMixin
 if TYPE_CHECKING:
     from app.models.analysis.analysis_session import AnalysisSession
     from app.models.project.project_file import ProjectFile
+    from app.models.user_account.user_account import UserAccount
 
 
 class AnalysisFile(Base, TimestampMixin):
@@ -29,6 +30,7 @@ class AnalysisFile(Base, TimestampMixin):
         sheet_name: シート名
         axis_config: 軸設定（JSONB）
         data: データ（JSONB）
+        added_by: 追加者ユーザーID（外部キー、任意）
     """
 
     __tablename__ = "analysis_file"
@@ -73,6 +75,13 @@ class AnalysisFile(Base, TimestampMixin):
         comment="データ",
     )
 
+    added_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="追加者ユーザーID",
+    )
+
     # リレーションシップ
     session: Mapped["AnalysisSession"] = relationship(
         "AnalysisSession",
@@ -83,6 +92,11 @@ class AnalysisFile(Base, TimestampMixin):
     project_file: Mapped["ProjectFile"] = relationship(
         "ProjectFile",
         back_populates="analysis_files",
+    )
+
+    adder: Mapped["UserAccount | None"] = relationship(
+        "UserAccount",
+        foreign_keys=[added_by],
     )
 
     def __repr__(self) -> str:

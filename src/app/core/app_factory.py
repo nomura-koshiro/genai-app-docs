@@ -27,6 +27,7 @@ from app.api.middlewares import (
 from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
     admin_category_router,
+    admin_graph_axis_router,
     admin_issue_router,
     admin_role_router,
     admin_validation_router,
@@ -180,9 +181,10 @@ def create_app() -> FastAPI:
 
     # 管理機能API
     app.include_router(admin_category_router, prefix="/api/v1", tags=["admin-category"])
+    app.include_router(admin_graph_axis_router, prefix="/api/v1", tags=["admin-graph-axis"])
+    app.include_router(admin_issue_router, prefix="/api/v1", tags=["admin-issue"])
     app.include_router(admin_role_router, prefix="/api/v1", tags=["admin-role"])
     app.include_router(admin_validation_router, prefix="/api/v1", tags=["admin-validation"])
-    app.include_router(admin_issue_router, prefix="/api/v1", tags=["admin-issue"])
 
     # ダッシュボードAPI
     app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["dashboard"])

@@ -1049,6 +1049,69 @@ async def get_chat_messages(
     )
 
 
+@analysis_sessions_router.delete(
+    "/project/{project_id}/analysis/session/{session_id}/messages/{chat_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="チャットメッセージ削除",
+    description="""
+    チャットメッセージを削除します。
+
+    **認証が必要です。**
+    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**
+
+    現在のスナップショットに関連付けられたチャットメッセージのみ削除できます。
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - session_id: uuid - セッションID（必須）
+        - chat_id: uuid - チャットID（必須）
+
+    レスポンス:
+        - なし（204 No Content）
+
+    ステータスコード:
+        - 204: 成功（削除完了）
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: セッションまたはチャットが見つからない
+        - 422: チャットが現在のスナップショットに属していない
+    """,
+)
+@handle_service_errors
+async def delete_chat_message(
+    member: ProjectMemberDep,
+    session_service: AnalysisSessionServiceDep,
+    project_id: uuid.UUID = Path(..., description="プロジェクトID"),
+    session_id: uuid.UUID = Path(..., description="分析セッションID"),
+    chat_id: uuid.UUID = Path(..., description="チャットID"),
+) -> None:
+    """チャットメッセージを削除します。
+
+    Args:
+        member (ProjectMemberDep): プロジェクトメンバー（権限チェック済み）
+        session_service (AnalysisSessionServiceDep): 分析セッションサービス
+        project_id (uuid.UUID): プロジェクトID
+        session_id (uuid.UUID): セッションID
+        chat_id (uuid.UUID): チャットID
+    """
+    logger.info(
+        "チャットメッセージ削除リクエスト",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        chat_id=str(chat_id),
+        action="delete_chat_message",
+    )
+
+    await session_service.delete_chat_message(project_id, session_id, chat_id)
+
+    logger.info(
+        "チャットメッセージを削除しました",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        chat_id=str(chat_id),
+    )
+
+
 @analysis_sessions_router.post(
     "/project/{project_id}/analysis/session/{session_id}/chat",
     response_model=AnalysisSessionDetailResponse,

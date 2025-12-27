@@ -61,9 +61,10 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         )
         response = []
         for s in sessions:
+            current_snapshot_order = s.current_snapshot.snapshot_order if s.current_snapshot else 0
             response.append(
                 AnalysisSessionResponse(
-                    current_snapshot=s.current_snapshot,
+                    current_snapshot=current_snapshot_order,
                     id=s.id,
                     project_id=s.project_id,
                     issue_id=s.issue_id,
@@ -101,12 +102,11 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         Raises:
             NotFoundError: 施策または課題が見つからない場合
         """
-        # セッションを作成
+        # セッションを作成（current_snapshot_idは初期スナップショット作成後に設定）
         session = await self.session_repository.create(
             project_id=project_id,
             issue_id=session_create.issue_id,
             creator_id=creator_id,
-            current_snapshot=0,
         )
 
         # 初期スナップショットを作成
@@ -114,6 +114,9 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
             session_id=session.id,
             snapshot_order=0,
         )
+
+        # セッションのcurrent_snapshot_idを設定
+        session = await self.session_repository.update(session, current_snapshot_id=snapshot.id)
 
         # issueを取得して課題のpromptを作成
         issue = await self.issue_repository.get(session_create.issue_id)
@@ -275,14 +278,16 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                 details={"session_id": str(session_id), "project_id": str(project_id)},
             )
 
-        # 新しいセッションを作成
+        # 新しいセッションを作成（current_snapshot_idはスナップショット複製後に設定）
         new_session = await self.session_repository.create(
             project_id=project_id,
             issue_id=original_session.issue_id,
             creator_id=creator_id,
-            current_snapshot=original_session.current_snapshot,
             status=original_session.status if hasattr(original_session, "status") else "draft",
         )
+
+        # 元のcurrent_snapshot_idを保存
+        original_current_snapshot_id = original_session.current_snapshot_id
 
         # スナップショットを複製
         original_snapshots = await self.snapshot_repository.list_by_session(session_id)
@@ -333,6 +338,11 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                 axis_config=file.axis_config,
                 data=file.data,
             )
+
+        # current_snapshot_idを設定（元のスナップショットに対応する新しいスナップショットID）
+        if original_current_snapshot_id and original_current_snapshot_id in snapshot_id_mapping:
+            new_current_snapshot_id = snapshot_id_mapping[original_current_snapshot_id]
+            new_session = await self.session_repository.update(new_session, current_snapshot_id=new_current_snapshot_id)
 
         # リレーションを取得してレスポンスを構築
         await self.db.commit()

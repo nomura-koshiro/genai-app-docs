@@ -22,6 +22,7 @@
 from app.api.core.dependencies import (
     # Admin管理サービス
     AdminCategoryServiceDep,
+    AdminGraphAxisServiceDep,
     AdminIssueServiceDep,
     AdminValidationServiceDep,
     # 分析サービス
@@ -46,6 +47,7 @@ from app.api.core.dependencies import (
     SuperuserAccountDep,
     UserServiceDep,
     get_admin_category_service,
+    get_admin_graph_axis_service,
     get_admin_issue_service,
     get_admin_validation_service,
     get_analysis_session_service,
@@ -77,10 +79,12 @@ __all__ = [
     # Admin Service Dependencies
     "AdminCategoryServiceDep",
     "get_admin_category_service",
-    "AdminValidationServiceDep",
-    "get_admin_validation_service",
+    "AdminGraphAxisServiceDep",
+    "get_admin_graph_axis_service",
     "AdminIssueServiceDep",
     "get_admin_issue_service",
+    "AdminValidationServiceDep",
+    "get_admin_validation_service",
     # UserAccount Service Dependencies
     "UserServiceDep",
     "get_user_service",

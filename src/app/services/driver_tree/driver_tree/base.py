@@ -22,6 +22,7 @@ from app.repositories.driver_tree import (
     DriverTreeCategoryRepository,
     DriverTreeFormulaRepository,
     DriverTreeNodeRepository,
+    DriverTreePolicyRepository,
     DriverTreeRepository,
 )
 
@@ -42,6 +43,7 @@ class DriverTreeServiceBase:
         self.category_repository = DriverTreeCategoryRepository(db)
         self.formula_repository = DriverTreeFormulaRepository(db)
         self.node_repository = DriverTreeNodeRepository(db)
+        self.policy_repository = DriverTreePolicyRepository(db)
 
     async def _get_tree_with_validation(
         self,

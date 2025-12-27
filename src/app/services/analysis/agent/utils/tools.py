@@ -1,6 +1,6 @@
 import json
 
-from langchain.tools import BaseTool
+from langchain_classic.tools import BaseTool
 from langchain_core.callbacks import BaseCallbackHandler
 
 from ..state import AnalysisState

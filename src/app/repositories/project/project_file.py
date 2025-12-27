@@ -99,13 +99,20 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
         )
         return result.scalar_one_or_none()
 
-    async def list_by_project(self, project_id: uuid.UUID, skip: int = 0, limit: int = 100) -> list[ProjectFile]:
+    async def list_by_project(
+        self,
+        project_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        mime_type: str | None = None,
+    ) -> list[ProjectFile]:
         """プロジェクトのファイル一覧を取得します（uploader情報含む）。
 
         Args:
             project_id: プロジェクトID
             skip: スキップするレコード数
             limit: 取得する最大レコード数
+            mime_type: MIMEタイプでフィルタ（部分一致、例: "image/", "application/pdf"）
 
         Returns:
             list[ProjectFile]: ファイルのリスト（アップロード日時の降順）
@@ -114,16 +121,40 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
             >>> files = await repo.list_by_project(project_id, skip=0, limit=10)
             >>> for file in files:
             ...     print(f"{file.original_filename} - {file.uploader.display_name}")
+            >>> # MIMEタイプでフィルタ
+            >>> images = await repo.list_by_project(project_id, mime_type="image/")
         """
-        result = await self.db.execute(
-            select(ProjectFile)
-            .options(selectinload(ProjectFile.uploader))  # uploader情報を含める
-            .where(ProjectFile.project_id == project_id)
-            .order_by(ProjectFile.uploaded_at.desc())
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(ProjectFile).options(selectinload(ProjectFile.uploader)).where(ProjectFile.project_id == project_id)
+
+        if mime_type:
+            query = query.where(ProjectFile.mime_type.ilike(f"{mime_type}%"))
+
+        query = query.order_by(ProjectFile.uploaded_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
         return list(result.scalars().all())
+
+    async def count_by_project_with_filter(
+        self,
+        project_id: uuid.UUID,
+        mime_type: str | None = None,
+    ) -> int:
+        """プロジェクトのファイル数をカウントします（フィルタ対応）。
+
+        Args:
+            project_id: プロジェクトID
+            mime_type: MIMEタイプでフィルタ（部分一致）
+
+        Returns:
+            int: ファイル数
+        """
+        query = select(func.count(ProjectFile.id)).where(ProjectFile.project_id == project_id)
+
+        if mime_type:
+            query = query.where(ProjectFile.mime_type.ilike(f"{mime_type}%"))
+
+        result = await self.db.execute(query)
+        return result.scalar() or 0
 
     async def delete(self, file_id: uuid.UUID) -> bool:
         """ファイルメタデータを削除します。

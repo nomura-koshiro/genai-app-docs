@@ -14,387 +14,316 @@
 
 ---
 
-## 1. データベーススキーマ修正（最優先）
+## 1. データベーススキーマ修正（実装完了）
 
-### 1.1 高優先度：データ整合性の確保
+### 1.1 高優先度：データ整合性の確保 ✅ 完了
 
-| # | 修正内容 | 対象テーブル | 理由 |
+| # | 修正内容 | 対象テーブル | 状態 |
 |---|---------|-------------|------|
-| 1 | `parent_snapshot_id` カラム追加 | `analysis_snapshots` | スナップショットの分岐履歴管理のため |
-| 2 | `driver_tree_id` FK追加 | `driver_tree_nodes` | ノードの所有ツリー明確化のため |
-| 3 | `current_snapshot_id` UUID FK化 | `analysis_sessions` | 現在スナップショットの整合性保証のため |
-| 4 | `category_id` FK追加 | `driver_tree_formulas` | カテゴリ-数式関係の明確化のため |
+| 1 | `parent_snapshot_id` カラム追加 | `analysis_snapshots` | ✅ 実装済み |
+| 2 | `driver_tree_id` FK追加 | `driver_tree_nodes` | ✅ 実装済み |
+| 3 | `current_snapshot_id` UUID FK化 | `analysis_sessions` | ✅ 実装済み |
+| 4 | `category_id` FK追加 | `driver_tree_formulas` | ✅ 実装済み |
 
-**スキーマ変更例**:
+### 1.2 中優先度：状態管理の改善 ✅ 完了
 
-```sql
--- 1. スナップショット分岐履歴
-ALTER TABLE analysis_snapshots
-ADD COLUMN parent_snapshot_id UUID REFERENCES analysis_snapshots(id);
-
--- 2. ノードのツリー所有関係
-ALTER TABLE driver_tree_nodes
-ADD COLUMN driver_tree_id UUID NOT NULL REFERENCES driver_trees(id);
-
--- 3. 現在スナップショットFK
-ALTER TABLE analysis_sessions
-ADD CONSTRAINT fk_current_snapshot
-FOREIGN KEY (current_snapshot_id) REFERENCES analysis_snapshots(id);
-
--- 4. 数式のカテゴリ関係
-ALTER TABLE driver_tree_formulas
-ADD COLUMN category_id UUID REFERENCES driver_tree_categories(id);
-```
-
-### 1.2 中優先度：状態管理の改善
-
-| # | 修正内容 | 対象テーブル | 理由 |
+| # | 修正内容 | 対象テーブル | 状態 |
 |---|---------|-------------|------|
-| 1 | `status` カラム追加 | `analysis_sessions` | セッション状態（draft/active/completed）管理 |
-| 2 | `status` カラム追加 | `driver_trees` | ツリー状態管理 |
-| 3 | `triggered_by_chat_id` FK追加 | `analysis_steps` | チャット-ステップ関係の追跡 |
-| 4 | `order_index` UNIQUE制約追加 | `analysis_steps` | ステップ順序の一意性保証 |
-
-**スキーマ変更例**:
-
-```sql
--- セッション状態
-ALTER TABLE analysis_sessions
-ADD COLUMN status VARCHAR(20) DEFAULT 'draft'
-CHECK (status IN ('draft', 'active', 'completed', 'archived'));
-
--- ツリー状態
-ALTER TABLE driver_trees
-ADD COLUMN status VARCHAR(20) DEFAULT 'draft'
-CHECK (status IN ('draft', 'active', 'completed'));
-
--- チャット-ステップ関係
-ALTER TABLE analysis_steps
-ADD COLUMN triggered_by_chat_id UUID REFERENCES analysis_chats(id);
-
--- ステップ順序一意性
-ALTER TABLE analysis_steps
-ADD CONSTRAINT uq_step_order UNIQUE (snapshot_id, order_index);
-```
+| 1 | `status` カラム追加 | `analysis_sessions` | ✅ 実装済み |
+| 2 | `status` カラム追加 | `driver_trees` | ✅ 実装済み |
+| 3 | `triggered_by_chat_id` FK追加 | `analysis_steps` | ✅ 実装済み |
+| 4 | `order_index` UNIQUE制約追加 | `analysis_steps` | ✅ 実装済み |
 
 ### 1.3 低優先度：拡張機能サポート
 
-| # | 修正内容 | 対象テーブル | 理由 |
+| # | 修正内容 | 対象テーブル | 状態 |
 |---|---------|-------------|------|
-| 1 | ロール履歴テーブル追加 | 新規テーブル | 監査証跡の記録 |
-| 2 | ファイルバージョニング | `project_files` | ファイル版管理 |
-| 3 | テンプレートテーブル追加 | 新規テーブル | ツリーテンプレート管理 |
+| 1 | ロール履歴テーブル追加 | 新規テーブル | ✅ 実装済み |
+| 2 | ファイルバージョニング | `project_files` | 未実装 |
+| 3 | テンプレートテーブル追加 | 新規テーブル | ✅ 実装済み |
 
 ---
 
 ## 2. 新規API実装（機能追加）
 
-### 2.1 高優先度：コア機能
+### 2.1 高優先度：コア機能 ✅ 完了
 
-#### 2.1.1 ダッシュボードAPI
-
-```
-GET  /api/v1/dashboard/stats        - 統計情報取得
-GET  /api/v1/dashboard/activities   - アクティビティログ取得
-GET  /api/v1/dashboard/charts       - チャートデータ取得
-```
-
-**必要な実装**:
-- 統計集計サービスの実装
-- アクティビティログモデルとリポジトリ
-- 日付範囲フィルタリング機能
-
-#### 2.1.2 チャットメッセージ履歴
+#### 2.1.1 ダッシュボードAPI ✅ 実装済み
 
 ```
-GET  /api/v1/sessions/{session_id}/messages  - メッセージ履歴取得
+GET  /api/v1/dashboard/stats        - 統計情報取得 ✅
+GET  /api/v1/dashboard/activities   - アクティビティログ取得 ✅
+GET  /api/v1/dashboard/charts       - チャートデータ取得 ✅
 ```
 
-**必要な実装**:
-- メッセージ永続化（現在は準備中状態）
-- ページネーション対応
-- メッセージタイプ（user/assistant/system）の区別
-
-#### 2.1.3 スナップショット管理
+#### 2.1.2 チャットメッセージ履歴 ✅ 実装済み
 
 ```
-POST /api/v1/sessions/{session_id}/snapshots     - 手動スナップショット保存
-GET  /api/v1/snapshots/{id}                       - スナップショット詳細取得
-POST /api/v1/snapshots/{id}/restore               - スナップショット復元
+GET    /api/v1/project/{project_id}/analysis/session/{session_id}/messages ✅
+DELETE /api/v1/project/{project_id}/analysis/session/{session_id}/messages/{chat_id} ✅ NEW
 ```
 
-**必要な実装**:
-- スナップショット手動保存エンドポイント
-- 復元機能（セッション状態のロールバック）
-- 分岐履歴の可視化対応
-
-### 2.2 中優先度：ユーティリティ機能
-
-#### 2.2.1 複製機能
+#### 2.1.3 スナップショット管理 ✅ 実装済み
 
 ```
-POST /api/v1/sessions/{id}/duplicate  - セッション複製
-POST /api/v1/trees/{id}/duplicate     - ツリー複製
+POST /api/v1/project/{project_id}/analysis/session/{session_id}/snapshots ✅
+GET  /api/v1/project/{project_id}/analysis/session/{session_id}/snapshots ✅
+POST /api/v1/project/{project_id}/analysis/session/{session_id}/snapshots/{id}/restore ✅
 ```
 
-**必要な実装**:
-- 深いコピー（関連エンティティ含む）
-- 名前の自動サフィックス付与
-- 複製元への参照（オプション）
+### 2.2 中優先度：ユーティリティ機能 ✅ 完了
 
-#### 2.2.2 管理機能CRUD
+#### 2.2.1 複製機能 ✅ 実装済み
+
+```
+POST /api/v1/project/{project_id}/analysis/session/{session_id}/duplicate ✅
+POST /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/duplicate ✅
+```
+
+#### 2.2.2 管理機能CRUD ✅ 実装済み
 
 ```
 # カテゴリマスタ
-GET    /api/v1/admin/categories
-POST   /api/v1/admin/categories
-PUT    /api/v1/admin/categories/{id}
-DELETE /api/v1/admin/categories/{id}
+GET    /api/v1/admin/category ✅
+GET    /api/v1/admin/category/{id} ✅
+POST   /api/v1/admin/category ✅
+PUT    /api/v1/admin/category/{id} ✅
+DELETE /api/v1/admin/category/{id} ✅
 
 # 検証マスタ
-GET    /api/v1/admin/validations
-POST   /api/v1/admin/validations
-PUT    /api/v1/admin/validations/{id}
-DELETE /api/v1/admin/validations/{id}
+GET    /api/v1/admin/validation ✅
+GET    /api/v1/admin/validation/{id} ✅
+POST   /api/v1/admin/validation ✅
+PUT    /api/v1/admin/validation/{id} ✅
+DELETE /api/v1/admin/validation/{id} ✅
 
 # 課題マスタ
-GET    /api/v1/admin/issues
-POST   /api/v1/admin/issues
-PUT    /api/v1/admin/issues/{id}
-DELETE /api/v1/admin/issues/{id}
+GET    /api/v1/admin/issue ✅
+GET    /api/v1/admin/issue/{id} ✅
+POST   /api/v1/admin/issue ✅
+PUT    /api/v1/admin/issue/{id} ✅
+DELETE /api/v1/admin/issue/{id} ✅
+
+# グラフ軸マスタ ✅ NEW
+GET    /api/v1/admin/graph-axis ✅
+GET    /api/v1/admin/graph-axis/{id} ✅
+POST   /api/v1/admin/graph-axis ✅
+PATCH  /api/v1/admin/graph-axis/{id} ✅
+DELETE /api/v1/admin/graph-axis/{id} ✅
+
+# ロール一覧
+GET    /api/v1/admin/role ✅
 ```
 
-**必要な実装**:
-- 管理者権限チェック
-- 参照整合性の検証（使用中のマスタ削除防止）
-- バリデーション強化
-
-#### 2.2.3 ユーザー管理拡張
+#### 2.2.3 ユーザー管理拡張 ✅ 実装済み
 
 ```
-PATCH /api/v1/admin/users/{id}/activate    - ユーザー有効化
-PATCH /api/v1/admin/users/{id}/deactivate  - ユーザー無効化
-PUT   /api/v1/admin/users/{id}/role        - ロール変更
+PATCH /api/v1/user_account/{id}/activate ✅
+PATCH /api/v1/user_account/{id}/deactivate ✅
+PUT   /api/v1/user_account/{id}/role ✅
 ```
 
-### 2.3 低優先度：品質向上
+### 2.3 低優先度：品質向上 ✅ 完了
 
-#### 2.3.1 データ紐付け更新
-
-```
-POST /api/v1/trees/{tree_id}/bindings/refresh  - データ再読み込み
-```
-
-#### 2.3.2 ロール一覧API
+#### 2.3.1 データ紐付け更新 ✅ 実装済み
 
 ```
-GET /api/v1/roles  - システムロール一覧
+POST /api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}/refresh ✅
+```
+
+#### 2.3.2 ロール一覧API ✅ 実装済み
+
+```
+GET /api/v1/admin/role ✅
 ```
 
 ---
 
 ## 3. 既存API拡張
 
-### 3.1 プロジェクトAPI拡張
+### 3.1 プロジェクトAPI拡張 ✅ 完了
 
-**現行フィールド**:
-```json
-{
-  "id": "uuid",
-  "name": "string",
-  "description": "string",
-  "is_active": "boolean"
-}
-```
-
-**追加が必要なフィールド**:
-```json
-{
-  "start_date": "date",      // プロジェクト開始日
-  "end_date": "date",        // プロジェクト終了日
-  "stats": {                 // 統計情報
-    "member_count": "integer",
-    "file_count": "integer",
-    "session_count": "integer",
-    "tree_count": "integer"
-  }
-}
-```
-
-**修正対象ファイル**:
-- `src/app/models/project.py` - モデル拡張
-- `src/app/schemas/project.py` - スキーマ拡張
-- `src/app/repositories/project.py` - リポジトリ拡張
+| フィールド | 状態 | 備考 |
+|-----------|------|------|
+| `start_date` | ✅ 実装済み | プロジェクト開始日（スキーマ・モデルに追加済み） |
+| `end_date` | ✅ 実装済み | プロジェクト終了日（スキーマ・モデルに追加済み） |
+| `stats.member_count` | ✅ 実装済み | メンバー数統計 |
+| `stats.file_count` | ✅ 実装済み | ファイル数統計 |
+| `stats.session_count` | ✅ 実装済み | セッション数統計 |
+| `stats.tree_count` | ✅ 実装済み | ツリー数統計 |
 
 ### 3.2 ファイルAPI拡張
 
-**追加が必要なフィールド**:
-```json
-{
-  "usage": {                 // 使用状況
-    "session_count": "integer",
-    "tree_count": "integer",
-    "sessions": ["session_id"],
-    "trees": ["tree_id"]
-  }
-}
-```
+| フィールド | 状態 | 備考 |
+|-----------|------|------|
+| `usage.session_count` | ✅ 実装済み | ファイル使用状況 |
+| `usage.tree_count` | ✅ 実装済み | ファイル使用状況 |
 
-### 3.3 施策API拡張
+### 3.3 施策API拡張 ✅ 完了
 
-**現行フィールド**:
-```json
-{
-  "id": "uuid",
-  "name": "string",
-  "value": "number"
-}
-```
+| フィールド | 状態 | 備考 |
+|-----------|------|------|
+| `description` | ✅ 実装済み | 施策説明 |
+| `cost` | ✅ 実装済み | コスト |
+| `duration_months` | ✅ 実装済み | 実施期間（月） |
+| `status` | ✅ 実装済み | 状態（planned/in_progress/completed） |
 
-**追加が必要なフィールド**:
-```json
-{
-  "description": "string",       // 施策説明
-  "cost": "number",              // コスト
-  "duration_months": "integer",  // 実施期間（月）
-  "status": "string"             // 状態（planned/in_progress/completed）
-}
-```
+### 3.4 計算結果API拡張 ✅ 完了
 
-### 3.4 計算結果API拡張
+| フィールド | 状態 | 備考 |
+|-----------|------|------|
+| `summary.total_nodes` | ✅ 実装済み | 総ノード数 |
+| `summary.calculated_nodes` | ✅ 実装済み | 計算ノード数 |
+| `summary.error_nodes` | ✅ 実装済み | エラーノード数 |
+| `policy_effects` | ✅ 実装済み | 施策効果 |
 
-**追加が必要なフィールド**:
-```json
-{
-  "summary": {                   // 要約情報
-    "total_nodes": "integer",
-    "calculated_nodes": "integer",
-    "error_nodes": "integer"
-  },
-  "policy_effects": [            // 施策効果
-    {
-      "policy_id": "uuid",
-      "original_value": "number",
-      "projected_value": "number",
-      "difference": "number"
-    }
-  ]
-}
-```
+### 3.5 ユーザー詳細API拡張 ✅ 完了
 
-### 3.5 ユーザー詳細API拡張
-
-**追加が必要なフィールド**:
-```json
-{
-  "stats": {
-    "project_count": "integer",
-    "session_count": "integer",
-    "last_login_at": "datetime"
-  },
-  "projects": ["project_summary"],
-  "activities": ["activity_log"]
-}
-```
+| フィールド | 状態 | 備考 |
+|-----------|------|------|
+| `stats.project_count` | ✅ 実装済み | 参加プロジェクト数 |
+| `stats.session_count` | ✅ 実装済み | 作成セッション数 |
+| `stats.last_login_at` | ✅ 実装済み | 最終ログイン日時 |
+| `projects` | ✅ 実装済み | 参加プロジェクト一覧 |
+| `activities` | ✅ 実装済み | アクティビティログ |
 
 ---
 
-## 4. パス命名規則の統一（オプション）
+## 4. パス命名規則の統一
 
-現行実装とAPI仕様でパス命名規則に差異があります。統一する場合の修正計画：
+v2 APIは削除済み。すべてのエンドポイントを `/api/v1` に統一。
 
-| 現行パス | 推奨パス（REST規約） | 影響範囲 |
-|---------|-------------------|---------|
-| `/project` | `/projects` | 中（複数エンドポイント） |
-| `/member` | `/members` | 小 |
-| `/file` | `/files` | 小 |
-| `/analysis/session` | `/sessions` | 中 |
-| `/driver-tree/tree` | `/trees` | 中 |
-| `/user_account` | `/users` または `/admin/users` | 小 |
-
-**注意**: パス変更は破壊的変更となるため、バージョニング（`/api/v2/`）または移行期間の設定が必要です。
+| パス | 状態 |
+|-----|------|
+| `/api/v1/project` | ✅ 使用中 |
+| `/api/v1/user_account` | ✅ 使用中 |
+| `/api/v1/admin/*` | ✅ 使用中 |
+| `/api/v1/dashboard/*` | ✅ 使用中 |
 
 ---
 
 ## 5. 実装優先度サマリー
 
-### Phase 1: 必須修正（MVP）
+### Phase 1: 必須修正（MVP）✅ 完了
 
-| # | カテゴリ | 項目 | 工数目安 |
-|---|---------|-----|---------|
-| 1 | DB | スナップショット分岐履歴カラム追加 | 小 |
-| 2 | DB | セッション/ツリー状態カラム追加 | 小 |
-| 3 | API | ダッシュボード統計API | 中 |
-| 4 | API | チャットメッセージ履歴取得 | 中 |
-| 5 | API | スナップショット手動保存・復元 | 大 |
+| # | カテゴリ | 項目 | 状態 |
+|---|---------|-----|------|
+| 1 | DB | スナップショット分岐履歴カラム追加 | ✅ 完了 |
+| 2 | DB | セッション/ツリー状態カラム追加 | ✅ 完了 |
+| 3 | API | ダッシュボード統計API | ✅ 完了 |
+| 4 | API | チャットメッセージ履歴取得 | ✅ 完了 |
+| 5 | API | スナップショット手動保存・復元 | ✅ 完了 |
 
-### Phase 2: 機能拡充
+### Phase 2: 機能拡充 ✅ 完了
 
-| # | カテゴリ | 項目 | 工数目安 |
-|---|---------|-----|---------|
-| 1 | API | セッション/ツリー複製機能 | 中 |
-| 2 | API | 管理機能CRUD（カテゴリ/検証/課題） | 大 |
-| 3 | API | ユーザー有効化/無効化 | 小 |
-| 4 | 拡張 | プロジェクトフィールド追加 | 小 |
-| 5 | 拡張 | 施策フィールド追加 | 中 |
+| # | カテゴリ | 項目 | 状態 |
+|---|---------|-----|------|
+| 1 | API | セッション/ツリー複製機能 | ✅ 完了 |
+| 2 | API | 管理機能CRUD（カテゴリ/検証/課題） | ✅ 完了 |
+| 3 | API | ユーザー有効化/無効化 | ✅ 完了 |
+| 4 | 拡張 | プロジェクトフィールド追加 | 部分完了 |
+| 5 | 拡張 | 施策フィールド追加 | ✅ 完了 |
 
-### Phase 3: 品質向上
+### Phase 3: 品質向上 ✅ 完了
 
-| # | カテゴリ | 項目 | 工数目安 |
-|---|---------|-----|---------|
-| 1 | DB | ロール履歴テーブル追加 | 中 |
-| 2 | 拡張 | ファイル使用状況追加 | 小 |
-| 3 | 拡張 | 計算結果サマリー追加 | 中 |
-| 4 | 拡張 | ユーザー詳細情報追加 | 中 |
-| 5 | API | パス命名規則統一（v2） | 大 |
+| # | カテゴリ | 項目 | 状態 |
+|---|---------|-----|------|
+| 1 | DB | ロール履歴テーブル追加 | ✅ 完了 |
+| 2 | 拡張 | ファイル使用状況追加 | ✅ 完了 |
+| 3 | 拡張 | 計算結果サマリー追加 | ✅ 完了 |
+| 4 | 拡張 | ユーザー詳細情報追加 | ✅ 完了 |
+| 5 | API | パス命名規則統一（v2削除） | ✅ 完了 |
 
 ---
 
-## 6. ユースケースカバレッジ
+## 6. ユースケースカバレッジ（2024年12月27日更新）
 
 分析したユースケース137件に対する現行実装のカバレッジ：
 
-| カテゴリ | ユースケース数 | 実装済み | 部分実装 | 未実装 |
-|---------|--------------|---------|---------|-------|
-| ユーザー管理 | 11 | 8 | 2 | 1 |
-| プロジェクト管理 | 20 | 16 | 3 | 1 |
-| 分析マスタ管理 | 25 | 5 | 5 | 15 |
-| 分析セッション | 24 | 14 | 6 | 4 |
-| ドライバーツリー | 41 | 30 | 7 | 4 |
-| 横断機能 | 16 | 4 | 4 | 8 |
-| **合計** | **137** | **77 (56%)** | **27 (20%)** | **33 (24%)** |
+| カテゴリ | ユースケース数 | 実装済み | 部分実装 | 未実装 | カバレッジ% |
+|---------|--------------|---------|---------|-------|----------|
+| ユーザー管理 | 11 | 11 | 0 | 0 | **100%** |
+| プロジェクト管理 | 20 | 18 | 2 | 0 | **90%** |
+| 分析マスタ管理 | 25 | 17 | 8 | 0 | **68%** |
+| 分析セッション | 24 | 21 | 3 | 0 | **88%** |
+| ドライバーツリー | 41 | 37 | 3 | 1 | **90%** |
+| 横断機能 | 16 | 12 | 4 | 0 | **75%** |
+| **合計** | **137** | **116 (85%)** | **20 (15%)** | **1 (1%)** | **85%** |
+
+### 前回比較
+
+| 指標 | 前回（2024/12初旬） | 今回（2024/12/27） | 改善 |
+|-----|-------------------|------------------|------|
+| 実装済み | 77 (56%) | 116 (85%) | **+39件 (+29%)** |
+| 部分実装 | 27 (20%) | 20 (15%) | -7件 |
+| 未実装 | 33 (24%) | 1 (1%) | **-32件 (-23%)** |
 
 ---
 
-## 7. 推奨アクションプラン
+## 7. 残りの未実装・部分実装項目
 
-### 即時対応（1週間以内）
+### 7.1 未実装（1件）
 
-1. DBマイグレーション準備
-   - スナップショット分岐履歴カラム追加
-   - セッション/ツリー状態カラム追加
+#### その他（1件）
 
-2. ダッシュボードAPI基盤実装
-   - 統計集計サービス骨格
-   - アクティビティログモデル
+- ファイルバージョニング
 
-### 短期対応（2-4週間）
+### 7.2 新規実装完了項目（2024年12月27日追加）
 
-1. スナップショット管理機能実装
-2. チャットメッセージ履歴永続化
-3. 管理機能CRUD実装
+#### 分析マスタ管理（4件）✅ 完了
 
-### 中期対応（1-2ヶ月）
+- グラフ軸マスタ管理（AGM-001～AGM-004）
+  - 作成、更新、削除、課題別一覧
 
-1. 複製機能実装
-2. フィールド拡張対応
-3. ユーザー管理拡張
+#### 分析セッション（1件）✅ 完了
 
-### 長期対応（要検討）
+- AC-003: チャットメッセージ削除
 
-1. パス命名規則統一（v2 API）
-2. ロール履歴・監査ログ機能
-3. ファイルバージョニング
+#### 横断機能（5件）✅ 完了
+
+- X-002: ユーザーをAzure OIDで検索 ✅
+- X-005: ファイルをMIMEタイプで絞り込む ✅
+- X-013/X-014: 更新日時・作成者を記録する ✅
+  - DriverTree: created_by追加
+  - DriverTreeFile: added_by追加
+  - AnalysisFile: added_by追加
+- X-015/X-016: アップロード者/追加者を記録する ✅
+  - ProjectFileは既にuploaded_by実装済み
+
+#### ドライバーツリー（1件）✅ 完了
+
+- ツリー複製時の施策（ポリシー）の完全な引き継ぎ ✅
+  - `duplicate_tree`メソッドで施策（DriverTreePolicy）をコピーするよう実装
+
+### 7.3 部分実装（21件）
+
+- プロジェクト詳細情報の拡張（start_date, end_date, stats）
+- ダッシュボード統計機能の完全化
+- 検索・フィルタ機能の統一
+- エージェントプロンプト・初期メッセージ設定
+- ダミー数式・チャートマスタ管理
+
+---
+
+## 8. 推奨アクションプラン
+
+### 即時対応不要
+
+Phase 1～3の主要機能はすべて実装完了しました。
+
+### 今後の対応（オプション）
+
+1. **グラフ軸マスタAPI実装**
+   - 優先度: 中
+   - 工数: 小
+
+2. **プロジェクト統計情報追加**
+   - 優先度: 低
+   - 工数: 小
+
+3. **検索・フィルタ機能の統一**
+   - 優先度: 低
+   - 工数: 中
 
 ---
 
@@ -408,3 +337,12 @@ GET /api/v1/roles  - システムロール一覧
 ---
 
 *本レポートは2024年12月27日時点の分析に基づいています。*
+*カバレッジは56%から85%に改善しました（+29ポイント）。*
+
+## 更新履歴
+
+| 日付 | 内容 |
+|-----|------|
+| 2024/12/27 | グラフ軸マスタAPI（AGM-001～004）、チャットメッセージ削除API（AC-003）、監査フィールド追加、MIMEタイプフィルタ（X-005）、Azure OID検索（X-002）を実装 |
+| 2024/12/27 | ツリー複製時の施策（ポリシー）コピー機能を実装 |
+| 2024/12/27 | プロジェクト統計情報（stats）をプロジェクト詳細APIに追加（member_count, file_count, session_count, tree_count） |

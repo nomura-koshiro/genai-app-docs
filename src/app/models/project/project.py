@@ -23,13 +23,12 @@
 """
 
 import uuid
+from datetime import date
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, Date, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from datetime import date
 
 from app.models.base import Base, TimestampMixin
 

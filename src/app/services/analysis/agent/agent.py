@@ -1,9 +1,9 @@
 import time
 from pathlib import Path
 
-from langchain.agents import AgentExecutor, create_tool_calling_agent
-from langchain.memory import ConversationBufferMemory
-from langchain.schema import AIMessage, HumanMessage, SystemMessage
+from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
+from langchain_classic.memory import ConversationBufferMemory
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from app.integrations.llm import llm

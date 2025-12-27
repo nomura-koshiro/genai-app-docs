@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.driver_tree.driver_tree_node import DriverTreeNode
     from app.models.driver_tree.driver_tree_relationship import DriverTreeRelationship
     from app.models.project.project import Project
+    from app.models.user_account.user_account import UserAccount
 
 
 class DriverTree(Base, TimestampMixin):
@@ -32,6 +33,7 @@ class DriverTree(Base, TimestampMixin):
         root_node_id: ルートノードID（外部キー、任意）
         formula_id: 数式テンプレートID（外部キー、任意）
         status: ツリー状態（draft/active/completed）
+        created_by: 作成者ID（外部キー、任意）
     """
 
     __tablename__ = "driver_tree"
@@ -86,6 +88,13 @@ class DriverTree(Base, TimestampMixin):
         comment="ツリー状態（draft/active/completed）",
     )
 
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="作成者ユーザーID",
+    )
+
     # リレーションシップ
     project: Mapped["Project"] = relationship(
         "Project",
@@ -112,6 +121,11 @@ class DriverTree(Base, TimestampMixin):
         "DriverTreeRelationship",
         back_populates="driver_tree",
         cascade="all, delete-orphan",
+    )
+
+    creator: Mapped["UserAccount | None"] = relationship(
+        "UserAccount",
+        foreign_keys=[created_by],
     )
 
     # インデックス・制約

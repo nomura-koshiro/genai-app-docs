@@ -12,7 +12,13 @@ from app.api.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import Project, ProjectMember, ProjectRole
-from app.schemas import ProjectCreate, ProjectUpdate
+from app.repositories import (
+    AnalysisSessionRepository,
+    DriverTreeRepository,
+    ProjectFileRepository,
+    ProjectMemberRepository,
+)
+from app.schemas import ProjectCreate, ProjectStatsResponse, ProjectUpdate
 from app.services.project.project.base import ProjectServiceBase
 
 logger = get_logger(__name__)
@@ -417,3 +423,53 @@ class ProjectCrudService(ProjectServiceBase):
         member = result.scalar_one_or_none()
 
         return member is not None
+
+    @measure_performance
+    async def get_project_stats(
+        self,
+        project_id: uuid.UUID,
+    ) -> ProjectStatsResponse:
+        """プロジェクトの統計情報を取得します。
+
+        Args:
+            project_id: プロジェクトのUUID
+
+        Returns:
+            ProjectStatsResponse: プロジェクト統計情報
+                - member_count: メンバー数
+                - file_count: ファイル数
+                - session_count: 分析セッション数
+                - tree_count: ドライバーツリー数
+        """
+        logger.debug(
+            "プロジェクト統計情報を取得中",
+            project_id=str(project_id),
+            action="get_project_stats",
+        )
+
+        # 各リポジトリのカウントを取得
+        member_repo = ProjectMemberRepository(self.db)
+        file_repo = ProjectFileRepository(self.db)
+        session_repo = AnalysisSessionRepository(self.db)
+        tree_repo = DriverTreeRepository(self.db)
+
+        member_count = await member_repo.count_by_project(project_id)
+        file_count = await file_repo.count_by_project(project_id)
+        session_count = await session_repo.count_by_project(project_id)
+        tree_count = await tree_repo.count_by_project(project_id)
+
+        logger.debug(
+            "プロジェクト統計情報を取得しました",
+            project_id=str(project_id),
+            member_count=member_count,
+            file_count=file_count,
+            session_count=session_count,
+            tree_count=tree_count,
+        )
+
+        return ProjectStatsResponse(
+            member_count=member_count,
+            file_count=file_count,
+            session_count=session_count,
+            tree_count=tree_count,
+        )

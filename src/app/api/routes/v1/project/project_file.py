@@ -13,7 +13,7 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, File, UploadFile, status
+from fastapi import APIRouter, File, Query, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.api.core import CurrentUserAccountDep, ProjectFileServiceDep
@@ -52,6 +52,7 @@ project_files_router = APIRouter()
     クエリパラメータ:
         - skip: int - スキップするファイル数（デフォルト: 0）
         - limit: int - 返す最大ファイル数（デフォルト: 100）
+        - mime_type: str | None - MIMEタイプでフィルタ（部分一致、例: "image/", "application/pdf"）
 
     レスポンス:
         - ProjectFileListResponse: プロジェクトファイル一覧レスポンス
@@ -82,6 +83,7 @@ async def list_files(
     current_user: CurrentUserAccountDep,
     skip: int = 0,
     limit: int = 100,
+    mime_type: str | None = Query(None, description="MIMEタイプでフィルタ（部分一致、例: 'image/', 'application/pdf'）"),
 ) -> ProjectFileListResponse:
     """プロジェクトのファイル一覧を取得します。"""
     logger.info(
@@ -90,12 +92,13 @@ async def list_files(
         user_id=str(current_user.id),
         skip=skip,
         limit=limit,
+        mime_type=mime_type,
         action="list_files",
     )
 
     user_id = current_user.id
 
-    files, total = await file_service.list_project_files(project_id, user_id, skip, limit)
+    files, total = await file_service.list_project_files(project_id, user_id, skip, limit, mime_type)
 
     file_responses = [ProjectFileResponse.model_validate(f) for f in files]
 

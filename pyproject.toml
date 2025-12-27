@@ -13,13 +13,14 @@ dependencies = [
     # Web Framework
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.32.0",
-    # AI/LangChain
-    "langchain>=0.3.0",
-    "langgraph>=0.2.0",
+    # AI/LangChain (updated to v1.x - December 2025)
+    "langchain>=1.2.0",
+    "langchain-classic>=1.0.0",  # Legacy AgentExecutor support
+    "langgraph>=0.3.0",
     "langserve>=0.3.0",
-    "langsmith>=0.2.0",
+    "langsmith>=0.4.0",
     "langchain-anthropic>=0.3.0",
-    "langchain-openai>=0.2.0",
+    "langchain-openai>=0.3.0",
     "langchain-community>=0.3.0",
     # Database
     "sqlalchemy>=2.0.0",

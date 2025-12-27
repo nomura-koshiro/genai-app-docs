@@ -54,8 +54,10 @@ from app.schemas.common import HealthResponse, MessageResponse, ProblemDetails
 # )
 from app.schemas.project.project import (
     ProjectCreate,
+    ProjectDetailResponse,
     ProjectListResponse,
     ProjectResponse,
+    ProjectStatsResponse,
     ProjectUpdate,
 )
 from app.schemas.project.project_file import (
@@ -156,8 +158,10 @@ __all__ = [
     "AnalysisDummyChartUpdate",
     # プロジェクトスキーマ
     "ProjectCreate",
+    "ProjectDetailResponse",
     "ProjectListResponse",
     "ProjectResponse",
+    "ProjectStatsResponse",
     "ProjectUpdate",
     # プロジェクトファイルスキーマ
     "ProjectFileUploadRequest",

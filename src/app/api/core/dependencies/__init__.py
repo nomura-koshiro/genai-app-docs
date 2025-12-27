@@ -42,9 +42,11 @@
 # Admin管理サービス依存性
 from app.api.core.dependencies.admin import (
     AdminCategoryServiceDep,
+    AdminGraphAxisServiceDep,
     AdminIssueServiceDep,
     AdminValidationServiceDep,
     get_admin_category_service,
+    get_admin_graph_axis_service,
     get_admin_issue_service,
     get_admin_validation_service,
 )
@@ -121,11 +123,13 @@ __all__ = [
     "get_db",
     # Admin管理サービス依存性
     "AdminCategoryServiceDep",
-    "AdminValidationServiceDep",
+    "AdminGraphAxisServiceDep",
     "AdminIssueServiceDep",
+    "AdminValidationServiceDep",
     "get_admin_category_service",
-    "get_admin_validation_service",
+    "get_admin_graph_axis_service",
     "get_admin_issue_service",
+    "get_admin_validation_service",
     # UserAccountサービス依存性
     "UserServiceDep",
     "RoleHistoryServiceDep",
