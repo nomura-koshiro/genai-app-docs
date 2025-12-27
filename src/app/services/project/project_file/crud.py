@@ -11,6 +11,7 @@ from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.models import ProjectFile, ProjectRole
+from app.schemas.project.project_file import FileUsageItem, ProjectFileUsageResponse
 from app.services.project.project_file.base import ProjectFileServiceBase
 
 logger = get_logger(__name__)
@@ -154,3 +155,81 @@ class ProjectFileCrudService(ProjectFileServiceBase):
         logger.info("ファイル削除完了", file_id=str(file_id))
 
         return True
+
+    @measure_performance
+    async def get_file_usage(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> ProjectFileUsageResponse:
+        """ファイルの使用状況を取得します。
+
+        このメソッドは、ファイルがどの分析セッションやドライバーツリーで使用されているかを返します。
+
+        Args:
+            file_id: ファイルID
+            requester_id: リクエスター（ユーザー）ID
+
+        Returns:
+            ProjectFileUsageResponse: ファイル使用状況
+
+        Raises:
+            NotFoundError: ファイルが見つからない場合
+            AuthorizationError: 権限が不足している場合
+        """
+        logger.debug("ファイル使用状況取得", file_id=str(file_id), requester_id=str(requester_id))
+
+        # 使用情報を含むファイルを取得
+        file = await self.repository.get_with_usage(file_id)
+        if not file:
+            raise NotFoundError(f"ファイルが見つかりません: {file_id}", details={"file_id": str(file_id)})
+
+        # 権限チェック（VIEWER以上）
+        await self._check_member_role(
+            file.project_id,
+            requester_id,
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
+        )
+
+        # 使用情報を収集
+        usages: list[FileUsageItem] = []
+
+        # 分析セッションでの使用
+        for analysis_file in file.analysis_files:
+            session = analysis_file.session
+            usages.append(
+                FileUsageItem(
+                    usage_type="analysis_session",
+                    target_id=session.id,
+                    target_name=session.name or f"セッション {session.id}",
+                    sheet_name=analysis_file.sheet_name,
+                    used_at=analysis_file.created_at,
+                )
+            )
+
+        # ドライバーツリーでの使用
+        for driver_tree_file in file.driver_tree_files:
+            usages.append(
+                FileUsageItem(
+                    usage_type="driver_tree",
+                    target_id=driver_tree_file.id,
+                    target_name=f"ドライバーツリーファイル {driver_tree_file.id}",
+                    sheet_name=driver_tree_file.sheet_name,
+                    used_at=driver_tree_file.created_at,
+                )
+            )
+
+        analysis_count = len(file.analysis_files)
+        driver_tree_count = len(file.driver_tree_files)
+
+        logger.debug(
+            "ファイル使用状況取得完了",
+            file_id=str(file_id),
+            analysis_session_count=analysis_count,
+            driver_tree_count=driver_tree_count,
+        )
+
+        return ProjectFileUsageResponse(
+            file_id=file_id,
+            filename=file.original_filename,
+            analysis_session_count=analysis_count,
+            driver_tree_count=driver_tree_count,
+            total_usage_count=analysis_count + driver_tree_count,
+            usages=usages,
+        )

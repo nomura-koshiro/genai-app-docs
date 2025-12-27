@@ -37,6 +37,8 @@ from app.api.core.dependencies import (
     ProjectMemberServiceDep,
     ProjectModeratorDep,
     ProjectServiceDep,
+    # ロール履歴サービス
+    RoleHistoryServiceDep,
     SuperuserAccountDep,
     UserServiceDep,
     get_analysis_session_service,
@@ -54,6 +56,7 @@ from app.api.core.dependencies import (
     get_project_member_service,
     get_project_moderator,
     get_project_service,
+    get_role_history_service,
     get_user_service,
 )
 
@@ -67,6 +70,8 @@ __all__ = [
     # UserAccount Service Dependencies
     "UserServiceDep",
     "get_user_service",
+    "RoleHistoryServiceDep",
+    "get_role_history_service",
     # Project Service Dependencies
     "ProjectServiceDep",
     "get_project_service",

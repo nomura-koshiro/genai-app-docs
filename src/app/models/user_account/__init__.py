@@ -5,6 +5,8 @@
 主なモデル:
     - UserAccount: ユーザーモデル（認証、プロフィール、システムロール）
     - SystemUserRole: システムロール（admin, user）
+    - RoleHistory: ロール変更履歴モデル
+    - RoleChangeActionEnum: ロール変更アクション種別
 
 使用例:
     >>> from app.models.user_account import UserAccount, SystemUserRole
@@ -15,6 +17,7 @@
     ... )
 """
 
+from app.models.user_account.role_history import RoleChangeActionEnum, RoleHistory
 from app.models.user_account.user_account import SystemUserRole, UserAccount
 
-__all__ = ["SystemUserRole", "UserAccount"]
+__all__ = ["RoleChangeActionEnum", "RoleHistory", "SystemUserRole", "UserAccount"]

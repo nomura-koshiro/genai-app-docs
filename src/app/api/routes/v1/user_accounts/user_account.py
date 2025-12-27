@@ -36,11 +36,12 @@ import uuid
 
 from fastapi import APIRouter, Query, Request, status
 
-from app.api.core import CurrentUserAccountDep, UserServiceDep
+from app.api.core import CurrentUserAccountDep, RoleHistoryServiceDep, UserServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
+from app.schemas.user_account import RoleHistoryListResponse
 
 logger = get_logger(__name__)
 
@@ -608,3 +609,84 @@ async def delete_user(
         admin_user_id=str(current_user.id),
         deleted_user_id=str(user_id),
     )
+
+
+# ================================================================================
+# ロール履歴 Endpoints
+# ================================================================================
+
+
+@user_accounts_router.get(
+    "/user_account/{user_id}/role_history",
+    response_model=RoleHistoryListResponse,
+    summary="ユーザーのロール変更履歴取得",
+    description="""
+    特定ユーザーのロール変更履歴を取得します（管理者専用）。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - user_id: uuid - ユーザーID（必須）
+
+    クエリパラメータ:
+        - skip: int - スキップ数（デフォルト: 0）
+        - limit: int - 取得件数（デフォルト: 100）
+
+    レスポンス:
+        - RoleHistoryListResponse: ロール履歴一覧レスポンス
+            - histories: list[RoleHistoryResponse] - 履歴リスト
+            - total: int - 総件数
+            - skip: int - スキップ数
+            - limit: int - 取得件数
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限不足
+    """,
+)
+@handle_service_errors
+async def get_user_role_history(
+    user_id: uuid.UUID,
+    role_history_service: RoleHistoryServiceDep,
+    current_user: CurrentUserAccountDep,
+    skip: int = Query(0, ge=0, description="スキップするレコード数"),
+    limit: int = Query(100, ge=1, le=1000, description="取得する最大レコード数"),
+) -> RoleHistoryListResponse:
+    """ユーザーのロール変更履歴を取得します（管理者専用）。"""
+    # ロールチェック: SystemAdminが必要（自分自身の履歴は閲覧可能）
+    if "SystemAdmin" not in current_user.roles and current_user.id != user_id:
+        logger.warning(
+            "権限がないユーザーが他ユーザーのロール履歴取得を試行",
+            requesting_user_id=str(current_user.id),
+            target_user_id=str(user_id),
+            roles=current_user.roles,
+        )
+        raise ValidationError(
+            "他ユーザーのロール履歴取得には管理者権限が必要です",
+            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+        )
+
+    logger.info(
+        "ユーザーロール履歴取得",
+        requesting_user_id=str(current_user.id),
+        target_user_id=str(user_id),
+        skip=skip,
+        limit=limit,
+        action="get_user_role_history",
+    )
+
+    response = await role_history_service.get_user_role_history(
+        user_id=user_id,
+        skip=skip,
+        limit=limit,
+    )
+
+    logger.info(
+        "ユーザーロール履歴を取得しました",
+        target_user_id=str(user_id),
+        count=len(response.histories),
+        total=response.total,
+    )
+
+    return response

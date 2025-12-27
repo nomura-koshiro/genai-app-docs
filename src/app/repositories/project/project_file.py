@@ -178,3 +178,23 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
         """
         result = await self.db.execute(select(func.sum(ProjectFile.file_size)).where(ProjectFile.project_id == project_id))
         return result.scalar() or 0
+
+    async def get_with_usage(self, file_id: uuid.UUID) -> ProjectFile | None:
+        """ファイルメタデータと使用情報を取得します。
+
+        Args:
+            file_id: ファイルID
+
+        Returns:
+            ProjectFile | None: ファイルメタデータ（analysis_files, driver_tree_files含む）
+        """
+        result = await self.db.execute(
+            select(ProjectFile)
+            .options(
+                selectinload(ProjectFile.uploader),
+                selectinload(ProjectFile.analysis_files),
+                selectinload(ProjectFile.driver_tree_files),
+            )
+            .where(ProjectFile.id == file_id)
+        )
+        return result.scalar_one_or_none()

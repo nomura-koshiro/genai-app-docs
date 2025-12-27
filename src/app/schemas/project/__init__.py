@@ -43,11 +43,13 @@ from app.schemas.project.project import (
     ProjectUpdate,
 )
 from app.schemas.project.project_file import (
+    FileUsageItem,
     ProjectFileDeleteResponse,
     ProjectFileListResponse,
     ProjectFileResponse,
     ProjectFileUploadRequest,
     ProjectFileUploadResponse,
+    ProjectFileUsageResponse,
 )
 from app.schemas.project.project_member import (
     ProjectMemberBulkCreate,
@@ -62,6 +64,7 @@ from app.schemas.project.project_member import (
 )
 
 __all__ = [
+    "FileUsageItem",
     "ProjectCreate",
     "ProjectDetailResponse",
     "ProjectListResponse",
@@ -73,6 +76,7 @@ __all__ = [
     "ProjectFileResponse",
     "ProjectFileUploadRequest",
     "ProjectFileUploadResponse",
+    "ProjectFileUsageResponse",
     "ProjectMemberBulkCreate",
     "ProjectMemberBulkError",
     "ProjectMemberBulkResponse",

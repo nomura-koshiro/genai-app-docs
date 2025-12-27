@@ -94,7 +94,9 @@ from app.api.core.dependencies.project import (
 
 # UserAccountサービス依存性
 from app.api.core.dependencies.user_account import (
+    RoleHistoryServiceDep,
     UserServiceDep,
+    get_role_history_service,
     get_user_service,
 )
 
@@ -106,7 +108,9 @@ __all__ = [
     "get_db",
     # UserAccountサービス依存性
     "UserServiceDep",
+    "RoleHistoryServiceDep",
     "get_user_service",
+    "get_role_history_service",
     # Projectサービス依存性
     "ProjectServiceDep",
     "ProjectFileServiceDep",

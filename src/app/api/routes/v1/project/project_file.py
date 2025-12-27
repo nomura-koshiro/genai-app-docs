@@ -25,6 +25,7 @@ from app.schemas import (
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
+from app.schemas.project.project_file import ProjectFileUsageResponse
 
 logger = get_logger(__name__)
 
@@ -376,3 +377,63 @@ async def delete_file(
     )
 
     return ProjectFileDeleteResponse(file_id=file_id, message=f"File {file_id} deleted successfully")
+
+
+@project_files_router.get(
+    "/project/{project_id}/file/{file_id}/usage",
+    response_model=ProjectFileUsageResponse,
+    summary="プロジェクトファイル使用状況取得",
+    description="""
+    プロジェクトのファイルがどこで使用されているかを取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - file_id: uuid - ファイルID（必須）
+
+    レスポンス:
+        - ProjectFileUsageResponse: ファイル使用状況
+            - file_id (uuid): ファイルID
+            - filename (str): ファイル名
+            - analysis_session_count (int): 分析セッションでの使用数
+            - driver_tree_count (int): ドライバーツリーでの使用数
+            - total_usage_count (int): 総使用数
+            - usages (list[FileUsageItem]): 使用情報リスト
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ファイルが見つからない
+    """,
+)
+@handle_service_errors
+async def get_file_usage(
+    project_id: uuid.UUID,
+    file_id: uuid.UUID,
+    file_service: ProjectFileServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> ProjectFileUsageResponse:
+    """プロジェクトのファイル使用状況を取得します。"""
+    logger.info(
+        "ファイル使用状況取得リクエスト",
+        project_id=str(project_id),
+        file_id=str(file_id),
+        user_id=str(current_user.id),
+        action="get_file_usage",
+    )
+
+    user_id = current_user.id
+
+    usage = await file_service.get_file_usage(file_id, user_id)
+
+    logger.info(
+        "ファイル使用状況を取得しました",
+        file_id=str(file_id),
+        analysis_session_count=usage.analysis_session_count,
+        driver_tree_count=usage.driver_tree_count,
+        total_usage_count=usage.total_usage_count,
+    )
+
+    return usage

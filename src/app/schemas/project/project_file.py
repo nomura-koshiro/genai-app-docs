@@ -183,3 +183,55 @@ class ProjectFileDeleteResponse(BaseCamelCaseModel):
 
     file_id: uuid.UUID = Field(..., description="削除されたファイルのID")
     message: str = Field(..., description="削除成功メッセージ")
+
+
+class FileUsageItem(BaseCamelCaseModel):
+    """ファイル使用情報アイテム。
+
+    ファイルがどこで使用されているかの個別情報。
+
+    Attributes:
+        usage_type (str): 使用タイプ（analysis_session/driver_tree）
+        target_id (uuid.UUID): 使用先のID
+        target_name (str): 使用先の名前
+        sheet_name (str | None): シート名
+        used_at (datetime): 使用日時
+    """
+
+    usage_type: str = Field(..., description="使用タイプ（analysis_session/driver_tree）")
+    target_id: uuid.UUID = Field(..., description="使用先のID")
+    target_name: str = Field(..., description="使用先の名前")
+    sheet_name: str | None = Field(default=None, description="シート名")
+    used_at: datetime = Field(..., description="使用日時")
+
+
+class ProjectFileUsageResponse(BaseCamelCaseModel):
+    """プロジェクトファイル使用状況レスポンススキーマ。
+
+    ファイルの使用状況を返却します。
+
+    Attributes:
+        file_id (uuid.UUID): ファイルID
+        filename (str): ファイル名
+        analysis_session_count (int): 分析セッションでの使用数
+        driver_tree_count (int): ドライバーツリーでの使用数
+        total_usage_count (int): 総使用数
+        usages (list[FileUsageItem]): 使用情報リスト
+
+    Example:
+        >>> response = ProjectFileUsageResponse(
+        ...     file_id=uuid.uuid4(),
+        ...     filename="data.xlsx",
+        ...     analysis_session_count=2,
+        ...     driver_tree_count=1,
+        ...     total_usage_count=3,
+        ...     usages=[...]
+        ... )
+    """
+
+    file_id: uuid.UUID = Field(..., description="ファイルID")
+    filename: str = Field(..., description="ファイル名")
+    analysis_session_count: int = Field(default=0, description="分析セッションでの使用数")
+    driver_tree_count: int = Field(default=0, description="ドライバーツリーでの使用数")
+    total_usage_count: int = Field(default=0, description="総使用数")
+    usages: list[FileUsageItem] = Field(default_factory=list, description="使用情報リスト")

@@ -4,6 +4,7 @@
 
 主なリポジトリ:
     - UserAccountRepository: ユーザーのCRUD操作（メール検索、認証等）
+    - RoleHistoryRepository: ロール変更履歴の操作
 
 使用例:
     >>> from app.repositories.user_account import UserAccountRepository
@@ -12,6 +13,7 @@
     ...     user = await user_repo.get_by_email("user@example.com")
 """
 
+from app.repositories.user_account.role_history import RoleHistoryRepository
 from app.repositories.user_account.user_account import UserAccountRepository
 
-__all__ = ["UserAccountRepository"]
+__all__ = ["RoleHistoryRepository", "UserAccountRepository"]

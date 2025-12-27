@@ -151,3 +151,47 @@ class DriverTreeFormulaGetResponse(BaseCamelCaseModel):
     """
 
     formula: FormulaInfo = Field(..., description="数式情報")
+
+
+class CalculationNodeSummary(BaseCamelCaseModel):
+    """計算ノードサマリー。
+
+    Attributes:
+        node_id: ノードID
+        label: ノード名
+        total_value: 合計値
+        avg_value: 平均値
+        min_value: 最小値
+        max_value: 最大値
+        record_count: レコード数
+    """
+
+    node_id: uuid.UUID = Field(..., description="ノードID")
+    label: str = Field(..., description="ノード名")
+    total_value: float | None = Field(default=None, description="合計値")
+    avg_value: float | None = Field(default=None, description="平均値")
+    min_value: float | None = Field(default=None, description="最小値")
+    max_value: float | None = Field(default=None, description="最大値")
+    record_count: int = Field(default=0, description="レコード数")
+
+
+class DriverTreeCalculationSummaryResponse(BaseCamelCaseModel):
+    """ドライバーツリー計算結果サマリーレスポンス。
+
+    Response:
+        - tree_id: uuid - ツリーID
+        - tree_name: str - ツリー名
+        - root_summary: CalculationNodeSummary - ルートノードのサマリー
+        - node_summaries: list[CalculationNodeSummary] - 各計算ノードのサマリー
+        - total_node_count: int - 総ノード数
+        - calculation_node_count: int - 計算ノード数
+        - calculated_at: datetime - 計算日時
+    """
+
+    tree_id: uuid.UUID = Field(..., description="ツリーID")
+    tree_name: str = Field(..., description="ツリー名")
+    root_summary: CalculationNodeSummary | None = Field(default=None, description="ルートノードのサマリー")
+    node_summaries: list[CalculationNodeSummary] = Field(default_factory=list, description="各計算ノードのサマリー")
+    total_node_count: int = Field(default=0, description="総ノード数")
+    calculation_node_count: int = Field(default=0, description="計算ノード数")
+    calculated_at: datetime = Field(..., description="計算日時")

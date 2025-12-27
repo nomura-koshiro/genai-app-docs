@@ -4,6 +4,7 @@
 
 主なサービス:
     - UserAccountService: ユーザー管理サービス（ユーザー作成、更新、認証、ロール管理）
+    - RoleHistoryService: ロール変更履歴サービス
 
 使用例:
     >>> from app.services.user_account import UserAccountService
@@ -18,6 +19,7 @@
     ...     )
 """
 
+from app.services.user_account.role_history import RoleHistoryService
 from app.services.user_account.user_account import UserAccountService
 
-__all__ = ["UserAccountService"]
+__all__ = ["RoleHistoryService", "UserAccountService"]

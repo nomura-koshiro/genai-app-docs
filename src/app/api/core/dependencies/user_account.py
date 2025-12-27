@@ -9,9 +9,12 @@ from fastapi import Depends
 
 from app.api.core.dependencies.database import DatabaseDep
 from app.services import UserAccountService
+from app.services.user_account import RoleHistoryService
 
 __all__ = [
+    "RoleHistoryServiceDep",
     "UserServiceDep",
+    "get_role_history_service",
     "get_user_service",
 ]
 
@@ -32,8 +35,26 @@ def get_user_service(db: DatabaseDep) -> UserAccountService:
     return UserAccountService(db)
 
 
+def get_role_history_service(db: DatabaseDep) -> RoleHistoryService:
+    """ロール履歴サービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        RoleHistoryService: 初期化されたロール履歴サービスインスタンス
+    """
+    return RoleHistoryService(db)
+
+
 UserServiceDep = Annotated[UserAccountService, Depends(get_user_service)]
 """ユーザーサービスの依存性型。
 
 エンドポイント関数にUserAccountServiceインスタンスを自動注入します。
+"""
+
+RoleHistoryServiceDep = Annotated[RoleHistoryService, Depends(get_role_history_service)]
+"""ロール履歴サービスの依存性型。
+
+エンドポイント関数にRoleHistoryServiceインスタンスを自動注入します。
 """

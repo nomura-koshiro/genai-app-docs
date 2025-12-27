@@ -22,6 +22,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ProjectFile
+from app.schemas.project.project_file import ProjectFileUsageResponse
 from app.services.project.project_file.crud import ProjectFileCrudService
 from app.services.project.project_file.download import ProjectFileDownloadService
 from app.services.project.project_file.upload import ALLOWED_MIME_TYPES, ProjectFileUploadService
@@ -63,6 +64,10 @@ class ProjectFileService:
     async def delete_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> bool:
         """ファイルを削除します。"""
         return await self._crud_service.delete_file(file_id, requester_id)
+
+    async def get_file_usage(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> ProjectFileUsageResponse:
+        """ファイルの使用状況を取得します。"""
+        return await self._crud_service.get_file_usage(file_id, requester_id)
 
     # ================================================================================
     # アップロード

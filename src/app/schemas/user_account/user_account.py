@@ -187,3 +187,35 @@ class UserAccountRoleUpdate(BaseCamelCaseModel):
     """
 
     roles: list[str] = Field(..., description="システムレベルのロール", min_length=1)
+
+
+class UserActivityStats(BaseCamelCaseModel):
+    """ユーザーアクティビティ統計情報。
+
+    ユーザーの活動統計を定義します。
+
+    Attributes:
+        project_count (int): 参加プロジェクト数
+        owned_project_count (int): オーナープロジェクト数
+        session_count (int): 作成した分析セッション数
+        file_upload_count (int): アップロードしたファイル数
+        last_activity_at (datetime | None): 最終活動日時
+    """
+
+    project_count: int = Field(default=0, description="参加プロジェクト数")
+    owned_project_count: int = Field(default=0, description="オーナープロジェクト数")
+    session_count: int = Field(default=0, description="作成した分析セッション数")
+    file_upload_count: int = Field(default=0, description="アップロードしたファイル数")
+    last_activity_at: datetime | None = Field(default=None, description="最終活動日時")
+
+
+class UserAccountDetailResponse(UserAccountResponse):
+    """ユーザー詳細情報レスポンススキーマ。
+
+    ユーザー詳細APIで統計情報を含めて返す際に使用します。
+
+    Attributes:
+        stats (UserActivityStats | None): ユーザーアクティビティ統計情報
+    """
+
+    stats: UserActivityStats | None = Field(default=None, description="ユーザーアクティビティ統計情報")
