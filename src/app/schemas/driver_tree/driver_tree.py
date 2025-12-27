@@ -175,6 +175,32 @@ class CalculationNodeSummary(BaseCamelCaseModel):
     record_count: int = Field(default=0, description="レコード数")
 
 
+class PolicyEffectInfo(BaseCamelCaseModel):
+    """施策効果情報。
+
+    施策適用前後の値と差分を表します。
+
+    Attributes:
+        policy_id: 施策ID
+        policy_name: 施策名
+        node_id: 対象ノードID
+        node_label: 対象ノード名
+        original_value: 施策適用前の値
+        projected_value: 施策適用後の値
+        difference: 差分（projected_value - original_value）
+        difference_percent: 差分率（%）
+    """
+
+    policy_id: uuid.UUID = Field(..., description="施策ID")
+    policy_name: str = Field(..., description="施策名")
+    node_id: uuid.UUID = Field(..., description="対象ノードID")
+    node_label: str = Field(..., description="対象ノード名")
+    original_value: float = Field(..., description="施策適用前の値")
+    projected_value: float = Field(..., description="施策適用後の値")
+    difference: float = Field(..., description="差分")
+    difference_percent: float | None = Field(default=None, description="差分率（%）")
+
+
 class DriverTreeCalculationSummaryResponse(BaseCamelCaseModel):
     """ドライバーツリー計算結果サマリーレスポンス。
 
@@ -183,8 +209,10 @@ class DriverTreeCalculationSummaryResponse(BaseCamelCaseModel):
         - tree_name: str - ツリー名
         - root_summary: CalculationNodeSummary - ルートノードのサマリー
         - node_summaries: list[CalculationNodeSummary] - 各計算ノードのサマリー
+        - policy_effects: list[PolicyEffectInfo] - 施策効果一覧
         - total_node_count: int - 総ノード数
         - calculation_node_count: int - 計算ノード数
+        - error_node_count: int - エラーノード数
         - calculated_at: datetime - 計算日時
     """
 
@@ -192,6 +220,8 @@ class DriverTreeCalculationSummaryResponse(BaseCamelCaseModel):
     tree_name: str = Field(..., description="ツリー名")
     root_summary: CalculationNodeSummary | None = Field(default=None, description="ルートノードのサマリー")
     node_summaries: list[CalculationNodeSummary] = Field(default_factory=list, description="各計算ノードのサマリー")
+    policy_effects: list[PolicyEffectInfo] = Field(default_factory=list, description="施策効果一覧")
     total_node_count: int = Field(default=0, description="総ノード数")
     calculation_node_count: int = Field(default=0, description="計算ノード数")
+    error_node_count: int = Field(default=0, description="エラーノード数")
     calculated_at: datetime = Field(..., description="計算日時")

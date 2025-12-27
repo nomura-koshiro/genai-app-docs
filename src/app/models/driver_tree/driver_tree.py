@@ -101,6 +101,13 @@ class DriverTree(Base, TimestampMixin):
         "DriverTreeFormula",
     )
 
+    nodes: Mapped[list["DriverTreeNode"]] = relationship(
+        "DriverTreeNode",
+        back_populates="driver_tree",
+        foreign_keys="[DriverTreeNode.driver_tree_id]",
+        cascade="all, delete-orphan",
+    )
+
     relationships: Mapped[list["DriverTreeRelationship"]] = relationship(
         "DriverTreeRelationship",
         back_populates="driver_tree",

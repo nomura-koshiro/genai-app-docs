@@ -53,6 +53,7 @@ from app.schemas.driver_tree.driver_tree import (
     DriverTreeListItem,
     DriverTreeListResponse,
     DriverTreeResetResponse,
+    PolicyEffectInfo,
 )
 
 # File schemas (Request/Response)
@@ -145,4 +146,5 @@ __all__ = [
     "DriverTreeListItem",
     "DriverTreeListResponse",
     "DriverTreeResetResponse",
+    "PolicyEffectInfo",
 ]

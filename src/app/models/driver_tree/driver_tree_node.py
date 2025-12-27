@@ -6,13 +6,14 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.driver_tree.driver_tree import DriverTree
     from app.models.driver_tree.driver_tree_data_frame import DriverTreeDataFrame
     from app.models.driver_tree.driver_tree_policy import DriverTreePolicy
 
@@ -24,6 +25,7 @@ class DriverTreeNode(Base, TimestampMixin):
 
     Attributes:
         id: 主キー（UUID）
+        driver_tree_id: ドライバーツリーID（外部キー）
         label: ノードラベル
         position_x: X座標
         position_y: Y座標
@@ -37,6 +39,14 @@ class DriverTreeNode(Base, TimestampMixin):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
+    )
+
+    driver_tree_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("driver_tree.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="ドライバーツリーID",
     )
 
     label: Mapped[str] = mapped_column(
@@ -74,6 +84,12 @@ class DriverTreeNode(Base, TimestampMixin):
     )
 
     # リレーションシップ
+    driver_tree: Mapped["DriverTree"] = relationship(
+        "DriverTree",
+        back_populates="nodes",
+        foreign_keys=[driver_tree_id],
+    )
+
     data_frame: Mapped["DriverTreeDataFrame | None"] = relationship(
         "DriverTreeDataFrame",
         back_populates="node",
@@ -84,6 +100,9 @@ class DriverTreeNode(Base, TimestampMixin):
         back_populates="node",
         cascade="all, delete-orphan",
     )
+
+    # インデックス
+    __table_args__ = (Index("idx_driver_tree_node_tree_id", "driver_tree_id"),)
 
     def __repr__(self) -> str:
         return f"<DriverTreeNode(id={self.id}, label={self.label})>"

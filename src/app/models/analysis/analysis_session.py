@@ -31,7 +31,7 @@ class AnalysisSession(Base, TimestampMixin):
         creator_id: 作成者ID（外部キー）
         project_id: プロジェクトID（外部キー）
         input_file_id: 入力ファイルID（外部キー、任意）
-        current_snapshot: 現在のスナップショット番号
+        current_snapshot_id: 現在のスナップショットID（外部キー、任意）
         status: セッション状態（draft/active/completed/archived）
     """
 
@@ -75,11 +75,12 @@ class AnalysisSession(Base, TimestampMixin):
         comment="入力ファイルID",
     )
 
-    current_snapshot: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=0,
-        comment="現在のスナップショット番号",
+    current_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("analysis_snapshot.id", ondelete="SET NULL", use_alter=True),
+        nullable=True,
+        index=True,
+        comment="現在のスナップショットID",
     )
 
     status: Mapped[str] = mapped_column(
@@ -119,6 +120,12 @@ class AnalysisSession(Base, TimestampMixin):
         foreign_keys=[input_file_id],
     )
 
+    current_snapshot: Mapped["AnalysisSnapshot | None"] = relationship(
+        "AnalysisSnapshot",
+        foreign_keys=[current_snapshot_id],
+        post_update=True,
+    )
+
     files: Mapped[list["AnalysisFile"]] = relationship(
         "AnalysisFile",
         back_populates="session",
@@ -129,6 +136,7 @@ class AnalysisSession(Base, TimestampMixin):
     snapshots: Mapped[list["AnalysisSnapshot"]] = relationship(
         "AnalysisSnapshot",
         back_populates="session",
+        foreign_keys="[AnalysisSnapshot.session_id]",
         cascade="all, delete-orphan",
         order_by="AnalysisSnapshot.snapshot_order",
     )

@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,6 +34,11 @@ class AnalysisStep(Base, TimestampMixin):
     """
 
     __tablename__ = "analysis_step"
+
+    __table_args__ = (
+        UniqueConstraint("snapshot_id", "step_order", name="uq_step_order"),
+        Index("idx_analysis_step_snapshot_order", "snapshot_id", "step_order"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),

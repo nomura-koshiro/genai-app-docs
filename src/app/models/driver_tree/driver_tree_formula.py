@@ -4,12 +4,16 @@
 """
 
 import uuid
+from typing import TYPE_CHECKING
 
-from sqlalchemy import Index, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.driver_tree.driver_tree_category import DriverTreeCategory
 
 
 class DriverTreeFormula(Base, TimestampMixin):
@@ -19,6 +23,7 @@ class DriverTreeFormula(Base, TimestampMixin):
 
     Attributes:
         id: 主キー（UUID）
+        category_id: カテゴリID（外部キー、任意）
         driver_type_id: ドライバー型ID（1-24）
         driver_type: ドライバー型
         kpi: KPI種別（売上、原価、販管費、粗利、営業利益、EBITDA）
@@ -32,6 +37,7 @@ class DriverTreeFormula(Base, TimestampMixin):
 
     Indexes:
         ix_formula_driver_kpi: driver_type_id + kpi による検索を最適化
+        ix_formula_category: category_id による検索を最適化
     """
 
     __tablename__ = "driver_tree_formula"
@@ -39,12 +45,20 @@ class DriverTreeFormula(Base, TimestampMixin):
     __table_args__ = (
         UniqueConstraint("driver_type_id", "kpi", name="uq_driver_kpi"),
         Index("ix_formula_driver_kpi", "driver_type_id", "kpi"),
+        Index("ix_formula_category", "category_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
+    )
+
+    category_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("driver_tree_category.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="カテゴリID",
     )
 
     driver_type_id: Mapped[int] = mapped_column(
@@ -69,6 +83,11 @@ class DriverTreeFormula(Base, TimestampMixin):
         JSONB,
         nullable=False,
         comment="数式リスト",
+    )
+
+    # リレーションシップ
+    category: Mapped["DriverTreeCategory | None"] = relationship(
+        "DriverTreeCategory",
     )
 
     def __repr__(self) -> str:
