@@ -13,6 +13,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.analysis.analysis_chat import AnalysisChat
     from app.models.analysis.analysis_snapshot import AnalysisSnapshot
 
 
@@ -24,6 +25,7 @@ class AnalysisStep(Base, TimestampMixin):
     Attributes:
         id: 主キー（UUID）
         snapshot_id: スナップショットID（外部キー）
+        triggered_by_chat_id: トリガーチャットID（外部キー、任意）
         config: ステップ設定（JSONB）
         name: ステップ名
         step_order: ステップ順序
@@ -45,6 +47,14 @@ class AnalysisStep(Base, TimestampMixin):
         nullable=False,
         index=True,
         comment="スナップショットID",
+    )
+
+    triggered_by_chat_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("analysis_chat.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+        comment="トリガーチャットID（このステップを生成したチャット）",
     )
 
     config: Mapped[dict[str, Any]] = mapped_column(
@@ -81,6 +91,11 @@ class AnalysisStep(Base, TimestampMixin):
     snapshot: Mapped["AnalysisSnapshot"] = relationship(
         "AnalysisSnapshot",
         back_populates="steps",
+    )
+
+    triggered_by_chat: Mapped["AnalysisChat | None"] = relationship(
+        "AnalysisChat",
+        foreign_keys=[triggered_by_chat_id],
     )
 
     def __repr__(self) -> str:

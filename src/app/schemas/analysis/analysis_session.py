@@ -386,6 +386,7 @@ class AnalysisSnapshotResponse(BaseCamelCaseORMModel):
     Attributes:
         id (uuid.UUID): スナップショットID
         snapshot_order (int): スナップショット順序
+        parent_snapshot_id (uuid.UUID | None): 親スナップショットID（分岐履歴用）
         chat (list[AnalysisChatResponse]): チャットメッセージリスト
         step (list[AnalysisStepResponse]): ステップリスト
         created_at (datetime): 作成日時
@@ -395,6 +396,7 @@ class AnalysisSnapshotResponse(BaseCamelCaseORMModel):
         >>> {
         ...     "id": "623e4567-e89b-12d3-a456-426614174555",
         ...     "snapshot_order": 1,
+        ...     "parent_snapshot_id": null,
         ...     "chat": [AnalysisChatResponse, ...],
         ...     "step": [AnalysisStepResponse, ...],
         ...     "created_at": "2025-01-01T00:00:00Z",
@@ -404,6 +406,7 @@ class AnalysisSnapshotResponse(BaseCamelCaseORMModel):
 
     id: uuid.UUID = Field(..., description="スナップショットID")
     snapshot_order: int = Field(..., description="スナップショット順序")
+    parent_snapshot_id: uuid.UUID | None = Field(default=None, description="親スナップショットID（分岐履歴用）")
     chat: list[AnalysisChatResponse] = Field(default=[], description="チャットメッセージリスト")
     step: list[AnalysisStepResponse] = Field(default=[], description="ステップリスト")
     created_at: datetime = Field(..., description="作成日時")
@@ -420,9 +423,11 @@ class AnalysisSessionBase(BaseCamelCaseModel):
 
     Attributes:
         current_snapshot (int): 現在のスナップショット番号
+        status (str): セッション状態（draft/active/completed/archived）
     """
 
     current_snapshot: int = Field(..., description="現在のスナップショット番号")
+    status: str = Field(default="draft", description="セッション状態（draft/active/completed/archived）")
 
 
 class AnalysisSessionCreate(BaseCamelCaseModel):
@@ -452,16 +457,19 @@ class AnalysisSessionUpdate(BaseCamelCaseModel):
     Attributes:
         current_snapshot (int | None): 現在のスナップショット番号
         input_file_id (uuid.UUID | None): 入力ファイルID
+        status (str | None): セッション状態（draft/active/completed/archived）
 
     Example:
         >>> session_update = AnalysisSessionUpdate(
         ...     current_snapshot=変更後の番号,
-        ...     input_file_id=変更後のファイルID
+        ...     input_file_id=変更後のファイルID,
+        ...     status="active"
         ... )
     """
 
     current_snapshot: int | None = Field(default=None, description="現在のスナップショット番号")
     input_file_id: uuid.UUID | None = Field(default=None, description="入力ファイルID")
+    status: str | None = Field(default=None, description="セッション状態（draft/active/completed/archived）")
 
 
 class AnalysisSessionDelete(BaseCamelCaseModel):
@@ -485,6 +493,7 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
     Attributes:
         id (uuid.UUID): セッションID
         current_snapshot (int): 現在のスナップショット番号
+        status (str): セッション状態（draft/active/completed/archived）
         project_id (uuid.UUID): プロジェクトID
         issue_id (uuid.UUID): 課題ID
         creator_id (uuid.UUID): 作成者のユーザーID
@@ -498,6 +507,7 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
         ...     "issue_id": "323e4567-e89b-12d3-a456-426614174222",
         ...     "creator_id": "423e4567-e89b-12d3-a456-426614174333",
         ...     "current_snapshot": 2,
+        ...     "status": "active",
         ...     "created_at": "2025-01-01T00:00:00Z",
         ...     "updated_at": "2025-01-02T00:00:00Z"
         ... }
@@ -505,6 +515,7 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
 
     id: uuid.UUID = Field(..., description="セッションID")
     current_snapshot: int = Field(..., description="現在のスナップショット番号")
+    status: str = Field(default="draft", description="セッション状態（draft/active/completed/archived）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     issue_id: uuid.UUID = Field(..., description="課題ID")
     creator_id: uuid.UUID = Field(..., description="作成者のユーザーID")
@@ -626,4 +637,73 @@ class AnalysisSessionResultListResponse(BaseCamelCaseModel):
     """
 
     results: list[AnalysisSessionResultResponse] = Field(..., description="結果リスト")
+    total: int = Field(..., description="総件数")
+
+
+class AnalysisChatListResponse(BaseCamelCaseModel):
+    """チャットメッセージ一覧レスポンススキーマ。
+
+    チャットメッセージ一覧APIのレスポンス形式を定義します。
+
+    Attributes:
+        messages (list[AnalysisChatResponse]): メッセージリスト
+        total (int): 総件数
+        skip (int): スキップ数（オフセット）
+        limit (int): 取得件数
+
+    Example:
+        >>> response = AnalysisChatListResponse(
+        ...     messages=[message1, message2, message3],
+        ...     total=100,
+        ...     skip=0,
+        ...     limit=50
+        ... )
+    """
+
+    messages: list[AnalysisChatResponse] = Field(..., description="メッセージリスト")
+    total: int = Field(..., description="総件数")
+    skip: int = Field(..., description="スキップ数（オフセット）")
+    limit: int = Field(..., description="取得件数")
+
+
+# ================================================================================
+# スナップショット管理スキーマ
+# ================================================================================
+class AnalysisSnapshotCreate(BaseCamelCaseModel):
+    """スナップショット手動作成リクエストスキーマ。
+
+    スナップショットを手動で保存する際に使用します。
+
+    Attributes:
+        name (str | None): スナップショット名（任意）
+        description (str | None): 説明（任意）
+
+    Example:
+        >>> snapshot = AnalysisSnapshotCreate(
+        ...     name="分析途中の状態",
+        ...     description="売上分析のフィルタリング後"
+        ... )
+    """
+
+    name: str | None = Field(default=None, max_length=255, description="スナップショット名")
+    description: str | None = Field(default=None, description="説明")
+
+
+class AnalysisSnapshotListResponse(BaseCamelCaseModel):
+    """スナップショット一覧レスポンススキーマ。
+
+    スナップショット一覧APIのレスポンス形式を定義します。
+
+    Attributes:
+        snapshots (list[AnalysisSnapshotResponse]): スナップショットリスト
+        total (int): 総件数
+
+    Example:
+        >>> response = AnalysisSnapshotListResponse(
+        ...     snapshots=[snapshot1, snapshot2, snapshot3],
+        ...     total=3
+        ... )
+    """
+
+    snapshots: list[AnalysisSnapshotResponse] = Field(..., description="スナップショットリスト")
     total: int = Field(..., description="総件数")

@@ -30,17 +30,28 @@ class AnalysisChatRepository(BaseRepository[AnalysisChat, uuid.UUID]):
         """
         super().__init__(AnalysisChat, db)
 
-    async def list_by_snapshot(self, snapshot_id: uuid.UUID) -> list[AnalysisChat]:
+    async def list_by_snapshot(
+        self,
+        snapshot_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[AnalysisChat]:
         """スナップショットのチャット一覧を取得します。
 
         Args:
             snapshot_id: スナップショットID
+            skip: スキップ数（デフォルト: 0）
+            limit: 取得件数（デフォルト: 100）
 
         Returns:
             list[AnalysisChat]: チャット一覧（順序順）
         """
         result = await self.db.execute(
-            select(AnalysisChat).where(AnalysisChat.snapshot_id == snapshot_id).order_by(AnalysisChat.chat_order.asc())
+            select(AnalysisChat)
+            .where(AnalysisChat.snapshot_id == snapshot_id)
+            .order_by(AnalysisChat.chat_order.asc())
+            .offset(skip)
+            .limit(limit)
         )
         return list(result.scalars().all())
 

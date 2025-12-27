@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer
+from sqlalchemy import CheckConstraint, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -32,6 +32,7 @@ class AnalysisSession(Base, TimestampMixin):
         project_id: プロジェクトID（外部キー）
         input_file_id: 入力ファイルID（外部キー、任意）
         current_snapshot: 現在のスナップショット番号
+        status: セッション状態（draft/active/completed/archived）
     """
 
     __tablename__ = "analysis_session"
@@ -79,6 +80,22 @@ class AnalysisSession(Base, TimestampMixin):
         nullable=False,
         default=0,
         comment="現在のスナップショット番号",
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="draft",
+        server_default="draft",
+        comment="セッション状態（draft/active/completed/archived）",
+    )
+
+    # テーブル制約
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('draft', 'active', 'completed', 'archived')",
+            name="ck_analysis_session_status",
+        ),
     )
 
     # リレーションシップ

@@ -16,6 +16,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.analysis import (
+    AnalysisChatResponse,
     AnalysisFileConfigResponse,
     AnalysisFileCreate,
     AnalysisFileResponse,
@@ -24,6 +25,8 @@ from app.schemas.analysis import (
     AnalysisSessionDetailResponse,
     AnalysisSessionResponse,
     AnalysisSessionResultListResponse,
+    AnalysisSnapshotCreate,
+    AnalysisSnapshotResponse,
     AnalysisStepResponse,
 )
 from app.services.analysis.analysis_session.analysis_operations import AnalysisSessionAnalysisService
@@ -158,6 +161,37 @@ class AnalysisSessionService:
     ) -> AnalysisSessionDetailResponse:
         """分析状態を選択されたスナップショットに戻します。"""
         return await self._analysis_service.restore_snapshot(session_id, snapshot_order)
+
+    async def get_chat_messages(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> list[AnalysisChatResponse]:
+        """セッションのチャットメッセージ履歴を取得します。"""
+        return await self._analysis_service.get_chat_messages(project_id, session_id, skip, limit)
+
+    # ================================================================================
+    # スナップショット操作
+    # ================================================================================
+
+    async def list_snapshots(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+    ) -> list[AnalysisSnapshotResponse]:
+        """セッションのスナップショット一覧を取得します。"""
+        return await self._analysis_service.list_snapshots(project_id, session_id)
+
+    async def create_snapshot(
+        self,
+        project_id: uuid.UUID,
+        session_id: uuid.UUID,
+        snapshot_create: AnalysisSnapshotCreate,
+    ) -> AnalysisSnapshotResponse:
+        """手動でスナップショットを保存します。"""
+        return await self._analysis_service.create_snapshot(project_id, session_id, snapshot_create)
 
     # ================================================================================
     # ステップ操作

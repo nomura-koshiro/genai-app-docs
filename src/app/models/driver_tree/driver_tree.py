@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, String, Text
+from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +31,7 @@ class DriverTree(Base, TimestampMixin):
         description: 説明
         root_node_id: ルートノードID（外部キー、任意）
         formula_id: 数式テンプレートID（外部キー、任意）
+        status: ツリー状態（draft/active/completed）
     """
 
     __tablename__ = "driver_tree"
@@ -77,6 +78,14 @@ class DriverTree(Base, TimestampMixin):
         comment="数式テンプレートID",
     )
 
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="draft",
+        server_default="draft",
+        comment="ツリー状態（draft/active/completed）",
+    )
+
     # リレーションシップ
     project: Mapped["Project"] = relationship(
         "Project",
@@ -98,8 +107,14 @@ class DriverTree(Base, TimestampMixin):
         cascade="all, delete-orphan",
     )
 
-    # インデックス
-    __table_args__ = (Index("idx_driver_tree_project_id", "project_id"),)
+    # インデックス・制約
+    __table_args__ = (
+        Index("idx_driver_tree_project_id", "project_id"),
+        CheckConstraint(
+            "status IN ('draft', 'active', 'completed')",
+            name="ck_driver_tree_status",
+        ),
+    )
 
     def __repr__(self) -> str:
         return f"<DriverTree(id={self.id}, project_id={self.project_id})>"

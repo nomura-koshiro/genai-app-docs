@@ -81,6 +81,7 @@ from app.schemas.analysis.analysis_session import (
     # チャット
     AnalysisChatBase,
     AnalysisChatCreate,
+    AnalysisChatListResponse,
     AnalysisChatResponse,
     AnalysisChatUpdate,
     # 分析ファイル
@@ -102,6 +103,8 @@ from app.schemas.analysis.analysis_session import (
     AnalysisSessionUpdate,
     # スナップショット
     AnalysisSnapshotBase,
+    AnalysisSnapshotCreate,
+    AnalysisSnapshotListResponse,
     AnalysisSnapshotResponse,
     # ステップ
     AnalysisStepBase,
@@ -153,6 +156,8 @@ __all__ = [
     "AnalysisSessionResultListResponse",
     # 分析スナップショット
     "AnalysisSnapshotBase",
+    "AnalysisSnapshotCreate",
+    "AnalysisSnapshotListResponse",
     "AnalysisSnapshotResponse",
     # 分析ファイル
     "AnalysisFileBase",
@@ -164,6 +169,7 @@ __all__ = [
     # チャット
     "AnalysisChatBase",
     "AnalysisChatCreate",
+    "AnalysisChatListResponse",
     "AnalysisChatResponse",
     "AnalysisChatUpdate",
     # ステップ

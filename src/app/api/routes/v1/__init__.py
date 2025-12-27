@@ -7,6 +7,7 @@ from app.api.routes.v1.analysis import (
     analysis_sessions_router,
     analysis_templates_router,
 )
+from app.api.routes.v1.dashboard import dashboard_router
 from app.api.routes.v1.driver_tree import (
     driver_tree_files_router,
     driver_tree_nodes_router,
@@ -23,6 +24,8 @@ __all__ = [
     # Analysis API
     "analysis_sessions_router",
     "analysis_templates_router",
+    # Dashboard API
+    "dashboard_router",
     # Driver Tree API
     "driver_tree_files_router",
     "driver_tree_nodes_router",

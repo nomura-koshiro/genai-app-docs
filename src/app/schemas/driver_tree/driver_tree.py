@@ -14,6 +14,7 @@ class DriverTreeListItem(BaseCamelCaseModel):
         tree_id: uuid - ツリーID
         name: str - ツリー名
         description: str - 説明
+        status: str - ツリー状態（draft/active/completed）
         created_at: datetime - 作成日時
         updated_at: datetime - 更新日時
 
@@ -22,6 +23,7 @@ class DriverTreeListItem(BaseCamelCaseModel):
     tree_id: uuid.UUID = Field(..., description="ツリーID")
     name: str = Field(..., description="ツリー名")
     description: str | None = Field(default=None, description="説明")
+    status: str = Field(default="draft", description="ツリー状態（draft/active/completed）")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 
@@ -67,12 +69,14 @@ class DriverTreeCreateTreeResponse(BaseCamelCaseModel):
         - tree_id: uuid - ツリーID
         - name: str - ツリー名
         - description: str - 説明
+        - status: str - ツリー状態（draft/active/completed）
         - created_at: datetime - 作成日時
     """
 
     tree_id: uuid.UUID = Field(..., description="ツリーID")
     name: str = Field(..., description="ツリー名")
     description: str | None = Field(default=None, description="説明")
+    status: str = Field(default="draft", description="ツリー状態（draft/active/completed）")
     created_at: datetime = Field(..., description="作成日時")
 
 

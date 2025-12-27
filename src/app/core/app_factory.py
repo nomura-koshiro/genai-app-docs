@@ -28,6 +28,7 @@ from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
     analysis_sessions_router,
     analysis_templates_router,
+    dashboard_router,
     driver_tree_files_router,
     driver_tree_nodes_router,
     driver_tree_trees_router,
@@ -172,6 +173,9 @@ def create_app() -> FastAPI:
 
     # Azure AD認証用ユーザー管理API
     app.include_router(user_accounts_router, prefix="/api/v1", tags=["user_account"])
+
+    # ダッシュボードAPI
+    app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["dashboard"])
 
     # プロジェクト管理API
     app.include_router(projects_router, prefix="/api/v1", tags=["project"])

@@ -25,6 +25,7 @@ from app.api.decorators import async_timeout, handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.analysis import (
     AnalysisChatCreate,
+    AnalysisChatListResponse,
     AnalysisFileConfigResponse,
     AnalysisFileCreate,
     AnalysisFileListResponse,
@@ -35,6 +36,9 @@ from app.schemas.analysis import (
     AnalysisSessionListResponse,
     AnalysisSessionResultListResponse,
     AnalysisSessionUpdate,
+    AnalysisSnapshotCreate,
+    AnalysisSnapshotListResponse,
+    AnalysisSnapshotResponse,
     AnalysisStepCreate,
     AnalysisStepResponse,
     AnalysisStepUpdate,
@@ -732,8 +736,252 @@ async def update_file_config(
 
 
 # ================================================================================
+# スナップショット管理
+# ================================================================================
+
+
+@analysis_sessions_router.get(
+    "/project/{project_id}/analysis/session/{session_id}/snapshots",
+    response_model=AnalysisSnapshotListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="スナップショット一覧取得",
+    description="""
+    セッションのスナップショット一覧を取得します。
+
+    **認証が必要です。**
+    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - session_id: uuid - セッションID（必須）
+
+    レスポンス:
+        - AnalysisSnapshotListResponse: スナップショット一覧
+            - snapshots (list[AnalysisSnapshotResponse]): スナップショットリスト
+                - id (uuid): スナップショットID
+                - snapshot_order (int): スナップショット順序番号
+                - parent_snapshot_id (uuid | None): 親スナップショットID
+                - chat_list (list[AnalysisChatResponse]): チャットリスト
+                - step_list (list[AnalysisStepResponse]): ステップリスト
+                - created_at (datetime): 作成日時
+                - updated_at (datetime): 更新日時
+            - total (int): 総件数
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: セッションが見つからない
+    """,
+)
+@handle_service_errors
+async def list_snapshots(
+    member: ProjectMemberDep,
+    session_service: AnalysisSessionServiceDep,
+    project_id: uuid.UUID = Path(..., description="プロジェクトID"),
+    session_id: uuid.UUID = Path(..., description="分析セッションID"),
+) -> AnalysisSnapshotListResponse:
+    """スナップショット一覧を取得します。
+
+    Args:
+        member (ProjectMemberDep): プロジェクトメンバー（権限チェック済み）
+        session_service (AnalysisSessionServiceDep): 分析セッションサービス
+        project_id (uuid.UUID): プロジェクトID
+        session_id (uuid.UUID): セッションID
+
+    Returns:
+        AnalysisSnapshotListResponse: スナップショット一覧
+    """
+    logger.info(
+        "スナップショット一覧取得リクエスト",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        action="list_snapshots",
+    )
+
+    snapshots = await session_service.list_snapshots(project_id, session_id)
+
+    logger.info(
+        "スナップショット一覧を取得しました",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        count=len(snapshots),
+    )
+
+    return AnalysisSnapshotListResponse(
+        snapshots=snapshots,
+        total=len(snapshots),
+    )
+
+
+@analysis_sessions_router.post(
+    "/project/{project_id}/analysis/session/{session_id}/snapshots",
+    response_model=AnalysisSnapshotResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="手動スナップショット保存",
+    description="""
+    現在の分析状態を手動でスナップショットとして保存します。
+
+    **認証が必要です。**
+    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - session_id: uuid - セッションID（必須）
+
+    リクエストボディ:
+        - name (str | None): スナップショット名（オプション）
+        - description (str | None): スナップショット説明（オプション）
+
+    レスポンス:
+        - AnalysisSnapshotResponse: 作成されたスナップショット
+            - id (uuid): スナップショットID
+            - snapshot_order (int): スナップショット順序番号
+            - parent_snapshot_id (uuid | None): 親スナップショットID
+            - chat_list (list[AnalysisChatResponse]): チャットリスト
+            - step_list (list[AnalysisStepResponse]): ステップリスト
+            - created_at (datetime): 作成日時
+            - updated_at (datetime): 更新日時
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: セッションが見つからない
+    """,
+)
+@handle_service_errors
+async def create_snapshot(
+    member: ProjectMemberDep,
+    session_service: AnalysisSessionServiceDep,
+    project_id: uuid.UUID = Path(..., description="プロジェクトID"),
+    session_id: uuid.UUID = Path(..., description="分析セッションID"),
+    snapshot_create: AnalysisSnapshotCreate = Body(..., description="スナップショット作成リクエスト"),
+) -> AnalysisSnapshotResponse:
+    """手動でスナップショットを保存します。
+
+    Args:
+        member (ProjectMemberDep): プロジェクトメンバー（権限チェック済み）
+        session_service (AnalysisSessionServiceDep): 分析セッションサービス
+        project_id (uuid.UUID): プロジェクトID
+        session_id (uuid.UUID): セッションID
+        snapshot_create (AnalysisSnapshotCreate): スナップショット作成データ
+
+    Returns:
+        AnalysisSnapshotResponse: 作成されたスナップショット
+    """
+    logger.info(
+        "手動スナップショット保存リクエスト",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        action="create_snapshot",
+    )
+
+    snapshot = await session_service.create_snapshot(project_id, session_id, snapshot_create)
+
+    logger.info(
+        "スナップショットを保存しました",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        snapshot_id=str(snapshot.id),
+    )
+
+    return snapshot
+
+
+# ================================================================================
 # チャット
 # ================================================================================
+
+
+@analysis_sessions_router.get(
+    "/project/{project_id}/analysis/session/{session_id}/messages",
+    response_model=AnalysisChatListResponse,
+    status_code=status.HTTP_200_OK,
+    summary="チャットメッセージ履歴取得",
+    description="""
+    セッションのチャットメッセージ履歴を取得します。
+
+    **認証が必要です。**
+    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**
+
+    現在のスナップショットに関連付けられたすべてのチャットメッセージを返します。
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - session_id: uuid - セッションID（必須）
+
+    クエリパラメータ:
+        - skip: int - スキップ数（デフォルト: 0）
+        - limit: int - 取得件数（デフォルト: 100、最大: 500）
+
+    レスポンス:
+        - AnalysisChatListResponse: チャットメッセージ一覧
+            - messages (list[AnalysisChatResponse]): メッセージリスト
+                - id (uuid): メッセージID
+                - chat_order (int): チャット順序
+                - snapshot (int): スナップショット番号
+                - role (str): ロール（user/assistant）
+                - message (str | None): メッセージ内容
+                - created_at (datetime): 作成日時
+                - updated_at (datetime): 更新日時
+            - total (int): 総件数
+            - skip (int): スキップ数
+            - limit (int): 取得件数
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: セッションが見つからない
+    """,
+)
+@handle_service_errors
+async def get_chat_messages(
+    member: ProjectMemberDep,
+    session_service: AnalysisSessionServiceDep,
+    project_id: uuid.UUID = Path(..., description="プロジェクトID"),
+    session_id: uuid.UUID = Path(..., description="分析セッションID"),
+    skip: int = Query(0, ge=0, description="スキップするレコード数"),
+    limit: int = Query(100, ge=1, le=500, description="取得する最大レコード数"),
+) -> AnalysisChatListResponse:
+    """チャットメッセージ履歴を取得します。
+
+    Args:
+        member (ProjectMemberDep): プロジェクトメンバー（権限チェック済み）
+        session_service (AnalysisSessionServiceDep): 分析セッションサービス
+        project_id (uuid.UUID): プロジェクトID
+        session_id (uuid.UUID): セッションID
+        skip (int): スキップ数
+        limit (int): 取得件数
+
+    Returns:
+        AnalysisChatListResponse: チャットメッセージ一覧
+    """
+    logger.info(
+        "チャットメッセージ履歴取得リクエスト",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        skip=skip,
+        limit=limit,
+        action="get_chat_messages",
+    )
+
+    messages = await session_service.get_chat_messages(project_id, session_id, skip, limit)
+
+    logger.info(
+        "チャットメッセージ履歴を取得しました",
+        user_id=str(member.user_id),
+        session_id=str(session_id),
+        count=len(messages),
+    )
+
+    return AnalysisChatListResponse(
+        messages=messages,
+        total=len(messages),
+        skip=skip,
+        limit=limit,
+    )
 
 
 @analysis_sessions_router.post(
