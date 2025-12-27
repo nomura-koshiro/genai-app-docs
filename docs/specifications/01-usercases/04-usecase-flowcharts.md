@@ -564,9 +564,297 @@ graph TD
 
 ---
 
-## 7. よくある業務シナリオ
+## 7. ダッシュボード・統計
 
-### 7.1 新商品の売上分析
+### 7.1 ダッシュボードの概要
+
+::: mermaid
+graph TB
+    subgraph DASH["📊 ダッシュボード"]
+        direction TB
+
+        subgraph stats["📈 統計情報"]
+            S1["👥 ユーザー数"]
+            S2["📁 プロジェクト数"]
+            S3["🔍 分析セッション数"]
+            S4["🌳 ドライバーツリー数"]
+        end
+
+        subgraph charts["📉 チャート"]
+            C1["📈 セッショントレンド"]
+            C2["📈 ツリートレンド"]
+            C3["🥧 プロジェクト分布"]
+            C4["🥧 ユーザー分布"]
+        end
+
+        subgraph activity["📋 アクティビティ"]
+            A1["🔄 最近の操作履歴"]
+            A2["👤 ロール変更履歴"]
+        end
+    end
+
+    style DASH fill:#e8f4f8
+    style stats fill:#d4edda
+    style charts fill:#fff3cd
+    style activity fill:#ffeaa7
+:::
+
+### 7.2 アクティビティの流れ
+
+::: mermaid
+graph TD
+    Start([📊 ダッシュボード表示]) --> Load
+
+    subgraph Load["📥 データ読み込み"]
+        L1[統計情報取得]
+        L2[チャートデータ取得]
+        L3[アクティビティ取得]
+    end
+
+    Load --> Display
+
+    subgraph Display["🖥️ 表示"]
+        D1["プロジェクト・セッション・ツリー数"]
+        D2["トレンドチャート"]
+        D3["最近のアクティビティ一覧"]
+    end
+
+    Display --> Action{アクション選択}
+
+    Action -->|詳細を見る| Detail[各機能画面へ遷移]
+    Action -->|更新| Load
+    Action -->|ページング| Paging[次のアクティビティ表示]
+
+    style Start fill:#4ecdc4,color:#fff
+    style Load fill:#e8f4f8
+    style Display fill:#d4edda
+:::
+
+---
+
+## 8. 複製・エクスポート機能
+
+### 8.1 セッション複製の流れ
+
+::: mermaid
+graph TD
+    Start([🔍 分析セッション]) --> Select[複製したいセッションを選択]
+    Select --> Confirm{複製確認}
+
+    Confirm -->|キャンセル| Start
+    Confirm -->|実行| Process
+
+    subgraph Process["⚙️ 複製処理"]
+        P1[セッション情報をコピー]
+        P2[スナップショットをコピー]
+        P3[ステップをコピー]
+        P4[チャット履歴をコピー]
+        P1 --> P2 --> P3 --> P4
+    end
+
+    Process --> Complete[✅ 複製完了]
+    Complete --> NewSession([📋 新しいセッション])
+
+    style Start fill:#4ecdc4,color:#fff
+    style Complete fill:#96ceb4
+    style NewSession fill:#d4edda
+:::
+
+### 8.2 ツリー複製の流れ
+
+::: mermaid
+graph TD
+    Start([🌳 ドライバーツリー]) --> Select[複製したいツリーを選択]
+    Select --> Confirm{複製確認}
+
+    Confirm -->|キャンセル| Start
+    Confirm -->|実行| Process
+
+    subgraph Process["⚙️ 複製処理"]
+        P1[ツリー情報をコピー]
+        P2[ノードをコピー<br/>IDマッピング作成]
+        P3[リレーションをコピー<br/>新IDで紐付け]
+        P4[施策をコピー<br/>新ノードIDで紐付け]
+        P1 --> P2 --> P3 --> P4
+    end
+
+    Process --> Complete[✅ 複製完了]
+    Complete --> NewTree([🌳 新しいツリー])
+
+    style Start fill:#4ecdc4,color:#fff
+    style Complete fill:#96ceb4
+    style NewTree fill:#d4edda
+:::
+
+### 8.3 エクスポート機能
+
+::: mermaid
+graph LR
+    subgraph source["📊 データソース"]
+        S1["分析セッション"]
+        S2["ドライバーツリー"]
+    end
+
+    subgraph export["📤 エクスポート"]
+        E1["📄 レポート出力"]
+        E2["📊 Excel出力"]
+        E3["🔗 共有リンク生成"]
+    end
+
+    S1 --> E1
+    S1 --> E3
+    S2 --> E1
+    S2 --> E2
+
+    style source fill:#e8f4f8
+    style export fill:#d4edda
+:::
+
+---
+
+## 9. テンプレート機能
+
+### 9.1 テンプレートからツリー作成
+
+::: mermaid
+graph TD
+    Start([🎯 ドライバーツリーを作りたい]) --> Choice{どちらで作成？}
+
+    Choice -->|テンプレートから| Template
+    Choice -->|ゼロから| Manual[手動でノード作成]
+
+    subgraph Template["📋 テンプレート選択"]
+        T1[業種を選択]
+        T2[分析タイプを選択]
+        T3[テンプレート一覧表示]
+        T4[プレビュー確認]
+        T1 --> T2 --> T3 --> T4
+    end
+
+    Template --> Apply[テンプレート適用]
+    Apply --> Created([🌳 ツリー作成完了])
+
+    Manual --> Created
+
+    Created --> Customize[必要に応じてカスタマイズ]
+
+    style Start fill:#4ecdc4,color:#fff
+    style Created fill:#96ceb4
+    style Template fill:#fff3cd
+:::
+
+### 9.2 テンプレート一覧画面
+
+::: mermaid
+graph TB
+    subgraph filter["🔍 フィルター"]
+        F1["業種選択"]
+        F2["分析タイプ選択"]
+    end
+
+    subgraph list["📋 テンプレート一覧"]
+        L1["💰 売上分析テンプレート<br/>業種: 小売"]
+        L2["👥 顧客分析テンプレート<br/>業種: サービス"]
+        L3["📦 在庫分析テンプレート<br/>業種: 製造"]
+    end
+
+    subgraph preview["👁️ プレビュー"]
+        P1["ツリー構造プレビュー"]
+        P2["使用するこのテンプレート"]
+    end
+
+    filter --> list
+    L1 --> preview
+    L2 --> preview
+    L3 --> preview
+
+    style filter fill:#fff3cd
+    style list fill:#e8f4f8
+    style preview fill:#d4edda
+:::
+
+---
+
+## 10. ファイルバージョン管理
+
+### 10.1 バージョン管理の概念
+
+::: mermaid
+graph TD
+    subgraph versions["📁 ファイルバージョン履歴"]
+        V1["📄 売上データ_v1.xlsx<br/>2024/12/01 アップロード"]
+        V2["📄 売上データ_v2.xlsx<br/>2024/12/15 更新"]
+        V3["📄 売上データ_v3.xlsx<br/>2024/12/28 最新 ⭐"]
+
+        V1 --> V2 --> V3
+    end
+
+    Note1["💡 いつでも過去バージョンに<br/>アクセス可能"]
+
+    style V3 fill:#96ceb4
+    style versions fill:#e8f4f8
+:::
+
+### 10.2 新バージョンアップロード
+
+::: mermaid
+graph TD
+    Start([📄 既存ファイル]) --> Select[新しいファイルを選択]
+    Select --> Upload[アップロード]
+
+    Upload --> Process
+
+    subgraph Process["⚙️ 処理"]
+        P1[旧バージョンを履歴に移動]
+        P2[新バージョンを最新に設定]
+        P3[バージョン番号を更新]
+        P1 --> P2 --> P3
+    end
+
+    Process --> Complete[✅ アップロード完了]
+
+    Complete --> View{確認}
+    View -->|履歴を見る| History[バージョン履歴表示]
+    View -->|続ける| Start
+
+    style Start fill:#4ecdc4,color:#fff
+    style Complete fill:#96ceb4
+:::
+
+### 10.3 バージョン履歴操作
+
+::: mermaid
+graph LR
+    subgraph history["📋 バージョン履歴"]
+        H1["v3 (最新)"]
+        H2["v2"]
+        H3["v1"]
+    end
+
+    subgraph actions["🔧 操作"]
+        A1["📥 ダウンロード"]
+        A2["👁️ プレビュー"]
+        A3["↩️ このバージョンに戻す"]
+    end
+
+    H1 --> A1
+    H1 --> A2
+    H2 --> A1
+    H2 --> A2
+    H2 --> A3
+    H3 --> A1
+    H3 --> A2
+    H3 --> A3
+
+    style history fill:#e8f4f8
+    style actions fill:#fff3cd
+:::
+
+---
+
+## 11. よくある業務シナリオ
+
+### 11.1 新商品の売上分析
 
 ::: mermaid
 graph TD
@@ -605,7 +893,7 @@ graph TD
     style Action fill:#96ceb4
 :::
 
-### 7.2 複数メンバーでの協業
+### 11.2 複数メンバーでの協業
 
 ::: mermaid
 graph LR
@@ -637,7 +925,7 @@ graph LR
 
 ---
 
-## 8. 用語集
+## 12. 用語集
 
 | 用語 | 説明 |
 |------|------|
@@ -652,9 +940,9 @@ graph LR
 
 ---
 
-## 9. 困ったときは
+## 13. 困ったときは
 
-### 9.1 よくある質問
+### 13.1 よくある質問
 
 ::: mermaid
 graph TD
@@ -687,8 +975,10 @@ graph TD
 
 ---
 
-##### ドキュメント管理情報
+#### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
+- **更新日**: 2025年12月28日
 - **対象読者**: ビジネスメンバー、プロジェクト参加者
 - **目的**: CAMPシステムの業務フローの理解促進
+- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理のフローチャートを追加

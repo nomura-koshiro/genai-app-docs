@@ -633,9 +633,316 @@ stateDiagram-v2
 
 ---
 
-## 7. DB設計改善提案まとめ
+## 6. ダッシュボード・統計フロー
 
-### 7.1 高優先度（データ整合性に直結）
+### 6.1 フロー図
+
+::: mermaid
+graph TD
+    subgraph ダッシュボード統計
+        D001[D-001: 統計情報を取得]
+        D002[D-002: アクティビティ一覧を取得]
+        D003[D-003: 分析チャートを取得]
+        D004[D-004: プロジェクト進捗を取得]
+        D005[D-005: プロジェクト分布を取得]
+        D006[D-006: ユーザーアクティビティを取得]
+
+        D001 --> D003
+        D001 --> D004
+        D001 --> D005
+        D001 --> D006
+    end
+
+    subgraph データソース
+        U[UserAccount]
+        P[Project]
+        AS[AnalysisSession]
+        DT[DriverTree]
+        RH[RoleHistory]
+        PF[ProjectFile]
+    end
+
+    U --> D001
+    P --> D001
+    AS --> D001
+    DT --> D001
+    RH --> D002
+    P --> D002
+    AS --> D002
+    DT --> D002
+    PF --> D002
+:::
+
+### 6.2 前提条件分析
+
+| ユースケース | 前提条件（先行UC） | 後続可能UC | 必要権限 |
+|-------------|-------------------|-----------|---------|
+| D-001: 統計情報取得 | U-001（ログイン） | D-003〜D-006 | 認証済みユーザー |
+| D-002: アクティビティ一覧 | U-001（ログイン） | - | 認証済みユーザー |
+| D-003: 分析チャート | D-001 | - | 認証済みユーザー |
+| D-004: プロジェクト進捗 | D-001 | - | 認証済みユーザー |
+| D-005: プロジェクト分布 | D-001 | - | 認証済みユーザー |
+| D-006: ユーザーアクティビティ | D-001 | - | 認証済みユーザー |
+
+### 6.3 DB設計への示唆
+
+```text
+【実装済み】
+1. RoleHistoryテーブルによるロール変更履歴の追跡
+   - user_id, changed_by_id, action, role_type, old_roles, new_roles, reason, changed_at
+
+2. アクティビティログの集約
+   - RoleHistory, Project, AnalysisSession, DriverTree, ProjectFileから
+     created_at順でアクティビティを集約
+
+3. チャートデータの動的生成
+   - 指定期間（days）に基づいたトレンドデータ
+   - プロジェクト・ユーザーの分布データ
+```
+
+---
+
+## 7. 複製・エクスポート機能フロー
+
+### 7.1 フロー図
+
+::: mermaid
+graph TD
+    subgraph 複製機能
+        CP001[CP-001: セッションを複製]
+        CP002[CP-002: ツリーを複製]
+    end
+
+    subgraph エクスポート機能
+        EX001[EX-001: レポート出力]
+        EX002[EX-002: ツリー結果エクスポート]
+        EX003[EX-003: 結果共有]
+    end
+
+    subgraph 元データ
+        AS[AnalysisSession]
+        ASN[AnalysisSnapshot]
+        AST[AnalysisStep]
+        DT[DriverTree]
+        DTN[DriverTreeNode]
+        DTP[DriverTreePolicy]
+    end
+
+    AS --> CP001
+    ASN --> CP001
+    AST --> CP001
+    DT --> CP002
+    DTN --> CP002
+    DTP --> CP002
+
+    AS --> EX001
+    ASN --> EX001
+    DT --> EX002
+    DTN --> EX002
+    AS --> EX003
+:::
+
+### 7.2 前提条件分析
+
+| ユースケース | 前提条件（先行UC） | 後続可能UC | 必要権限 |
+|-------------|-------------------|-----------|---------|
+| CP-001: セッション複製 | AS-001（セッション存在） | AS-002〜AS-007 | MEMBER以上 |
+| CP-002: ツリー複製 | DT-001（ツリー存在） | DTN-001, DTP-001 | MEMBER以上 |
+| EX-001: レポート出力 | AS-001, ASN-001 | - | VIEWER以上 |
+| EX-002: ツリーエクスポート | DT-001 | - | VIEWER以上 |
+| EX-003: 結果共有 | AS-001 | - | MEMBER以上 |
+
+### 7.3 DB設計への示唆
+
+```text
+【実装済み】
+1. セッション複製
+   - AnalysisSession, AnalysisSnapshot, AnalysisStep, AnalysisChatの
+     完全な複製とID再生成
+
+2. ツリー複製（施策込み）
+   - DriverTree, DriverTreeNode, DriverTreeRelationship,
+     DriverTreeRelationshipChild, DriverTreePolicyの複製
+   - ノードIDのマッピングによる関係性の再構築
+
+【部分実装】
+3. エクスポート機能
+   - API未実装（フロントエンド機能として実装予定）
+   - セッション結果のレポート出力
+   - ツリー計算結果のエクスポート
+   - 結果共有機能
+```
+
+---
+
+## 8. テンプレート機能フロー
+
+### 8.1 フロー図
+
+::: mermaid
+graph TD
+    subgraph テンプレート管理
+        TM001[TM-001: テンプレート一覧]
+        TM002[TM-002: 業種で絞込]
+        TM003[TM-003: 分析タイプで絞込]
+        TM004[TM-004: プレビュー]
+        TM005[TM-005: テンプレートからツリー作成]
+    end
+
+    subgraph マスタデータ
+        AT[AnalysisTemplate]
+        DTC[DriverTreeCategory]
+        DTF[DriverTreeFormula]
+    end
+
+    AT --> TM001
+    AT --> TM002
+    AT --> TM003
+    AT --> TM004
+    AT --> TM005
+    DTC --> TM002
+    DTF --> TM003
+:::
+
+### 8.2 前提条件分析
+
+| ユースケース | 前提条件（先行UC） | 後続可能UC | 必要権限 |
+|-------------|-------------------|-----------|---------|
+| TM-001: テンプレート一覧 | なし | TM-002〜TM-005 | 認証済みユーザー |
+| TM-002: 業種絞込 | TM-001 | TM-004, TM-005 | 認証済みユーザー |
+| TM-003: 分析タイプ絞込 | TM-001 | TM-004, TM-005 | 認証済みユーザー |
+| TM-004: プレビュー | TM-001 | TM-005 | 認証済みユーザー |
+| TM-005: ツリー作成 | TM-001, P-001 | DT-001〜 | MEMBER以上 |
+
+### 8.3 DB設計への示唆
+
+```text
+【実装済み】
+1. AnalysisTemplateテーブル
+   - id, name, description, industry, analysis_type, config, is_active
+   - validation.ymlからのシードデータ対応
+
+2. テンプレート絞込機能
+   - 業種（industry）による絞込
+   - 分析タイプ（analysis_type）による絞込
+   - アクティブ状態（is_active）による絞込
+
+3. テンプレートからのツリー作成
+   - テンプレート設定（config）に基づくDriverTree, DriverTreeNodeの自動生成
+```
+
+---
+
+## 9. ファイルバージョン管理フロー
+
+### 9.1 フロー図
+
+::: mermaid
+graph TD
+    subgraph バージョン管理
+        FV001[FV-001: 新バージョンアップロード]
+        FV002[FV-002: バージョン履歴取得]
+        FV003[FV-003: 過去バージョンダウンロード]
+        FV004[FV-004: 最新バージョン確認]
+    end
+
+    subgraph ファイル構造
+        PF1[ProjectFile v1]
+        PF2[ProjectFile v2]
+        PF3[ProjectFile v3]
+
+        PF1 --> |parent_file_id| PF2
+        PF2 --> |parent_file_id| PF3
+    end
+
+    PF1 --> FV002
+    PF2 --> FV002
+    PF3 --> FV002
+    PF3 --> FV004
+:::
+
+### 9.2 前提条件分析
+
+| ユースケース | 前提条件（先行UC） | 後続可能UC | 必要権限 |
+|-------------|-------------------|-----------|---------|
+| FV-001: 新バージョンアップロード | PF-001（元ファイル存在） | FV-002, FV-004 | MEMBER以上 |
+| FV-002: バージョン履歴取得 | PF-001 | FV-003 | VIEWER以上 |
+| FV-003: 過去バージョンダウンロード | FV-002 | - | VIEWER以上 |
+| FV-004: 最新バージョン確認 | PF-001 | FV-001 | VIEWER以上 |
+
+### 9.3 DB設計への示唆
+
+```text
+【実装済み】
+1. ProjectFileテーブルのバージョン管理カラム
+   - version: INTEGER (バージョン番号、デフォルト1)
+   - parent_file_id: UUID FK (親ファイルへの参照、自己参照)
+   - is_latest: BOOLEAN (最新バージョンフラグ)
+
+2. バージョン管理API
+   - POST /api/v1/projects/{project_id}/files/{file_id}/versions
+     新バージョンアップロード時、旧バージョンのis_latest=falseに更新
+   - GET /api/v1/projects/{project_id}/files/{file_id}/versions
+     バージョン履歴を返却
+
+3. 整合性保証
+   - 新バージョン作成時、旧バージョンのis_latestをfalseに更新
+   - parent_file_idによる履歴チェーン構築
+```
+
+---
+
+## 10. 全体フロー（ユーザージャーニー）更新版
+
+### 10.1 新規プロジェクト〜分析完了までのフロー
+
+::: mermaid
+graph TD
+    subgraph 1_初期設定
+        U001[ログイン] --> D001[ダッシュボード確認]
+        D001 --> P001[プロジェクト作成]
+        P001 --> PM001[メンバー追加]
+    end
+
+    subgraph 2_データ準備
+        PM001 --> PF001[ファイルアップロード]
+        PF001 --> FV001[バージョン管理]
+    end
+
+    subgraph 3_テンプレート活用
+        PF001 --> TM001[テンプレート選択]
+        TM001 --> TM005[テンプレートからツリー作成]
+    end
+
+    subgraph 4_個別施策分析
+        PF001 --> AS001[分析セッション作成]
+        AS001 --> AF001[分析ファイル作成]
+        AF001 --> ASN001[スナップショット作成]
+        ASN001 --> AC001[チャット分析]
+        AC001 --> AST001[ステップ実行]
+        AST001 --> CP001[セッション複製]
+        AST001 --> EX001[レポート出力]
+    end
+
+    subgraph 5_ドライバーツリー分析
+        TM005 --> DTN001[ノード構築]
+        PF001 --> DT001[ツリー作成]
+        DT001 --> DTN001
+        DTN001 --> DTR001[リレーション定義]
+        PF001 --> DTFL001[ファイル取込]
+        DTFL001 --> DTDF001[データフレーム作成]
+        DTDF001 --> DTN007[ノードにデータ紐付け]
+        DTN001 --> DTP001[施策設定]
+        DTP001 --> CP002[ツリー複製]
+        DTP001 --> EX002[結果エクスポート]
+    end
+:::
+
+---
+
+## 11. DB設計改善提案まとめ
+
+### 11.1 高優先度（データ整合性に直結）
 
 | # | 問題 | 改善案 | 影響範囲 |
 |---|------|-------|---------|
@@ -644,7 +951,7 @@ stateDiagram-v2
 | 3 | current_snapshotの整合性保証がない | current_snapshot_id UUID FK化 | AnalysisSession |
 | 4 | DriverTreeCategoryとFormulaの関係不明確 | DriverTreeFormula.category_id FK追加、またはスキーマ整理 | DriverTreeCategory, DriverTreeFormula |
 
-### 7.2 中優先度（業務ルールの明示化）
+### 11.2 中優先度（業務ルールの明示化）
 
 | # | 問題 | 改善案 | 影響範囲 |
 |---|------|-------|---------|
@@ -653,7 +960,7 @@ stateDiagram-v2
 | 7 | order_indexの一意性制約がない | (relationship_id, order_index) UNIQUE制約 | DriverTreeRelationshipChild |
 | 8 | プロジェクト作成者とPMの整合性 | トリガーまたはアプリ層での保証 | Project, ProjectMember |
 
-### 7.3 低優先度（将来の拡張性）
+### 11.3 低優先度（将来の拡張性）
 
 | # | 問題 | 改善案 | 影響範囲 |
 |---|------|-------|---------|
@@ -664,9 +971,9 @@ stateDiagram-v2
 
 ---
 
-## 8. 改善後ER図（提案）
+## 12. 改善後ER図（提案）
 
-### 8.1 AnalysisSnapshot（改善案）
+### 12.1 AnalysisSnapshot（改善案）
 
 ::: mermaid
 erDiagram
@@ -680,7 +987,7 @@ erDiagram
     }
 :::
 
-### 8.2 DriverTreeNode（改善案）
+### 12.2 DriverTreeNode（改善案）
 
 ::: mermaid
 erDiagram
@@ -697,7 +1004,7 @@ erDiagram
     }
 :::
 
-### 8.3 AnalysisSession（改善案）
+### 12.3 AnalysisSession（改善案）
 
 ::: mermaid
 erDiagram
@@ -714,7 +1021,7 @@ erDiagram
     }
 :::
 
-### 8.4 DriverTreeFormula（改善案）
+### 12.4 DriverTreeFormula（改善案）
 
 ::: mermaid
 erDiagram
@@ -732,7 +1039,7 @@ erDiagram
 
 ---
 
-## 9. 次のステップ
+## 13. 次のステップ
 
 1. **レビュー**: 本分析結果をチームでレビュー
 2. **優先度決定**: 高優先度の改善から着手
@@ -745,5 +1052,7 @@ erDiagram
 ##### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
+- **更新日**: 2025年12月28日
 - **分析元**: 01-usecases.md, ../03-database/02-er-diagram.md
 - **目的**: ユースケースフロー分析によるDB設計検証
+- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理フローを追加

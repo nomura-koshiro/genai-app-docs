@@ -857,9 +857,365 @@ sequenceDiagram
 
 ---
 
-## 6. DB設計課題まとめ（シーケンス図から抽出）
+## 6. ダッシュボード・統計
 
-### 6.1 課題一覧
+### 6.1 ダッシュボード統計情報取得
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: ダッシュボード表示要求
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-001: 統計情報取得
+        par 並列クエリ
+            API->>DB: SELECT COUNT(*) FROM project
+            API->>DB: SELECT COUNT(*) FROM analysis_session
+            API->>DB: SELECT COUNT(*) FROM driver_tree
+            API->>DB: SELECT COUNT(*) FROM user_account
+        end
+        DB-->>API: 各種カウント
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-005: プロジェクト分布
+        API->>DB: SELECT is_active, COUNT(*) FROM project GROUP BY is_active
+        DB-->>API: アクティブ/アーカイブ分布
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-006: ユーザーアクティビティ
+        API->>DB: SELECT is_active, COUNT(*) FROM user_account GROUP BY is_active
+        DB-->>API: アクティブ/非アクティブ分布
+    end
+
+    API-->>User: ダッシュボード表示
+:::
+
+### 6.2 アクティビティ一覧取得
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: アクティビティ一覧要求（skip, limit）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-002: アクティビティ集約
+        par 複数ソースから取得
+            API->>DB: SELECT 'role' as type, * FROM role_history
+            API->>DB: SELECT 'project' as type, * FROM project
+            API->>DB: SELECT 'session' as type, * FROM analysis_session
+            API->>DB: SELECT 'tree' as type, * FROM driver_tree
+            API->>DB: SELECT 'file' as type, * FROM project_file
+        end
+        DB-->>API: 各種アクティビティデータ
+    end
+
+    API->>API: created_at順でソート・統合
+    API->>API: ページネーション適用
+
+    API-->>User: アクティビティ一覧（activities, total, skip, limit）
+
+    Note over User,DB: 【実装】RoleHistory, Project, AnalysisSession,
+    Note over User,DB: DriverTree, ProjectFileから集約
+:::
+
+### 6.3 チャートデータ取得
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: チャートデータ要求（days=30）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-003: セッショントレンド
+        API->>DB: SELECT DATE(created_at), COUNT(*)<br/>FROM analysis_session<br/>WHERE created_at >= NOW() - INTERVAL '{days} days'<br/>GROUP BY DATE(created_at)
+        DB-->>API: 日別セッション数
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: D-003: ツリートレンド
+        API->>DB: SELECT DATE(created_at), COUNT(*)<br/>FROM driver_tree<br/>WHERE created_at >= NOW() - INTERVAL '{days} days'<br/>GROUP BY DATE(created_at)
+        DB-->>API: 日別ツリー数
+    end
+
+    API->>API: チャートデータ構築
+
+    API-->>User: チャートデータ（sessionTrend, treeTrend, projectDistribution, userActivity）
+:::
+
+---
+
+## 7. 複製・エクスポート機能
+
+### 7.1 セッション複製
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: セッション複製要求（session_id）
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT role FROM project_member WHERE project_id = ? AND user_id = ?
+        DB-->>API: MEMBER
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: 元セッション取得
+        API->>DB: SELECT * FROM analysis_session WHERE id = ?
+        DB-->>API: セッションデータ
+        API->>DB: SELECT * FROM analysis_snapshot WHERE session_id = ?
+        DB-->>API: スナップショット一覧
+        API->>DB: SELECT * FROM analysis_step WHERE snapshot_id IN (...)
+        DB-->>API: ステップ一覧
+        API->>DB: SELECT * FROM analysis_chat WHERE snapshot_id IN (...)
+        DB-->>API: チャット一覧
+    end
+
+    rect rgb(200, 230, 200)
+        Note over API,DB: CP-001: セッション複製
+        API->>DB: INSERT INTO analysis_session (新規ID, 複製データ)
+        DB-->>API: new_session_id
+        loop 各スナップショット
+            API->>DB: INSERT INTO analysis_snapshot (新規ID, session_id=new_session_id)
+            DB-->>API: new_snapshot_id
+            API->>DB: INSERT INTO analysis_step (新規ID, snapshot_id=new_snapshot_id)
+            API->>DB: INSERT INTO analysis_chat (新規ID, snapshot_id=new_snapshot_id)
+        end
+    end
+
+    API-->>User: 複製完了（new_session_id）
+:::
+
+### 7.2 ツリー複製（施策込み）
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: ツリー複製要求（tree_id）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: 元ツリー取得
+        API->>DB: SELECT * FROM driver_tree WHERE id = ?
+        DB-->>API: ツリーデータ
+        API->>DB: SELECT * FROM driver_tree_node WHERE driver_tree_id = ?
+        DB-->>API: ノード一覧
+        API->>DB: SELECT * FROM driver_tree_relationship WHERE driver_tree_id = ?
+        DB-->>API: リレーション一覧
+        API->>DB: SELECT * FROM driver_tree_policy WHERE node_id IN (...)
+        DB-->>API: 施策一覧
+    end
+
+    rect rgb(200, 230, 200)
+        Note over API,DB: CP-002: ツリー複製
+        API->>DB: INSERT INTO driver_tree (新規ID, 複製データ)
+        DB-->>API: new_tree_id
+        API->>API: ノードIDマッピング作成
+
+        loop 各ノード
+            API->>DB: INSERT INTO driver_tree_node (新規ID, driver_tree_id=new_tree_id)
+            DB-->>API: new_node_id
+            API->>API: old_node_id → new_node_id マッピング更新
+        end
+
+        loop 各リレーション
+            API->>DB: INSERT INTO driver_tree_relationship<br/>(新規ID, parent_node_id=mapped_id)
+            DB-->>API: new_relationship_id
+            API->>DB: INSERT INTO driver_tree_relationship_child<br/>(relationship_id, child_node_id=mapped_id)
+        end
+
+        loop 各施策
+            API->>DB: INSERT INTO driver_tree_policy<br/>(新規ID, node_id=mapped_id)
+        end
+    end
+
+    API-->>User: 複製完了（new_tree_id）
+
+    Note over User,DB: 【実装済み】ノードIDマッピングにより
+    Note over User,DB: 関係性を維持したまま完全複製
+:::
+
+---
+
+## 8. テンプレート機能
+
+### 8.1 テンプレート一覧・絞込
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: テンプレート一覧要求（industry?, analysis_type?）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: TM-001〜003: テンプレート取得
+        alt フィルタなし
+            API->>DB: SELECT * FROM analysis_template WHERE is_active = true
+        else 業種フィルタ
+            API->>DB: SELECT * FROM analysis_template<br/>WHERE is_active = true AND industry = ?
+        else 分析タイプフィルタ
+            API->>DB: SELECT * FROM analysis_template<br/>WHERE is_active = true AND analysis_type = ?
+        else 複合フィルタ
+            API->>DB: SELECT * FROM analysis_template<br/>WHERE is_active = true AND industry = ? AND analysis_type = ?
+        end
+        DB-->>API: テンプレート一覧
+    end
+
+    API-->>User: テンプレート一覧
+:::
+
+### 8.2 テンプレートからツリー作成
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: テンプレートからツリー作成（template_id, project_id）
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT role FROM project_member WHERE project_id = ? AND user_id = ?
+        DB-->>API: MEMBER
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: TM-004: テンプレート取得
+        API->>DB: SELECT * FROM analysis_template WHERE id = ?
+        DB-->>API: テンプレートデータ（config含む）
+    end
+
+    rect rgb(200, 230, 200)
+        Note over API,DB: TM-005: ツリー作成
+        API->>DB: INSERT INTO driver_tree (project_id, name, description)
+        DB-->>API: tree_id
+
+        Note over API,DB: テンプレートconfigに基づいてノード作成
+        loop configのノード定義
+            API->>DB: INSERT INTO driver_tree_node<br/>(driver_tree_id, label, node_type, position)
+            DB-->>API: node_id
+        end
+
+        API->>DB: UPDATE driver_tree SET root_node_id = ?
+        DB-->>API: 更新完了
+    end
+
+    API-->>User: ツリー作成完了（tree_id）
+:::
+
+---
+
+## 9. ファイルバージョン管理
+
+### 9.1 新バージョンアップロード
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant Storage as ファイルストレージ
+    participant DB as Database
+
+    User->>API: 新バージョンアップロード（file_id, new_file）
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT role FROM project_member WHERE project_id = ? AND user_id = ?
+        DB-->>API: MEMBER
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: FV-004: 現在バージョン確認
+        API->>DB: SELECT * FROM project_file WHERE id = ?
+        DB-->>API: current_file（version, is_latest）
+    end
+
+    API->>Storage: 新ファイル保存
+    Storage-->>API: new_file_path
+
+    rect rgb(200, 230, 200)
+        Note over API,DB: FV-001: 新バージョン作成
+        API->>DB: UPDATE project_file SET is_latest = false WHERE id = ?
+        DB-->>API: 更新完了
+
+        API->>DB: INSERT INTO project_file<br/>(parent_file_id=?, version=current+1, is_latest=true, ...)
+        DB-->>API: new_file_id
+    end
+
+    API-->>User: 新バージョン作成完了（new_file_id, version）
+
+    Note over User,DB: 【実装】parent_file_idでバージョンチェーン構築
+    Note over User,DB: is_latestフラグで最新版を識別
+:::
+
+### 9.2 バージョン履歴取得
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>API: バージョン履歴要求（file_id）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: FV-002: バージョン履歴取得
+
+        API->>DB: SELECT * FROM project_file WHERE id = ?
+        DB-->>API: 指定ファイル
+
+        Note over API,DB: 親ファイルを辿って履歴取得
+        loop parent_file_id != NULL
+            API->>DB: SELECT * FROM project_file WHERE id = {parent_file_id}
+            DB-->>API: 親ファイル
+        end
+
+        Note over API,DB: 子ファイルを辿って履歴取得
+        API->>DB: WITH RECURSIVE を使用して子ファイル取得
+        DB-->>API: 子ファイル一覧
+    end
+
+    API->>API: バージョン順でソート
+
+    API-->>User: バージョン履歴（versions[]）
+
+    Note over User,DB: 各バージョンにはversion, created_at,
+    Note over User,DB: uploaded_by, is_latestが含まれる
+:::
+
+---
+
+## 10. DB設計課題まとめ（シーケンス図から抽出）
+
+### 10.1 課題一覧
 
 ::: mermaid
 sequenceDiagram
@@ -918,9 +1274,9 @@ sequenceDiagram
 
 ---
 
-## 7. 改善後の理想的なシーケンス
+## 11. 改善後の理想的なシーケンス
 
-### 7.1 スナップショット分岐（改善後）
+### 11.1 スナップショット分岐（改善後）
 
 ::: mermaid
 sequenceDiagram
@@ -960,7 +1316,7 @@ sequenceDiagram
     Note over User,DB: - ツリー構造の履歴を完全に再現可能
 :::
 
-### 7.2 ノード作成（改善後）
+### 11.2 ノード作成（改善後）
 
 ::: mermaid
 sequenceDiagram
@@ -985,8 +1341,10 @@ sequenceDiagram
 
 ---
 
-##### ドキュメント管理情報
+#### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
+- **更新日**: 2025年12月28日
 - **目的**: ユースケースフローの可視化とDB設計課題の抽出
 - **関連**: 02-usecase-flow-analysis.md, ../03-database/02-er-diagram.md
+- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理のシーケンス図を追加
