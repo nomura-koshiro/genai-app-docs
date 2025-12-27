@@ -40,36 +40,6 @@ from app.api.routes.v1 import (
     projects_router,
     user_accounts_router,
 )
-from app.api.routes.v2 import (
-    dashboard_router as dashboard_router_v2,
-)
-from app.api.routes.v2 import (
-    project_file_router as project_file_router_v2,
-)
-from app.api.routes.v2 import (
-    project_member_router as project_member_router_v2,
-)
-from app.api.routes.v2 import (
-    project_router as project_router_v2,
-)
-from app.api.routes.v2 import (
-    session_router as session_router_v2,
-)
-from app.api.routes.v2 import (
-    template_router as template_router_v2,
-)
-from app.api.routes.v2 import (
-    tree_file_router as tree_file_router_v2,
-)
-from app.api.routes.v2 import (
-    tree_node_router as tree_node_router_v2,
-)
-from app.api.routes.v2 import (
-    tree_router as tree_router_v2,
-)
-from app.api.routes.v2 import (
-    user_router as user_router_v2,
-)
 from app.core.config import settings
 from app.core.lifespan import lifespan
 
@@ -238,40 +208,6 @@ def create_app() -> FastAPI:
 
     # Driver Tree API - ノード管理
     app.include_router(driver_tree_nodes_router, prefix="/api/v1", tags=["driver-tree-node"])
-
-    # ================================================================================
-    # API v2 ルーター（パス構造統一版）
-    # ================================================================================
-
-    # ユーザー管理API v2
-    app.include_router(user_router_v2, prefix="/api/v2", tags=["v2-user"])
-
-    # ダッシュボードAPI v2
-    app.include_router(dashboard_router_v2, prefix="/api/v2/dashboard", tags=["v2-dashboard"])
-
-    # プロジェクト管理API v2
-    app.include_router(project_router_v2, prefix="/api/v2", tags=["v2-project"])
-
-    # プロジェクトメンバー管理API v2
-    app.include_router(project_member_router_v2, prefix="/api/v2", tags=["v2-project-member"])
-
-    # プロジェクトファイル管理API v2
-    app.include_router(project_file_router_v2, prefix="/api/v2", tags=["v2-project-file"])
-
-    # 分析セッションAPI v2
-    app.include_router(session_router_v2, prefix="/api/v2", tags=["v2-session"])
-
-    # 分析テンプレートAPI v2
-    app.include_router(template_router_v2, prefix="/api/v2", tags=["v2-template"])
-
-    # ドライバーツリーAPI v2
-    app.include_router(tree_router_v2, prefix="/api/v2", tags=["v2-tree"])
-
-    # ドライバーツリーファイルAPI v2
-    app.include_router(tree_file_router_v2, prefix="/api/v2", tags=["v2-tree-file"])
-
-    # ドライバーツリーノードAPI v2
-    app.include_router(tree_node_router_v2, prefix="/api/v2", tags=["v2-tree-node"])
 
     # 基本エンドポイントを登録
     app.include_router(root_router, tags=["root"])
