@@ -11,7 +11,12 @@ from app.api.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.models import ProjectFile, ProjectRole
-from app.schemas.project.project_file import FileUsageItem, ProjectFileUsageResponse
+from app.schemas.project.project_file import (
+    FileUsageItem,
+    ProjectFileUsageResponse,
+    ProjectFileVersionHistoryResponse,
+    ProjectFileVersionItem,
+)
 from app.services.project.project_file.base import ProjectFileServiceBase
 
 logger = get_logger(__name__)
@@ -244,4 +249,72 @@ class ProjectFileCrudService(ProjectFileServiceBase):
             driver_tree_count=driver_tree_count,
             total_usage_count=analysis_count + driver_tree_count,
             usages=usages,
+        )
+
+    @measure_performance
+    async def get_version_history(
+        self,
+        file_id: uuid.UUID,
+        requester_id: uuid.UUID,
+    ) -> ProjectFileVersionHistoryResponse:
+        """ファイルのバージョン履歴を取得します。
+
+        指定されたファイルIDから親をたどり、同じ元ファイルに属するすべてのバージョンを取得します。
+
+        Args:
+            file_id: ファイルID（任意のバージョン）
+            requester_id: リクエスター（ユーザー）ID
+
+        Returns:
+            ProjectFileVersionHistoryResponse: バージョン履歴
+
+        Raises:
+            NotFoundError: ファイルが見つからない場合
+            AuthorizationError: 権限が不足している場合
+        """
+        logger.debug("バージョン履歴取得", file_id=str(file_id), requester_id=str(requester_id))
+
+        file = await self.repository.get(file_id)
+        if not file:
+            raise NotFoundError(f"ファイルが見つかりません: {file_id}", details={"file_id": str(file_id)})
+
+        # 権限チェック（VIEWER以上）
+        await self._check_member_role(
+            file.project_id,
+            requester_id,
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
+        )
+
+        # バージョン履歴を取得
+        versions = await self.repository.get_version_history(file_id)
+
+        # 最新バージョンを特定
+        latest_file = next((v for v in versions if v.is_latest), versions[0] if versions else file)
+
+        version_items = [
+            ProjectFileVersionItem(
+                id=v.id,
+                version=v.version,
+                filename=v.filename,
+                original_filename=v.original_filename,
+                file_size=v.file_size,
+                uploaded_at=v.uploaded_at,
+                uploaded_by=v.uploaded_by,
+                is_latest=v.is_latest,
+                uploader=None,  # 別途ロードが必要な場合は対応
+            )
+            for v in versions
+        ]
+
+        logger.debug(
+            "バージョン履歴取得完了",
+            file_id=str(file_id),
+            total_versions=len(version_items),
+        )
+
+        return ProjectFileVersionHistoryResponse(
+            file_id=latest_file.id,
+            original_filename=latest_file.original_filename,
+            total_versions=len(version_items),
+            versions=version_items,
         )

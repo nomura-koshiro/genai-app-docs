@@ -29,7 +29,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -57,9 +57,13 @@ class ProjectFile(Base):
         mime_type (str | None): MIMEタイプ
         uploaded_by (UUID): アップロード者のユーザーID
         uploaded_at (datetime): アップロード日時
+        version (int): バージョン番号（1から開始）
+        parent_file_id (UUID | None): 親ファイルID（バージョン履歴用）
+        is_latest (bool): 最新バージョンかどうか
 
     インデックス:
         - idx_project_files_project_id: project_id
+        - idx_project_files_parent_file_id: parent_file_id
     """
 
     __tablename__ = "project_file"
@@ -122,6 +126,28 @@ class ProjectFile(Base):
         comment="アップロードタイムスタンプ",
     )
 
+    # バージョニング用カラム
+    version: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1,
+        comment="バージョン番号（1から開始）",
+    )
+
+    parent_file_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("project_file.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="親ファイルID（バージョン履歴用）",
+    )
+
+    is_latest: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=True,
+        comment="最新バージョンかどうか",
+    )
+
     # リレーションシップ
     project: Mapped["Project"] = relationship(
         "Project",
@@ -131,6 +157,20 @@ class ProjectFile(Base):
     uploader: Mapped["UserAccount"] = relationship(
         "UserAccount",
         foreign_keys=[uploaded_by],
+    )
+
+    # バージョン履歴用リレーションシップ
+    parent_file: Mapped["ProjectFile | None"] = relationship(
+        "ProjectFile",
+        remote_side="ProjectFile.id",
+        foreign_keys=[parent_file_id],
+        back_populates="child_versions",
+    )
+
+    child_versions: Mapped[list["ProjectFile"]] = relationship(
+        "ProjectFile",
+        back_populates="parent_file",
+        foreign_keys="ProjectFile.parent_file_id",
     )
 
     analysis_files: Mapped[list["AnalysisFile"]] = relationship(
@@ -146,7 +186,11 @@ class ProjectFile(Base):
     )
 
     # インデックス
-    __table_args__ = (Index("idx_project_files_project_id", "project_id"),)
+    __table_args__ = (
+        Index("idx_project_files_project_id", "project_id"),
+        Index("idx_project_files_parent_file_id", "parent_file_id"),
+        Index("idx_project_files_is_latest", "is_latest"),
+    )
 
     def __repr__(self) -> str:
         """ファイルオブジェクトの文字列表現。

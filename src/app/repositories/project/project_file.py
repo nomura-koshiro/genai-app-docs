@@ -229,3 +229,101 @@ class ProjectFileRepository(BaseRepository[ProjectFile, uuid.UUID]):
             .where(ProjectFile.id == file_id)
         )
         return result.scalar_one_or_none()
+
+    async def get_version_history(self, file_id: uuid.UUID) -> list[ProjectFile]:
+        """ファイルのバージョン履歴を取得します。
+
+        指定されたファイルから親をたどって最初のバージョンを見つけ、
+        そこから子をたどってすべてのバージョンを取得します。
+
+        Args:
+            file_id: ファイルID（任意のバージョン）
+
+        Returns:
+            list[ProjectFile]: バージョン履歴（バージョン番号順）
+
+        Example:
+            >>> versions = await repo.get_version_history(file_id)
+            >>> for v in versions:
+            ...     print(f"v{v.version}: {v.filename} {'(最新)' if v.is_latest else ''}")
+        """
+        # まず指定されたファイルを取得
+        file = await self.get(file_id)
+        if not file:
+            return []
+
+        # 親をたどって最初のバージョンを見つける
+        root_file = file
+        visited_ids = {file.id}  # 循環参照を防ぐ
+
+        while root_file.parent_file_id is not None:
+            parent = await self.get(root_file.parent_file_id)
+            if not parent or parent.id in visited_ids:
+                break
+            visited_ids.add(parent.id)
+            root_file = parent
+
+        # ルートから同じoriginal_filenameを持つすべてのバージョンを取得
+        result = await self.db.execute(
+            select(ProjectFile)
+            .options(selectinload(ProjectFile.uploader))
+            .where(
+                ProjectFile.project_id == root_file.project_id,
+                ProjectFile.original_filename == root_file.original_filename,
+            )
+            .order_by(ProjectFile.version.asc())
+        )
+        return list(result.scalars().all())
+
+    async def update_is_latest(self, file_id: uuid.UUID, is_latest: bool) -> bool:
+        """ファイルのis_latestフラグを更新します。
+
+        Args:
+            file_id: ファイルID
+            is_latest: 最新バージョンかどうか
+
+        Returns:
+            bool: 更新成功の場合True
+        """
+        file = await self.get(file_id)
+        if not file:
+            return False
+
+        file.is_latest = is_latest
+        await self.db.flush()
+        return True
+
+    async def list_by_project_latest_only(
+        self,
+        project_id: uuid.UUID,
+        skip: int = 0,
+        limit: int = 100,
+        mime_type: str | None = None,
+    ) -> list[ProjectFile]:
+        """プロジェクトの最新バージョンファイル一覧を取得します。
+
+        Args:
+            project_id: プロジェクトID
+            skip: スキップするレコード数
+            limit: 取得する最大レコード数
+            mime_type: MIMEタイプでフィルタ
+
+        Returns:
+            list[ProjectFile]: 最新バージョンファイルのリスト
+        """
+        query = (
+            select(ProjectFile)
+            .options(selectinload(ProjectFile.uploader))
+            .where(
+                ProjectFile.project_id == project_id,
+                ProjectFile.is_latest == True,  # noqa: E712
+            )
+        )
+
+        if mime_type:
+            query = query.where(ProjectFile.mime_type.ilike(f"{mime_type}%"))
+
+        query = query.order_by(ProjectFile.uploaded_at.desc()).offset(skip).limit(limit)
+
+        result = await self.db.execute(query)
+        return list(result.scalars().all())

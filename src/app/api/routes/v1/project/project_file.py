@@ -25,7 +25,10 @@ from app.schemas import (
     ProjectFileResponse,
     ProjectFileUploadResponse,
 )
-from app.schemas.project.project_file import ProjectFileUsageResponse
+from app.schemas.project.project_file import (
+    ProjectFileUsageResponse,
+    ProjectFileVersionHistoryResponse,
+)
 
 logger = get_logger(__name__)
 
@@ -440,3 +443,146 @@ async def get_file_usage(
     )
 
     return usage
+
+
+@project_files_router.get(
+    "/project/{project_id}/file/{file_id}/versions",
+    response_model=ProjectFileVersionHistoryResponse,
+    summary="プロジェクトファイルバージョン履歴取得",
+    description="""
+    プロジェクトのファイルのバージョン履歴を取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - file_id: uuid - ファイルID（必須、任意のバージョンを指定可能）
+
+    レスポンス:
+        - ProjectFileVersionHistoryResponse: バージョン履歴
+            - file_id (uuid): 最新バージョンのファイルID
+            - original_filename (str): 元のファイル名
+            - total_versions (int): 総バージョン数
+            - versions (list[ProjectFileVersionItem]): バージョンリスト
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ファイルが見つからない
+    """,
+)
+@handle_service_errors
+async def get_file_version_history(
+    project_id: uuid.UUID,
+    file_id: uuid.UUID,
+    file_service: ProjectFileServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> ProjectFileVersionHistoryResponse:
+    """プロジェクトのファイルバージョン履歴を取得します。"""
+    logger.info(
+        "ファイルバージョン履歴取得リクエスト",
+        project_id=str(project_id),
+        file_id=str(file_id),
+        user_id=str(current_user.id),
+        action="get_file_version_history",
+    )
+
+    user_id = current_user.id
+
+    version_history = await file_service.get_version_history(file_id, user_id)
+
+    logger.info(
+        "ファイルバージョン履歴を取得しました",
+        file_id=str(file_id),
+        total_versions=version_history.total_versions,
+    )
+
+    return version_history
+
+
+@project_files_router.post(
+    "/project/{project_id}/file/{file_id}/version",
+    response_model=ProjectFileUploadResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="プロジェクトファイル新バージョンアップロード",
+    description="""
+    既存ファイルの新しいバージョンをアップロードします。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - file_id: uuid - 親ファイルID（必須、新バージョンの元となるファイル）
+
+    リクエストボディ:
+        - Content-Type: multipart/form-data
+        - file: File - アップロードするファイル
+
+    レスポンス:
+        - ProjectFileUploadResponse: ファイルアップロード成功レスポンス
+
+    ステータスコード:
+        - 201: アップロード成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: 親ファイルが見つからない
+        - 413: ファイルサイズ超過
+        - 422: ファイルが無効
+    """,
+    openapi_extra={
+        "requestBody": {"content": {"multipart/form-data": {"schema": {"$ref": "#/components/schemas/ProjectFileUploadRequest"}}}}
+    },
+)
+@handle_service_errors
+@async_timeout(60.0)
+async def upload_file_version(
+    project_id: uuid.UUID,
+    file_id: uuid.UUID,
+    file: Annotated[UploadFile, File(description="アップロードするファイル")],
+    file_service: ProjectFileServiceDep,
+    current_user: CurrentUserAccountDep,
+) -> ProjectFileUploadResponse:
+    """既存ファイルの新しいバージョンをアップロードします。"""
+    logger.info(
+        "ファイル新バージョンアップロードリクエスト",
+        project_id=str(project_id),
+        parent_file_id=str(file_id),
+        filename=file.filename,
+        content_type=file.content_type,
+        user_id=str(current_user.id),
+        action="upload_file_version",
+    )
+
+    user_id = current_user.id
+
+    uploaded_file = await file_service.upload_new_version(
+        parent_file_id=file_id,
+        file=file,
+        uploaded_by=user_id,
+    )
+
+    logger.info(
+        "ファイル新バージョンをアップロードしました",
+        file_id=str(uploaded_file.id),
+        parent_file_id=str(file_id),
+        version=uploaded_file.version,
+        filename=uploaded_file.filename,
+        file_size=uploaded_file.file_size,
+    )
+
+    return ProjectFileUploadResponse(
+        id=uploaded_file.id,
+        project_id=uploaded_file.project_id,
+        filename=uploaded_file.filename,
+        original_filename=uploaded_file.original_filename,
+        file_path=uploaded_file.file_path,
+        file_size=uploaded_file.file_size,
+        mime_type=uploaded_file.mime_type,
+        uploaded_by=uploaded_file.uploaded_by,
+        uploaded_at=uploaded_file.uploaded_at,
+        version=uploaded_file.version,
+        parent_file_id=uploaded_file.parent_file_id,
+        is_latest=uploaded_file.is_latest,
+        message=f"File version {uploaded_file.version} uploaded successfully",
+    )

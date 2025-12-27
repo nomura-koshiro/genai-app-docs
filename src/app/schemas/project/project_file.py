@@ -87,6 +87,9 @@ class ProjectFileUploadResponse(BaseCamelCaseModel):
     mime_type: str | None = Field(default=None, description="MIMEタイプ")
     uploaded_by: uuid.UUID = Field(..., description="アップロード者のユーザーID")
     uploaded_at: datetime = Field(..., description="アップロード日時")
+    version: int = Field(default=1, description="バージョン番号")
+    parent_file_id: uuid.UUID | None = Field(default=None, description="親ファイルID")
+    is_latest: bool = Field(default=True, description="最新バージョンかどうか")
     message: str = Field(default="File uploaded successfully", description="成功メッセージ")
 
 
@@ -135,6 +138,9 @@ class ProjectFileResponse(BaseCamelCaseORMModel):
     mime_type: str | None = Field(default=None, description="MIMEタイプ")
     uploaded_by: uuid.UUID = Field(..., description="アップロード者のユーザーID")
     uploaded_at: datetime = Field(..., description="アップロード日時")
+    version: int = Field(default=1, description="バージョン番号")
+    parent_file_id: uuid.UUID | None = Field(default=None, description="親ファイルID")
+    is_latest: bool = Field(default=True, description="最新バージョンかどうか")
     uploader: UserAccountResponse | None = Field(default=None, description="アップロード者のユーザー情報")
 
 
@@ -235,3 +241,44 @@ class ProjectFileUsageResponse(BaseCamelCaseModel):
     driver_tree_count: int = Field(default=0, description="ドライバーツリーでの使用数")
     total_usage_count: int = Field(default=0, description="総使用数")
     usages: list[FileUsageItem] = Field(default_factory=list, description="使用情報リスト")
+
+
+class ProjectFileVersionItem(BaseCamelCaseORMModel):
+    """ファイルバージョン情報。
+
+    Attributes:
+        id (uuid.UUID): ファイルID
+        version (int): バージョン番号
+        filename (str): ファイル名
+        file_size (int): ファイルサイズ
+        uploaded_at (datetime): アップロード日時
+        uploaded_by (uuid.UUID): アップロード者ID
+        is_latest (bool): 最新バージョンかどうか
+        uploader (UserAccountResponse | None): アップロード者情報
+    """
+
+    id: uuid.UUID = Field(..., description="ファイルID")
+    version: int = Field(..., description="バージョン番号")
+    filename: str = Field(..., description="ファイル名")
+    original_filename: str = Field(..., description="元のファイル名")
+    file_size: int = Field(..., description="ファイルサイズ（バイト）")
+    uploaded_at: datetime = Field(..., description="アップロード日時")
+    uploaded_by: uuid.UUID = Field(..., description="アップロード者ID")
+    is_latest: bool = Field(..., description="最新バージョンかどうか")
+    uploader: UserAccountResponse | None = Field(default=None, description="アップロード者情報")
+
+
+class ProjectFileVersionHistoryResponse(BaseCamelCaseModel):
+    """ファイルバージョン履歴レスポンス。
+
+    Attributes:
+        file_id (uuid.UUID): 最新バージョンのファイルID
+        original_filename (str): 元のファイル名
+        total_versions (int): 総バージョン数
+        versions (list[ProjectFileVersionItem]): バージョン履歴リスト
+    """
+
+    file_id: uuid.UUID = Field(..., description="最新バージョンのファイルID")
+    original_filename: str = Field(..., description="元のファイル名")
+    total_versions: int = Field(..., description="総バージョン数")
+    versions: list[ProjectFileVersionItem] = Field(..., description="バージョン履歴リスト")
