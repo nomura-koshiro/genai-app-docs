@@ -60,20 +60,12 @@ graph TD
 
 ### 1.3 DB設計への示唆
 
-```
-【現状の問題点】
-1. ロール履歴が追跡できない
-   - roles列がJSON配列で、いつ誰がロールを変更したか不明
-
-2. アカウント状態の履歴がない
+```text
+【将来対応（オプション）】
+1. アカウント状態の履歴追跡
    - is_activeの変更履歴が追跡できない
-
-【改善案】
-Option A: 監査ログテーブルの追加
-  - user_audit_log (id, user_id, action, old_value, new_value, changed_by, changed_at)
-
-Option B: ロール履歴テーブルの追加
-  - user_role_history (id, user_id, role, granted_by, granted_at, revoked_by, revoked_at)
+   - 監査要件が発生した場合にuser_status_historyテーブルで対応
+   - 現状はRoleHistoryでロール変更履歴を追跡しており、主要な監査要件は満たしている
 ```
 
 ---
@@ -138,30 +130,6 @@ graph TD
 | PF-001: ファイルアップロード | PM-001（メンバーである） | PF-002〜PF-006, AF-001, DTFL-001 | MEMBER以上 |
 | PF-003: ファイル削除 | PF-001 | - | PM/MODERATOR/アップロード者 |
 | P-003: プロジェクト無効化 | P-001 | P-004 | PM |
-
-### 2.3 DB設計への示唆
-
-```
-【現状の問題点】
-1. プロジェクト作成者とPROJECT_MANAGERの関係が暗黙的
-   - created_byとProjectMemberの整合性保証がない
-
-2. ファイル削除権限の判定が複雑
-   - uploaded_by または PM/MODERATOR の判定がアプリケーション層依存
-
-3. メンバー追加者（added_by）の制約がない
-   - 権限のないユーザーがadded_byになる可能性
-
-【改善案】
-Option A: トリガーによる整合性保証
-  - プロジェクト作成時、自動的にProjectMemberにPMとして追加
-
-Option B: ファイル削除権限の明示化
-  - ProjectFileに can_delete_by カラム追加、または削除ポリシーテーブル追加
-
-Option C: 制約の追加
-  - added_byはそのプロジェクトのPM/MODERATORであることをチェック制約
-```
 
 ---
 
@@ -257,41 +225,6 @@ graph TD
 | AC-001: チャット送信 | ASN-001 | AST-001（AI処理時） | チャット追加 |
 | AST-001: ステップ作成 | ASN-001 | AST-002〜AST-006 | ステップ追加 |
 | ASN-005: 過去に戻る | ASN-001（複数） | ASN-001, AS-007 | ブランチ発生 |
-
-### 3.4 DB設計への示唆
-
-```
-【現状の問題点】
-1. スナップショットの分岐履歴が追跡できない
-   - snapshot_orderは連番だが、分岐元が不明
-   - 過去に戻って新しいスナップショットを作った場合の親子関係が不明
-
-2. current_snapshotの整合性
-   - AnalysisSession.current_snapshotとAnalysisSnapshot.snapshot_orderの整合性保証がない
-
-3. チャットとステップの関連が不明確
-   - どのチャットがどのステップを生成したか追跡できない
-
-4. 入力ファイルの状態管理
-   - input_file_idがNULL許容だが、セッション開始後は必須という業務ルールが表現できない
-
-【改善案】
-Option A: スナップショットに親参照追加
-  - AnalysisSnapshot.parent_snapshot_id FK (自己参照)
-  - これにより分岐履歴がツリー構造で表現可能
-
-Option B: チャットとステップの関連付け
-  - AnalysisStep.triggered_by_chat_id FK
-  - またはAnalysisChat.generated_step_id FK
-
-Option C: セッション状態の明示化
-  - AnalysisSession.status ENUM('draft', 'file_selected', 'analyzing', 'completed')
-  - 状態によってNULL許容を制御
-
-Option D: current_snapshotを外部キー化
-  - current_snapshot INTEGER → current_snapshot_id UUID FK
-  - 整合性をDB制約で保証
-```
 
 ---
 
@@ -425,53 +358,6 @@ sequenceDiagram
 | DTN-007: データフレーム紐付け | DTN-001, DTDF-001 | - | 任意 |
 | DTP-001: 施策作成 | DTN-001 | DTP-002〜006 | 任意 |
 
-### 4.5 DB設計への示唆
-
-```
-【現状の問題点】
-1. DriverTreeCategoryとDriverTreeFormulaの関係が不明確
-   - ER図ではDriverTreeCategory ||--o{ DriverTreeFormula
-   - しかしDriverTreeFormulaにcategory_id FKがない
-   - driver_type_idで紐付いているが、これはFKではない
-
-2. ノードがどのツリーに属するか不明
-   - DriverTreeNodeにdriver_tree_id FKがない
-   - リレーションシップ経由でしかツリーとの関連が分からない
-   - 孤立ノードの検出が困難
-
-3. ルートノード設定の整合性
-   - root_node_idがNULL許容だが、ツリーとして成立するには必須
-   - root_nodeが削除された時の動作が不明確
-
-4. リレーションシップの循環検出ができない
-   - 親→子→孫→親 のような循環が発生する可能性
-   - DBレベルでの制約がない
-
-5. order_indexの一意性制約がない
-   - DriverTreeRelationshipChildのorder_indexが重複する可能性
-
-【改善案】
-Option A: カテゴリと数式の関係明確化
-  - DriverTreeFormulaにcategory_id FK追加
-  - または、driver_type_idをDriverTreeCategoryのPKとして整理
-
-Option B: ノードにツリー参照追加
-  - DriverTreeNode.driver_tree_id FK（NOT NULL）
-  - これによりノードの所属が明確になり、カスケード削除も容易
-
-Option C: ツリー状態の明示化
-  - DriverTree.status ENUM('draft', 'building', 'complete', 'archived')
-  - status='complete'時はroot_node_id NOT NULL制約
-
-Option D: 順序の一意性保証
-  - (relationship_id, order_index) に UNIQUE制約
-  - アプリケーション層でのギャップ管理
-
-Option E: ノードの階層情報追加（非正規化）
-  - DriverTreeNode.path TEXT (例: '/root/child1/grandchild')
-  - 循環検出と階層クエリの高速化
-```
-
 ---
 
 ## 5. 全体フロー（ユーザージャーニー）
@@ -527,35 +413,6 @@ graph LR
     PF --> |project_file_id| AF
     PF --> |project_file_id| DTF
 :::
-
-### 5.3 DB設計への示唆（全体）
-
-```
-【現状の問題点】
-1. ProjectFileの削除時の影響が広範囲
-   - AnalysisFileとDriverTreeFileの両方に影響
-   - カスケード削除で予期せぬデータ損失の可能性
-
-2. プロジェクト横断の参照がない
-   - 例：別プロジェクトのドライバーツリーテンプレートを参照したい場合
-   - 現状は不可能
-
-3. バージョニングの概念がない
-   - ファイル更新時、過去の分析結果との整合性が崩れる
-
-【改善案】
-Option A: ファイル削除の保護
-  - ProjectFile.is_deletable フラグ
-  - 参照がある場合は論理削除のみ
-
-Option B: テンプレート機能
-  - DriverTreeTemplate テーブル追加
-  - プロジェクト横断で再利用可能
-
-Option C: ファイルバージョニング
-  - ProjectFile.version INT
-  - 同じoriginal_filenameで複数バージョン保持
-```
 
 ---
 
@@ -684,22 +541,6 @@ graph TD
 | D-005: プロジェクト分布 | D-001 | - | 認証済みユーザー |
 | D-006: ユーザーアクティビティ | D-001 | - | 認証済みユーザー |
 
-### 6.3 DB設計への示唆
-
-```text
-【実装済み】
-1. RoleHistoryテーブルによるロール変更履歴の追跡
-   - user_id, changed_by_id, action, role_type, old_roles, new_roles, reason, changed_at
-
-2. アクティビティログの集約
-   - RoleHistory, Project, AnalysisSession, DriverTree, ProjectFileから
-     created_at順でアクティビティを集約
-
-3. チャートデータの動的生成
-   - 指定期間（days）に基づいたトレンドデータ
-   - プロジェクト・ユーザーの分布データ
-```
-
 ---
 
 ## 7. 複製・エクスポート機能フロー
@@ -755,22 +596,12 @@ graph TD
 ### 7.3 DB設計への示唆
 
 ```text
-【実装済み】
-1. セッション複製
-   - AnalysisSession, AnalysisSnapshot, AnalysisStep, AnalysisChatの
-     完全な複製とID再生成
-
-2. ツリー複製（施策込み）
-   - DriverTree, DriverTreeNode, DriverTreeRelationship,
-     DriverTreeRelationshipChild, DriverTreePolicyの複製
-   - ノードIDのマッピングによる関係性の再構築
-
-【部分実装】
-3. エクスポート機能
-   - API未実装（フロントエンド機能として実装予定）
-   - セッション結果のレポート出力
-   - ツリー計算結果のエクスポート
-   - 結果共有機能
+【将来実装予定 - フロントエンド機能】
+1. エクスポート機能
+   - セッション結果のレポート出力（PDF/Excel）
+   - ツリー計算結果のエクスポート（Excel/CSV）
+   - 結果共有機能（共有リンク生成）
+   - フロントエンドでのファイル生成・ダウンロード処理として実装予定
 ```
 
 ---
@@ -814,23 +645,6 @@ graph TD
 | TM-004: プレビュー | TM-001 | TM-005 | 認証済みユーザー |
 | TM-005: ツリー作成 | TM-001, P-001 | DT-001〜 | MEMBER以上 |
 
-### 8.3 DB設計への示唆
-
-```text
-【実装済み】
-1. AnalysisTemplateテーブル
-   - id, name, description, industry, analysis_type, config, is_active
-   - validation.ymlからのシードデータ対応
-
-2. テンプレート絞込機能
-   - 業種（industry）による絞込
-   - 分析タイプ（analysis_type）による絞込
-   - アクティブ状態（is_active）による絞込
-
-3. テンプレートからのツリー作成
-   - テンプレート設定（config）に基づくDriverTree, DriverTreeNodeの自動生成
-```
-
 ---
 
 ## 9. ファイルバージョン管理フロー
@@ -869,26 +683,6 @@ graph TD
 | FV-002: バージョン履歴取得 | PF-001 | FV-003 | VIEWER以上 |
 | FV-003: 過去バージョンダウンロード | FV-002 | - | VIEWER以上 |
 | FV-004: 最新バージョン確認 | PF-001 | FV-001 | VIEWER以上 |
-
-### 9.3 DB設計への示唆
-
-```text
-【実装済み】
-1. ProjectFileテーブルのバージョン管理カラム
-   - version: INTEGER (バージョン番号、デフォルト1)
-   - parent_file_id: UUID FK (親ファイルへの参照、自己参照)
-   - is_latest: BOOLEAN (最新バージョンフラグ)
-
-2. バージョン管理API
-   - POST /api/v1/projects/{project_id}/files/{file_id}/versions
-     新バージョンアップロード時、旧バージョンのis_latest=falseに更新
-   - GET /api/v1/projects/{project_id}/files/{file_id}/versions
-     バージョン履歴を返却
-
-3. 整合性保証
-   - 新バージョン作成時、旧バージョンのis_latestをfalseに更新
-   - parent_file_idによる履歴チェーン構築
-```
 
 ---
 
@@ -940,116 +734,15 @@ graph TD
 
 ---
 
-## 11. DB設計改善提案まとめ
+## 11. 今後の対応（オプション）
 
-### 11.1 高優先度（データ整合性に直結）
-
-| # | 問題 | 改善案 | 影響範囲 |
-|---|------|-------|---------|
-| 1 | スナップショットの分岐履歴が追跡できない | AnalysisSnapshot.parent_snapshot_id FK追加 | AnalysisSnapshot |
-| 2 | DriverTreeNodeがどのツリーに属するか不明 | DriverTreeNode.driver_tree_id FK追加 | DriverTreeNode |
-| 3 | current_snapshotの整合性保証がない | current_snapshot_id UUID FK化 | AnalysisSession |
-| 4 | DriverTreeCategoryとFormulaの関係不明確 | DriverTreeFormula.category_id FK追加、またはスキーマ整理 | DriverTreeCategory, DriverTreeFormula |
-
-### 11.2 中優先度（業務ルールの明示化）
-
-| # | 問題 | 改善案 | 影響範囲 |
-|---|------|-------|---------|
-| 5 | セッション/ツリーの状態が不明確 | statusカラム追加 | AnalysisSession, DriverTree |
-| 6 | チャットとステップの関連が不明確 | AnalysisStep.triggered_by_chat_id FK追加 | AnalysisStep |
-| 7 | order_indexの一意性制約がない | (relationship_id, order_index) UNIQUE制約 | DriverTreeRelationshipChild |
-| 8 | プロジェクト作成者とPMの整合性 | トリガーまたはアプリ層での保証 | Project, ProjectMember |
-
-### 11.3 低優先度（将来の拡張性）
-
-| # | 問題 | 改善案 | 影響範囲 |
-|---|------|-------|---------|
-| 9 | ロール変更履歴がない | user_role_history テーブル追加 | 新規テーブル |
-| 10 | ファイルバージョニングがない | version カラム追加 | ProjectFile |
-| 11 | テンプレート機能がない | DriverTreeTemplate テーブル追加 | 新規テーブル |
-| 12 | 循環参照の検出 | path カラム追加またはアプリ層チェック | DriverTreeNode |
+1. **パフォーマンス最適化**: インデックス追加やクエリ最適化
+2. **監査ログ拡張**: アカウント状態変更の履歴追跡（必要に応じて）
+3. **エクスポート機能**: フロントエンド実装（PDF/Excel出力、共有リンク生成）
 
 ---
 
-## 12. 改善後ER図（提案）
-
-### 12.1 AnalysisSnapshot（改善案）
-
-::: mermaid
-erDiagram
-    AnalysisSnapshot {
-        uuid id PK
-        uuid session_id FK
-        uuid parent_snapshot_id FK "NEW: 親スナップショット（分岐元）"
-        integer snapshot_order
-        timestamp created_at
-        timestamp updated_at
-    }
-:::
-
-### 12.2 DriverTreeNode（改善案）
-
-::: mermaid
-erDiagram
-    DriverTreeNode {
-        uuid id PK
-        uuid driver_tree_id FK "NEW: 所属ツリー"
-        string label
-        integer position_x
-        integer position_y
-        string node_type
-        uuid data_frame_id FK
-        timestamp created_at
-        timestamp updated_at
-    }
-:::
-
-### 12.3 AnalysisSession（改善案）
-
-::: mermaid
-erDiagram
-    AnalysisSession {
-        uuid id PK
-        uuid issue_id FK
-        uuid creator_id FK
-        uuid project_id FK
-        uuid input_file_id FK
-        uuid current_snapshot_id FK "CHANGED: UUIDに変更"
-        string status "NEW: draft/file_selected/analyzing/completed"
-        timestamp created_at
-        timestamp updated_at
-    }
-:::
-
-### 12.4 DriverTreeFormula（改善案）
-
-::: mermaid
-erDiagram
-    DriverTreeFormula {
-        uuid id PK
-        integer category_id FK "NEW: カテゴリへのFK"
-        integer driver_type_id
-        string driver_type
-        string kpi
-        jsonb formulas
-        timestamp created_at
-        timestamp updated_at
-    }
-:::
-
----
-
-## 13. 次のステップ
-
-1. **レビュー**: 本分析結果をチームでレビュー
-2. **優先度決定**: 高優先度の改善から着手
-3. **マイグレーション計画**: 既存データの移行計画策定
-4. **実装**: スキーマ変更とアプリケーション層の対応
-5. **テスト**: 回帰テストの実施
-
----
-
-##### ドキュメント管理情報
+### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
 - **更新日**: 2025年12月28日

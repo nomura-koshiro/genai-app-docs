@@ -267,16 +267,20 @@ class DriverTreeNodeCrudService(DriverTreeNodeServiceBase):
 
                 # 子ノードの更新
                 if children_id_list is not None:
+                    # 循環参照チェック
+                    await self._validate_no_circular_reference(node_id, children_id_list)
+
                     # 既存の子を削除
                     for child in existing_rel.children:
                         await self.db.delete(child)
 
-                    # 新しい子を追加
+                    # 新しい子を追加（正規化されたorder_indexを使用）
+                    normalized_indices = self._normalize_order_indices(len(children_id_list))
                     for i, child_id in enumerate(children_id_list):
                         child_rel = DriverTreeRelationshipChild(
                             relationship_id=existing_rel.id,
                             child_node_id=child_id,
-                            order_index=i,
+                            order_index=normalized_indices[i],
                         )
                         self.db.add(child_rel)
 

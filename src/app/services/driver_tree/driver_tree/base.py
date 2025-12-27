@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models.driver_tree import (
     DriverTree,
@@ -158,3 +158,68 @@ class DriverTreeServiceBase:
             "position_x": node.position_x or 0,
             "position_y": node.position_y or 0,
         }
+
+    async def _validate_no_circular_reference(
+        self,
+        parent_node_id: uuid.UUID,
+        child_node_ids: list[uuid.UUID],
+    ) -> None:
+        """循環参照がないことを検証します。
+
+        親ノードが子孫ノードに含まれていないかをチェックします。
+        親→子→孫→親のような循環が発生する場合はValidationErrorを発生させます。
+
+        Args:
+            parent_node_id: 親ノードID
+            child_node_ids: 子ノードIDリスト
+
+        Raises:
+            ValidationError: 循環参照が検出された場合
+        """
+        # 親ノードが子ノードリストに含まれていないかチェック
+        if parent_node_id in child_node_ids:
+            raise ValidationError(
+                "循環参照が検出されました: 親ノードを子ノードとして設定することはできません",
+                details={
+                    "parent_node_id": str(parent_node_id),
+                    "child_node_ids": [str(cid) for cid in child_node_ids],
+                },
+            )
+
+        # 子ノードの子孫をたどって親ノードが含まれていないかチェック
+        visited: set[uuid.UUID] = set()
+        to_check: list[uuid.UUID] = list(child_node_ids)
+
+        while to_check:
+            current_id = to_check.pop()
+            if current_id in visited:
+                continue
+            visited.add(current_id)
+
+            # このノードの子ノードを取得
+            result = await self.db.execute(
+                select(DriverTreeRelationshipChild.child_node_id)
+                .join(
+                    DriverTreeRelationship,
+                    DriverTreeRelationshipChild.relationship_id == DriverTreeRelationship.id,
+                )
+                .where(DriverTreeRelationship.parent_node_id == current_id)
+            )
+            descendant_ids = [row[0] for row in result.fetchall()]
+
+            for descendant_id in descendant_ids:
+                if descendant_id == parent_node_id:
+                    raise ValidationError(
+                        "循環参照が検出されました: 親ノードが子孫ノードに存在します",
+                        details={
+                            "parent_node_id": str(parent_node_id),
+                            "circular_path_via": str(current_id),
+                        },
+                    )
+                to_check.append(descendant_id)
+
+        logger.debug(
+            "循環参照チェック完了",
+            parent_node_id=str(parent_node_id),
+            checked_nodes=len(visited),
+        )

@@ -322,13 +322,15 @@
 | CP-001 | 分析セッションを複製する | AnalysisSession, AnalysisSnapshot, AnalysisStep |
 | CP-002 | ドライバーツリーを複製する | DriverTree, DriverTreeNode, DriverTreePolicy |
 
-### 7.2 エクスポート・レポート機能
+### 7.2 エクスポート・レポート機能（将来実装予定）
 
-| ID | ユースケース | 関連エンティティ |
-|----|-------------|-----------------|
-| EX-001 | セッション結果をレポート出力する | AnalysisSession, AnalysisSnapshot |
-| EX-002 | ツリー計算結果をエクスポートする | DriverTree, DriverTreeNode |
-| EX-003 | セッション結果を共有する | AnalysisSession |
+> **注記**: 以下のユースケースはフロントエンド機能として将来実装予定です。
+
+| ID | ユースケース | 関連エンティティ | 実装状態 |
+|----|-------------|-----------------|---------|
+| EX-001 | セッション結果をレポート出力する | AnalysisSession, AnalysisSnapshot | 将来実装 |
+| EX-002 | ツリー計算結果をエクスポートする | DriverTree, DriverTreeNode | 将来実装 |
+| EX-003 | セッション結果を共有する | AnalysisSession | 将来実装 |
 
 ---
 
