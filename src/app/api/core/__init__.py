@@ -20,6 +20,10 @@
 
 # 依存性注入
 from app.api.core.dependencies import (
+    # Admin管理サービス
+    AdminCategoryServiceDep,
+    AdminIssueServiceDep,
+    AdminValidationServiceDep,
     # 分析サービス
     AnalysisSessionServiceDep,
     AnalysisTemplateServiceDep,
@@ -41,6 +45,9 @@ from app.api.core.dependencies import (
     RoleHistoryServiceDep,
     SuperuserAccountDep,
     UserServiceDep,
+    get_admin_category_service,
+    get_admin_issue_service,
+    get_admin_validation_service,
     get_analysis_session_service,
     get_analysis_template_service,
     get_current_active_user_account,
@@ -67,6 +74,13 @@ __all__ = [
     # Database Dependencies
     "DatabaseDep",
     "get_db",
+    # Admin Service Dependencies
+    "AdminCategoryServiceDep",
+    "get_admin_category_service",
+    "AdminValidationServiceDep",
+    "get_admin_validation_service",
+    "AdminIssueServiceDep",
+    "get_admin_issue_service",
     # UserAccount Service Dependencies
     "UserServiceDep",
     "get_user_service",

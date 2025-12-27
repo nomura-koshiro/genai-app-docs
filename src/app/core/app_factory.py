@@ -26,6 +26,9 @@ from app.api.middlewares import (
 )
 from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
+    admin_category_router,
+    admin_issue_router,
+    admin_validation_router,
     analysis_sessions_router,
     analysis_templates_router,
     dashboard_router,
@@ -39,14 +42,32 @@ from app.api.routes.v1 import (
 )
 from app.api.routes.v2 import (
     dashboard_router as dashboard_router_v2,
-    project_router as project_router_v2,
+)
+from app.api.routes.v2 import (
     project_file_router as project_file_router_v2,
+)
+from app.api.routes.v2 import (
     project_member_router as project_member_router_v2,
+)
+from app.api.routes.v2 import (
+    project_router as project_router_v2,
+)
+from app.api.routes.v2 import (
     session_router as session_router_v2,
+)
+from app.api.routes.v2 import (
     template_router as template_router_v2,
-    tree_router as tree_router_v2,
+)
+from app.api.routes.v2 import (
     tree_file_router as tree_file_router_v2,
+)
+from app.api.routes.v2 import (
     tree_node_router as tree_node_router_v2,
+)
+from app.api.routes.v2 import (
+    tree_router as tree_router_v2,
+)
+from app.api.routes.v2 import (
     user_router as user_router_v2,
 )
 from app.core.config import settings
@@ -185,6 +206,11 @@ def create_app() -> FastAPI:
 
     # Azure AD認証用ユーザー管理API
     app.include_router(user_accounts_router, prefix="/api/v1", tags=["user_account"])
+
+    # 管理機能API
+    app.include_router(admin_category_router, prefix="/api/v1", tags=["admin-category"])
+    app.include_router(admin_validation_router, prefix="/api/v1", tags=["admin-validation"])
+    app.include_router(admin_issue_router, prefix="/api/v1", tags=["admin-issue"])
 
     # ダッシュボードAPI
     app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["dashboard"])

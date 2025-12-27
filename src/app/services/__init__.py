@@ -1,5 +1,10 @@
 """ビジネスロジックサービス。"""
 
+from app.services.admin import (
+    AdminCategoryService,
+    AdminIssueService,
+    AdminValidationService,
+)
 from app.services.analysis import (
     AnalysisSessionService,
     AnalysisTemplateService,
@@ -14,6 +19,10 @@ from app.services.project.project_member import ProjectMemberService
 from app.services.user_account.user_account import UserAccountService
 
 __all__ = [
+    # Admin
+    "AdminCategoryService",
+    "AdminValidationService",
+    "AdminIssueService",
     # Analysis
     "AnalysisSessionService",
     "AnalysisTemplateService",

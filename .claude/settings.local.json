@@ -131,7 +131,8 @@
       "Bash(uv sync:*)",
       "Bash(git check-ignore:*)",
       "Bash(timeout 120 uv run python -m pytest:*)",
-      "Bash(do echo \"=== $file ===\" grep -n \"^# ====\" \"$file\")"
+      "Bash(do echo \"=== $file ===\" grep -n \"^# ====\" \"$file\")",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

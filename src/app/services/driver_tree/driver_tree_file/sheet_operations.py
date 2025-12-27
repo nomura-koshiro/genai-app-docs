@@ -4,6 +4,7 @@
 """
 
 import uuid
+from datetime import UTC
 from io import BytesIO
 from typing import Any
 
@@ -408,5 +409,119 @@ class SheetOperationsMixin:
 
         # 7. 削除後の選択済みシート一覧を返す
         result = {"success": True}
+        result.update(await self.list_selected_sheets(project_id, user_id))
+        return result
+
+    @transactional
+    @measure_performance
+    async def refresh_sheet(
+        self,
+        project_id: uuid.UUID,
+        file_id: uuid.UUID,
+        sheet_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> dict[str, Any]:
+        """シートのデータを元ファイルから再読み込みして更新します。
+
+        ファイルの内容が更新された場合に、最新のデータを反映させるために使用します。
+        axis_config（カラム設定）は保持したまま、データのみを更新します。
+
+        Args:
+            project_id: プロジェクトID
+            file_id: ファイルID
+            sheet_id: シートID
+            user_id: ユーザーID
+
+        Returns:
+            dict[str, Any]: 更新結果
+                - success (bool): 更新成功フラグ
+                - updated_at (datetime): 更新日時
+                - files (list): 更新後の選択済みシート一覧
+
+        Raises:
+            NotFoundError: ファイルまたはシートが見つからない場合
+        """
+        from datetime import datetime
+
+        logger.info(
+            "シートデータ更新リクエスト",
+            user_id=str(user_id),
+            project_id=str(project_id),
+            file_id=str(file_id),
+            sheet_id=str(sheet_id),
+            action="refresh_sheet",
+        )
+
+        # 1. ProjectFileを取得
+        project_file = await self.project_file_repository.get(file_id)
+        if not project_file:
+            raise NotFoundError(
+                "ファイルが見つかりません",
+                details={"file_id": str(file_id)},
+            )
+
+        # 2. プロジェクトIDの確認
+        if project_file.project_id != project_id:
+            raise NotFoundError(
+                "このプロジェクト内で該当ファイルが見つかりません",
+                details={"file_id": str(file_id), "project_id": str(project_id)},
+            )
+
+        # 3. DriverTreeFileを取得
+        driver_tree_file = await self.file_repository.get(sheet_id)
+        if not driver_tree_file:
+            raise NotFoundError(
+                "シートが見つかりません",
+                details={"sheet_id": str(sheet_id)},
+            )
+
+        # 4. DriverTreeFileがProjectFileに紐づいているか確認
+        if driver_tree_file.project_file_id != file_id:
+            raise NotFoundError(
+                "このファイル内で該当シートが見つかりません",
+                details={"sheet_id": str(sheet_id), "file_id": str(file_id)},
+            )
+
+        # 5. シートが選択済みか確認
+        if not driver_tree_file.axis_config or len(driver_tree_file.axis_config) == 0:
+            raise NotFoundError(
+                "シートが選択されていません",
+                details={"sheet_id": str(sheet_id)},
+            )
+
+        # 6. 既存のDataFrameを全削除
+        existing_data_frames = await self.data_frame_repository.list_by_file(sheet_id)
+        for data_frame in existing_data_frames:
+            await self.data_frame_repository.delete(data_frame.id)
+
+        # 7. StorageServiceを使用してExcelファイルを再読み込み
+        excel_bytes = await self.storage.download(self.container, project_file.file_path)
+        df_metadata, df_data = parse_driver_tree_excel(BytesIO(excel_bytes), driver_tree_file.sheet_name)
+
+        # 8. 新しいaxis_configを構築（カラム情報を更新）
+        new_axis_config = self._build_axis_config(df_metadata, df_data)
+
+        # 9. DriverTreeFileのaxis_configを更新
+        await self.file_repository.update(driver_tree_file, axis_config=new_axis_config)
+
+        # 10. 新しいDataFrameを保存
+        await self._save_data_frames(sheet_id, df_metadata, df_data)
+
+        updated_at = datetime.now(UTC)
+
+        logger.info(
+            "シートデータを更新しました",
+            user_id=str(user_id),
+            project_id=str(project_id),
+            file_id=str(file_id),
+            sheet_id=str(sheet_id),
+            column_count=len(new_axis_config),
+            updated_at=updated_at.isoformat(),
+        )
+
+        result = {
+            "success": True,
+            "updated_at": updated_at,
+        }
         result.update(await self.list_selected_sheets(project_id, user_id))
         return result

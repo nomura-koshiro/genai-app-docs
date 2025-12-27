@@ -153,6 +153,33 @@ class ValidationError(AppException):
         super().__init__(message, status_code=422, details=details)
 
 
+class ConflictError(AppException):
+    """リソースの競合が発生した場合の例外（HTTPステータス: 409）。
+
+    この例外は、リソースの作成・更新時に競合が発生した場合に発生させます。
+    例えば、他のリソースが参照しているため削除できない場合などに使用します。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Conflict"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: 競合の原因となるリソース情報を含める
+
+    Example:
+        >>> # 参照が存在するため削除できない
+        >>> raise ConflictError(
+        ...     "カテゴリを削除できません",
+        ...     details={"reason": "関連するドライバーツリーが存在します"}
+        ... )
+
+    Note:
+        - クライアントに409レスポンスが返されます
+        - 参照整合性エラーや重複エラーなどに使用します
+    """
+
+    def __init__(self, message: str = "Conflict", details: dict[str, Any] | None = None):
+        super().__init__(message, status_code=409, details=details)
+
+
 class AuthenticationError(AppException):
     """認証に失敗した場合に発生する例外（HTTPステータス: 401）。
 

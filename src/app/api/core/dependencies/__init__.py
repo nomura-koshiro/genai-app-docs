@@ -18,6 +18,9 @@
        - DriverTreeFileServiceDep: ドライバーツリーファイルサービス
        - DriverTreeServiceDep: ドライバーツリーサービス
        - DriverTreeNodeServiceDep: ドライバーツリーノードサービス
+       - AdminCategoryServiceDep: カテゴリ管理サービス
+       - AdminValidationServiceDep: 検証マスタ管理サービス
+       - AdminIssueServiceDep: 課題マスタ管理サービス
 
     3. 認証依存性:
        - CurrentUserAccountDep: 認証済みアクティブユーザー（必須）
@@ -35,6 +38,16 @@
     ... ):
     ...     return {"email": current_user.email}
 """
+
+# Admin管理サービス依存性
+from app.api.core.dependencies.admin import (
+    AdminCategoryServiceDep,
+    AdminIssueServiceDep,
+    AdminValidationServiceDep,
+    get_admin_category_service,
+    get_admin_issue_service,
+    get_admin_validation_service,
+)
 
 # データベース依存性
 # 分析サービス依存性
@@ -106,6 +119,13 @@ __all__ = [
     # データベース依存性
     "DatabaseDep",
     "get_db",
+    # Admin管理サービス依存性
+    "AdminCategoryServiceDep",
+    "AdminValidationServiceDep",
+    "AdminIssueServiceDep",
+    "get_admin_category_service",
+    "get_admin_validation_service",
+    "get_admin_issue_service",
     # UserAccountサービス依存性
     "UserServiceDep",
     "RoleHistoryServiceDep",

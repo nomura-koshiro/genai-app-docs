@@ -26,6 +26,7 @@ from app.schemas.driver_tree import (
     DriverTreeFileUploadResponse,
     DriverTreeSelectedSheetListResponse,
     DriverTreeSheetDeleteResponse,
+    DriverTreeSheetRefreshResponse,
     DriverTreeSheetSelectResponse,
     DriverTreeUploadedFileListResponse,
 )
@@ -227,6 +228,75 @@ async def upload_file(
     )
 
     return DriverTreeFileUploadResponse(**uploaded)
+
+
+@driver_tree_files_router.post(
+    "/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}/refresh",
+    response_model=DriverTreeSheetRefreshResponse,
+    status_code=status.HTTP_200_OK,
+    summary="シートデータ更新",
+    description="""
+    選択済みシートのデータを元ファイルから再読み込みして更新します。
+
+    ファイルの内容が更新された場合に、最新のデータを反映させるために使用します。
+    axis_config（カラム情報）も最新のデータから再構築されます。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - file_id: uuid - ファイルID（必須）
+        - sheet_id: uuid - シートID（必須）
+
+    レスポンス:
+        - DriverTreeSheetRefreshResponse: シートデータ更新レスポンス
+            - success (bool): 成功フラグ
+            - updated_at (datetime): 更新日時
+            - files (list): 更新後の選択済みシート一覧
+                - file_id (uuid): ファイルID
+                - filename (str): ファイル名
+                - uploaded_at (datetime): アップロード日時
+                - sheets (list): 選択済みシート一覧
+                    - sheet_id (uuid): シートID
+                    - sheet_name (str): シート名
+                    - columns (list): カラムリスト
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ファイルまたはシートが見つからない
+    """,
+)
+@handle_service_errors
+async def refresh_sheet(
+    project_id: uuid.UUID,
+    file_id: uuid.UUID,
+    sheet_id: uuid.UUID,
+    current_user: CurrentUserAccountDep,
+    file_service: DriverTreeFileServiceDep,
+) -> DriverTreeSheetRefreshResponse:
+    """シートのデータを再読み込みして更新します。"""
+    logger.info(
+        "シートデータ更新リクエスト",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        file_id=str(file_id),
+        sheet_id=str(sheet_id),
+        action="refresh_sheet",
+    )
+
+    result = await file_service.refresh_sheet(project_id, file_id, sheet_id, current_user.id)
+
+    logger.info(
+        "シートデータを更新しました",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        file_id=str(file_id),
+        sheet_id=str(sheet_id),
+    )
+
+    return DriverTreeSheetRefreshResponse(**result)
 
 
 @driver_tree_files_router.post(

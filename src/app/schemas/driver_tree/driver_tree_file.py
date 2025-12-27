@@ -127,3 +127,21 @@ class DriverTreeColumnSetupResponse(BaseCamelCaseModel):
 
     success: bool = Field(..., description="成功フラグ")
     columns: list[DriverTreeColumnInfo] = Field(default_factory=list, description="カラム情報のリスト")
+
+
+class DriverTreeSheetRefreshResponse(BaseCamelCaseModel):
+    """シートデータ更新レスポンス。
+
+    元ファイルからデータを再読み込みして更新した結果を返します。
+
+    Response:
+        - success: bool - 成功フラグ
+        - updated_at: datetime - 更新日時
+        - files: list[DriverTreeFileListItem] - 更新後の選択済みシート一覧（columns あり）
+    """
+
+    from datetime import datetime
+
+    success: bool = Field(..., description="成功フラグ")
+    updated_at: datetime = Field(..., description="更新日時")
+    files: list[DriverTreeFileListItem] = Field(default_factory=list, description="ファイル一覧")
