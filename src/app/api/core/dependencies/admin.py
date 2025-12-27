@@ -14,6 +14,8 @@ from fastapi import Depends
 from app.api.core.dependencies.database import DatabaseDep
 from app.services.admin import (
     AdminCategoryService,
+    AdminDummyChartService,
+    AdminDummyFormulaService,
     AdminGraphAxisService,
     AdminIssueService,
     AdminValidationService,
@@ -21,10 +23,14 @@ from app.services.admin import (
 
 __all__ = [
     "AdminCategoryServiceDep",
+    "AdminDummyChartServiceDep",
+    "AdminDummyFormulaServiceDep",
     "AdminGraphAxisServiceDep",
     "AdminIssueServiceDep",
     "AdminValidationServiceDep",
     "get_admin_category_service",
+    "get_admin_dummy_chart_service",
+    "get_admin_dummy_formula_service",
     "get_admin_graph_axis_service",
     "get_admin_issue_service",
     "get_admin_validation_service",
@@ -91,3 +97,35 @@ def get_admin_graph_axis_service(db: DatabaseDep) -> AdminGraphAxisService:
 
 AdminGraphAxisServiceDep = Annotated[AdminGraphAxisService, Depends(get_admin_graph_axis_service)]
 """グラフ軸マスタ管理サービスの依存性型。"""
+
+
+def get_admin_dummy_formula_service(db: DatabaseDep) -> AdminDummyFormulaService:
+    """ダミー数式マスタ管理サービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        AdminDummyFormulaService: 初期化されたダミー数式マスタ管理サービスインスタンス
+    """
+    return AdminDummyFormulaService(db)
+
+
+AdminDummyFormulaServiceDep = Annotated[AdminDummyFormulaService, Depends(get_admin_dummy_formula_service)]
+"""ダミー数式マスタ管理サービスの依存性型。"""
+
+
+def get_admin_dummy_chart_service(db: DatabaseDep) -> AdminDummyChartService:
+    """ダミーチャートマスタ管理サービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db (AsyncSession): データベースセッション（自動注入）
+
+    Returns:
+        AdminDummyChartService: 初期化されたダミーチャートマスタ管理サービスインスタンス
+    """
+    return AdminDummyChartService(db)
+
+
+AdminDummyChartServiceDep = Annotated[AdminDummyChartService, Depends(get_admin_dummy_chart_service)]
+"""ダミーチャートマスタ管理サービスの依存性型。"""

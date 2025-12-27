@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import Field
 
@@ -139,8 +140,6 @@ class DriverTreeSheetRefreshResponse(BaseCamelCaseModel):
         - updated_at: datetime - 更新日時
         - files: list[DriverTreeFileListItem] - 更新後の選択済みシート一覧（columns あり）
     """
-
-    from datetime import datetime
 
     success: bool = Field(..., description="成功フラグ")
     updated_at: datetime = Field(..., description="更新日時")

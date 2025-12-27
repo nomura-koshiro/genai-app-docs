@@ -22,6 +22,8 @@
 from app.api.core.dependencies import (
     # Admin管理サービス
     AdminCategoryServiceDep,
+    AdminDummyChartServiceDep,
+    AdminDummyFormulaServiceDep,
     AdminGraphAxisServiceDep,
     AdminIssueServiceDep,
     AdminValidationServiceDep,
@@ -47,6 +49,8 @@ from app.api.core.dependencies import (
     SuperuserAccountDep,
     UserServiceDep,
     get_admin_category_service,
+    get_admin_dummy_chart_service,
+    get_admin_dummy_formula_service,
     get_admin_graph_axis_service,
     get_admin_issue_service,
     get_admin_validation_service,
@@ -79,6 +83,10 @@ __all__ = [
     # Admin Service Dependencies
     "AdminCategoryServiceDep",
     "get_admin_category_service",
+    "AdminDummyChartServiceDep",
+    "get_admin_dummy_chart_service",
+    "AdminDummyFormulaServiceDep",
+    "get_admin_dummy_formula_service",
     "AdminGraphAxisServiceDep",
     "get_admin_graph_axis_service",
     "AdminIssueServiceDep",

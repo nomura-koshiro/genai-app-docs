@@ -295,13 +295,18 @@ v2 APIは削除済み。すべてのエンドポイントを `/api/v1` に統一
 - ツリー複製時の施策（ポリシー）の完全な引き継ぎ ✅
   - `duplicate_tree`メソッドで施策（DriverTreePolicy）をコピーするよう実装
 
-### 7.3 部分実装（21件）
+### 7.3 部分実装（19件）
 
 - プロジェクト詳細情報の拡張（start_date, end_date, stats）
 - ダッシュボード統計機能の完全化
 - 検索・フィルタ機能の統一
 - エージェントプロンプト・初期メッセージ設定
-- ダミー数式・チャートマスタ管理
+
+### 7.4 追加完了項目（2024年12月27日）
+
+- ダミー数式・チャートマスタ管理 ✅
+  - ダミー数式マスタCRUD API（/api/v1/admin/dummy-formula）
+  - ダミーチャートマスタCRUD API（/api/v1/admin/dummy-chart）
 
 ---
 
@@ -346,3 +351,5 @@ Phase 1～3の主要機能はすべて実装完了しました。
 | 2024/12/27 | グラフ軸マスタAPI（AGM-001～004）、チャットメッセージ削除API（AC-003）、監査フィールド追加、MIMEタイプフィルタ（X-005）、Azure OID検索（X-002）を実装 |
 | 2024/12/27 | ツリー複製時の施策（ポリシー）コピー機能を実装 |
 | 2024/12/27 | プロジェクト統計情報（stats）をプロジェクト詳細APIに追加（member_count, file_count, session_count, tree_count） |
+| 2024/12/27 | ダミー数式・チャートマスタCRUD API（/api/v1/admin/dummy-formula、/api/v1/admin/dummy-chart）を実装 |
+| 2024/12/27 | Pylanceエラー修正（current_snapshot型、chat_list/step_list修正、chat_repository.delete修正等）|

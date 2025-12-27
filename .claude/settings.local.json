@@ -133,7 +133,10 @@
       "Bash(timeout 120 uv run python -m pytest:*)",
       "Bash(do echo \"=== $file ===\" grep -n \"^# ====\" \"$file\")",
       "Bash(mkdir:*)",
-      "Bash(timeout 120 uv run python:*)"
+      "Bash(timeout 120 uv run python:*)",
+      "Bash(export AZURE_OPENAI_API_KEY=\"dummy-test-key\")",
+      "Bash(export AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\")",
+      "Bash(export AZURE_OPENAI_EMBEDDING_ENDPOINT=\"https://dummy.openai.azure.com\")"
     ],
     "deny": [],
     "ask": []

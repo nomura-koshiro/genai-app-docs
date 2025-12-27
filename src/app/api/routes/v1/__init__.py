@@ -5,6 +5,8 @@
 
 from app.api.routes.v1.admin import (
     admin_category_router,
+    admin_dummy_chart_router,
+    admin_dummy_formula_router,
     admin_graph_axis_router,
     admin_issue_router,
     admin_role_router,
@@ -30,6 +32,8 @@ from app.api.routes.v1.user_accounts import user_accounts_router
 __all__ = [
     # Admin API
     "admin_category_router",
+    "admin_dummy_chart_router",
+    "admin_dummy_formula_router",
     "admin_graph_axis_router",
     "admin_issue_router",
     "admin_role_router",
