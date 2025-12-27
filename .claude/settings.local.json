@@ -136,7 +136,13 @@
       "Bash(timeout 120 uv run python:*)",
       "Bash(export AZURE_OPENAI_API_KEY=\"dummy-test-key\")",
       "Bash(export AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\")",
-      "Bash(export AZURE_OPENAI_EMBEDDING_ENDPOINT=\"https://dummy.openai.azure.com\")"
+      "Bash(export AZURE_OPENAI_EMBEDDING_ENDPOINT=\"https://dummy.openai.azure.com\")",
+      "Bash(AZURE_OPENAI_API_KEY=\"dummy-test-key\" AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\" timeout 120 uv run python -m pytest:*)",
+      "Bash(AZURE_OPENAI_API_KEY=\"dummy-test-key\" AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\" timeout 180 uv run python:*)",
+      "Bash(AZURE_OPENAI_API_KEY=\"dummy-test-key\" AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\" timeout 300 uv run python -m pytest:*)",
+      "Bash(AZURE_OPENAI_API_KEY=\"dummy-test-key\" AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\" timeout 60 uv run python:*)",
+      "Bash(AZURE_OPENAI_API_KEY=\"dummy-test-key\" AZURE_OPENAI_ENDPOINT=\"https://dummy.openai.azure.com\" timeout 60 uv run python -m pytest:*)",
+      "Bash(ls -la \"c:\\\\developments\\\\genai-app-docs\\\\src\\\\app\\\\models\\\\analysis\"\" | grep -i \".py \")"
     ],
     "deny": [],
     "ask": []

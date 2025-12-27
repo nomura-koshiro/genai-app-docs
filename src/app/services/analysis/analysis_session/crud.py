@@ -69,6 +69,9 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                     project_id=s.project_id,
                     issue_id=s.issue_id,
                     creator_id=s.creator_id,
+                    status=s.status,
+                    custom_system_prompt=s.custom_system_prompt,
+                    initial_message=s.initial_message,
                     created_at=s.created_at,
                     updated_at=s.updated_at,
                 )

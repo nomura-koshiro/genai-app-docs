@@ -64,6 +64,7 @@ class AnalysisSnapshot(Base, TimestampMixin):
     session: Mapped["AnalysisSession"] = relationship(
         "AnalysisSession",
         back_populates="snapshots",
+        foreign_keys=[session_id],
     )
 
     parent_snapshot: Mapped["AnalysisSnapshot | None"] = relationship(

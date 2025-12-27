@@ -437,14 +437,28 @@ class AnalysisSessionCreate(BaseCamelCaseModel):
 
     Attributes:
         issue_id (uuid.UUID): 課題ID
+        custom_system_prompt (str | None): カスタムシステムプロンプト（任意）
+        initial_message (str | None): 初期メッセージ（任意）
 
     Example:
         >>> session = AnalysisSessionCreate(
         ...     issue_id=uuid.uuid4(),
+        ...     custom_system_prompt="追加の指示: 結果は簡潔に日本語で説明してください",
+        ...     initial_message="こんにちは。売上データの分析を始めましょう。",
         ... )
     """
 
     issue_id: uuid.UUID = Field(..., description="課題ID")
+    custom_system_prompt: str | None = Field(
+        default=None,
+        max_length=10000,
+        description="カスタムシステムプロンプト（デフォルトプロンプトに追加）",
+    )
+    initial_message: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="初期メッセージ（セッション開始時に表示）",
+    )
 
 
 class AnalysisSessionUpdate(BaseCamelCaseModel):
@@ -458,18 +472,31 @@ class AnalysisSessionUpdate(BaseCamelCaseModel):
         current_snapshot (int | None): 現在のスナップショット番号
         input_file_id (uuid.UUID | None): 入力ファイルID
         status (str | None): セッション状態（draft/active/completed/archived）
+        custom_system_prompt (str | None): カスタムシステムプロンプト
+        initial_message (str | None): 初期メッセージ
 
     Example:
         >>> session_update = AnalysisSessionUpdate(
         ...     current_snapshot=変更後の番号,
         ...     input_file_id=変更後のファイルID,
-        ...     status="active"
+        ...     status="active",
+        ...     custom_system_prompt="追加の指示を設定"
         ... )
     """
 
     current_snapshot: int | None = Field(default=None, description="現在のスナップショット番号")
     input_file_id: uuid.UUID | None = Field(default=None, description="入力ファイルID")
     status: str | None = Field(default=None, description="セッション状態（draft/active/completed/archived）")
+    custom_system_prompt: str | None = Field(
+        default=None,
+        max_length=10000,
+        description="カスタムシステムプロンプト（デフォルトプロンプトに追加）",
+    )
+    initial_message: str | None = Field(
+        default=None,
+        max_length=2000,
+        description="初期メッセージ（セッション開始時に表示）",
+    )
 
 
 class AnalysisSessionDelete(BaseCamelCaseModel):
@@ -497,6 +524,8 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
         project_id (uuid.UUID): プロジェクトID
         issue_id (uuid.UUID): 課題ID
         creator_id (uuid.UUID): 作成者のユーザーID
+        custom_system_prompt (str | None): カスタムシステムプロンプト
+        initial_message (str | None): 初期メッセージ
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
 
@@ -508,6 +537,8 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
         ...     "creator_id": "423e4567-e89b-12d3-a456-426614174333",
         ...     "current_snapshot": 2,
         ...     "status": "active",
+        ...     "customSystemPrompt": "追加の指示",
+        ...     "initialMessage": "こんにちは",
         ...     "created_at": "2025-01-01T00:00:00Z",
         ...     "updated_at": "2025-01-02T00:00:00Z"
         ... }
@@ -519,6 +550,8 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     issue_id: uuid.UUID = Field(..., description="課題ID")
     creator_id: uuid.UUID = Field(..., description="作成者のユーザーID")
+    custom_system_prompt: str | None = Field(default=None, description="カスタムシステムプロンプト")
+    initial_message: str | None = Field(default=None, description="初期メッセージ")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 

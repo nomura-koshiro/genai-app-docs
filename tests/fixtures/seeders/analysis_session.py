@@ -1,5 +1,6 @@
 """AnalysisSession シーダー。"""
 
+import uuid
 from typing import Any
 
 from app.models import Project, ProjectFile, UserAccount
@@ -58,14 +59,16 @@ class AnalysisSessionSeederMixin(ProjectSeederMixin):
         project: Project,
         creator: UserAccount,
         issue: AnalysisIssueMaster,
-        current_snapshot: int = 0,
+        current_snapshot_id: uuid.UUID | None = None,
+        status: str = "draft",
     ) -> AnalysisSession:
         """分析セッションを作成。"""
         session = AnalysisSession(
             project_id=project.id,
             creator_id=creator.id,
             issue_id=issue.id,
-            current_snapshot=current_snapshot,
+            current_snapshot_id=current_snapshot_id,
+            status=status,
         )
         self.db.add(session)
         await self.db.flush()

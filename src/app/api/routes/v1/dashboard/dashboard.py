@@ -106,17 +106,16 @@ async def get_stats(
         - limit: 取得件数（デフォルト: 20、最大: 100）
 
     レスポンス:
-        - activities: アクティビティリスト
+        - activities: アクティビティリスト（ロール変更、プロジェクト/セッション/ツリー作成、ファイルアップロード）
         - total: 総件数
         - skip: スキップ数
         - limit: 取得件数
-
-    **注意**: アクティビティログ機能は準備中です。現在は空のレスポンスを返します。
     """,
 )
 @handle_service_errors
 async def get_activities(
     current_user: CurrentUserAccountDep,
+    dashboard_service: DashboardServiceDep,
     skip: int = Query(default=0, ge=0, description="スキップ数"),
     limit: int = Query(default=20, ge=1, le=100, description="取得件数"),
 ) -> DashboardActivitiesResponse:
@@ -124,24 +123,15 @@ async def get_activities(
 
     Args:
         current_user: 現在のユーザー
+        dashboard_service: ダッシュボードサービス
         skip: スキップ数
         limit: 取得件数
 
     Returns:
         DashboardActivitiesResponse: アクティビティログ
-
-    Note:
-        アクティビティログ機能は準備中です。現在は空のレスポンスを返します。
     """
     logger.info(f"アクティビティログ取得: user_id={current_user.id}, skip={skip}, limit={limit}")
-
-    # TODO: アクティビティログモデルとリポジトリを実装後、実際のデータを返す
-    return DashboardActivitiesResponse(
-        activities=[],
-        total=0,
-        skip=skip,
-        limit=limit,
-    )
+    return await dashboard_service.get_activities(skip=skip, limit=limit)
 
 
 @router.get(

@@ -31,8 +31,15 @@ SYSTEM_PROMPT_PATH = Path(__file__).parent / "utils" / "system_prompt.txt"
 
 
 class AnalysisAgent:
-    def __init__(self, state: AnalysisState):
+    def __init__(self, state: AnalysisState, custom_system_prompt: str | None = None):
+        """分析エージェントを初期化します。
+
+        Args:
+            state: 分析状態オブジェクト
+            custom_system_prompt: カスタムシステムプロンプト（デフォルトプロンプトに追加）
+        """
         self.state = state
+        self.custom_system_prompt = custom_system_prompt
         self.tools = [
             GetDataOverviewTool(state),
             GetStepOverviewTool(state),
@@ -55,6 +62,10 @@ class AnalysisAgent:
         # システムプロンプトの設定
         with open(SYSTEM_PROMPT_PATH, encoding="utf-8") as f:
             system_message = f.read()
+
+        # カスタムシステムプロンプトがある場合は追加
+        if custom_system_prompt:
+            system_message = f"{system_message}\n\n## 追加の指示\n{custom_system_prompt}"
 
         # プロンプトテンプレートを直接定義
         prompt = ChatPromptTemplate.from_messages(

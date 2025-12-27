@@ -149,8 +149,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
             snapshot_id=new_snapshot_id,
             chat_list=state.chat_history,
         )
-        # セッションのcurrent_snapshotを更新
-        session = await self.session_repository.update(session, current_snapshot=new_snapshot_order)
+        # セッションのcurrent_snapshot_idを更新（スナップショットIDを設定）
+        session = await self.session_repository.update(session, current_snapshot_id=new_snapshot_id)
 
         # リレーションを取得してレスポンスを構築
         await self.db.commit()
@@ -204,8 +204,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
                 details={"session_id": str(session_id), "snapshot_order": snapshot_order},
             )
 
-        # セッションのcurrent_snapshotを更新
-        session = await self.session_repository.update(session, current_snapshot=snapshot_order)
+        # セッションのcurrent_snapshot_idを更新（スナップショットIDを設定）
+        session = await self.session_repository.update(session, current_snapshot_id=snapshot.id)
 
         # current_snapshot以降のsnapshot（後続分）を削除する（chat, stepも一緒に）
         snapshots = await self.snapshot_repository.list_by_session(session_id)
@@ -418,8 +418,8 @@ class AnalysisSessionAnalysisService(AnalysisSessionServiceBase):
                     message=chat.message,
                 )
 
-        # セッションのcurrent_snapshotを更新
-        await self.session_repository.update(session, current_snapshot=new_snapshot_order)
+        # セッションのcurrent_snapshot_idを更新（スナップショットIDを設定）
+        await self.session_repository.update(session, current_snapshot_id=new_snapshot.id)
 
         # リレーションを取得
         new_snapshot_with_relations = await self.snapshot_repository.get_with_relations(new_snapshot.id)

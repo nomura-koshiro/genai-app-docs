@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import CheckConstraint, ForeignKey, String
+from sqlalchemy import CheckConstraint, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,6 +33,8 @@ class AnalysisSession(Base, TimestampMixin):
         input_file_id: 入力ファイルID（外部キー、任意）
         current_snapshot_id: 現在のスナップショットID（外部キー、任意）
         status: セッション状態（draft/active/completed/archived）
+        custom_system_prompt: カスタムシステムプロンプト（任意）
+        initial_message: 初期メッセージ（任意、セッション開始時に表示）
     """
 
     __tablename__ = "analysis_session"
@@ -89,6 +91,19 @@ class AnalysisSession(Base, TimestampMixin):
         default="draft",
         server_default="draft",
         comment="セッション状態（draft/active/completed/archived）",
+    )
+
+    # エージェント設定
+    custom_system_prompt: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="カスタムシステムプロンプト（デフォルトプロンプトに追加）",
+    )
+
+    initial_message: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="初期メッセージ（セッション開始時に表示）",
     )
 
     # テーブル制約
