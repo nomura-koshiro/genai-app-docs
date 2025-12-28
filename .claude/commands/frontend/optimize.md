@@ -39,23 +39,28 @@ tools: [Read, Edit, MultiEdit, Bash, Grep]
 
 ```typescript
 // React.memo の適切な使用
-const OptimizedComponent = React.memo(({ data, onAction }) => {
-  // コンポーネント実装
-}, (prevProps, nextProps) => {
-  // カスタム比較関数
-  return prevProps.data.id === nextProps.data.id &&
-         prevProps.data.updatedAt === nextProps.data.updatedAt
-})
+const OptimizedComponent = React.memo(
+  ({ data, onAction }) => {
+    // コンポーネント実装
+  },
+  (prevProps, nextProps) => {
+    // カスタム比較関数
+    return prevProps.data.id === nextProps.data.id && prevProps.data.updatedAt === nextProps.data.updatedAt;
+  }
+);
 
 // useMemo - 重い計算のメモ化
 const expensiveValue = useMemo(() => {
-  return computeExpensiveValue(data)
-}, [data])
+  return computeExpensiveValue(data);
+}, [data]);
 
 // useCallback - 関数のメモ化
-const handleAction = useCallback((id: string) => {
-  onAction(id)
-}, [onAction])
+const handleAction = useCallback(
+  (id: string) => {
+    onAction(id);
+  },
+  [onAction]
+);
 ```
 
 #### 状態管理最適化
@@ -204,5 +209,12 @@ cd apps/frontend && pnpm test:e2e
 - [ ] 軽量コンポーネントへの過度なメモ化
 - [ ] 全てのオブジェクト・関数のメモ化
 - [ ] プレマチュアな最適化
+
+## プロジェクトガイドライン参照
+
+**必ず以下のドキュメントを読んでから最適化してください：**
+
+- `.claude/skills/frontend/state-management.md` - 状態管理戦略
+- `.claude/skills/frontend/architecture.md` - アーキテクチャ設計
 
 最適化完了後、Before/Afterの性能比較データを提供してください。

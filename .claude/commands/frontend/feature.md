@@ -67,10 +67,10 @@ src/features/$ARGUMENTS/
 
 ## プロジェクトガイドラインの確認
 
-以下のドキュメントを参照してください：
+**必ず以下のドキュメントを読んでから実装してください：**
 
-- `apps/frontend/docs/ARCHITECTURE.md`
-- `apps/frontend/docs/STATE_MANAGEMENT.md`
-- `apps/frontend/docs/DEVELOPMENT_GUIDE.md`
+- `.claude/skills/frontend/architecture.md` - bulletproof-react アーキテクチャ
+- `.claude/skills/frontend/state-management.md` - 状態管理戦略
+- `.claude/skills/frontend/component-guidelines.md` - コンポーネント設計
 
 完了後、`src/features/index.ts` でのエクスポートも設定してください。

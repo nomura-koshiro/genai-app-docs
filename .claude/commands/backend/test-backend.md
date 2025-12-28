@@ -11,7 +11,6 @@ tools: [Write, Edit, MultiEdit, Read, Bash]
 ## FastAPI テスト戦略
 
 ### 1. テスト構成
-
 ```
 apps/backend/tests/
 ├── api/v1/
@@ -29,7 +28,6 @@ apps/backend/tests/
 ### 2. APIエンドポイントテスト (`tests/api/v1/test_$ARGUMENTS.py`)
 
 #### 基本構造
-
 ```python
 import pytest
 from fastapi.testclient import TestClient
@@ -470,7 +468,6 @@ def create_random_$ARGUMENTS_data() -> dict:
 ### 6. テスト実行・検証
 
 #### テスト実行コマンド
-
 ```bash
 # 全テスト実行
 cd apps/backend && python -m pytest
@@ -486,7 +483,6 @@ cd apps/backend && python -m pytest -n auto
 ```
 
 #### カバレッジ目標
-
 - **ライン カバレッジ**: 90% 以上
 - **ブランチ カバレッジ**: 85% 以上
 - **重要機能**: 100% カバレッジ
@@ -522,7 +518,6 @@ def test_$ARGUMENTS_list_performance(
 ### 8. テスト品質チェック
 
 #### 実行確認
-
 ```bash
 # テスト実行
 cd apps/backend && python -m pytest tests/ -v
@@ -536,7 +531,6 @@ cd apps/backend && python -m pytest tests/ -k "performance" -v
 ```
 
 #### 品質基準
-
 - [ ] 全テストが成功すること
 - [ ] カバレッジが目標値を満たすこと
 - [ ] パフォーマンステストが基準を満たすこと

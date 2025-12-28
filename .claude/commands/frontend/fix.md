@@ -87,10 +87,10 @@ cd apps/frontend && pnpm build
 
 ## プロジェクトガイドライン参照
 
-修正時に以下のドキュメントを参照してください：
+**必ず以下のドキュメントを読んでから修正してください：**
 
-- `apps/frontend/docs/DEVELOPMENT_GUIDE.md` - 開発ガイド
-- `apps/frontend/docs/COMPONENT_GUIDELINES.md` - コンポーネント設計
-- `apps/frontend/docs/ARCHITECTURE.md` - アーキテクチャ設計
+- `.claude/skills/frontend/project-overview.md` - プロジェクト概要
+- `.claude/skills/frontend/component-guidelines.md` - コンポーネント設計
+- `.claude/skills/frontend/architecture.md` - アーキテクチャ設計
 
 修正内容と理由を明確に説明してください。

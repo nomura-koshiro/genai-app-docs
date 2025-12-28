@@ -36,7 +36,6 @@ Training Tracker プロジェクトの Claude Code 設定とエージェント�
 ## 🤖 利用可能なエージェント
 
 ### フロントエンド開発
-
 - **@frontend-developer**: Next.js、React、TypeScript の開発支援
   - Features-based アーキテクチャ
   - SOLID/DRY/KISS 原則
@@ -49,7 +48,6 @@ Training Tracker プロジェクトの Claude Code 設定とエージェント�
   - TypeScript型安全性チェック
 
 ### バックエンド開発
-
 - **@backend-developer**: FastAPI、Python の開発支援
   - Clean Architecture + Repository パターン
   - SOLID 原則の実装
@@ -73,7 +71,6 @@ Training Tracker プロジェクトの Claude Code 設定とエージェント�
 ## 🛠️ カスタムコマンド
 
 ### バックエンドコマンド
-
 - `@api` - FastAPI エンドポイント作成
 - `@model` - SQLAlchemy モデル作成
 - `@fix-backend` - バックエンド修正
@@ -81,12 +78,10 @@ Training Tracker プロジェクトの Claude Code 設定とエージェント�
 - `@test-backend` - バックエンドテスト
 
 ### フロントエンドコマンド
-
 - `@component` - UI コンポーネント作成
 - `@feature` - 機能モジュール作成
 
 ### 共通コマンド
-
 - `@fix` - 汎用修正
 - `@optimize` - パフォーマンス最適化
 - `@review` - 汎用レビュー
@@ -96,14 +91,12 @@ Training Tracker プロジェクトの Claude Code 設定とエージェント�
 ## 🚀 使用方法
 
 ### エージェント呼び出し
-
 ```
 @frontend-developer ユーザー管理機能のコンポーネントを作成してください
 @backend-code-reviewer この認証コードをレビューしてください
 ```
 
 ### コマンド使用
-
 ```
 @component Button - 新しいButtonコンポーネントを作成
 @api users - ユーザー管理API作成

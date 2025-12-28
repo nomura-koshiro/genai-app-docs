@@ -1,151 +1,146 @@
-# Training Tracker - プロジェクト設定・メモリ
+# バックエンドAPI - プロジェクト設定・メモリ
 
 ## プロジェクト概要
 
-Training Tracker は、個人やチームのトレーニング記録を管理するフルスタックWebアプリケーションです。bulletproof-react アーキテクチャとSOLID原則に基づいて設計されています。
+FastAPI + LangChain/LangGraphによるAIエージェントアプリケーションのバックエンドAPIです。
+レイヤードアーキテクチャとSOLID原則に基づいて設計されています。
 
 ## 重要な設計原則
 
 ### アーキテクチャ
-
-- **Features-based Architecture**: 機能別モジュール分割 (`src/features/`)
+- **4層アーキテクチャ**: API層 → サービス層 → リポジトリ層 → モデル層
 - **SOLID原則**: 単一責任、開放閉鎖、依存性逆転
 - **DRY/KISS**: コード重複排除・シンプル設計
 
-### 状態管理戦略
-
-- **グローバル状態**: Zustand (認証、UI設定)
-- **サーバー状態**: TanStack Query (APIデータ、キャッシュ)
-- **ローカル状態**: React State (コンポーネント固有)
-
-### コンポーネント設計
-
-- **UI Components** (`components/ui/`): CVAによるバリアント、forwardRef、型安全なProps
-- **Feature Components** (`features/*/components/`): ビジネスロジック統合
-- **Layout Components** (`components/layout/`): ページ構造
+### レイヤー責務
+- **API層** (`api/v1/endpoints/`): HTTPリクエスト/レスポンス、認証・認可
+- **サービス層** (`services/`): ビジネスロジック、トランザクション管理
+- **リポジトリ層** (`repositories/`): データアクセス、CRUD操作
+- **モデル層** (`models/`, `schemas/`): SQLAlchemy/Pydantic定義
 
 ## 技術スタック
 
-### Frontend (apps/frontend/)
-
-- Next.js 15 (App Router)
-- React 19 (Hooks, Suspense)
-- TypeScript (厳密な型安全性)
-- Tailwind CSS + CVA (スタイリング)
-- Zustand (グローバル状態)
-- TanStack Query (サーバー状態)
-- React Hook Form + Zod (フォーム・バリデーション)
+### Backend
+- Python 3.13
+- FastAPI
+- SQLAlchemy 2.0 (ORM)
+- Pydantic v2 (バリデーション)
+- PostgreSQL (データベース)
+- Redis (キャッシュ)
+- Alembic (マイグレーション)
+- LangChain / LangGraph (AI/エージェント)
+- uv (パッケージ管理)
 
 ### 品質管理ツール
-
-- ESLint + Prettier (コード品質)
-- Vitest (ユニット・統合テスト)
-- Playwright (E2Eテスト)
-- Storybook (コンポーネント開発)
+- Ruff (リンター・フォーマッター)
+- mypy (静的型チェック)
+- pytest (テストフレームワーク)
+- bandit (セキュリティチェック)
 
 ## 重要な規約
 
 ### 命名規則
-
-- **ファイル・フォルダ**: kebab-case (`user-profile/`, `use-local-storage.ts`)
-- **コンポーネント**: PascalCase (`UserProfile.tsx`)
-- **変数・関数**: camelCase (`userName`, `handleSubmit`)
-- **定数**: UPPER_SNAKE_CASE (`API_ENDPOINTS`)
-
-### コンポーネント作成時のチェック
-
-- [ ] 単一責任の原則を満たしているか
-- [ ] Props インターフェースが明確で最小限か
-- [ ] forwardRef を適切に使用しているか
-- [ ] アクセシビリティ要件を満たしているか
-- [ ] 適切なJSDocコメントがあるか
+- **ファイル**: snake_case (`user_service.py`)
+- **クラス**: PascalCase (`UserService`)
+- **関数・変数**: snake_case (`get_user`, `user_name`)
+- **定数**: UPPER_SNAKE_CASE (`API_VERSION`)
 
 ### 型安全性
+- すべての関数に型ヒントを付与
+- Pydanticスキーマでバリデーション
+- mypy による静的型チェック
 
-- `any` の使用を避ける
-- 厳密な型定義 (interfaces, types)
-- API レスポンスの型定義 (`src/types/api.ts`)
-- Zod スキーマでのランタイムバリデーション
+### APIエンドポイント作成時のチェック
+- [ ] Pydanticスキーマ（Base, Create, Update, Response）
+- [ ] SQLAlchemyモデル
+- [ ] リポジトリ層（CRUD操作）
+- [ ] サービス層（ビジネスロジック）
+- [ ] APIエンドポイント
+- [ ] テスト（API、CRUD、モデル）
 
 ## 開発コマンド
 
 ### よく使用するコマンド
-
 ```bash
 # 開発サーバー起動
-cd apps/frontend && pnpm dev
-
-# コード品質チェック
-pnpm lint && pnpm format
+cd apps/backend && uvicorn app.main:app --reload
 
 # テスト実行
-pnpm test
-pnpm test:e2e
+cd apps/backend && python -m pytest
 
-# コード生成
-pnpm generate component Button ui
-pnpm generate feature user-management
+# 型チェック
+cd apps/backend && mypy app/
+
+# リント・フォーマット
+cd apps/backend && ruff check app/ --fix
+cd apps/backend && ruff format app/
+
+# マイグレーション
+cd apps/backend && alembic upgrade head
+cd apps/backend && alembic revision --autogenerate -m "description"
 ```
 
-## 現在の状況
+## ドキュメント参照
 
-### 完成済み
+### 開発ガイド
+- `docs/developer-guide/01-getting-started/` - はじめに
+- `docs/developer-guide/02-architecture/` - アーキテクチャ
+- `docs/developer-guide/03-core-concepts/` - コアコンセプト
+- `docs/developer-guide/04-development/` - 開発ガイド
+- `docs/developer-guide/05-testing/` - テスト
+- `docs/developer-guide/06-guides/` - 実装ガイド
+- `docs/developer-guide/07-reference/` - リファレンス
 
-- ✅ プロジェクト構造とモノレポ設定
-- ✅ ESLint/Prettier/TypeScript設定
-- ✅ 基本UIコンポーネント (Button, Label, Spinner)
-- ✅ 状態管理設定 (Zustand, TanStack Query)
-- ✅ 認証・認可システム設計
-- ✅ Claude Code Agent設定
+### 設計仕様書
+- `docs/specifications/01-usercases/` - ユースケース
+- `docs/specifications/04-architecture/` - アーキテクチャ設計
+- `docs/specifications/05-database/` - データベース設計
+- `docs/specifications/06-security/` - セキュリティ設計
+- `docs/specifications/07-api/` - API仕様
 
-### 開発中・次のタスク
-
-- 🔄 ユーザー管理機能の実装
-- 🔄 トレーニングセッション機能
-- 🔄 ダッシュボード画面
-- 🔄 レスポンシブデザイン対応
+### APIドキュメント
+- `docs/api/openapi.json` - OpenAPI仕様
+- `docs/api/api-docs.html` - Swagger UI
+- `docs/api/redoc.html` - ReDoc
 
 ## トラブルシューティング
 
 ### よくある問題
-
-- **ESLintエラー**: `pnpm lint:fix` で自動修正
-- **型エラー**: 厳密な型定義の確認、`src/types/api.ts` の活用
-- **ビルドエラー**: `.next` フォルダ削除後再ビルド
-- **依存関係エラー**: `pnpm install` で再インストール
-
-### パフォーマンス最適化
-
-- React.memo は重いコンポーネントにのみ使用
-- useMemo/useCallback は適切な依存配列で
-- 不要な再レンダリングをReact DevToolsで確認
+- **型エラー**: mypy で確認、型ヒントを修正
+- **バリデーションエラー**: Pydanticスキーマを確認
+- **マイグレーションエラー**: alembic history で履歴確認
+- **依存関係エラー**: uv sync で再インストール
 
 ## Agent活用ガイド
 
-### @frontend-developer
+### @backend-developer
+- 新機能開発、APIエンドポイント作成、リファクタリング
+- モデル・スキーマ・リポジトリ・サービス層の実装
 
-新機能開発、リファクタリング、技術的実装に使用
-
-### @frontend-code-reviewer
-
-コード品質チェック、SOLID原則確認、パフォーマンス最適化に使用
+### @backend-code-reviewer
+- コード品質チェック、SOLID原則確認
+- セキュリティレビュー、パフォーマンス最適化
 
 ## 重要なファイル・ディレクトリ
 
 ```
-apps/frontend/
-├── docs/                     # プロジェクトドキュメント
-├── src/
-│   ├── features/            # ビジネス機能モジュール
-│   ├── components/ui/       # 再利用可能UIコンポーネント
-│   ├── lib/                # 共通ライブラリ・設定
-│   ├── stores/             # Zustand状態管理
-│   ├── types/              # 型定義
-│   └── utils/              # ユーティリティ関数
-├── package.json
-├── tsconfig.json
-├── next.config.js
-└── tailwind.config.ts
+apps/backend/
+├── app/
+│   ├── api/v1/endpoints/    # APIエンドポイント
+│   ├── models/              # SQLAlchemyモデル
+│   ├── schemas/             # Pydanticスキーマ
+│   ├── repositories/        # データアクセス層
+│   ├── services/            # ビジネスロジック層
+│   ├── core/                # 設定・セキュリティ
+│   └── utils/               # ユーティリティ
+├── tests/                   # テスト
+├── alembic/                 # マイグレーション
+└── requirements.txt
+
+docs/
+├── api/                     # OpenAPI仕様
+├── developer-guide/         # 開発者ガイド
+└── specifications/          # 設計仕様書
 ```
 
 このメモリ情報により、Claude は常にプロジェクトのコンテキスト、設計原則、技術選択を理解して開発支援を行います。

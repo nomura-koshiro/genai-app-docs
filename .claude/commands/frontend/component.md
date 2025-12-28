@@ -10,7 +10,7 @@ tools: [Write, Edit, MultiEdit, Bash]
 
 ## 要件
 
-- **ディレクトリ**: `src/components/ui/$ARGUMENTS/`
+- **ディレクトリ**: `src/components/sample-ui/$ARGUMENTS/` (基本UI) または `src/components/ui/$ARGUMENTS/` (ユーティリティ)
 - **アーキテクチャ**: bulletproof-react features-based architecture に従う
 - **設計原則**: SOLID、DRY、KISS原則を適用
 
@@ -39,9 +39,11 @@ tools: [Write, Edit, MultiEdit, Bash]
 - **型安全性**: 厳密なProps型定義
 
 ## プロジェクトガイドラインの確認
-以下のドキュメントを参照してください：
 
-- `apps/frontend/docs/COMPONENT_GUIDELINES.md`
-- `apps/frontend/docs/ARCHITECTURE.md`
+**必ず以下のドキュメントを読んでから実装してください：**
+
+- `.claude/skills/frontend/component-guidelines.md` - コンポーネント設計・命名規則
+- `.claude/skills/frontend/architecture.md` - bulletproof-react アーキテクチャ
+- `.claude/skills/frontend/testing.md` - テスト方針
 
 完了後、コンポーネントのインポート・エクスポートも含めて設定してください。

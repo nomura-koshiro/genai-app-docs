@@ -5,7 +5,6 @@ GitHub Issue作業を効率的に管理するためのコマンド群です。
 ## 🎯 推奨ワークフロー
 
 ### 基本的な作業管理
-
 ```bash
 /issue start 123          # 作業環境作成（worktree）
 /issue list               # 作業状況確認
@@ -14,7 +13,6 @@ GitHub Issue作業を効率的に管理するためのコマンド群です。
 ```
 
 ### 本格的な開発作業
-
 ```bash
 /issue-dev 123            # 自動判定で開発開始（推奨）
 /issue-dev 123 frontend   # フロントエンド開発
@@ -57,37 +55,31 @@ GitHub Issue作業を効率的に管理するためのコマンド群です。
 `/issue-dev 123` で自動判定される開発タイプ：
 
 ### Frontend判定条件
-
 - ラベル: `frontend`, `ui`, `component`, `styling`
 - 内容: React, UI, コンポーネント関連
 
 ### Backend判定条件
-
 - ラベル: `backend`, `api`, `database`, `server`
 - 内容: API, データベース, サーバー関連
 
 ### Fullstack判定条件
-
 - ラベル: `fullstack`, `feature`, `integration`
 - 内容: 両方の要素が必要
 
 ## 🔧 高度な機能
 
 ### 品質ゲート
-
 - TypeScript型チェック
 - ESLint/Prettier
 - テストカバレッジ確認
 - パフォーマンス監視
 
 ### 自動最適化
-
 - バンドルサイズ最適化
 - データベースクエリ最適化
 - キャッシュ戦略適用
 
 ### 継続作業対応
-
 既存のworktreeがある場合、自動的に継続作業として認識
 
 ## 📊 ポート自動割り当て
@@ -99,15 +91,13 @@ Issue番号に基づく専用ポート設定：
 - **Storybook**: 6000 + (issue_number % 100)
 
 例: Issue #123
-
-- Frontend: <http://localhost:3023>
-- Backend: <http://localhost:8023>
-- Storybook: <http://localhost:6023>
+- Frontend: http://localhost:3023
+- Backend: http://localhost:8023
+- Storybook: http://localhost:6023
 
 ## 🎯 使用例
 
 ### 典型的なワークフロー
-
 ```bash
 # 1. 自動判定で開発開始
 /issue-dev 123
@@ -126,7 +116,6 @@ Issue番号に基づく専用ポート設定：
 ```
 
 ### 明示的なタイプ指定
-
 ```bash
 # フロントエンド特化
 /issue-dev 456 frontend
@@ -151,7 +140,6 @@ Issue番号に基づく専用ポート設定：
 ### 自動判定の活用
 
 旧コマンドの代わりに自動判定を使用（推奨）：
-
 ```bash
 # 推奨: 自動判定
 /issue-dev 123
@@ -179,14 +167,12 @@ Issue番号に基づく専用ポート設定：
 統合コマンドにより以下が自動実行：
 
 ### フロントエンド
-
 - コンポーネント最適化
 - バンドル分析・最適化
 - 画像最適化
 - キャッシュ戦略
 
 ### バックエンド
-
 - クエリ最適化
 - インデックス分析
 - レスポンス時間監視

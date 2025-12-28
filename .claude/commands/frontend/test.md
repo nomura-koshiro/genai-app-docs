@@ -51,16 +51,16 @@ tools: [Write, Edit, MultiEdit, Read, Bash]
 
 ```typescript
 // ✅ 良い例
-describe('UserCard', () => {
-  it('should display user information correctly', () => {})
-  it('should call onEdit when edit button is clicked', () => {})
-  it('should show loading state while updating', () => {})
-})
+describe("UserCard", () => {
+  it("should display user information correctly", () => {});
+  it("should call onEdit when edit button is clicked", () => {});
+  it("should show loading state while updating", () => {});
+});
 
 // ❌ 悪い例
-describe('test', () => {
-  it('works', () => {})
-})
+describe("test", () => {
+  it("works", () => {});
+});
 ```
 
 ### テストデータ
@@ -68,11 +68,11 @@ describe('test', () => {
 ```typescript
 // モックデータの作成
 const mockUser: User = {
-  id: '1',
-  name: 'John Doe',
-  email: 'john@example.com',
+  id: "1",
+  name: "John Doe",
+  email: "john@example.com",
   // 必要な他のプロパティ...
-}
+};
 ```
 
 ### MSW（Mock Service Worker）の活用
@@ -83,8 +83,8 @@ API呼び出しのモックを適切に設定してください。
 
 ```typescript
 // screen.getByRole を使用したテスト
-expect(screen.getByRole('button', { name: '送信' })).toBeInTheDocument()
-expect(screen.getByLabelText('ユーザー名')).toBeInTheDocument()
+expect(screen.getByRole("button", { name: "送信" })).toBeInTheDocument();
+expect(screen.getByLabelText("ユーザー名")).toBeInTheDocument();
 ```
 
 ## カバレッジ目標
@@ -124,5 +124,12 @@ cd apps/frontend && pnpm test:e2e
 - **状態管理**: Zustand/TanStack Query のモック
 - **ルーティング**: Next.js App Router のテスト
 - **コンポーネント**: CVA バリアントのテスト
+
+## プロジェクトガイドライン参照
+
+**必ず以下のドキュメントを読んでからテストを作成してください：**
+
+- `.claude/skills/frontend/testing.md` - テスト方針・ベストプラクティス
+- `.claude/skills/frontend/component-guidelines.md` - コンポーネント設計
 
 テスト作成完了後、実行して全て成功することを確認してください。

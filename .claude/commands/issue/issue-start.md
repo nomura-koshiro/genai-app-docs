@@ -50,8 +50,8 @@ GitHub Issue #{issue_number} の作業を開始し、独立したworktree環境�
 
 - **自動的にworktreeディレクトリに移動**
 - **開発サーバーが自動起動**：
-  - Frontend: <http://localhost:300X> (Xはissue番号の下2桁)
-  - Backend: <http://localhost:800X> (uvicorn + uv環境で起動)
+  - Frontend: http://localhost:300X (Xはissue番号の下2桁)
+  - Backend: http://localhost:800X (uvicorn + uv環境で起動)
 - **VS Codeで新しいワークスペースが開く**
 
 手動で開発サーバーを起動したい場合：
@@ -70,13 +70,11 @@ cd ../training-tracker-issue-123
 ## 技術的な改善点
 
 ### Python環境の自動セットアップ
-
 - `uv`コマンドが利用可能な場合、自動的に`uv sync`を実行
 - uvicornは`uv run`経由で起動し、依存関係の問題を解決
 - 従来のvenvベースの環境にもフォールバック対応
 
 ### 自動化された作業フロー
-
 - worktree作成後、自動的に作業ディレクトリに移動
 - 開発サーバーの起動状況を明確に表示
 - エラーハンドリングとクリーンアップ機能

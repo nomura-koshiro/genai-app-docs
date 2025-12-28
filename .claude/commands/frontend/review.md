@@ -76,10 +76,10 @@ $ARGUMENTS
 
 ## プロジェクトガイドライン参照
 
-レビュー時に以下のドキュメントを参照してください：
+**必ず以下のドキュメントを読んでからレビューしてください：**
 
-- `apps/frontend/docs/COMPONENT_GUIDELINES.md`
-- `apps/frontend/docs/ARCHITECTURE.md`
-- `apps/frontend/docs/STATE_MANAGEMENT.md`
+- `.claude/skills/frontend/component-guidelines.md` - コンポーネント設計・命名規則
+- `.claude/skills/frontend/architecture.md` - bulletproof-react アーキテクチャ
+- `.claude/skills/frontend/state-management.md` - 状態管理戦略
 
 具体的なコード例と改善案を含めた建設的なフィードバックをお願いします。
