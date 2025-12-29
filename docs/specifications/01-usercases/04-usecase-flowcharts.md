@@ -977,10 +977,231 @@ graph TD
 
 ---
 
+## 14. システム管理（管理者専用）
+
+> **注記**: 以下のフローはシステム管理者（SystemAdmin）ロールを持つユーザーのみが実行可能です。すべて将来実装予定の機能です。
+
+### 14.1 システム管理の概要
+
+::: mermaid
+graph TB
+    subgraph ADMIN["🔧 システム管理機能"]
+        direction TB
+
+        subgraph monitoring["📊 監視・分析"]
+            SA_USER["👤 ユーザー操作履歴"]
+            SA_AUDIT["📋 詳細監査ログ"]
+            SA_STATS["📈 システム統計"]
+        end
+
+        subgraph management["⚙️ 管理・設定"]
+            SA_PROJECT["📁 全プロジェクト閲覧"]
+            SA_SETTING["🔧 システム設定"]
+            SA_NOTIFY["🔔 通知・アラート"]
+        end
+
+        subgraph operations["🛠️ 運用・保守"]
+            SA_BATCH["📦 一括操作"]
+            SA_SECURITY["🔒 セキュリティ管理"]
+            SA_DATA["🗑️ データクリーンアップ"]
+            SA_SUPPORT["🆘 サポートツール"]
+        end
+    end
+
+    style ADMIN fill:#e8f4f8
+    style monitoring fill:#fff3cd
+    style management fill:#d4edda
+    style operations fill:#ffeaa7
+:::
+
+### 14.2 ユーザー操作履歴追跡
+
+::: mermaid
+graph TD
+    Start([🔍 ユーザーの問い合わせ対応]) --> Search
+
+    subgraph Search["📋 STEP 1: 履歴検索"]
+        S1[ユーザーを選択]
+        S2[日時範囲を指定]
+        S3[操作タイプで絞込]
+        S1 --> S2 --> S3
+    end
+
+    Search --> Results
+
+    subgraph Results["📊 STEP 2: 結果確認"]
+        R1[操作一覧表示]
+        R2[詳細を確認]
+        R3[エラー内容を確認]
+        R1 --> R2 --> R3
+    end
+
+    Results --> Action{対応}
+
+    Action -->|問題発見| Fix[問題解決対応]
+    Action -->|問題なし| Report[調査報告]
+
+    style Start fill:#4ecdc4,color:#fff
+    style Search fill:#e8f4f8
+    style Results fill:#fff3cd
+:::
+
+### 14.3 通知・アラート管理
+
+::: mermaid
+graph TD
+    Start([📢 ユーザーに通知したい]) --> Choice{通知種別}
+
+    Choice -->|お知らせ| Announce
+    Choice -->|メンテナンス| Maintenance
+    Choice -->|アラート| Alert
+
+    subgraph Announce["📣 システムお知らせ"]
+        A1[タイトル・内容入力]
+        A2[対象ユーザー選択]
+        A3[配信日時設定]
+        A1 --> A2 --> A3
+    end
+
+    subgraph Maintenance["🔧 メンテナンス予告"]
+        M1[メンテナンス日時入力]
+        M2[影響範囲を記載]
+        M3[事前通知設定]
+        M1 --> M2 --> M3
+    end
+
+    subgraph Alert["⚠️ システムアラート"]
+        AL1[アラート条件設定]
+        AL2[通知先設定]
+        AL3[有効化]
+        AL1 --> AL2 --> AL3
+    end
+
+    Announce --> Send[📤 配信]
+    Maintenance --> Send
+    Alert --> Active[🟢 監視開始]
+
+    style Start fill:#4ecdc4,color:#fff
+    style Send fill:#96ceb4
+    style Active fill:#96ceb4
+:::
+
+### 14.4 セキュリティ管理
+
+::: mermaid
+graph TD
+    Start([🔒 セキュリティ監視]) --> Sessions
+
+    subgraph Sessions["👥 アクティブセッション管理"]
+        S1[セッション一覧取得]
+        S2[不審なセッション確認]
+        S3{対応必要？}
+
+        S1 --> S2 --> S3
+
+        S3 -->|はい| S4[強制ログアウト]
+        S3 -->|いいえ| S5[監視継続]
+    end
+
+    S4 --> Notify[ユーザーに通知]
+    S5 --> Start
+
+    Note["💡 IP制限・認証ポリシーは<br/>Azure ADで管理"]
+
+    style Start fill:#4ecdc4,color:#fff
+    style S4 fill:#ff6b6b,color:#fff
+    style Sessions fill:#fff3cd
+:::
+
+### 14.5 データ管理・クリーンアップ
+
+::: mermaid
+graph TD
+    Start([🗑️ データクリーンアップ]) --> Choice{クリーンアップ種別}
+
+    Choice -->|孤立ファイル| Orphan
+    Choice -->|古いデータ| Old
+    Choice -->|一括削除| Bulk
+
+    subgraph Orphan["📄 孤立ファイル"]
+        O1[孤立ファイル検出]
+        O2[一覧確認]
+        O3[削除実行]
+        O1 --> O2 --> O3
+    end
+
+    subgraph Old["📅 古いデータ"]
+        OL1[データ保持ポリシー確認]
+        OL2[対象データ特定]
+        OL3[削除実行]
+        OL1 --> OL2 --> OL3
+    end
+
+    subgraph Bulk["📦 一括削除"]
+        B1[削除条件設定]
+        B2[影響範囲確認]
+        B3[削除実行]
+        B1 --> B2 --> B3
+    end
+
+    Orphan --> Complete[✅ 完了]
+    Old --> Complete
+    Bulk --> Complete
+
+    style Start fill:#4ecdc4,color:#fff
+    style Complete fill:#96ceb4
+:::
+
+### 14.6 サポートツール
+
+::: mermaid
+graph TD
+    Start([🆘 サポート作業]) --> Choice{ツール選択}
+
+    Choice -->|操作代行| Proxy
+    Choice -->|診断| Health
+    Choice -->|デバッグ| Debug
+
+    subgraph Proxy["👤 ユーザー操作代行"]
+        P1[対象ユーザー選択]
+        P2[代行モード開始]
+        P3[操作実行]
+        P4[代行モード終了]
+        P1 --> P2 --> P3 --> P4
+    end
+
+    subgraph Health["🏥 システムヘルスチェック"]
+        H1[ヘルスチェック実行]
+        H2[結果確認]
+        H3{問題あり？}
+        H1 --> H2 --> H3
+        H3 -->|はい| H4[対応]
+        H3 -->|いいえ| H5[正常]
+    end
+
+    subgraph Debug["🐛 デバッグモード"]
+        D1[デバッグモード有効化]
+        D2[詳細ログ確認]
+        D3[問題調査]
+        D4[デバッグモード無効化]
+        D1 --> D2 --> D3 --> D4
+    end
+
+    Proxy --> Complete[✅ 完了]
+    H4 --> Complete
+    H5 --> Complete
+    Debug --> Complete
+
+    style Start fill:#4ecdc4,color:#fff
+    style Complete fill:#96ceb4
+:::
+
+---
+
 #### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
-- **更新日**: 2025年12月28日
+- **更新日**: 2025年12月29日
 - **対象読者**: ビジネスメンバー、プロジェクト参加者
 - **目的**: CAMPシステムの業務フローの理解促進
-- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理のフローチャートを追加
+- **更新内容**: システム管理（管理者専用）のフローチャートを追加
