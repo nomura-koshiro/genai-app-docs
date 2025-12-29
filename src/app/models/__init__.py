@@ -33,9 +33,6 @@ from app.models.driver_tree import (
 # Project models
 from app.models.project import Project, ProjectFile, ProjectMember, ProjectRole
 
-# System models
-from app.models.system import UserActivity
-
 # User models
 from app.models.user_account.user_account import SystemUserRole, UserAccount
 
@@ -74,6 +71,4 @@ __all__ = [
     "DriverTreeFile",
     "DriverTreeDataFrame",
     "DriverTreePolicy",
-    # System models
-    "UserActivity",
 ]

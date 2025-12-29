@@ -36,7 +36,6 @@ from app.models.base import Base, TimestampMixin
 if TYPE_CHECKING:
     from app.models.analysis.analysis_session import AnalysisSession
     from app.models.project.project_member import ProjectMember
-    from app.models.system.user_activity import UserActivity
 
 
 class SystemUserRole(str, Enum):
@@ -135,13 +134,6 @@ class UserAccount(Base, TimestampMixin):
         "AnalysisSession",
         foreign_keys="[AnalysisSession.creator_id]",
         back_populates="creator",
-    )
-
-    activities: Mapped[list["UserActivity"]] = relationship(
-        "UserActivity",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="dynamic",
     )
 
     # インデックス
