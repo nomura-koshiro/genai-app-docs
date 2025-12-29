@@ -23,6 +23,7 @@ from app.schemas.dashboard.dashboard import (
     DashboardActivitiesResponse,
     DashboardChartsResponse,
     DashboardStatsResponse,
+    FileStats,
     ProjectStats,
     SessionStats,
     TreeStats,
@@ -75,6 +76,12 @@ class DashboardService:
             select(func.count(UserAccount.id)).where(UserAccount.is_active == True)  # noqa: E712
         )
 
+        # ファイル統計
+        file_total = await self.db.scalar(select(func.count(ProjectFile.id)))
+        file_total_size = await self.db.scalar(
+            select(func.coalesce(func.sum(ProjectFile.file_size), 0))
+        )
+
         return DashboardStatsResponse(
             projects=ProjectStats(
                 total=project_total or 0,
@@ -96,6 +103,10 @@ class DashboardService:
             users=UserStats(
                 total=user_total or 0,
                 active=user_active or 0,
+            ),
+            files=FileStats(
+                total=file_total or 0,
+                total_size_bytes=int(file_total_size or 0),
             ),
             generated_at=datetime.utcnow(),
         )
