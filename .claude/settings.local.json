@@ -20,6 +20,7 @@
       "Bash(docker:*)",
       "Bash(docker-compose:*)",
       "Bash(ls:*)",
+      "Bash(dir:*)",
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(cat:*)",
@@ -51,12 +52,10 @@
       "Bash(for:*)",
       "Bash(while:*)",
       "Bash(test:*)",
+      "Bash(powershell:*)",
       "mcp__serena__*",
       "WebSearch",
-      "WebFetch(domain:*)",
-      "Bash(dir \"c:\\\\developments\\\\next-app-docs\\\\src\\\\app\")",
-      "Bash({} ;)",
-      "Bash(done)"
+      "WebFetch(domain:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
