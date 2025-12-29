@@ -97,6 +97,8 @@ class DriverTreeCrudService(DriverTreeServiceBase):
     ) -> dict[str, Any]:
         """ツリーの一覧を取得します。
 
+        数式マスタ名、ノード数、施策数を含む詳細情報を返します。
+
         Note:
             権限チェックはルーター層の ProjectMemberDep で行われます。
 
@@ -106,17 +108,32 @@ class DriverTreeCrudService(DriverTreeServiceBase):
 
         Returns:
             dict[str, Any]: ツリー一覧
-                - trees: list[dict] - ツリー一覧
+                - trees: list[dict] - ツリー一覧（集計情報含む）
         """
         trees = await self.tree_repository.list_by_project(project_id)
 
+        # 一括で集計情報を取得（N+1クエリ回避）
+        tree_ids = [tree.id for tree in trees]
+        aggregate_counts = await self.tree_repository.get_aggregate_counts(tree_ids)
+
         tree_list = []
         for tree in trees:
+            counts = aggregate_counts.get(tree.id, {"node_count": 0, "policy_count": 0})
+
+            # 数式マスタ名を取得
+            formula_master_name = None
+            if tree.formula:
+                formula_master_name = tree.formula.driver_type
+
             tree_list.append(
                 {
                     "tree_id": tree.id,
                     "name": tree.name,
                     "description": tree.description,
+                    "status": tree.status,
+                    "formula_master_name": formula_master_name,
+                    "node_count": counts["node_count"],
+                    "policy_count": counts["policy_count"],
                     "created_at": tree.created_at,
                     "updated_at": tree.updated_at,
                 }

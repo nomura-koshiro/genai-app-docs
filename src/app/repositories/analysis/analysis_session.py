@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
-from app.models.analysis import AnalysisSession, AnalysisSnapshot
+from app.models.analysis import AnalysisFile, AnalysisSession, AnalysisSnapshot
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
@@ -70,6 +70,12 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
         result = await self.db.execute(
             select(AnalysisSession)
             .where(AnalysisSession.project_id == project_id)
+            .options(
+                selectinload(AnalysisSession.issue),
+                selectinload(AnalysisSession.creator),
+                selectinload(AnalysisSession.input_file).selectinload(AnalysisFile.project_file),
+                selectinload(AnalysisSession.current_snapshot),
+            )
             .order_by(AnalysisSession.created_at.desc())
             .offset(skip)
             .limit(limit)

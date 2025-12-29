@@ -14,6 +14,9 @@ from app.schemas.analysis import (
     AnalysisSessionCreate,
     AnalysisSessionDetailResponse,
     AnalysisSessionResponse,
+    CreatorInfo,
+    InputFileInfo,
+    IssueInfo,
 )
 from app.services.analysis.analysis_session.base import AnalysisSessionServiceBase
 
@@ -41,6 +44,7 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         """プロジェクトに属する分析セッションの一覧を取得します。
 
         created_at降順でソートされます（最新が先頭）。
+        リレーション情報（課題、作成者、入力ファイル）も展開されます。
 
         Note:
             権限チェックはルーター層の ProjectMemberDep で行われます。
@@ -52,7 +56,7 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
             is_active: アクティブフラグフィルタ
 
         Returns:
-            list[AnalysisSessionResponse]: セッション一覧
+            list[AnalysisSessionResponse]: セッション一覧（リレーション情報含む）
         """
         sessions = await self.session_repository.list_by_project(
             project_id=project_id,
@@ -62,13 +66,36 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         response = []
         for s in sessions:
             current_snapshot_order = s.current_snapshot.snapshot_order if s.current_snapshot else 0
+
+            # 課題情報を構築
+            issue_info = None
+            if s.issue:
+                issue_info = IssueInfo(id=s.issue.id, name=s.issue.name)
+
+            # 作成者情報を構築
+            creator_info = None
+            if s.creator:
+                creator_info = CreatorInfo(id=s.creator.id, display_name=s.creator.display_name)
+
+            # 入力ファイル情報を構築
+            input_file_info = None
+            if s.input_file and s.input_file.project_file:
+                input_file_info = InputFileInfo(
+                    id=s.input_file.id,
+                    original_filename=s.input_file.project_file.original_filename,
+                )
+
             response.append(
                 AnalysisSessionResponse(
                     current_snapshot=current_snapshot_order,
                     id=s.id,
+                    name=s.name,
                     project_id=s.project_id,
                     issue_id=s.issue_id,
+                    issue=issue_info,
                     creator_id=s.creator_id,
+                    creator=creator_info,
+                    input_file=input_file_info,
                     status=s.status,
                     custom_system_prompt=s.custom_system_prompt,
                     initial_message=s.initial_message,
