@@ -8180,6 +8180,19 @@
       },
       "AnalysisSessionCreate": {
         "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "セッション名（未指定時は自動生成）"
+          },
           "issueId": {
             "type": "string",
             "format": "uuid",
@@ -8218,7 +8231,7 @@
           "issueId"
         ],
         "title": "AnalysisSessionCreate",
-        "description": "分析セッション作成リクエストスキーマ。\n\n新規分析セッション作成時に使用します。\n\nAttributes:\n    issue_id (uuid.UUID): 課題ID\n    custom_system_prompt (str | None): カスタムシステムプロンプト（任意）\n    initial_message (str | None): 初期メッセージ（任意）\n\nExample:\n    >>> session = AnalysisSessionCreate(\n    ...     issue_id=uuid.uuid4(),\n    ...     custom_system_prompt=\"追加の指示: 結果は簡潔に日本語で説明してください\",\n    ...     initial_message=\"こんにちは。売上データの分析を始めましょう。\",\n    ... )"
+        "description": "分析セッション作成リクエストスキーマ。\n\n新規分析セッション作成時に使用します。\n\nAttributes:\n    name (str | None): セッション名（任意、未指定時は自動生成）\n    issue_id (uuid.UUID): 課題ID\n    custom_system_prompt (str | None): カスタムシステムプロンプト（任意）\n    initial_message (str | None): 初期メッセージ（任意）\n\nExample:\n    >>> session = AnalysisSessionCreate(\n    ...     name=\"売上分析セッション\",\n    ...     issue_id=uuid.uuid4(),\n    ...     custom_system_prompt=\"追加の指示: 結果は簡潔に日本語で説明してください\",\n    ...     initial_message=\"こんにちは。売上データの分析を始めましょう。\",\n    ... )"
       },
       "AnalysisSessionDetailResponse": {
         "properties": {
@@ -8227,6 +8240,12 @@
             "format": "uuid",
             "title": "Id",
             "description": "セッションID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "セッション名",
+            "default": ""
           },
           "currentSnapshot": {
             "type": "integer",
@@ -8251,11 +8270,44 @@
             "title": "Issueid",
             "description": "課題ID"
           },
+          "issue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "課題情報（リレーション展開）"
+          },
           "creatorId": {
             "type": "string",
             "format": "uuid",
             "title": "Creatorid",
             "description": "作成者のユーザーID"
+          },
+          "creator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreatorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "作成者情報（リレーション展開）"
+          },
+          "inputFile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputFileInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "入力ファイル情報（リレーション展開）"
           },
           "customSystemPrompt": {
             "anyOf": [
@@ -8382,6 +8434,12 @@
             "title": "Id",
             "description": "セッションID"
           },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "セッション名",
+            "default": ""
+          },
           "currentSnapshot": {
             "type": "integer",
             "title": "Currentsnapshot",
@@ -8405,11 +8463,44 @@
             "title": "Issueid",
             "description": "課題ID"
           },
+          "issue": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IssueInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "課題情報（リレーション展開）"
+          },
           "creatorId": {
             "type": "string",
             "format": "uuid",
             "title": "Creatorid",
             "description": "作成者のユーザーID"
+          },
+          "creator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreatorInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "作成者情報（リレーション展開）"
+          },
+          "inputFile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InputFileInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "入力ファイル情報（リレーション展開）"
           },
           "customSystemPrompt": {
             "anyOf": [
@@ -8459,7 +8550,7 @@
           "updatedAt"
         ],
         "title": "AnalysisSessionResponse",
-        "description": "分析セッションレスポンススキーマ。\n\n分析セッションを選択するときに、レスポンスとして返す際に使用します。\n詳細内容は含まれません。\n\nAttributes:\n    id (uuid.UUID): セッションID\n    current_snapshot (int): 現在のスナップショット番号\n    status (str): セッション状態（draft/active/completed/archived）\n    project_id (uuid.UUID): プロジェクトID\n    issue_id (uuid.UUID): 課題ID\n    creator_id (uuid.UUID): 作成者のユーザーID\n    custom_system_prompt (str | None): カスタムシステムプロンプト\n    initial_message (str | None): 初期メッセージ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n\nExample:\n    >>> {\n    ...     \"id\": \"223e4567-e89b-12d3-a456-426614174111\",\n    ...     \"project_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    ...     \"issue_id\": \"323e4567-e89b-12d3-a456-426614174222\",\n    ...     \"creator_id\": \"423e4567-e89b-12d3-a456-426614174333\",\n    ...     \"current_snapshot\": 2,\n    ...     \"status\": \"active\",\n    ...     \"customSystemPrompt\": \"追加の指示\",\n    ...     \"initialMessage\": \"こんにちは\",\n    ...     \"created_at\": \"2025-01-01T00:00:00Z\",\n    ...     \"updated_at\": \"2025-01-02T00:00:00Z\"\n    ... }"
+        "description": "分析セッションレスポンススキーマ。\n\n分析セッションを選択するときに、レスポンスとして返す際に使用します。\n詳細内容は含まれません。\n\nAttributes:\n    id (uuid.UUID): セッションID\n    name (str): セッション名\n    current_snapshot (int): 現在のスナップショット番号\n    status (str): セッション状態（draft/active/completed/archived）\n    project_id (uuid.UUID): プロジェクトID\n    issue_id (uuid.UUID): 課題ID\n    issue (IssueInfo | None): 課題情報（リレーション展開）\n    creator_id (uuid.UUID): 作成者のユーザーID\n    creator (CreatorInfo | None): 作成者情報（リレーション展開）\n    input_file (InputFileInfo | None): 入力ファイル情報（リレーション展開）\n    custom_system_prompt (str | None): カスタムシステムプロンプト\n    initial_message (str | None): 初期メッセージ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n\nExample:\n    >>> {\n    ...     \"id\": \"223e4567-e89b-12d3-a456-426614174111\",\n    ...     \"name\": \"売上分析セッション\",\n    ...     \"project_id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    ...     \"issue_id\": \"323e4567-e89b-12d3-a456-426614174222\",\n    ...     \"issue\": {\"id\": \"323e4567-e89b-12d3-a456-426614174222\", \"name\": \"売上分析\"},\n    ...     \"creator_id\": \"423e4567-e89b-12d3-a456-426614174333\",\n    ...     \"creator\": {\"id\": \"423e4567-e89b-12d3-a456-426614174333\", \"displayName\": \"山田太郎\"},\n    ...     \"inputFile\": {\"id\": \"...\", \"originalFilename\": \"sales_data.xlsx\"},\n    ...     \"current_snapshot\": 2,\n    ...     \"status\": \"active\",\n    ...     \"customSystemPrompt\": \"追加の指示\",\n    ...     \"initialMessage\": \"こんにちは\",\n    ...     \"created_at\": \"2025-01-01T00:00:00Z\",\n    ...     \"updated_at\": \"2025-01-02T00:00:00Z\"\n    ... }"
       },
       "AnalysisSessionResultListResponse": {
         "properties": {
@@ -8554,6 +8645,19 @@
       },
       "AnalysisSessionUpdate": {
         "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "セッション名"
+          },
           "currentSnapshot": {
             "anyOf": [
               {
@@ -8620,7 +8724,7 @@
         },
         "type": "object",
         "title": "AnalysisSessionUpdate",
-        "description": "分析セッション更新リクエストスキーマ。\n\n既存の分析セッションを更新する際に使用します。\n選択ファイルの変更、またはスナップショットの切り替えに対応。\nすべてのフィールドは Optional(部分更新対応)。\n\nAttributes:\n    current_snapshot (int | None): 現在のスナップショット番号\n    input_file_id (uuid.UUID | None): 入力ファイルID\n    status (str | None): セッション状態（draft/active/completed/archived）\n    custom_system_prompt (str | None): カスタムシステムプロンプト\n    initial_message (str | None): 初期メッセージ\n\nExample:\n    >>> session_update = AnalysisSessionUpdate(\n    ...     current_snapshot=変更後の番号,\n    ...     input_file_id=変更後のファイルID,\n    ...     status=\"active\",\n    ...     custom_system_prompt=\"追加の指示を設定\"\n    ... )"
+        "description": "分析セッション更新リクエストスキーマ。\n\n既存の分析セッションを更新する際に使用します。\n選択ファイルの変更、またはスナップショットの切り替えに対応。\nすべてのフィールドは Optional(部分更新対応)。\n\nAttributes:\n    name (str | None): セッション名\n    current_snapshot (int | None): 現在のスナップショット番号\n    input_file_id (uuid.UUID | None): 入力ファイルID\n    status (str | None): セッション状態（draft/active/completed/archived）\n    custom_system_prompt (str | None): カスタムシステムプロンプト\n    initial_message (str | None): 初期メッセージ\n\nExample:\n    >>> session_update = AnalysisSessionUpdate(\n    ...     name=\"更新後のセッション名\",\n    ...     current_snapshot=変更後の番号,\n    ...     input_file_id=変更後のファイルID,\n    ...     status=\"active\",\n    ...     custom_system_prompt=\"追加の指示を設定\"\n    ... )"
       },
       "AnalysisSnapshotCreate": {
         "properties": {
@@ -9275,6 +9379,34 @@
         "title": "ChartDataResponse",
         "description": "チャートデータレスポンス。\n\nAttributes:\n    chart_type: チャートタイプ（line/bar/pie/area）\n    title: チャートタイトル\n    data: データポイントリスト\n    x_axis_label: X軸ラベル\n    y_axis_label: Y軸ラベル"
       },
+      "CreatorInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ユーザーID"
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Displayname",
+            "description": "表示名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "title": "CreatorInfo",
+        "description": "作成者情報（リレーション展開用）。\n\nセッション一覧で作成者名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID\n    display_name (str | None): 表示名"
+      },
       "DashboardActivitiesResponse": {
         "properties": {
           "activities": {
@@ -9365,6 +9497,10 @@
             "$ref": "#/components/schemas/UserStats",
             "description": "ユーザー統計"
           },
+          "files": {
+            "$ref": "#/components/schemas/FileStats",
+            "description": "ファイル統計"
+          },
           "generatedAt": {
             "type": "string",
             "format": "date-time",
@@ -9378,10 +9514,11 @@
           "sessions",
           "trees",
           "users",
+          "files",
           "generatedAt"
         ],
         "title": "DashboardStatsResponse",
-        "description": "ダッシュボード統計レスポンス。\n\nAttributes:\n    projects: プロジェクト統計\n    sessions: セッション統計\n    trees: ツリー統計\n    users: ユーザー統計\n    generated_at: 統計生成日時"
+        "description": "ダッシュボード統計レスポンス。\n\nAttributes:\n    projects: プロジェクト統計\n    sessions: セッション統計\n    trees: ツリー統計\n    users: ユーザー統計\n    files: ファイル統計\n    generated_at: 統計生成日時"
       },
       "DriverTreeCalculatedDataResponse": {
         "properties": {
@@ -10159,6 +10296,30 @@
             "description": "ツリー状態（draft/active/completed）",
             "default": "draft"
           },
+          "formulaMasterName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Formulamastername",
+            "description": "数式マスタ名"
+          },
+          "nodeCount": {
+            "type": "integer",
+            "title": "Nodecount",
+            "description": "ノード数",
+            "default": 0
+          },
+          "policyCount": {
+            "type": "integer",
+            "title": "Policycount",
+            "description": "施策数",
+            "default": 0
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -10180,7 +10341,7 @@
           "updatedAt"
         ],
         "title": "DriverTreeListItem",
-        "description": "ツリー一覧アイテム。\n\nAttributes:\n    tree_id: uuid - ツリーID\n    name: str - ツリー名\n    description: str - 説明\n    status: str - ツリー状態（draft/active/completed）\n    created_at: datetime - 作成日時\n    updated_at: datetime - 更新日時"
+        "description": "ツリー一覧アイテム。\n\nAttributes:\n    tree_id: uuid - ツリーID\n    name: str - ツリー名\n    description: str - 説明\n    status: str - ツリー状態（draft/active/completed）\n    formula_master_name: str | None - 数式マスタ名（紐づいている数式テンプレートのドライバー型名）\n    node_count: int - ノード数（ツリーに含まれるノード数）\n    policy_count: int - 施策数（ツリーに関連する施策数）\n    created_at: datetime - 作成日時\n    updated_at: datetime - 更新日時"
       },
       "DriverTreeListResponse": {
         "properties": {
@@ -11097,6 +11258,27 @@
         "title": "DriverTypeInfo",
         "description": "ドライバー型情報。\n\nAttributes:\n    driver_type_id: ドライバー型ID\n    driver_type: ドライバー型"
       },
+      "FileStats": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総ファイル数"
+          },
+          "totalSizeBytes": {
+            "type": "integer",
+            "title": "Totalsizebytes",
+            "description": "総ファイルサイズ（バイト）",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "total"
+        ],
+        "title": "FileStats",
+        "description": "ファイル統計。\n\nAttributes:\n    total: 総ファイル数\n    total_size_bytes: 総ファイルサイズ（バイト）"
+      },
       "FileUsageItem": {
         "properties": {
           "usageType": {
@@ -11227,6 +11409,50 @@
         "title": "IndustryInfo",
         "description": "業界名情報。\n\nAttributes:\n    industry_id: 業界名ID\n    industry_name: 業界名\n    driver_types: ドライバー型リスト"
       },
+      "InputFileInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ファイルID"
+          },
+          "originalFilename": {
+            "type": "string",
+            "title": "Originalfilename",
+            "description": "元のファイル名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "originalFilename"
+        ],
+        "title": "InputFileInfo",
+        "description": "入力ファイル情報（リレーション展開用）。\n\nセッション一覧で入力ファイル名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): ファイルID\n    original_filename (str): 元のファイル名"
+      },
+      "IssueInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "課題ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "課題名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "IssueInfo",
+        "description": "課題情報（リレーション展開用）。\n\nセッション一覧で課題名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): 課題ID\n    name (str): 課題名"
+      },
       "ProjectCreate": {
         "properties": {
           "name": {
@@ -11280,6 +11506,22 @@
             ],
             "title": "Enddate",
             "description": "プロジェクト終了日"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget",
+            "description": "プロジェクト予算"
           }
         },
         "type": "object",
@@ -11288,7 +11530,7 @@
           "code"
         ],
         "title": "ProjectCreate",
-        "description": "プロジェクト作成リクエストスキーマ。\n\n新規プロジェクト作成時に使用します。\n\nAttributes:\n    name (str): プロジェクト名（ProjectBaseから継承）\n    code (str): プロジェクトコード（ProjectBaseから継承）\n    description (str | None): プロジェクト説明（ProjectBaseから継承）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n\nExample:\n    >>> project = ProjectCreate(\n    ...     name=\"AI Development Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"Project for AI model development\",\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31)\n    ... )"
+        "description": "プロジェクト作成リクエストスキーマ。\n\n新規プロジェクト作成時に使用します。\n\nAttributes:\n    name (str): プロジェクト名（ProjectBaseから継承）\n    code (str): プロジェクトコード（ProjectBaseから継承）\n    description (str | None): プロジェクト説明（ProjectBaseから継承）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n    budget (Decimal | None): プロジェクト予算（オプション）\n\nExample:\n    >>> project = ProjectCreate(\n    ...     name=\"AI Development Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"Project for AI model development\",\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31),\n    ...     budget=Decimal(\"1000000.00\")\n    ... )"
       },
       "ProjectDetailResponse": {
         "properties": {
@@ -11367,6 +11609,19 @@
             ],
             "title": "Enddate",
             "description": "プロジェクト終了日"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget",
+            "description": "プロジェクト予算"
           },
           "createdAt": {
             "type": "string",
@@ -12025,6 +12280,19 @@
             "title": "Addedby",
             "description": "追加者のユーザーID"
           },
+          "lastActivityAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastactivityat",
+            "description": "プロジェクト内最終活動日時"
+          },
           "user": {
             "anyOf": [
               {
@@ -12171,6 +12439,19 @@
             "title": "Enddate",
             "description": "プロジェクト終了日"
           },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget",
+            "description": "プロジェクト予算"
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -12194,7 +12475,7 @@
           "updatedAt"
         ],
         "title": "ProjectResponse",
-        "description": "プロジェクト情報レスポンススキーマ。\n\nAPIレスポンスでプロジェクト情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): プロジェクトID（UUID）\n    name (str): プロジェクト名\n    code (str): プロジェクトコード\n    description (str | None): プロジェクト説明\n    is_active (bool): アクティブフラグ\n    created_by (uuid.UUID | None): 作成者のユーザーID\n    start_date (date | None): プロジェクト開始日\n    end_date (date | None): プロジェクト終了日\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n\nExample:\n    >>> from datetime import UTC\n    >>> project = ProjectResponse(\n    ...     id=uuid.uuid4(),\n    ...     name=\"AI Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"AI development project\",\n    ...     is_active=True,\n    ...     created_by=uuid.uuid4(),\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31),\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC)\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です"
+        "description": "プロジェクト情報レスポンススキーマ。\n\nAPIレスポンスでプロジェクト情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): プロジェクトID（UUID）\n    name (str): プロジェクト名\n    code (str): プロジェクトコード\n    description (str | None): プロジェクト説明\n    is_active (bool): アクティブフラグ\n    created_by (uuid.UUID | None): 作成者のユーザーID\n    start_date (date | None): プロジェクト開始日\n    end_date (date | None): プロジェクト終了日\n    budget (Decimal | None): プロジェクト予算\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n\nExample:\n    >>> from datetime import UTC\n    >>> project = ProjectResponse(\n    ...     id=uuid.uuid4(),\n    ...     name=\"AI Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"AI development project\",\n    ...     is_active=True,\n    ...     created_by=uuid.uuid4(),\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31),\n    ...     budget=Decimal(\"1000000.00\"),\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC)\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です"
       },
       "ProjectRole": {
         "type": "string",
@@ -12329,11 +12610,27 @@
             ],
             "title": "Enddate",
             "description": "プロジェクト終了日"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget",
+            "description": "プロジェクト予算"
           }
         },
         "type": "object",
         "title": "ProjectUpdate",
-        "description": "プロジェクト更新リクエストスキーマ。\n\nプロジェクト情報の更新時に使用します。\n\nAttributes:\n    name (str | None): プロジェクト名（オプション）\n    description (str | None): プロジェクト説明（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n\nExample:\n    >>> update = ProjectUpdate(\n    ...     name=\"Updated Project Name\",\n    ...     description=\"Updated description\",\n    ...     start_date=date(2024, 2, 1),\n    ...     end_date=date(2025, 1, 31)\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - code は変更できません（一意識別子のため）"
+        "description": "プロジェクト更新リクエストスキーマ。\n\nプロジェクト情報の更新時に使用します。\n\nAttributes:\n    name (str | None): プロジェクト名（オプション）\n    description (str | None): プロジェクト説明（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n    budget (Decimal | None): プロジェクト予算（オプション）\n\nExample:\n    >>> update = ProjectUpdate(\n    ...     name=\"Updated Project Name\",\n    ...     description=\"Updated description\",\n    ...     start_date=date(2024, 2, 1),\n    ...     end_date=date(2025, 1, 31),\n    ...     budget=Decimal(\"2000000.00\")\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - code は変更できません（一意識別子のため）"
       },
       "RoleChangeActionEnum": {
         "type": "string",

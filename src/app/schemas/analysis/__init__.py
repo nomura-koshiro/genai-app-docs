@@ -101,6 +101,10 @@ from app.schemas.analysis.analysis_session import (
     AnalysisSessionResultListResponse,
     AnalysisSessionResultResponse,
     AnalysisSessionUpdate,
+    # リレーション展開用Info
+    CreatorInfo,
+    InputFileInfo,
+    IssueInfo,
     # スナップショット
     AnalysisSnapshotBase,
     AnalysisSnapshotCreate,
@@ -154,6 +158,10 @@ __all__ = [
     "AnalysisSessionListResponse",
     "AnalysisSessionResultResponse",
     "AnalysisSessionResultListResponse",
+    # リレーション展開用Info
+    "CreatorInfo",
+    "InputFileInfo",
+    "IssueInfo",
     # 分析スナップショット
     "AnalysisSnapshotBase",
     "AnalysisSnapshotCreate",
