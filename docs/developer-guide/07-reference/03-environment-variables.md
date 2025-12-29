@@ -289,7 +289,7 @@ token = create_access_token(
 | 変数名 | 型 | デフォルト値 | 必須 | 説明 |
 |-------|---|------------|------|------|
 | DEV_MOCK_TOKEN | string | "mock-access-token-dev-12345" | × | モック認証トークン |
-| DEV_MOCK_USER_EMAIL | string | "dev.user@example.com" | × | モックユーザーメールアドレス |
+| DEV_MOCK_USER_EMAIL | string | `dev.user@example.com` | × | モックユーザーメールアドレス |
 | DEV_MOCK_USER_OID | string | "dev-azure-oid-12345" | × | モックユーザーAzure OID |
 | DEV_MOCK_USER_NAME | string | "Development User" | × | モックユーザー名 |
 

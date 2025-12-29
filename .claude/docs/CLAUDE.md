@@ -8,11 +8,13 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 ## 重要な設計原則
 
 ### アーキテクチャ
+
 - **4層アーキテクチャ**: API層 → サービス層 → リポジトリ層 → モデル層
 - **SOLID原則**: 単一責任、開放閉鎖、依存性逆転
 - **DRY/KISS**: コード重複排除・シンプル設計
 
 ### レイヤー責務
+
 - **API層** (`api/v1/endpoints/`): HTTPリクエスト/レスポンス、認証・認可
 - **サービス層** (`services/`): ビジネスロジック、トランザクション管理
 - **リポジトリ層** (`repositories/`): データアクセス、CRUD操作
@@ -21,6 +23,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 ## 技術スタック
 
 ### Backend
+
 - Python 3.13
 - FastAPI
 - SQLAlchemy 2.0 (ORM)
@@ -32,6 +35,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 - uv (パッケージ管理)
 
 ### 品質管理ツール
+
 - Ruff (リンター・フォーマッター)
 - mypy (静的型チェック)
 - pytest (テストフレームワーク)
@@ -40,17 +44,20 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 ## 重要な規約
 
 ### 命名規則
+
 - **ファイル**: snake_case (`user_service.py`)
 - **クラス**: PascalCase (`UserService`)
 - **関数・変数**: snake_case (`get_user`, `user_name`)
 - **定数**: UPPER_SNAKE_CASE (`API_VERSION`)
 
 ### 型安全性
+
 - すべての関数に型ヒントを付与
 - Pydanticスキーマでバリデーション
 - mypy による静的型チェック
 
 ### APIエンドポイント作成時のチェック
+
 - [ ] Pydanticスキーマ（Base, Create, Update, Response）
 - [ ] SQLAlchemyモデル
 - [ ] リポジトリ層（CRUD操作）
@@ -61,6 +68,7 @@ FastAPI + LangChain/LangGraphによるAIエージェントアプリケーショ�
 ## 開発コマンド
 
 ### よく使用するコマンド
+
 ```bash
 # 開発サーバー起動
 cd apps/backend && uvicorn app.main:app --reload
@@ -83,6 +91,7 @@ cd apps/backend && alembic revision --autogenerate -m "description"
 ## ドキュメント参照
 
 ### 開発ガイド
+
 - `docs/developer-guide/01-getting-started/` - はじめに
 - `docs/developer-guide/02-architecture/` - アーキテクチャ
 - `docs/developer-guide/03-core-concepts/` - コアコンセプト
@@ -92,6 +101,7 @@ cd apps/backend && alembic revision --autogenerate -m "description"
 - `docs/developer-guide/07-reference/` - リファレンス
 
 ### 設計仕様書
+
 - `docs/specifications/01-usercases/` - ユースケース
 - `docs/specifications/04-architecture/` - アーキテクチャ設計
 - `docs/specifications/05-database/` - データベース設計
@@ -99,6 +109,7 @@ cd apps/backend && alembic revision --autogenerate -m "description"
 - `docs/specifications/07-api/` - API仕様
 
 ### APIドキュメント
+
 - `docs/api/openapi.json` - OpenAPI仕様
 - `docs/api/api-docs.html` - Swagger UI
 - `docs/api/redoc.html` - ReDoc
@@ -106,6 +117,7 @@ cd apps/backend && alembic revision --autogenerate -m "description"
 ## トラブルシューティング
 
 ### よくある問題
+
 - **型エラー**: mypy で確認、型ヒントを修正
 - **バリデーションエラー**: Pydanticスキーマを確認
 - **マイグレーションエラー**: alembic history で履歴確認
@@ -114,16 +126,18 @@ cd apps/backend && alembic revision --autogenerate -m "description"
 ## Agent活用ガイド
 
 ### @backend-developer
+
 - 新機能開発、APIエンドポイント作成、リファクタリング
 - モデル・スキーマ・リポジトリ・サービス層の実装
 
 ### @backend-code-reviewer
+
 - コード品質チェック、SOLID原則確認
 - セキュリティレビュー、パフォーマンス最適化
 
 ## 重要なファイル・ディレクトリ
 
-```
+```text
 apps/backend/
 ├── app/
 │   ├── api/v1/endpoints/    # APIエンドポイント

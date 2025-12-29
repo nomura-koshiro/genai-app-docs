@@ -11,7 +11,8 @@ tools: [Write, Edit, MultiEdit, Bash]
 ## SQLAlchemy モデル作成要件
 
 ### 1. ファイル構成
-```
+
+```text
 apps/backend/app/
 ├── models/
 │   └── $ARGUMENTS.py          # SQLAlchemy モデル
@@ -28,6 +29,7 @@ apps/backend/app/
 ### 2. SQLAlchemy モデル実装 (`models/$ARGUMENTS.py`)
 
 #### 基本構造
+
 ```python
 from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, ForeignKey
 from sqlalchemy.orm import relationship
@@ -226,18 +228,21 @@ def test_delete_$ARGUMENTS(db: Session) -> None:
 ### 7. 設計考慮事項
 
 #### データベース制約
+
 - [ ] 適切な NULL/NOT NULL 設定
 - [ ] ユニーク制約の設定
 - [ ] 外部キー制約の設定
 - [ ] チェック制約の設定
 
 #### インデックス最適化
+
 - [ ] 主キーインデックス
 - [ ] 頻繁に検索されるカラムのインデックス
 - [ ] 複合インデックスの検討
 - [ ] 部分インデックスの活用
 
 #### パフォーマンス
+
 - [ ] N+1問題の回避（eager loading）
 - [ ] クエリ最適化
 - [ ] バッチ処理対応

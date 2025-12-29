@@ -474,7 +474,7 @@ erDiagram
 
 **マスタ階層:**
 
-```
+```text
 AnalysisValidationMaster (検証マスタ)
   └── AnalysisIssueMaster (課題マスタ)
         ├── AnalysisGraphAxisMaster (グラフ軸マスタ)
@@ -553,7 +553,7 @@ erDiagram
 
 **セッション階層:**
 
-```
+```text
 AnalysisSession (分析セッション)
   ├── AnalysisFile (分析ファイル) ← ProjectFile
   └── AnalysisSnapshot (スナップショット)
@@ -852,7 +852,7 @@ ON driver_tree_formula USING GIN (formulas);
 
 ### 7.1 テーブル数
 
-**合計: 21テーブル**
+合計: 21テーブル
 
 - ユーザー管理: 1テーブル
 - プロジェクト管理: 3テーブル
@@ -877,7 +877,7 @@ ON driver_tree_formula USING GIN (formulas);
 
 ---
 
-##### ドキュメント管理情報
+#### ドキュメント管理情報
 
 - **作成日**: 2025年
 - **対象バージョン**: 現行実装

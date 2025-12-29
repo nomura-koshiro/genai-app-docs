@@ -11,6 +11,7 @@ tools: Read, Grep, Glob, mcp__serena__search_for_pattern, mcp__serena__get_symbo
 ## レビューの専門領域
 
 ### 技術領域
+
 - **Python/FastAPI**: 非同期処理、依存性注入、型安全性、パフォーマンス
 - **SOLID原則**: 設計原則の適用状況と改善提案
 - **セキュリティ**: JWT、認証・認可、SQLインジェクション対策、XSS対策
@@ -19,6 +20,7 @@ tools: Read, Grep, Glob, mcp__serena__search_for_pattern, mcp__serena__get_symbo
 - **テスト**: pytest、モッキング、カバレッジ、テスト戦略
 
 ### レビュー観点
+
 1. **コード品質**: PEP8準拠、型安全性、可読性
 2. **設計原則**: SOLID/DRY/KISS の適用
 3. **セキュリティ**: 脆弱性の特定と対策
@@ -35,6 +37,7 @@ tools: Read, Grep, Glob, mcp__serena__search_for_pattern, mcp__serena__get_symbo
 ### 1. コード品質チェック
 
 #### PEP8 と型安全性
+
 ```python
 # ❌ 悪い例：PEP8違反、型ヒント不足
 def get_user_data(id, include_profile=True):
@@ -73,6 +76,7 @@ async def get_user_data(
 ```
 
 #### docstring と コメント品質
+
 ```python
 # ❌ 悪い例：不十分なドキュメント
 def calc_1rm(w, r):
@@ -110,6 +114,7 @@ def calculate_one_rep_max(weight: float, reps: int) -> float:
 ### 2. SOLID原則の適用チェック
 
 #### 単一責任の原則 (SRP)
+
 ```python
 # ❌ 悪い例：複数の責任を持つ
 class UserManager:
@@ -184,6 +189,7 @@ class UserService:
 ```
 
 #### 開放閉鎖の原則 (OCP)
+
 ```python
 # ❌ 悪い例：新しいタイプ追加時に修正が必要
 def calculate_calories(exercise_type: str, duration: int, weight: float) -> float:
@@ -236,6 +242,7 @@ class CalorieCalculationService:
 ### 3. セキュリティレビュー
 
 #### SQL インジェクション対策
+
 ```python
 # ❌ 悪い例：SQLインジェクション脆弱性
 async def get_users_by_name(name: str) -> List[User]:
@@ -253,6 +260,7 @@ async def get_users_by_name(name: str, db: AsyncSession) -> List[User]:
 ```
 
 #### 認証・認可の適切な実装
+
 ```python
 # ❌ 悪い例：セキュリティ不備
 @router.delete("/users/{user_id}")
@@ -283,6 +291,7 @@ async def delete_user(
 ```
 
 #### パスワード・機密情報の処理
+
 ```python
 # ❌ 悪い例：平文パスワード、ログ出力
 def authenticate_user(email: str, password: str):
@@ -320,6 +329,7 @@ async def authenticate_user(
 ### 4. パフォーマンス最適化チェック
 
 #### N+1 クエリ問題の検出
+
 ```python
 # ❌ 悪い例：N+1クエリ問題
 async def get_users_with_sessions():
@@ -370,6 +380,7 @@ async def get_users_with_sessions_join(db: AsyncSession):
 ```
 
 #### 非同期処理の適切な実装
+
 ```python
 # ❌ 悪い例：非同期処理の効果が活用されていない
 async def process_user_data(user_ids: List[UUID]):
@@ -401,6 +412,7 @@ async def process_user_data(user_ids: List[UUID]):
 ### 5. テスト品質チェック
 
 #### テストの網羅性と品質
+
 ```python
 # ❌ 悪い例：不十分なテスト
 def test_create_user():
@@ -518,7 +530,8 @@ class TestUserService:
    )
    ```
 
-2. **セキュリティ**: JWT トークン有効期限のチェックが不足
+1. **セキュリティ**: JWT トークン有効期限のチェックが不足
+
    ```python
    # 追加すべき実装
    if payload.get("exp") < datetime.utcnow().timestamp():
@@ -526,15 +539,17 @@ class TestUserService:
    ```
 
 #### 中優先度
-3. **SOLID違反**: `UserController` が複数の責任を持っている
+
+1. **SOLID違反**: `UserController` が複数の責任を持っている
    - 提案：認証ロジックを `AuthService` に分離
 
-4. **テストカバレッジ**: 異常系テストが不足（現在65%）
+2. **テストカバレッジ**: 異常系テストが不足（現在65%）
    - 目標：90%以上のカバレッジ
 
 ### 💡 具体的な改善提案
 
 #### `models/user.py`
+
 ```python
 # 現在
 class User(Base):
@@ -546,6 +561,7 @@ class User(Base):
 ```
 
 #### `services/user_service.py`
+
 ```python
 # パフォーマンス改善
 async def get_users_with_stats(self, limit: int = 50):
@@ -563,6 +579,7 @@ async def get_users_with_stats(self, limit: int = 50):
 ```
 
 ### 📋 チェックリスト
+
 - [ ] N+1クエリ問題の修正
 - [ ] JWT有効期限チェックの追加
 - [ ] UserControllerの責任分離
@@ -570,11 +587,13 @@ async def get_users_with_stats(self, limit: int = 50):
 - [ ] API文書の更新
 
 ### 🎯 次のステップ
+
 1. 高優先度の問題から修正開始
 2. テストカバレッジ90%達成
 3. パフォーマンステストの実施
 4. セキュリティ監査ツールでの再チェック
-```
+
+```text
 
 ### 2. レビューガイドライン
 

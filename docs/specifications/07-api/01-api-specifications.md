@@ -335,7 +335,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: SystemAdmin ロール必須
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ---
 
@@ -422,7 +422,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: PROJECT_MANAGER
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ---
 
@@ -552,7 +552,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: PROJECT_MANAGER
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ### 8.7 プロジェクト退出
 
@@ -560,7 +560,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: 任意のプロジェクトメンバー
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ---
 
@@ -626,7 +626,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: プロジェクトメンバー
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ---
 
@@ -689,7 +689,7 @@ http_requests_total{method="GET",endpoint="/health",status_code="200"} 42.0
 
 **権限**: プロジェクトメンバー
 
-**レスポンス (204 No Content)**
+レスポンス: 204 No Content
 
 ### 10.5 ファイル管理
 

@@ -15,6 +15,7 @@ tools: Read, Grep, Glob, mcp__serena__search_for_pattern, mcp__serena__get_symbo
 **⚠️ これらのルール違反はコードレビューで必ず指摘し、修正を要求すること。例外は一切認めない。**
 
 #### 🏗️ アーキテクチャルール（絶対遵守）
+
 1. **Features-based Architecture 厳守**
    - `src/features/[feature-name]/` 構造からの逸脱は絶対禁止
    - bulletproof-react のディレクトリ構成を必ず守る
@@ -33,6 +34,7 @@ tools: Read, Grep, Glob, mcp__serena__search_for_pattern, mcp__serena__get_symbo
    - シンプルで理解しやすい設計を強制
 
 #### 📝 型安全性ルール（絶対遵守）
+
 - **interface禁止**: すべての型定義は `type` を使用。`interface` 発見時は即時指摘
 - **アロー関数必須**: すべての関数定義はアロー関数。`function` キーワード発見時は即時指摘
 - **any禁止**: 型安全性を必ず確保。`any` 使用時は即時指摘
@@ -74,6 +76,7 @@ function handleSubmit(data: FormData) {  // ❌ functionキーワード禁止
 ### 1. アーキテクチャ準拠性
 
 #### Features-based Architecture
+
 ```typescript
 // ✅ 遵守例：bulletproof-react Features-based Architecture
 src/features/user-management/
@@ -93,6 +96,7 @@ src/models/User.ts                // ❌ 絶対禁止：features/user-management
 ```
 
 **チェックポイント：**
+
 - [ ] 機能は適切にfeatures配下に分離されているか
 - [ ] UI コンポーネントとビジネスロジックが分離されているか
 - [ ] API層、コンポーネント層、フック層が明確に分かれているか
@@ -100,7 +104,8 @@ src/models/User.ts                // ❌ 絶対禁止：features/user-management
 
 #### SOLID原則の適用状況
 
-**単一責任の原則 (SRP)**
+##### 単一責任の原則 (SRP)
+
 ```typescript
 // ✅ 良い例：単一責任
 const UserAvatar = ({ user, size }: { user: User; size: 'sm' | 'md' | 'lg' }) => {
@@ -123,7 +128,8 @@ const UserComponent = ({ user }: { user: User }) => {
 }
 ```
 
-**開放閉鎖の原則 (OCP)**
+##### 開放閉鎖の原則 (OCP)
+
 ```typescript
 // ✅ 良い例：CVAによる拡張可能な設計
 const alertVariants = cva('rounded-lg p-4', {
@@ -147,6 +153,7 @@ const Alert = ({ type }: { type: string }) => {
 ### 2. 型安全性とTypeScript活用
 
 #### 厳密な型定義
+
 ```typescript
 // ✅ 良い例：厳密で表現力のある型定義（type使用）
 type UserProfileProps = {
@@ -176,6 +183,7 @@ interface BadProps {  // ❌ interface禁止
 ```
 
 **チェックポイント：**
+
 - [ ] `any` 型の使用を避けているか
 - [ ] Props インターフェースが明確で最小限か
 - [ ] 適切なジェネリクスが使用されているか
@@ -183,6 +191,7 @@ interface BadProps {  // ❌ interface禁止
 - [ ] null/undefined の扱いが明確か
 
 #### API型安全性
+
 ```typescript
 // ✅ 良い例：型安全なAPI統合
 export const useUser = (id: string): UseQueryResult<User, ApiError> => {
@@ -214,6 +223,7 @@ const useUser = (id: string) => {  // 戻り値の型が不明
 ### 3. コンポーネント設計品質
 
 #### Props設計の適切性
+
 ```typescript
 // ✅ 良い例：明確で拡張可能なProps設計（type使用）
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -259,6 +269,7 @@ interface BadButtonProps {  // ❌ interface禁止
 ```
 
 **チェックポイント：**
+
 - [ ] Props名が直感的で理解しやすいか
 - [ ] 必要最小限のPropsになっているか
 - [ ] デフォルト値が適切に設定されているか
@@ -266,6 +277,7 @@ interface BadButtonProps {  // ❌ interface禁止
 - [ ] HTMLの標準属性を適切に継承しているか
 
 #### コンポーネントの凝集度
+
 ```typescript
 // ✅ 良い例：高凝集、低結合
 const UserCard = ({ user, onEdit, onDelete }: UserCardProps) => {
@@ -304,6 +316,7 @@ const UserCard = ({ user }: { user: User }) => {
 ### 4. 状態管理の適切性
 
 #### 状態管理手法の選択
+
 ```typescript
 // ✅ 良い例：適切な状態管理の選択
 
@@ -330,12 +343,14 @@ const useGlobalUIStore = create(() => ({
 ```
 
 **チェックポイント：**
+
 - [ ] 状態の性質に応じて適切な管理手法を選択しているか
 - [ ] 不要なグローバル状態を作成していないか
 - [ ] サーバー状態をクライアント状態に持ち込んでいないか
 - [ ] 状態の更新ロジックが適切に抽象化されているか
 
 #### パフォーマンス最適化
+
 ```typescript
 // ✅ 良い例：適切なメモ化
 const UserList = ({ users, filter }: UserListProps) => {
@@ -388,6 +403,7 @@ const heavyCalculation = useMemo(() => {
 ### 5. リーダブルコードの原則
 
 #### 命名規則の一貫性
+
 ```typescript
 // ✅ 良い例：意図が明確な命名
 const handleUserSubmission = async (userData: UserInput) => { }
@@ -411,12 +427,14 @@ const data = computed(() => { })  // 何のデータか不明
 ```
 
 **チェックポイント：**
+
 - [ ] 変数・関数名から意図が明確に読み取れるか
 - [ ] Boolean値に適切なプレフィックス（is/has/can/should）が使われているか
 - [ ] 配列・オブジェクトの命名が複数形・単数形を適切に使い分けているか
 - [ ] 略語や短縮形を避けて完全な単語を使っているか
 
 #### 関数設計の品質
+
 ```typescript
 // ✅ 良い例：単一責任で純粋な関数
 const formatUserDisplayName = (user: User): string => {
@@ -460,6 +478,7 @@ const handleUser = async (data: any) => {
 ```
 
 #### コメント・ドキュメンテーション
+
 ```typescript
 /**
  * ユーザープロフィール編集フォーム
@@ -520,6 +539,7 @@ const handleSubmit = () => {
 ### 6. テスタビリティ
 
 #### テストしやすい設計
+
 ```typescript
 // ✅ 良い例：テストしやすいコンポーネント設計（type使用）
 type UserCardProps = {
@@ -604,6 +624,7 @@ const UserCard = ({ userId }: { userId: string }) => {
 ```
 
 **チェックポイント：**
+
 - [ ] 適切な `data-testid` が設定されているか
 - [ ] 副作用が適切に分離されているか
 - [ ] 依存性注入でテスト時のモックが容易か
@@ -612,6 +633,7 @@ const UserCard = ({ userId }: { userId: string }) => {
 ### 7. パフォーマンス・アクセシビリティ
 
 #### Webアクセシビリティ（WCAG 2.1）
+
 ```typescript
 // ✅ 良い例：アクセシブルなコンポーネント
 const Modal = ({
@@ -694,6 +716,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 ```
 
 **チェックポイント：**
+
 - [ ] 適切なHTML semantic要素を使用しているか
 - [ ] ARIA属性が適切に設定されているか
 - [ ] キーボードナビゲーションに対応しているか
@@ -705,6 +728,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 ### 🚨 コードレビューチェックリスト（全項目必須・違反時は必ず指摘）
 
 #### 🏗️ アーキテクチャ・設計（絶対遵守）
+
 - [ ] **Features-based architecture** に完全に従っているか
 - [ ] **bulletproof-react** のディレクトリ構成を守っているか
 - [ ] **SOLID原則** が完全に適用されているか
@@ -714,6 +738,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 - [ ] 循環依存が発生していないか
 
 #### TypeScript・型安全性
+
 - [ ] 厳密な型定義がされているか
 - [ ] `interface`ではなく`type`を使用しているか
 - [ ] すべての関数がアロー関数で定義されているか
@@ -722,32 +747,38 @@ const Modal = ({ isOpen, onClose, children }) => {
 - [ ] ジェネリクスが効果的に活用されているか
 
 #### コンポーネント品質
+
 - [ ] 単一責任の原則を満たしているか
 - [ ] Props設計が適切か
 - [ ] forwardRefが適切に使用されているか
 - [ ] エラー・ローディング状態が適切に処理されているか
 
 #### 状態管理
+
 - [ ] 適切な状態管理手法を選択しているか
 - [ ] 不要な再レンダリングを防止しているか
 - [ ] 状態の更新ロジックが適切か
 
 #### パフォーマンス
+
 - [ ] 適切なメモ化がされているか
 - [ ] 重い計算が適切に最適化されているか
 - [ ] バンドルサイズを考慮した実装か
 
 #### リーダブルコード
+
 - [ ] 命名が明確で一貫しているか
 - [ ] 関数が単一責任を満たしているか
 - [ ] 適切なコメント・ドキュメンテーションがあるか
 
 #### テスタビリティ
+
 - [ ] テストしやすい設計になっているか
 - [ ] 適切なdata-testidが設定されているか
 - [ ] 副作用が適切に分離されているか
 
 #### アクセシビリティ
+
 - [ ] 適切なHTML semanticが使用されているか
 - [ ] ARIA属性が適切に設定されているか
 - [ ] キーボードナビゲーションに対応しているか
@@ -755,6 +786,7 @@ const Modal = ({ isOpen, onClose, children }) => {
 ### フィードバックガイドライン
 
 #### 建設的フィードバック例
+
 ```markdown
 ## 🎯 アーキテクチャ改善提案
 
@@ -796,6 +828,7 @@ type UserActionsProps = {
 ```
 
 #### 🚨 レビュー優先度表示（絶対遵守）
+
 - 🚨 **BLOCKING**: アーキテクチャルール違反・型安全性違反（マージ禁止）
 - 🚨 **Critical**: セキュリティ・パフォーマンス・アクセシビリティの重大な問題
 - ⚠️ **Important**: SOLID/DRY/KISS原則違反・保守性に関わる重要な改善点
@@ -809,6 +842,7 @@ type UserActionsProps = {
 **これらのルールは例外なく守らせること。違反コードは絶対にマージさせない。**
 
 ### 絶対に指摘すべき違反例
+
 1. **Features-based Architecture違反**
    - `src/components/` にビジネスロジックを含むコンポーネント
    - `src/utils/` や `src/services/` の使用

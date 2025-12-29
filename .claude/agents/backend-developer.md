@@ -11,6 +11,7 @@ tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, mcp__serena__list_dir, mc
 ## 統合された専門領域
 
 ### 1. 通常の開発タスク
+
 - **FastAPI**：非同期処理、依存性注入、自動API文書生成、パフォーマンス最適化
 - **Python 3.11+**：型ヒント、非同期プログラミング、データクラス、コンテキストマネージャー
 - **Pydantic v2**：データバリデーション、シリアライゼーション、設定管理
@@ -20,6 +21,7 @@ tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, mcp__serena__list_dir, mc
 - **テスト**：pytest、factory_boy、テストDB、モッキング
 
 ### 2. GitHub Issue対応フロー
+
 - **Issue分析**: API要件・ビジネスロジック・データ設計の理解
 - **技術調査**: 既存アーキテクチャ・データベース・API設計の調査
 - **実装設計**: Clean Architecture原則に基づく設計
@@ -30,6 +32,7 @@ tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, mcp__serena__list_dir, mc
 ## 専門領域
 
 ### 技術スタック
+
 - **FastAPI**：非同期処理、依存性注入、自動API文書生成、パフォーマンス最適化
 - **Python 3.11+**：型ヒント、非同期プログラミング、データクラス、コンテキストマネージャー
 - **Pydantic v2**：データバリデーション、シリアライゼーション、設定管理
@@ -41,9 +44,10 @@ tools: Read, Write, Edit, MultiEdit, Bash, Grep, Glob, mcp__serena__list_dir, mc
 ### アーキテクチャ原則
 
 #### 必須ファイル構成
+
 **重要**: `docs/07_backend_development_tasks.md` に定義された構成を厳守すること
 
-```
+```text
 apps/backend/
 ├── app/
 │   ├── api/
@@ -308,6 +312,7 @@ class SQLUserRepository(UserRepositoryInterface):
 ### 1. データモデル設計
 
 #### SQLAlchemy モデル
+
 ```python
 """
 モデル設計の原則
@@ -397,6 +402,7 @@ class User(Base):
 ```
 
 #### Pydantic スキーマ
+
 ```python
 """
 Pydantic スキーマ設計原則
@@ -1155,6 +1161,7 @@ class TestUserAPI:
 ## 開発ワークフロー
 
 ### 1. 機能開発手順
+
 1. **要件分析**：ビジネス要件とAPI仕様の確認
 2. **モデル設計**：SQLAlchemyモデルとPydanticスキーマ
 3. **Repository実装**：データアクセス層
@@ -1164,6 +1171,7 @@ class TestUserAPI:
 7. **ドキュメント更新**：API文書とコメント
 
 ### 2. コード品質管理
+
 ```bash
 # 開発中の品質チェック
 ruff check .                    # Python linting
@@ -1176,6 +1184,7 @@ pytest --cov=app              # Coverage report
 ### 3. 開発時の必須チェックリスト
 
 #### 📁 ファイル構成チェック（最重要）
+
 - [ ] **ファイル構成**: `docs/07_backend_development_tasks.md` の構成に準拠しているか
 - [ ] **APIバージョニング**: `/api/v1/` ディレクトリ構造が統一されているか
 - [ ] **APIパス**: すべてのエンドポイントに `/api/v1/` プレフィックスが付与されているか
@@ -1186,6 +1195,7 @@ pytest --cov=app              # Coverage report
 - [ ] **ミドルウェア配置**: `app/middleware/` に適切に分離されているか
 
 #### 🏗️ モデル作成時
+
 - [ ] 適切な型ヒント（Type hints）があるか（すべての変数・関数に必須）
 - [ ] 必要なバリデーション制約があるか
 - [ ] インデックスが適切に設定されているか
@@ -1193,6 +1203,7 @@ pytest --cov=app              # Coverage report
 - [ ] docstring が記述されているか（Google style推奨）
 
 #### ⚙️ Service層実装時
+
 - [ ] 単一責任の原則を満たしているか
 - [ ] ビジネスルールが適切に実装されているか
 - [ ] 例外処理が適切に実装されているか（HTTPExceptionの適切な使用）
@@ -1200,6 +1211,7 @@ pytest --cov=app              # Coverage report
 - [ ] 依存性注入が適切に設定されているか（FastAPIのDependsを活用）
 
 #### 🌐 API実装時
+
 - [ ] 適切なHTTPステータスコードを返すか
 - [ ] セキュリティが適切に実装されているか（JWT認証、SQLインジェクション対策）
 - [ ] バリデーションが適切に実装されているか（Pydanticスキーマ使用）
@@ -1209,6 +1221,7 @@ pytest --cov=app              # Coverage report
 - [ ] CORSセキュリティが適切に設定されているか
 
 #### 🔒 セキュリティ・品質チェック
+
 - [ ] **PEP8準拠**: black, ruff でフォーマットされているか
 - [ ] **型安全性**: 型ヒントが適切に記述されているか
 - [ ] **環境変数**: 機密情報が環境変数で管理されているか
@@ -1217,7 +1230,9 @@ pytest --cov=app              # Coverage report
 - [ ] **リソースクリーンアップ**: DB接続やファイルハンドルが適切に閉じられているか
 
 #### ファイル構成遵守の重要性
+
 **docs/07_backend_development_tasks.md** に定義されたファイル構成は必ず守ること：
+
 - APIバージョニング: `/api/v1/` ディレクトリ構造
 - モデル・スキーマ・サービスの適切な分離
 - 責任の明確な分離（SOLID原則）

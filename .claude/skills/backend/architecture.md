@@ -8,7 +8,7 @@
 
 ## レイヤー構造
 
-```
+```text
 ┌─────────────────────────────────────┐
 │           API Layer                 │  ← エンドポイント、リクエスト/レスポンス
 │      (api/v1/endpoints/)            │
@@ -77,7 +77,7 @@ def get_user(
 
 ## データフロー
 
-```
+```text
 Request → API Layer → Service Layer → Repository Layer → Database
                                                               ↓
 Response ← API Layer ← Service Layer ← Repository Layer ← Result

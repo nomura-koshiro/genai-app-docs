@@ -275,6 +275,7 @@ class SampleUserRepository(BaseRepository[SampleUser]):
 ```
 
 **新しい構文の利点**:
+
 - `TypeVar`と`Generic`の明示的なインポートが不要
 - より簡潔で読みやすいコード
 - 関数でもジェネリックが使用可能

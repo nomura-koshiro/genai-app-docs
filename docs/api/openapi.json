@@ -3126,7 +3126,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectFileUploadRequest"
+                "$ref": "#/components/schemas/Body_upload_file_api_v1_project__project_id__file_post"
               }
             }
           }
@@ -3481,7 +3481,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectFileUploadRequest"
+                "$ref": "#/components/schemas/Body_upload_file_version_api_v1_project__project_id__file__file_id__version_post"
               }
             }
           }
