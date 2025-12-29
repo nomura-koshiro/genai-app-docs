@@ -85,6 +85,35 @@ def parse_float(value: str) -> float | None:
     return float(value)
 
 
+def parse_date(value: str) -> "date | None":
+    """日付文字列をパースします。空文字列の場合はNoneを返します。"""
+    from datetime import date as date_type
+
+    if not value or value.strip() == "":
+        return None
+    # YYYY-MM-DD形式
+    return date_type.fromisoformat(value)
+
+
+def parse_datetime(value: str) -> "datetime | None":
+    """日時文字列をパースします。空文字列の場合はNoneを返します。"""
+    if not value or value.strip() == "":
+        return None
+    # ISO 8601形式（末尾のZはUTCを示す）
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    return datetime.fromisoformat(value)
+
+
+def parse_decimal(value: str) -> "Decimal | None":
+    """Decimal値をパースします。空文字列の場合はNoneを返します。"""
+    from decimal import Decimal
+
+    if not value or value.strip() == "":
+        return None
+    return Decimal(value)
+
+
 def read_csv(file_path: Path) -> list[dict[str, str]]:
     """CSVファイルを読み込みます。"""
     if not file_path.exists():
@@ -309,6 +338,8 @@ async def load_driver_tree_categories(session: AsyncSession) -> int:
             industry_name=record_data["industry_name"],
             driver_type_id=record_data["driver_type_id"],
             driver_type=record_data["driver_type"],
+            description=record_data.get("description"),
+            created_by=parse_uuid(record_data.get("created_by", "")),
         )
         session.add(record)
         count += 1
@@ -362,6 +393,9 @@ async def load_projects(session: AsyncSession) -> int:
             description=row.get("description") or None,
             is_active=parse_bool(row["is_active"]),
             created_by=parse_uuid(row["created_by"]),
+            start_date=parse_date(row.get("start_date", "")),
+            end_date=parse_date(row.get("end_date", "")),
+            budget=parse_decimal(row.get("budget", "")),
         )
         session.add(record)
         count += 1
@@ -386,6 +420,7 @@ async def load_project_members(session: AsyncSession) -> int:
             user_id=parse_uuid(row["user_id"]),
             role=ProjectRole(row["role"]),
             added_by=parse_uuid(row["added_by"]) if row.get("added_by") else None,
+            last_activity_at=parse_datetime(row.get("last_activity_at", "")),
         )
         session.add(record)
         count += 1
@@ -599,6 +634,7 @@ async def load_analysis_sessions(session: AsyncSession) -> int:
 
         record = AnalysisSession(
             id=record_id,
+            name=row.get("name", ""),
             issue_id=parse_uuid(row["issue_id"]),
             creator_id=parse_uuid(row["creator_id"]),
             project_id=parse_uuid(row["project_id"]),
