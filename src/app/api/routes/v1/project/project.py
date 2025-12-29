@@ -94,7 +94,7 @@ async def list_projects(
         action="list_projects",
     )
 
-    projects = await project_service.list_user_projects(
+    projects, total = await project_service.list_user_projects(
         user_id=current_user.id,
         skip=skip,
         limit=limit,
@@ -105,11 +105,12 @@ async def list_projects(
         "プロジェクト一覧を取得しました",
         user_id=str(current_user.id),
         count=len(projects),
+        total=total,
     )
 
     return ProjectListResponse(
         projects=[ProjectResponse.model_validate(project) for project in projects],
-        total=len(projects),
+        total=total,
         skip=skip,
         limit=limit,
     )

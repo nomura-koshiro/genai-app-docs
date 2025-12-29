@@ -73,7 +73,7 @@ class ProjectService:
         skip: int = 0,
         limit: int = 100,
         is_active: bool | None = None,
-    ) -> list[Project]:
+    ) -> tuple[list[Project], int]:
         """特定ユーザーが所属するプロジェクトの一覧を取得します。"""
         return await self._crud_service.list_user_projects(user_id, skip, limit, is_active)
 

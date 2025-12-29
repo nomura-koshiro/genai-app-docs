@@ -6,13 +6,12 @@
 import uuid
 from pathlib import Path
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import AuthorizationError
 from app.core.logging import get_logger
-from app.models import Project, ProjectFile, ProjectMember, ProjectRole
-from app.repositories import ProjectRepository
+from app.models import Project, ProjectMember, ProjectRole
+from app.repositories import ProjectFileRepository, ProjectMemberRepository, ProjectRepository
 
 logger = get_logger(__name__)
 
@@ -28,6 +27,8 @@ class ProjectServiceBase:
         """
         self.db = db
         self.repository = ProjectRepository(db)
+        self.member_repository = ProjectMemberRepository(db)
+        self.file_repository = ProjectFileRepository(db)
 
     async def _check_user_role(
         self,
@@ -48,11 +49,8 @@ class ProjectServiceBase:
         Raises:
             AuthorizationError: ユーザーが必要なロールを持っていない場合
         """
-        # ユーザーのメンバーシップを取得
-        result = await self.db.execute(
-            select(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.user_id == user_id)
-        )
-        member = result.scalar_one_or_none()
+        # ユーザーのメンバーシップを取得（リポジトリを使用）
+        member = await self.member_repository.get_by_project_and_user(project_id, user_id)
 
         if not member:
             logger.warning(
@@ -96,9 +94,12 @@ class ProjectServiceBase:
             - ファイル削除失敗時もエラーログを記録して処理を継続します
             - データベースからの削除は別途CASCADEで実行されます
         """
-        # プロジェクトに関連するファイルを取得（リレーションシップを明示的にロード）
-        result = await self.db.execute(select(ProjectFile).where(ProjectFile.project_id == project.id))
-        project_files = result.scalars().all()
+        # プロジェクトに関連するファイルを取得（リポジトリを使用）
+        project_files = await self.file_repository.list_by_project(
+            project_id=project.id,
+            skip=0,
+            limit=10000,  # 大量ファイル対応
+        )
 
         if not project_files:
             logger.debug(

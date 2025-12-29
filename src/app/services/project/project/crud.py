@@ -5,7 +5,6 @@
 
 import uuid
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.decorators import measure_performance, transactional
@@ -229,7 +228,7 @@ class ProjectCrudService(ProjectServiceBase):
         skip: int = 0,
         limit: int = 100,
         is_active: bool | None = None,
-    ) -> list[Project]:
+    ) -> tuple[list[Project], int]:
         """特定ユーザーが所属するプロジェクトの一覧を取得します。
 
         Args:
@@ -239,7 +238,7 @@ class ProjectCrudService(ProjectServiceBase):
             is_active: アクティブフラグフィルタ
 
         Returns:
-            list[Project]: ユーザーが所属するプロジェクトのリスト
+            tuple[list[Project], int]: (プロジェクトリスト, 総数)
         """
         logger.debug(
             "ユーザーのプロジェクト一覧を取得中",
@@ -257,13 +256,20 @@ class ProjectCrudService(ProjectServiceBase):
             is_active=is_active,
         )
 
+        # 総数を別途取得（正確なtotalを返すため）
+        total = await self.repository.count_by_user(
+            user_id=user_id,
+            is_active=is_active,
+        )
+
         logger.debug(
             "ユーザーのプロジェクト一覧を正常に取得しました",
             user_id=str(user_id),
             count=len(projects),
+            total=total,
         )
 
-        return projects
+        return projects, total
 
     @measure_performance
     @transactional
@@ -417,11 +423,8 @@ class ProjectCrudService(ProjectServiceBase):
         Returns:
             bool: アクセス可能な場合はTrue、不可能な場合はFalse
         """
-        result = await self.db.execute(
-            select(ProjectMember).where(ProjectMember.project_id == project_id).where(ProjectMember.user_id == user_id)
-        )
-        member = result.scalar_one_or_none()
-
+        # リポジトリを使用（コード重複を回避）
+        member = await self.member_repository.get_by_project_and_user(project_id, user_id)
         return member is not None
 
     @measure_performance

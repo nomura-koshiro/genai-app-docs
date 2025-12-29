@@ -22,6 +22,7 @@ from fastapi import APIRouter, Body, Path, Query, status
 
 from app.api.core import AnalysisSessionServiceDep, ProjectMemberDep
 from app.api.decorators import async_timeout, handle_service_errors
+from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.schemas.analysis import (
     AnalysisChatCreate,
@@ -412,6 +413,15 @@ async def update_session(
 
     file_id = session_update.input_file_id
     snapshot_order = session_update.current_snapshot
+
+    # 少なくとも1つの更新パラメータが必要
+    if file_id is None and snapshot_order is None:
+        raise ValidationError(
+            "input_file_id または current_snapshot のいずれかを指定してください",
+            details={"session_id": str(session_id)},
+        )
+
+    result = None
 
     if file_id is not None:
         logger.info(

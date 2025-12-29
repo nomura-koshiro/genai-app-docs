@@ -330,12 +330,11 @@ class ProjectMemberCrudService(ProjectMemberServiceBase):
             # リクエスタがプロジェクトメンバーであることを確認
             await self._get_requester_role(project_id, requester_id)
 
-            # メンバー一覧を取得
-            all_members = await self.repository.list_by_project(project_id)
+            # メンバー一覧をDBレベルでページネーション（パフォーマンス最適化）
+            members = await self.repository.list_by_project(project_id, skip, limit)
 
-            # ページネーション適用
-            total = len(all_members)
-            members = all_members[skip : skip + limit]
+            # 総数を別途取得（正確なtotalを返すため）
+            total = await self.repository.count_by_project(project_id)
 
             logger.info(
                 "プロジェクトメンバー一覧取得完了",
