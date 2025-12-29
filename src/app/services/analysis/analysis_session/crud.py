@@ -168,13 +168,9 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         session = await self.session_repository.get_with_relations(session.id)
         if not session:
             raise NotFoundError("セッション作成後の取得に失敗しました")
-        snapshots = await self.snapshot_repository.list_by_session(session.id)
-        for snap in snapshots:
-            snap_with_relations = await self.snapshot_repository.get_with_relations(snap.id)
-            if snap_with_relations:
-                snap.chats = snap_with_relations.chats
-                snap.steps = snap_with_relations.steps
 
+        # スナップショットをリレーション付きで一括取得（N+1回避）
+        snapshots = await self.snapshot_repository.list_by_session_with_relations(session.id)
         files = await self.file_repository.list_by_session(session.id)
 
         return self._build_session_detail_response(session, snapshots, files)
@@ -217,15 +213,8 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                 details={"session_id": str(session_id), "project_id": str(project_id)},
             )
 
-        # スナップショットを取得（チャット、ステップ含む）
-        snapshots = await self.snapshot_repository.list_by_session(session_id)
-        for snap in snapshots:
-            snap_with_relations = await self.snapshot_repository.get_with_relations(snap.id)
-            if snap_with_relations:
-                snap.chats = snap_with_relations.chats
-                snap.steps = snap_with_relations.steps
-
-        # ファイルを取得
+        # スナップショットをリレーション付きで一括取得（N+1回避）
+        snapshots = await self.snapshot_repository.list_by_session_with_relations(session_id)
         files = await self.file_repository.list_by_session(session_id)
 
         return self._build_session_detail_response(session, snapshots, files)
@@ -379,13 +368,9 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
         new_session = await self.session_repository.get_with_relations(new_session.id)
         if not new_session:
             raise NotFoundError("セッション複製後の取得に失敗しました")
-        snapshots = await self.snapshot_repository.list_by_session(new_session.id)
-        for snap in snapshots:
-            snap_with_relations = await self.snapshot_repository.get_with_relations(snap.id)
-            if snap_with_relations:
-                snap.chats = snap_with_relations.chats
-                snap.steps = snap_with_relations.steps
 
+        # スナップショットをリレーション付きで一括取得（N+1回避）
+        snapshots = await self.snapshot_repository.list_by_session_with_relations(new_session.id)
         files = await self.file_repository.list_by_session(new_session.id)
 
         return self._build_session_detail_response(new_session, snapshots, files)

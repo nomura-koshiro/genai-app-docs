@@ -5,7 +5,7 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -94,14 +94,16 @@ class AnalysisSnapshotRepository(BaseRepository[AnalysisSnapshot, uuid.UUID]):
         Returns:
             int: 最大順序（存在しない場合は-1）
         """
-        from sqlalchemy import func
-
-        result = await self.db.execute(select(func.max(AnalysisSnapshot.snapshot_order)).where(AnalysisSnapshot.session_id == session_id))
+        result = await self.db.execute(
+            select(func.max(AnalysisSnapshot.snapshot_order)).where(AnalysisSnapshot.session_id == session_id)
+        )
         max_order = result.scalar_one()
         return max_order if max_order is not None else -1
 
     async def list_by_session_with_relations(self, session_id: uuid.UUID) -> list[AnalysisSnapshot]:
         """セッションのスナップショット一覧をリレーションシップ付きで取得します。
+
+        N+1クエリを回避するため、selectinloadを使用して一括取得します。
 
         Args:
             session_id: セッションID
@@ -109,9 +111,13 @@ class AnalysisSnapshotRepository(BaseRepository[AnalysisSnapshot, uuid.UUID]):
         Returns:
             list[AnalysisSnapshot]: スナップショット一覧（ステップ、チャット含む）
         """
-        snapshots = await self.list_by_session(session_id)
-        for i, snap in enumerate(snapshots):
-            snap_with_relations = await self.get_with_relations(snap.id)
-            if snap_with_relations:
-                snapshots[i] = snap_with_relations
-        return snapshots
+        result = await self.db.execute(
+            select(AnalysisSnapshot)
+            .where(AnalysisSnapshot.session_id == session_id)
+            .options(
+                selectinload(AnalysisSnapshot.steps),
+                selectinload(AnalysisSnapshot.chats),
+            )
+            .order_by(AnalysisSnapshot.snapshot_order.asc())
+        )
+        return list(result.scalars().all())

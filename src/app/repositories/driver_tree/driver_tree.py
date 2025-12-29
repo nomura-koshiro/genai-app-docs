@@ -5,7 +5,7 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -86,9 +86,9 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         Returns:
             int: ツリー数
         """
-        from sqlalchemy import func
-
-        result = await self.db.execute(select(func.count()).select_from(DriverTree).where(DriverTree.project_id == project_id))
+        result = await self.db.execute(
+            select(func.count()).select_from(DriverTree).where(DriverTree.project_id == project_id)
+        )
         return result.scalar_one()
 
     async def count_nodes_by_tree(self, tree_id: uuid.UUID) -> int:
@@ -100,8 +100,6 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         Returns:
             int: ノード数
         """
-        from sqlalchemy import func
-
         result = await self.db.execute(
             select(func.count()).select_from(DriverTreeNode).where(DriverTreeNode.driver_tree_id == tree_id)
         )
@@ -118,8 +116,6 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         Returns:
             int: 施策数
         """
-        from sqlalchemy import func
-
         result = await self.db.execute(
             select(func.count())
             .select_from(DriverTreePolicy)
@@ -143,8 +139,6 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
                 - node_count: ノード数
                 - policy_count: 施策数
         """
-        from sqlalchemy import func
-
         if not tree_ids:
             return {}
 

@@ -500,43 +500,43 @@ class DriverTreeCrudService(DriverTreeServiceBase):
         # ノードIDのマッピング（元ID -> 新ID）
         node_id_mapping: dict[uuid.UUID, uuid.UUID] = {}
 
-        # 元ツリーの全ノードを取得（リレーションシップから収集）
-        original_nodes = set()
+        # 元ツリーの全ノードIDを収集（リレーションシップから）
+        original_node_ids: set[uuid.UUID] = set()
         for relationship in original_tree.relationships:
-            original_nodes.add(relationship.parent_node_id)
+            original_node_ids.add(relationship.parent_node_id)
             for child in relationship.children:
-                original_nodes.add(child.child_node_id)
+                original_node_ids.add(child.child_node_id)
 
         # ルートノードも含める
         if original_tree.root_node_id:
-            original_nodes.add(original_tree.root_node_id)
+            original_node_ids.add(original_tree.root_node_id)
+
+        # 全ノードを施策付きで一括取得（N+1回避）
+        original_nodes = await self.node_repository.get_many_with_policies(list(original_node_ids))
 
         # ノードを複製（施策も含む）
-        for node_id in original_nodes:
-            original_node = await self.node_repository.get(node_id)
-            if original_node:
-                new_node = await self.node_repository.create(
-                    label=original_node.label,
-                    node_type=original_node.node_type,
-                    position_x=original_node.position_x,
-                    position_y=original_node.position_y,
-                    data_frame_id=original_node.data_frame_id,
-                )
-                node_id_mapping[node_id] = new_node.id
+        for node_id, original_node in original_nodes.items():
+            new_node = await self.node_repository.create(
+                label=original_node.label,
+                node_type=original_node.node_type,
+                position_x=original_node.position_x,
+                position_y=original_node.position_y,
+                data_frame_id=original_node.data_frame_id,
+            )
+            node_id_mapping[node_id] = new_node.id
 
-                # ノードに紐づく施策（ポリシー）を複製
-                original_policies = await self.policy_repository.list_by_node(node_id)
-                for policy in original_policies:
-                    new_policy = DriverTreePolicy(
-                        node_id=new_node.id,
-                        label=policy.label,
-                        value=policy.value,
-                        description=policy.description,
-                        cost=policy.cost,
-                        duration_months=policy.duration_months,
-                        status=policy.status,
-                    )
-                    self.db.add(new_policy)
+            # ノードに紐づく施策（ポリシー）を複製（既に読み込み済み）
+            for policy in original_node.policies:
+                new_policy = DriverTreePolicy(
+                    node_id=new_node.id,
+                    label=policy.label,
+                    value=policy.value,
+                    description=policy.description,
+                    cost=policy.cost,
+                    duration_months=policy.duration_months,
+                    status=policy.status,
+                )
+                self.db.add(new_policy)
 
         # ルートノードを更新
         if original_tree.root_node_id and original_tree.root_node_id in node_id_mapping:

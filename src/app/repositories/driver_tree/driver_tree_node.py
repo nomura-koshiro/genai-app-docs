@@ -77,3 +77,24 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
             select(DriverTreeNode).where(DriverTreeNode.id == node_id).options(selectinload(DriverTreeNode.policies))
         )
         return result.scalar_one_or_none()
+
+    async def get_many_with_policies(self, node_ids: list[uuid.UUID]) -> dict[uuid.UUID, DriverTreeNode]:
+        """複数のノードを施策付きで一括取得します。
+
+        N+1クエリを回避するため、selectinloadを使用して一括取得します。
+
+        Args:
+            node_ids: ノードIDリスト
+
+        Returns:
+            dict[uuid.UUID, DriverTreeNode]: ノードIDをキーとした辞書
+        """
+        if not node_ids:
+            return {}
+
+        result = await self.db.execute(
+            select(DriverTreeNode)
+            .where(DriverTreeNode.id.in_(node_ids))
+            .options(selectinload(DriverTreeNode.policies))
+        )
+        return {node.id: node for node in result.scalars().all()}
