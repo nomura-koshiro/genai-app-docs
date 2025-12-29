@@ -19,6 +19,7 @@ from app.models.driver_tree import (
     DriverTreeRelationshipChild,
 )
 from app.services.driver_tree.driver_tree.base import DriverTreeServiceBase
+from app.services.driver_tree.formula_parser import FormulaParser
 
 logger = get_logger(__name__)
 
@@ -33,6 +34,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
             db: SQLAlchemyの非同期データベースセッション
         """
         super().__init__(db)
+        self.formula_parser = FormulaParser()
 
     @transactional
     async def create_tree(
@@ -251,36 +253,11 @@ class DriverTreeCrudService(DriverTreeServiceBase):
             base_x: ベースX座標
             base_y: ベースY座標
         """
-        # 簡易的な数式パーサー
-        if "=" not in formula:
-            raise ValidationError(
-                "数式のフォーマットが不正です",
-                details={"formula": formula},
-            )
-
-        parts = formula.split("=")
-        if len(parts) != 2:
-            raise ValidationError(
-                "数式のフォーマットが不正です",
-                details={"formula": formula},
-            )
-
-        result_name = parts[0].strip()
-        expression = parts[1].strip()
-
-        # 演算子を検出
-        operator = None
-        operands = []
-        for op in ["+", "-", "*", "/"]:
-            if op in expression:
-                operator = op
-                operands = [o.strip() for o in expression.split(op)]
-                break
-
-        if not operator or len(operands) < 2:
-            # 単純な代入の場合
-            operands = [expression]
-            operator = None
+        # 数式を解析（FormulaParserに委譲）
+        parsed = self.formula_parser.parse(formula)
+        result_name = parsed.result_name
+        operator = parsed.operator
+        operands = parsed.operands
 
         # 結果ノードの作成または更新（ルートノードを使用）
         # lazy loadを避けるため、root_node_idでチェックしリポジトリから取得
@@ -307,12 +284,8 @@ class DriverTreeCrudService(DriverTreeServiceBase):
         # 子ノードの作成
         child_nodes = []
         for i, operand in enumerate(operands):
-            # 数値かどうか判定
-            try:
-                float(operand)
-                node_type = "定数"
-            except ValueError:
-                node_type = "入力"
+            # ノードタイプを判定（FormulaParserに委譲）
+            node_type = self.formula_parser.determine_node_type(operand)
 
             child_node = await self.node_repository.create(
                 label=operand,

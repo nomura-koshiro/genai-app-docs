@@ -4,9 +4,9 @@
 """
 
 import uuid
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import Date, cast, func, select
+from sqlalchemy import Date, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -47,67 +47,91 @@ class DashboardService:
     async def get_stats(self) -> DashboardStatsResponse:
         """統計情報を取得。
 
+        条件付きCOUNTを使用して、テーブルごとに1クエリで全統計を取得します。
+        （14クエリ → 5クエリに最適化）
+
         Returns:
             DashboardStatsResponse: 統計情報
         """
-        # プロジェクト統計
-        project_total = await self.db.scalar(select(func.count(Project.id)))
-        project_active = await self.db.scalar(
-            select(func.count(Project.id)).where(Project.is_active == True)  # noqa: E712
+        # プロジェクト統計（1クエリで全カウントを取得）
+        project_result = await self.db.execute(
+            select(
+                func.count(Project.id).label("total"),
+                func.count(case((Project.is_active == True, 1))).label("active"),  # noqa: E712
+            )
         )
-        project_archived = (project_total or 0) - (project_active or 0)
+        project_row = project_result.one()
+        project_total = project_row.total or 0
+        project_active = project_row.active or 0
+        project_archived = project_total - project_active
 
-        # セッション統計
-        session_total = await self.db.scalar(select(func.count(AnalysisSession.id)))
-        session_draft = await self.db.scalar(select(func.count(AnalysisSession.id)).where(AnalysisSession.status == "draft"))
-        session_active = await self.db.scalar(select(func.count(AnalysisSession.id)).where(AnalysisSession.status == "active"))
-        session_completed = await self.db.scalar(select(func.count(AnalysisSession.id)).where(AnalysisSession.status == "completed"))
-
-        # ツリー統計
-        tree_total = await self.db.scalar(select(func.count(DriverTree.id)))
-        tree_draft = await self.db.scalar(select(func.count(DriverTree.id)).where(DriverTree.status == "draft"))
-        tree_active = await self.db.scalar(select(func.count(DriverTree.id)).where(DriverTree.status == "active"))
-        tree_completed = await self.db.scalar(select(func.count(DriverTree.id)).where(DriverTree.status == "completed"))
-
-        # ユーザー統計
-        user_total = await self.db.scalar(select(func.count(UserAccount.id)))
-        user_active = await self.db.scalar(
-            select(func.count(UserAccount.id)).where(UserAccount.is_active == True)  # noqa: E712
+        # セッション統計（1クエリで全カウントを取得）
+        session_result = await self.db.execute(
+            select(
+                func.count(AnalysisSession.id).label("total"),
+                func.count(case((AnalysisSession.status == "draft", 1))).label("draft"),
+                func.count(case((AnalysisSession.status == "active", 1))).label("active"),
+                func.count(case((AnalysisSession.status == "completed", 1))).label("completed"),
+            )
         )
+        session_row = session_result.one()
 
-        # ファイル統計
-        file_total = await self.db.scalar(select(func.count(ProjectFile.id)))
-        file_total_size = await self.db.scalar(
-            select(func.coalesce(func.sum(ProjectFile.file_size), 0))
+        # ツリー統計（1クエリで全カウントを取得）
+        tree_result = await self.db.execute(
+            select(
+                func.count(DriverTree.id).label("total"),
+                func.count(case((DriverTree.status == "draft", 1))).label("draft"),
+                func.count(case((DriverTree.status == "active", 1))).label("active"),
+                func.count(case((DriverTree.status == "completed", 1))).label("completed"),
+            )
         )
+        tree_row = tree_result.one()
+
+        # ユーザー統計（1クエリで全カウントを取得）
+        user_result = await self.db.execute(
+            select(
+                func.count(UserAccount.id).label("total"),
+                func.count(case((UserAccount.is_active == True, 1))).label("active"),  # noqa: E712
+            )
+        )
+        user_row = user_result.one()
+
+        # ファイル統計（1クエリで全カウントとサイズを取得）
+        file_result = await self.db.execute(
+            select(
+                func.count(ProjectFile.id).label("total"),
+                func.coalesce(func.sum(ProjectFile.file_size), 0).label("total_size"),
+            )
+        )
+        file_row = file_result.one()
 
         return DashboardStatsResponse(
             projects=ProjectStats(
-                total=project_total or 0,
-                active=project_active or 0,
+                total=project_total,
+                active=project_active,
                 archived=project_archived,
             ),
             sessions=SessionStats(
-                total=session_total or 0,
-                draft=session_draft or 0,
-                active=session_active or 0,
-                completed=session_completed or 0,
+                total=session_row.total or 0,
+                draft=session_row.draft or 0,
+                active=session_row.active or 0,
+                completed=session_row.completed or 0,
             ),
             trees=TreeStats(
-                total=tree_total or 0,
-                draft=tree_draft or 0,
-                active=tree_active or 0,
-                completed=tree_completed or 0,
+                total=tree_row.total or 0,
+                draft=tree_row.draft or 0,
+                active=tree_row.active or 0,
+                completed=tree_row.completed or 0,
             ),
             users=UserStats(
-                total=user_total or 0,
-                active=user_active or 0,
+                total=user_row.total or 0,
+                active=user_row.active or 0,
             ),
             files=FileStats(
-                total=file_total or 0,
-                total_size_bytes=int(file_total_size or 0),
+                total=file_row.total or 0,
+                total_size_bytes=int(file_row.total_size or 0),
             ),
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(UTC),
         )
 
     async def get_charts(self, days: int = 30) -> DashboardChartsResponse:
@@ -119,7 +143,7 @@ class DashboardService:
         Returns:
             DashboardChartsResponse: チャートデータ
         """
-        start_date = datetime.utcnow() - timedelta(days=days)
+        start_date = datetime.now(UTC) - timedelta(days=days)
 
         # セッション作成トレンド（日別）
         session_trend_data = await self._get_creation_trend(AnalysisSession, start_date, days)
@@ -178,7 +202,7 @@ class DashboardService:
             ),
             project_distribution=project_distribution,
             user_activity=user_activity,
-            generated_at=datetime.utcnow(),
+            generated_at=datetime.now(UTC),
         )
 
     async def _get_creation_trend(self, model: type, start_date: datetime, days: int) -> list[ChartDataPoint]:
@@ -278,10 +302,7 @@ class DashboardService:
     async def _get_recent_projects(self, limit: int) -> list[ActivityLogResponse]:
         """最近のプロジェクト作成アクティビティを取得。"""
         result = await self.db.execute(
-            select(Project)
-            .options(selectinload(Project.created_by_user))
-            .order_by(Project.created_at.desc())
-            .limit(limit)
+            select(Project).options(selectinload(Project.created_by_user)).order_by(Project.created_at.desc()).limit(limit)
         )
         return [
             ActivityLogResponse(
@@ -324,10 +345,7 @@ class DashboardService:
     async def _get_recent_trees(self, limit: int) -> list[ActivityLogResponse]:
         """最近のツリー作成アクティビティを取得。"""
         result = await self.db.execute(
-            select(DriverTree)
-            .options(selectinload(DriverTree.created_by_user))
-            .order_by(DriverTree.created_at.desc())
-            .limit(limit)
+            select(DriverTree).options(selectinload(DriverTree.created_by_user)).order_by(DriverTree.created_at.desc()).limit(limit)
         )
         return [
             ActivityLogResponse(
@@ -347,10 +365,7 @@ class DashboardService:
     async def _get_recent_files(self, limit: int) -> list[ActivityLogResponse]:
         """最近のファイルアップロードアクティビティを取得。"""
         result = await self.db.execute(
-            select(ProjectFile)
-            .options(selectinload(ProjectFile.uploaded_by_user))
-            .order_by(ProjectFile.created_at.desc())
-            .limit(limit)
+            select(ProjectFile).options(selectinload(ProjectFile.uploaded_by_user)).order_by(ProjectFile.created_at.desc()).limit(limit)
         )
         return [
             ActivityLogResponse(
