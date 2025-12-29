@@ -129,6 +129,12 @@ class ProjectMember(Base):
         comment="このメンバーを追加したユーザーID",
     )
 
+    last_activity_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="プロジェクト内最終活動日時",
+    )
+
     # リレーションシップ
     project: Mapped["Project"] = relationship(
         "Project",

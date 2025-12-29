@@ -92,6 +92,7 @@ class ProjectMemberResponse(BaseCamelCaseORMModel):
         role (ProjectRole): プロジェクトロール
         joined_at (datetime): 参加日時
         added_by (uuid.UUID | None): 追加者のユーザーID
+        last_activity_at (datetime | None): プロジェクト内最終活動日時
 
     Example:
         >>> from datetime import UTC
@@ -101,7 +102,8 @@ class ProjectMemberResponse(BaseCamelCaseORMModel):
         ...     user_id=uuid.uuid4(),
         ...     role=ProjectRole.MEMBER,
         ...     joined_at=datetime.now(UTC),
-        ...     added_by=uuid.uuid4()
+        ...     added_by=uuid.uuid4(),
+        ...     last_activity_at=datetime.now(UTC)
         ... )
 
     Note:
@@ -114,6 +116,7 @@ class ProjectMemberResponse(BaseCamelCaseORMModel):
     role: ProjectRole = Field(..., description="プロジェクトロール（project_manager/project_moderator/member/viewer）")
     joined_at: datetime = Field(..., description="参加日時")
     added_by: uuid.UUID | None = Field(default=None, description="追加者のユーザーID")
+    last_activity_at: datetime | None = Field(default=None, description="プロジェクト内最終活動日時")
 
 
 class ProjectMemberDetailResponse(ProjectMemberResponse):

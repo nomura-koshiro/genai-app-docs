@@ -15,6 +15,9 @@ class DriverTreeListItem(BaseCamelCaseModel):
         name: str - ツリー名
         description: str - 説明
         status: str - ツリー状態（draft/active/completed）
+        formula_master_name: str | None - 数式マスタ名（紐づいている数式テンプレートのドライバー型名）
+        node_count: int - ノード数（ツリーに含まれるノード数）
+        policy_count: int - 施策数（ツリーに関連する施策数）
         created_at: datetime - 作成日時
         updated_at: datetime - 更新日時
 
@@ -24,6 +27,9 @@ class DriverTreeListItem(BaseCamelCaseModel):
     name: str = Field(..., description="ツリー名")
     description: str | None = Field(default=None, description="説明")
     status: str = Field(default="draft", description="ツリー状態（draft/active/completed）")
+    formula_master_name: str | None = Field(default=None, description="数式マスタ名")
+    node_count: int = Field(default=0, description="ノード数")
+    policy_count: int = Field(default=0, description="施策数")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 

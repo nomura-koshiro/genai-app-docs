@@ -24,9 +24,10 @@
 
 import uuid
 from datetime import date
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, Index, String, Text
+from sqlalchemy import Boolean, Date, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -109,6 +110,12 @@ class Project(Base, TimestampMixin):
         Date,
         nullable=True,
         comment="プロジェクト終了日",
+    )
+
+    budget: Mapped[Decimal | None] = mapped_column(
+        Numeric(15, 2),
+        nullable=True,
+        comment="プロジェクト予算",
     )
 
     # リレーションシップ

@@ -73,6 +73,18 @@ class UserStats(BaseCamelCaseModel):
     active: int = Field(..., description="アクティブユーザー数")
 
 
+class FileStats(BaseCamelCaseModel):
+    """ファイル統計。
+
+    Attributes:
+        total: 総ファイル数
+        total_size_bytes: 総ファイルサイズ（バイト）
+    """
+
+    total: int = Field(..., description="総ファイル数")
+    total_size_bytes: int = Field(default=0, description="総ファイルサイズ（バイト）")
+
+
 class DashboardStatsResponse(BaseCamelCaseModel):
     """ダッシュボード統計レスポンス。
 
@@ -81,6 +93,7 @@ class DashboardStatsResponse(BaseCamelCaseModel):
         sessions: セッション統計
         trees: ツリー統計
         users: ユーザー統計
+        files: ファイル統計
         generated_at: 統計生成日時
     """
 
@@ -88,6 +101,7 @@ class DashboardStatsResponse(BaseCamelCaseModel):
     sessions: SessionStats = Field(..., description="セッション統計")
     trees: TreeStats = Field(..., description="ツリー統計")
     users: UserStats = Field(..., description="ユーザー統計")
+    files: FileStats = Field(..., description="ファイル統計")
     generated_at: datetime = Field(..., description="統計生成日時")
 
 

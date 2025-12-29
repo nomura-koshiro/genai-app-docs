@@ -414,6 +414,51 @@ class AnalysisSnapshotResponse(BaseCamelCaseORMModel):
 
 
 # ================================================================================
+# リレーション情報スキーマ（セッション一覧用）
+# ================================================================================
+class IssueInfo(BaseCamelCaseModel):
+    """課題情報（リレーション展開用）。
+
+    セッション一覧で課題名を表示するために使用します。
+
+    Attributes:
+        id (uuid.UUID): 課題ID
+        name (str): 課題名
+    """
+
+    id: uuid.UUID = Field(..., description="課題ID")
+    name: str = Field(..., description="課題名")
+
+
+class CreatorInfo(BaseCamelCaseModel):
+    """作成者情報（リレーション展開用）。
+
+    セッション一覧で作成者名を表示するために使用します。
+
+    Attributes:
+        id (uuid.UUID): ユーザーID
+        display_name (str | None): 表示名
+    """
+
+    id: uuid.UUID = Field(..., description="ユーザーID")
+    display_name: str | None = Field(default=None, description="表示名")
+
+
+class InputFileInfo(BaseCamelCaseModel):
+    """入力ファイル情報（リレーション展開用）。
+
+    セッション一覧で入力ファイル名を表示するために使用します。
+
+    Attributes:
+        id (uuid.UUID): ファイルID
+        original_filename (str): 元のファイル名
+    """
+
+    id: uuid.UUID = Field(..., description="ファイルID")
+    original_filename: str = Field(..., description="元のファイル名")
+
+
+# ================================================================================
 # 分析セッションスキーマ
 # ================================================================================
 class AnalysisSessionBase(BaseCamelCaseModel):
@@ -436,18 +481,21 @@ class AnalysisSessionCreate(BaseCamelCaseModel):
     新規分析セッション作成時に使用します。
 
     Attributes:
+        name (str | None): セッション名（任意、未指定時は自動生成）
         issue_id (uuid.UUID): 課題ID
         custom_system_prompt (str | None): カスタムシステムプロンプト（任意）
         initial_message (str | None): 初期メッセージ（任意）
 
     Example:
         >>> session = AnalysisSessionCreate(
+        ...     name="売上分析セッション",
         ...     issue_id=uuid.uuid4(),
         ...     custom_system_prompt="追加の指示: 結果は簡潔に日本語で説明してください",
         ...     initial_message="こんにちは。売上データの分析を始めましょう。",
         ... )
     """
 
+    name: str | None = Field(default=None, max_length=255, description="セッション名（未指定時は自動生成）")
     issue_id: uuid.UUID = Field(..., description="課題ID")
     custom_system_prompt: str | None = Field(
         default=None,
@@ -469,6 +517,7 @@ class AnalysisSessionUpdate(BaseCamelCaseModel):
     すべてのフィールドは Optional(部分更新対応)。
 
     Attributes:
+        name (str | None): セッション名
         current_snapshot (int | None): 現在のスナップショット番号
         input_file_id (uuid.UUID | None): 入力ファイルID
         status (str | None): セッション状態（draft/active/completed/archived）
@@ -477,6 +526,7 @@ class AnalysisSessionUpdate(BaseCamelCaseModel):
 
     Example:
         >>> session_update = AnalysisSessionUpdate(
+        ...     name="更新後のセッション名",
         ...     current_snapshot=変更後の番号,
         ...     input_file_id=変更後のファイルID,
         ...     status="active",
@@ -484,6 +534,7 @@ class AnalysisSessionUpdate(BaseCamelCaseModel):
         ... )
     """
 
+    name: str | None = Field(default=None, max_length=255, description="セッション名")
     current_snapshot: int | None = Field(default=None, description="現在のスナップショット番号")
     input_file_id: uuid.UUID | None = Field(default=None, description="入力ファイルID")
     status: str | None = Field(default=None, description="セッション状態（draft/active/completed/archived）")
@@ -519,11 +570,15 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
 
     Attributes:
         id (uuid.UUID): セッションID
+        name (str): セッション名
         current_snapshot (int): 現在のスナップショット番号
         status (str): セッション状態（draft/active/completed/archived）
         project_id (uuid.UUID): プロジェクトID
         issue_id (uuid.UUID): 課題ID
+        issue (IssueInfo | None): 課題情報（リレーション展開）
         creator_id (uuid.UUID): 作成者のユーザーID
+        creator (CreatorInfo | None): 作成者情報（リレーション展開）
+        input_file (InputFileInfo | None): 入力ファイル情報（リレーション展開）
         custom_system_prompt (str | None): カスタムシステムプロンプト
         initial_message (str | None): 初期メッセージ
         created_at (datetime): 作成日時
@@ -532,9 +587,13 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
     Example:
         >>> {
         ...     "id": "223e4567-e89b-12d3-a456-426614174111",
+        ...     "name": "売上分析セッション",
         ...     "project_id": "123e4567-e89b-12d3-a456-426614174000",
         ...     "issue_id": "323e4567-e89b-12d3-a456-426614174222",
+        ...     "issue": {"id": "323e4567-e89b-12d3-a456-426614174222", "name": "売上分析"},
         ...     "creator_id": "423e4567-e89b-12d3-a456-426614174333",
+        ...     "creator": {"id": "423e4567-e89b-12d3-a456-426614174333", "displayName": "山田太郎"},
+        ...     "inputFile": {"id": "...", "originalFilename": "sales_data.xlsx"},
         ...     "current_snapshot": 2,
         ...     "status": "active",
         ...     "customSystemPrompt": "追加の指示",
@@ -545,11 +604,15 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
     """
 
     id: uuid.UUID = Field(..., description="セッションID")
+    name: str = Field(default="", description="セッション名")
     current_snapshot: int = Field(..., description="現在のスナップショット番号")
     status: str = Field(default="draft", description="セッション状態（draft/active/completed/archived）")
     project_id: uuid.UUID = Field(..., description="プロジェクトID")
     issue_id: uuid.UUID = Field(..., description="課題ID")
+    issue: IssueInfo | None = Field(default=None, description="課題情報（リレーション展開）")
     creator_id: uuid.UUID = Field(..., description="作成者のユーザーID")
+    creator: CreatorInfo | None = Field(default=None, description="作成者情報（リレーション展開）")
+    input_file: InputFileInfo | None = Field(default=None, description="入力ファイル情報（リレーション展開）")
     custom_system_prompt: str | None = Field(default=None, description="カスタムシステムプロンプト")
     initial_message: str | None = Field(default=None, description="初期メッセージ")
     created_at: datetime = Field(..., description="作成日時")

@@ -27,6 +27,7 @@ class AnalysisSession(Base, TimestampMixin):
 
     Attributes:
         id: 主キー（UUID）
+        name: セッション名
         issue_id: 課題マスタID（外部キー）
         creator_id: 作成者ID（外部キー）
         project_id: プロジェクトID（外部キー）
@@ -43,6 +44,14 @@ class AnalysisSession(Base, TimestampMixin):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
+    )
+
+    name: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False,
+        default="",
+        server_default="",
+        comment="セッション名",
     )
 
     issue_id: Mapped[uuid.UUID] = mapped_column(

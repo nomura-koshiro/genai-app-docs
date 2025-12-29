@@ -25,6 +25,7 @@
 
 import uuid
 from datetime import date, datetime
+from decimal import Decimal
 
 from pydantic import Field
 
@@ -62,6 +63,7 @@ class ProjectCreate(ProjectBase):
         description (str | None): プロジェクト説明（ProjectBaseから継承）
         start_date (date | None): プロジェクト開始日（オプション）
         end_date (date | None): プロジェクト終了日（オプション）
+        budget (Decimal | None): プロジェクト予算（オプション）
 
     Example:
         >>> project = ProjectCreate(
@@ -69,12 +71,14 @@ class ProjectCreate(ProjectBase):
         ...     code="AI-001",
         ...     description="Project for AI model development",
         ...     start_date=date(2024, 1, 1),
-        ...     end_date=date(2024, 12, 31)
+        ...     end_date=date(2024, 12, 31),
+        ...     budget=Decimal("1000000.00")
         ... )
     """
 
     start_date: date | None = Field(default=None, description="プロジェクト開始日")
     end_date: date | None = Field(default=None, description="プロジェクト終了日")
+    budget: Decimal | None = Field(default=None, description="プロジェクト予算")
 
 
 class ProjectUpdate(BaseCamelCaseModel):
@@ -88,13 +92,15 @@ class ProjectUpdate(BaseCamelCaseModel):
         is_active (bool | None): アクティブフラグ（オプション）
         start_date (date | None): プロジェクト開始日（オプション）
         end_date (date | None): プロジェクト終了日（オプション）
+        budget (Decimal | None): プロジェクト予算（オプション）
 
     Example:
         >>> update = ProjectUpdate(
         ...     name="Updated Project Name",
         ...     description="Updated description",
         ...     start_date=date(2024, 2, 1),
-        ...     end_date=date(2025, 1, 31)
+        ...     end_date=date(2025, 1, 31),
+        ...     budget=Decimal("2000000.00")
         ... )
 
     Note:
@@ -107,6 +113,7 @@ class ProjectUpdate(BaseCamelCaseModel):
     is_active: bool | None = Field(default=None, description="アクティブフラグ")
     start_date: date | None = Field(default=None, description="プロジェクト開始日")
     end_date: date | None = Field(default=None, description="プロジェクト終了日")
+    budget: Decimal | None = Field(default=None, description="プロジェクト予算")
 
 
 class ProjectStatsResponse(BaseCamelCaseModel):
@@ -141,6 +148,7 @@ class ProjectResponse(BaseCamelCaseORMModel):
         created_by (uuid.UUID | None): 作成者のユーザーID
         start_date (date | None): プロジェクト開始日
         end_date (date | None): プロジェクト終了日
+        budget (Decimal | None): プロジェクト予算
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
 
@@ -155,6 +163,7 @@ class ProjectResponse(BaseCamelCaseORMModel):
         ...     created_by=uuid.uuid4(),
         ...     start_date=date(2024, 1, 1),
         ...     end_date=date(2024, 12, 31),
+        ...     budget=Decimal("1000000.00"),
         ...     created_at=datetime.now(UTC),
         ...     updated_at=datetime.now(UTC)
         ... )
@@ -171,6 +180,7 @@ class ProjectResponse(BaseCamelCaseORMModel):
     created_by: uuid.UUID | None = Field(default=None, description="作成者のユーザーID")
     start_date: date | None = Field(default=None, description="プロジェクト開始日")
     end_date: date | None = Field(default=None, description="プロジェクト終了日")
+    budget: Decimal | None = Field(default=None, description="プロジェクト予算")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 

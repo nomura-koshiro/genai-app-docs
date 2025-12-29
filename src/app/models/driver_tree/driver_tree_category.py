@@ -3,10 +3,17 @@
 このモジュールは、業界分類・業界名とドライバー型の対応関係を管理するモデルを定義します。
 """
 
-from sqlalchemy import Index, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+import uuid
+from typing import TYPE_CHECKING
+
+from sqlalchemy import ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.user_account.user_account import UserAccount
 
 
 class DriverTreeCategory(Base, TimestampMixin):
@@ -22,6 +29,8 @@ class DriverTreeCategory(Base, TimestampMixin):
         industry_name: 業界名
         driver_type_id: ドライバー型ID（1-24）
         driver_type: ドライバー型
+        description: カテゴリ説明
+        created_by: 作成者ID
 
     Indexes:
         ix_category_industry: 業界名による検索を最適化
@@ -75,6 +84,25 @@ class DriverTreeCategory(Base, TimestampMixin):
         String(255),
         nullable=False,
         comment="ドライバー型",
+    )
+
+    description: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="カテゴリ説明",
+    )
+
+    created_by: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="作成者ID",
+    )
+
+    # リレーションシップ
+    creator: Mapped["UserAccount | None"] = relationship(
+        "UserAccount",
+        foreign_keys=[created_by],
     )
 
     def __repr__(self) -> str:

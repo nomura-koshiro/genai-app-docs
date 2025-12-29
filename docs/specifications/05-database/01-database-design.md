@@ -198,6 +198,9 @@ class SystemUserRole(str, Enum):
 | description | Text | NULLABLE | 説明 |
 | is_active | Boolean | DEFAULT TRUE | アクティブフラグ |
 | created_by | UUID | NULLABLE | 作成者ID |
+| start_date | Date | NULLABLE | プロジェクト開始日 |
+| end_date | Date | NULLABLE | プロジェクト終了日 |
+| budget | Numeric(15,2) | NULLABLE | プロジェクト予算 |
 | created_at | DateTime | NOT NULL | 作成日時 |
 | updated_at | DateTime | NOT NULL | 更新日時 |
 
@@ -226,6 +229,7 @@ class SystemUserRole(str, Enum):
 | role | Enum(ProjectRole) | NOT NULL | プロジェクトロール |
 | joined_at | DateTime | NOT NULL | 参加日時 |
 | added_by | UUID | FK(user_account.id), NULLABLE | 追加者ID |
+| last_activity_at | DateTime | NULLABLE | プロジェクト内最終活動日時 |
 
 ##### インデックス
 
@@ -370,6 +374,7 @@ class ProjectRole(str, Enum):
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
 | id | UUID | PK | 主キー |
+| name | String(255) | NOT NULL, DEFAULT '' | セッション名 |
 | issue_id | UUID | FK, NOT NULL | 課題マスタID |
 | creator_id | UUID | FK, NOT NULL | 作成者ID |
 | project_id | UUID | FK, NOT NULL | プロジェクトID |
@@ -457,6 +462,8 @@ class ProjectRole(str, Enum):
 | industry_name | String(255) | NOT NULL | 業界名 |
 | driver_type_id | Integer | NOT NULL | ドライバー型ID（1-24） |
 | driver_type_name | String(255) | NOT NULL | ドライバー型 |
+| description | Text | NULLABLE | カテゴリ説明 |
+| created_by | UUID | FK(user_account.id), NULLABLE | 作成者ID |
 | created_at | DateTime | NOT NULL | 作成日時 |
 | updated_at | DateTime | NOT NULL | 更新日時 |
 
@@ -465,6 +472,7 @@ class ProjectRole(str, Enum):
 - PRIMARY KEY: `id`
 - INDEX: `industry_name` (ix_category_industry)
 - INDEX: `driver_type_id` (ix_category_driver)
+- FOREIGN KEY: `created_by` → `user_account(id)` ON DELETE SET NULL
 
 #### 3.5.2 driver_tree_formula（数式マスタ）
 
