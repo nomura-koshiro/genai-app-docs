@@ -7,7 +7,8 @@ import json
 import re
 import time
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -171,9 +172,7 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
 
         return False
 
-    async def _get_masked_request_body(
-        self, request: Request
-    ) -> dict[str, Any] | None:
+    async def _get_masked_request_body(self, request: Request) -> dict[str, Any] | None:
         """リクエストボディを取得し、機密情報をマスクします。
 
         注意: リクエストボディは一度しか読めないため、読み取り後はキャッシュします。
@@ -214,11 +213,7 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
 
         if isinstance(data, dict):
             return {
-                key: (
-                    "***MASKED***"
-                    if key.lower() in self.SENSITIVE_KEYS
-                    else self._mask_sensitive_data(value, depth + 1)
-                )
+                key: ("***MASKED***" if key.lower() in self.SENSITIVE_KEYS else self._mask_sensitive_data(value, depth + 1))
                 for key, value in data.items()
             }
         elif isinstance(data, list):
@@ -251,9 +246,7 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
 
         return None, None
 
-    def _extract_resource_info(
-        self, path: str
-    ) -> tuple[str | None, uuid.UUID | None]:
+    def _extract_resource_info(self, path: str) -> tuple[str | None, uuid.UUID | None]:
         """URLパスからリソース情報を抽出します。
 
         Args:

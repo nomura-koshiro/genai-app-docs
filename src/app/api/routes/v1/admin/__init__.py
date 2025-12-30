@@ -14,24 +14,23 @@
 """
 
 # 既存の管理機能ルーター
-from app.api.routes.v1.admin.category import admin_category_router
-from app.api.routes.v1.admin.dummy_chart import admin_dummy_chart_router
-from app.api.routes.v1.admin.dummy_formula import admin_dummy_formula_router
-from app.api.routes.v1.admin.graph_axis import admin_graph_axis_router
-from app.api.routes.v1.admin.issue import admin_issue_router
-from app.api.routes.v1.admin.role import admin_role_router
-from app.api.routes.v1.admin.validation import admin_validation_router
-
 # システム管理機能ルーター
 from app.api.routes.v1.admin.activity_logs import activity_logs_router
 from app.api.routes.v1.admin.audit_logs import audit_logs_router
 from app.api.routes.v1.admin.bulk_operations import bulk_operations_router
+from app.api.routes.v1.admin.category import admin_category_router
 from app.api.routes.v1.admin.data_management import data_management_router
+from app.api.routes.v1.admin.dummy_chart import admin_dummy_chart_router
+from app.api.routes.v1.admin.dummy_formula import admin_dummy_formula_router
+from app.api.routes.v1.admin.graph_axis import admin_graph_axis_router
+from app.api.routes.v1.admin.issue import admin_issue_router
 from app.api.routes.v1.admin.notifications import notifications_router
+from app.api.routes.v1.admin.role import admin_role_router
 from app.api.routes.v1.admin.security import security_router
 from app.api.routes.v1.admin.settings import settings_router
 from app.api.routes.v1.admin.statistics import statistics_router
 from app.api.routes.v1.admin.support_tools import support_tools_router
+from app.api.routes.v1.admin.validation import admin_validation_router
 
 __all__ = [
     # 既存の管理機能ルーター

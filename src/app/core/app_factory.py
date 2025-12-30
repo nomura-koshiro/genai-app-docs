@@ -31,6 +31,8 @@ from app.api.middlewares import (
 )
 from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
+    # システム管理機能ルーター
+    activity_logs_router,
     # 既存の管理機能ルーター
     admin_category_router,
     admin_dummy_chart_router,
@@ -39,29 +41,27 @@ from app.api.routes.v1 import (
     admin_issue_router,
     admin_role_router,
     admin_validation_router,
-    # システム管理機能ルーター
-    activity_logs_router,
-    audit_logs_router,
-    bulk_operations_router,
-    data_management_router,
-    notifications_router,
-    security_router,
-    settings_router,
-    statistics_router,
-    support_tools_router,
     # 分析API
     analysis_sessions_router,
     analysis_templates_router,
+    audit_logs_router,
+    bulk_operations_router,
     # ダッシュボード
     dashboard_router,
+    data_management_router,
     # ドライバーツリー
     driver_tree_files_router,
     driver_tree_nodes_router,
     driver_tree_trees_router,
+    notifications_router,
     # プロジェクト
     project_files_router,
     project_members_router,
     projects_router,
+    security_router,
+    settings_router,
+    statistics_router,
+    support_tools_router,
     # ユーザー管理
     user_accounts_router,
 )

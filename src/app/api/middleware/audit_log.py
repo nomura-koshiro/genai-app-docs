@@ -5,7 +5,8 @@
 
 import re
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -140,9 +141,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
 
         return response
 
-    def _get_audit_config(
-        self, path: str, method: str
-    ) -> dict[str, Any] | None:
+    def _get_audit_config(self, path: str, method: str) -> dict[str, Any] | None:
         """パスとメソッドから監査設定を取得します。
 
         Args:
@@ -157,9 +156,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
                 return config
         return None
 
-    def _extract_resource_id(
-        self, path: str, pattern: re.Pattern[str]
-    ) -> str | None:
+    def _extract_resource_id(self, path: str, pattern: re.Pattern[str]) -> str | None:
         """パスからリソースIDを抽出します。
 
         Args:

@@ -108,9 +108,7 @@ def get_activity_tracking_service(db: DatabaseDep) -> ActivityTrackingService:
     return ActivityTrackingService(db)
 
 
-ActivityTrackingServiceDep = Annotated[
-    ActivityTrackingService, Depends(get_activity_tracking_service)
-]
+ActivityTrackingServiceDep = Annotated[ActivityTrackingService, Depends(get_activity_tracking_service)]
 """操作履歴追跡サービスの依存性型。"""
 
 
@@ -190,9 +188,7 @@ def get_session_management_service(db: DatabaseDep) -> SessionManagementService:
     return SessionManagementService(db)
 
 
-SessionManagementServiceDep = Annotated[
-    SessionManagementService, Depends(get_session_management_service)
-]
+SessionManagementServiceDep = Annotated[SessionManagementService, Depends(get_session_management_service)]
 """セッション管理サービスの依存性型。"""
 
 

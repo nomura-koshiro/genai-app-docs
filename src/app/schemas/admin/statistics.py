@@ -71,7 +71,7 @@ class StatisticsOverviewResponse(BaseCamelCaseModel):
 class TimeSeriesDataPoint(BaseCamelCaseModel):
     """時系列データポイント。"""
 
-    date: date = Field(..., description="日付")
+    timestamp: date = Field(..., alias="date", description="日付")
     value: float = Field(..., description="値")
 
 

@@ -6,7 +6,7 @@
 import json
 import re
 import time
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -152,19 +152,9 @@ class MaintenanceModeMiddleware(BaseHTTPMiddleware):
                 )
 
                 settings: dict[str, bool | str] = {
-                    "enabled": (
-                        json.loads(maintenance_mode.value)
-                        if maintenance_mode
-                        else False
-                    ),
-                    "message": (
-                        json.loads(maintenance_message.value)
-                        if maintenance_message
-                        else ""
-                    ),
-                    "allow_admin_access": (
-                        json.loads(allow_admin.value) if allow_admin else True
-                    ),
+                    "enabled": (json.loads(maintenance_mode.value) if maintenance_mode else False),
+                    "message": (json.loads(maintenance_message.value) if maintenance_message else ""),
+                    "allow_admin_access": (json.loads(allow_admin.value) if allow_admin else True),
                 }
 
                 # キャッシュを更新

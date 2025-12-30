@@ -186,9 +186,7 @@ async def export_activity_logs(
     return StreamingResponse(
         iter([csv_content]),
         media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename=activity_logs_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv"
-        },
+        headers={"Content-Disposition": f"attachment; filename=activity_logs_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.csv"},
     )
 
 

@@ -50,6 +50,15 @@ class ImportErrorDetail(BaseCamelCaseModel):
     error: str = Field(..., description="エラー内容")
 
 
+class BulkImportResult(BaseCamelCaseModel):
+    """一括インポート結果（内部処理用）。"""
+
+    row: int = Field(..., description="行番号")
+    success: bool = Field(..., description="成功フラグ")
+    user_id: uuid.UUID | None = Field(default=None, description="作成されたユーザーID")
+    error: str | None = Field(default=None, description="エラーメッセージ")
+
+
 class BulkImportResponse(BaseCamelCaseModel):
     """一括インポートレスポンス。"""
 

@@ -180,3 +180,14 @@ class HealthCheckHistoryResponse(BaseCamelCaseModel):
     uptime_percent_24h: float = Field(..., description="24時間稼働率（%）")
     uptime_percent_7d: float = Field(..., description="7日間稼働率（%）")
     uptime_percent_30d: float = Field(..., description="30日間稼働率（%）")
+
+
+# ================================================================================
+# 互換性エイリアス
+# ================================================================================
+
+
+# サービス層で使用される名前のエイリアス
+ComponentHealth = HealthCheckItem
+HealthCheckResponse = HealthCheckSimpleResponse
+HealthCheckDetailResponse = HealthCheckDetailedResponse
