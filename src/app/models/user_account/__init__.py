@@ -19,5 +19,12 @@
 
 from app.models.user_account.role_history import RoleChangeActionEnum, RoleHistory
 from app.models.user_account.user_account import SystemUserRole, UserAccount
+from app.models.user_account.user_session import UserSession
 
-__all__ = ["RoleChangeActionEnum", "RoleHistory", "SystemUserRole", "UserAccount"]
+__all__ = [
+    "RoleChangeActionEnum",
+    "RoleHistory",
+    "SystemUserRole",
+    "UserAccount",
+    "UserSession",
+]
