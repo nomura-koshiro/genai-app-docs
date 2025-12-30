@@ -55,6 +55,30 @@ from app.api.core.dependencies.admin import (
     get_admin_validation_service,
 )
 
+# システム管理サービス依存性
+from app.api.core.dependencies.system_admin import (
+    ActivityTrackingServiceDep,
+    AuditLogServiceDep,
+    BulkOperationServiceDep,
+    DataManagementServiceDep,
+    NotificationServiceDep,
+    RequireSystemAdminDep,
+    SessionManagementServiceDep,
+    StatisticsServiceDep,
+    SupportToolsServiceDep,
+    SystemSettingServiceDep,
+    get_activity_tracking_service,
+    get_audit_log_service,
+    get_bulk_operation_service,
+    get_data_management_service,
+    get_notification_service,
+    get_session_management_service,
+    get_statistics_service,
+    get_support_tools_service,
+    get_system_setting_service,
+    require_system_admin,
+)
+
 # データベース依存性
 # 分析サービス依存性
 from app.api.core.dependencies.analysis import (
@@ -138,6 +162,27 @@ __all__ = [
     "get_admin_graph_axis_service",
     "get_admin_issue_service",
     "get_admin_validation_service",
+    # システム管理サービス依存性
+    "ActivityTrackingServiceDep",
+    "AuditLogServiceDep",
+    "BulkOperationServiceDep",
+    "DataManagementServiceDep",
+    "NotificationServiceDep",
+    "RequireSystemAdminDep",
+    "SessionManagementServiceDep",
+    "StatisticsServiceDep",
+    "SupportToolsServiceDep",
+    "SystemSettingServiceDep",
+    "get_activity_tracking_service",
+    "get_audit_log_service",
+    "get_bulk_operation_service",
+    "get_data_management_service",
+    "get_notification_service",
+    "get_session_management_service",
+    "get_statistics_service",
+    "get_support_tools_service",
+    "get_system_setting_service",
+    "require_system_admin",
     # UserAccountサービス依存性
     "UserServiceDep",
     "RoleHistoryServiceDep",

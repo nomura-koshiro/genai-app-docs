@@ -4,6 +4,7 @@
 """
 
 from app.api.routes.v1.admin import (
+    # 既存の管理機能ルーター
     admin_category_router,
     admin_dummy_chart_router,
     admin_dummy_formula_router,
@@ -11,6 +12,16 @@ from app.api.routes.v1.admin import (
     admin_issue_router,
     admin_role_router,
     admin_validation_router,
+    # システム管理機能ルーター
+    activity_logs_router,
+    audit_logs_router,
+    bulk_operations_router,
+    data_management_router,
+    notifications_router,
+    security_router,
+    settings_router,
+    statistics_router,
+    support_tools_router,
 )
 from app.api.routes.v1.analysis import (
     analysis_sessions_router,
@@ -30,7 +41,7 @@ from app.api.routes.v1.project import (
 from app.api.routes.v1.user_accounts import user_accounts_router
 
 __all__ = [
-    # Admin API
+    # Admin API（既存）
     "admin_category_router",
     "admin_dummy_chart_router",
     "admin_dummy_formula_router",
@@ -38,6 +49,16 @@ __all__ = [
     "admin_issue_router",
     "admin_role_router",
     "admin_validation_router",
+    # Admin API（システム管理）
+    "activity_logs_router",
+    "audit_logs_router",
+    "bulk_operations_router",
+    "data_management_router",
+    "notifications_router",
+    "security_router",
+    "settings_router",
+    "statistics_router",
+    "support_tools_router",
     # Analysis API
     "analysis_sessions_router",
     "analysis_templates_router",

@@ -18,6 +18,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.core import register_exception_handlers
+from app.api.middleware import (
+    ActivityTrackingMiddleware,
+    AuditLogMiddleware,
+    MaintenanceModeMiddleware,
+)
 from app.api.middlewares import (
     LoggingMiddleware,
     PrometheusMetricsMiddleware,
@@ -26,6 +31,7 @@ from app.api.middlewares import (
 )
 from app.api.routes.system import health_router, metrics_router, root_router
 from app.api.routes.v1 import (
+    # 既存の管理機能ルーター
     admin_category_router,
     admin_dummy_chart_router,
     admin_dummy_formula_router,
@@ -33,15 +39,30 @@ from app.api.routes.v1 import (
     admin_issue_router,
     admin_role_router,
     admin_validation_router,
+    # システム管理機能ルーター
+    activity_logs_router,
+    audit_logs_router,
+    bulk_operations_router,
+    data_management_router,
+    notifications_router,
+    security_router,
+    settings_router,
+    statistics_router,
+    support_tools_router,
+    # 分析API
     analysis_sessions_router,
     analysis_templates_router,
+    # ダッシュボード
     dashboard_router,
+    # ドライバーツリー
     driver_tree_files_router,
     driver_tree_nodes_router,
     driver_tree_trees_router,
+    # プロジェクト
     project_files_router,
     project_members_router,
     projects_router,
+    # ユーザー管理
     user_accounts_router,
 )
 from app.core.config import settings
@@ -156,8 +177,29 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     # カスタムミドルウェアを登録（実行順序は登録の逆順 - 後に追加されたものが先に実行される）
+    # ミドルウェア実行順序:
+    #   1. SecurityHeadersMiddleware（最外層）
+    #   2. CORS
+    #   3. RateLimitMiddleware
+    #   4. MaintenanceModeMiddleware（メンテナンスモードチェック）
+    #   5. LoggingMiddleware
+    #   6. AuditLogMiddleware（監査ログ記録）
+    #   7. ActivityTrackingMiddleware（操作履歴記録）
+    #   8. PrometheusMetricsMiddleware（最内層）
+
     app.add_middleware(PrometheusMetricsMiddleware)
+
+    # 操作履歴記録ミドルウェア（全リクエストを記録）
+    app.add_middleware(ActivityTrackingMiddleware)
+
+    # 監査ログミドルウェア（セキュリティイベント・データ変更を記録）
+    app.add_middleware(AuditLogMiddleware)
+
     app.add_middleware(LoggingMiddleware)
+
+    # メンテナンスモードミドルウェア（メンテナンス中のアクセス制御）
+    app.add_middleware(MaintenanceModeMiddleware)
+
     app.add_middleware(
         RateLimitMiddleware,
         calls=settings.RATE_LIMIT_CALLS,
@@ -181,7 +223,7 @@ def create_app() -> FastAPI:
     # Azure AD認証用ユーザー管理API
     app.include_router(user_accounts_router, prefix="/api/v1", tags=["user_account"])
 
-    # 管理機能API
+    # 管理機能API（既存）
     app.include_router(admin_category_router, prefix="/api/v1", tags=["admin-category"])
     app.include_router(admin_dummy_chart_router, prefix="/api/v1", tags=["admin-dummy-chart"])
     app.include_router(admin_dummy_formula_router, prefix="/api/v1", tags=["admin-dummy-formula"])
@@ -189,6 +231,35 @@ def create_app() -> FastAPI:
     app.include_router(admin_issue_router, prefix="/api/v1", tags=["admin-issue"])
     app.include_router(admin_role_router, prefix="/api/v1", tags=["admin-role"])
     app.include_router(admin_validation_router, prefix="/api/v1", tags=["admin-validation"])
+
+    # システム管理API（SA-001〜SA-043）
+    app.include_router(
+        activity_logs_router, prefix="/api/v1/admin", tags=["system-admin-activity"]
+    )
+    app.include_router(
+        audit_logs_router, prefix="/api/v1/admin", tags=["system-admin-audit"]
+    )
+    app.include_router(
+        settings_router, prefix="/api/v1/admin", tags=["system-admin-settings"]
+    )
+    app.include_router(
+        statistics_router, prefix="/api/v1/admin", tags=["system-admin-statistics"]
+    )
+    app.include_router(
+        notifications_router, prefix="/api/v1/admin", tags=["system-admin-notifications"]
+    )
+    app.include_router(
+        security_router, prefix="/api/v1/admin", tags=["system-admin-security"]
+    )
+    app.include_router(
+        bulk_operations_router, prefix="/api/v1/admin", tags=["system-admin-bulk"]
+    )
+    app.include_router(
+        data_management_router, prefix="/api/v1/admin", tags=["system-admin-data"]
+    )
+    app.include_router(
+        support_tools_router, prefix="/api/v1/admin", tags=["system-admin-support"]
+    )
 
     # ダッシュボードAPI
     app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["dashboard"])
