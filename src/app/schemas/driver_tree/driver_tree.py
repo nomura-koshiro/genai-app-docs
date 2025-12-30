@@ -231,3 +231,41 @@ class DriverTreeCalculationSummaryResponse(BaseCamelCaseModel):
     calculation_node_count: int = Field(default=0, description="計算ノード数")
     error_node_count: int = Field(default=0, description="エラーノード数")
     calculated_at: datetime = Field(..., description="計算日時")
+
+
+class TreePolicyItem(BaseCamelCaseModel):
+    """ツリー施策アイテム。
+
+    Attributes:
+        policy_id (uuid.UUID): 施策ID
+        node_id (uuid.UUID): ノードID
+        node_label (str): ノード名
+        label (str): 施策名
+        description (str | None): 説明
+        impact_type (str): 影響タイプ（加算/減算/乗算/除算）
+        impact_value (float): 影響値
+        status (str): 施策状態（active/inactive）
+    """
+
+    policy_id: uuid.UUID = Field(..., description="施策ID")
+    node_id: uuid.UUID = Field(..., description="ノードID")
+    node_label: str = Field(..., description="ノード名")
+    label: str = Field(..., description="施策名")
+    description: str | None = Field(default=None, description="説明")
+    impact_type: str = Field(..., description="影響タイプ")
+    impact_value: float = Field(..., description="影響値")
+    status: str = Field(default="active", description="施策状態")
+
+
+class TreePoliciesResponse(BaseCamelCaseModel):
+    """ツリー施策一覧レスポンス。
+
+    Response:
+        - tree_id (uuid.UUID): ツリーID
+        - policies (list[TreePolicyItem]): 施策一覧
+        - total_count (int): 施策総数
+    """
+
+    tree_id: uuid.UUID = Field(..., description="ツリーID")
+    policies: list[TreePolicyItem] = Field(default_factory=list, description="施策一覧")
+    total_count: int = Field(default=0, description="施策総数")

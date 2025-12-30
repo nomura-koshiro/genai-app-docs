@@ -525,3 +525,256 @@ class SheetOperationsMixin:
         }
         result.update(await self.list_selected_sheets(project_id, user_id))
         return result
+
+    @measure_performance
+    async def get_sheet_detail(
+        self,
+        project_id: uuid.UUID,
+        file_id: uuid.UUID,
+        sheet_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> dict[str, Any]:
+        """シート詳細を取得します。
+
+        Args:
+            project_id: プロジェクトID
+            file_id: ファイルID
+            sheet_id: シートID
+            user_id: ユーザーID
+
+        Returns:
+            dict[str, Any]: シート詳細情報
+                - sheet_id (uuid.UUID): シートID
+                - sheet_name (str): シート名
+                - columns (list[dict]): カラム情報リスト
+                - row_count (int): 行数
+                - sample_data (list[dict]): サンプルデータ（最初の10行）
+
+        Raises:
+            NotFoundError: ファイルまたはシートが見つからない場合
+        """
+        logger.info(
+            "シート詳細取得リクエスト",
+            user_id=str(user_id),
+            project_id=str(project_id),
+            file_id=str(file_id),
+            sheet_id=str(sheet_id),
+            action="get_sheet_detail",
+        )
+
+        # 1. ProjectFileを取得
+        project_file = await self.project_file_repository.get(file_id)
+        if not project_file:
+            raise NotFoundError(
+                "ファイルが見つかりません",
+                details={"file_id": str(file_id)},
+            )
+
+        # 2. プロジェクトIDの確認
+        if project_file.project_id != project_id:
+            raise NotFoundError(
+                "このプロジェクト内で該当ファイルが見つかりません",
+                details={"file_id": str(file_id), "project_id": str(project_id)},
+            )
+
+        # 3. DriverTreeFileを取得
+        driver_tree_file = await self.file_repository.get(sheet_id)
+        if not driver_tree_file:
+            raise NotFoundError(
+                "シートが見つかりません",
+                details={"sheet_id": str(sheet_id)},
+            )
+
+        # 4. DriverTreeFileがProjectFileに紐づいているか確認
+        if driver_tree_file.project_file_id != file_id:
+            raise NotFoundError(
+                "このファイル内で該当シートが見つかりません",
+                details={"sheet_id": str(sheet_id), "file_id": str(file_id)},
+            )
+
+        # 5. StorageServiceを使用してExcelファイルを読み込み
+        excel_bytes = await self.storage.download(self.container, project_file.file_path)
+        df_metadata, df_data = parse_driver_tree_excel(BytesIO(excel_bytes), driver_tree_file.sheet_name)
+
+        # 6. カラム情報を解析
+        columns = self._analyze_columns(df_metadata, df_data)
+
+        # 7. サンプルデータを構築（最初の10行）
+        sample_data = self._build_sample_data(df_metadata, df_data, limit=10)
+
+        # 8. 行数を計算
+        row_count = len(df_metadata)
+
+        logger.info(
+            "シート詳細を取得しました",
+            user_id=str(user_id),
+            project_id=str(project_id),
+            file_id=str(file_id),
+            sheet_id=str(sheet_id),
+            column_count=len(columns),
+            row_count=row_count,
+        )
+
+        return {
+            "sheet_id": sheet_id,
+            "sheet_name": driver_tree_file.sheet_name,
+            "columns": columns,
+            "row_count": row_count,
+            "sample_data": sample_data,
+        }
+
+    def _analyze_columns(self, df_metadata: pd.DataFrame, df_data: pd.DataFrame) -> list[dict[str, Any]]:
+        """DataFrameからカラム情報を解析します。
+
+        Args:
+            df_metadata: メタデータDataFrame
+            df_data: データDataFrame
+
+        Returns:
+            list[dict[str, Any]]: カラム情報リスト
+        """
+        columns = []
+
+        # メタデータの各列を処理
+        for column_name in df_metadata.columns:
+            if pd.isna(column_name):
+                continue
+
+            column_name_str = str(column_name)
+            column_series = df_metadata[column_name]
+
+            # データ型を推定
+            data_type = self._infer_data_type(column_series)
+
+            # 役割を推定
+            role = self._infer_role(column_name_str, data_type)
+
+            columns.append(
+                {
+                    "name": column_name_str,
+                    "display_name": column_name_str,
+                    "data_type": data_type,
+                    "role": role,
+                }
+            )
+
+        # データの「科目」列を追加
+        columns.append(
+            {
+                "name": "科目",
+                "display_name": "科目",
+                "data_type": "string",
+                "role": "カテゴリ",
+            }
+        )
+
+        return columns
+
+    def _infer_data_type(self, series: pd.Series) -> str:
+        """シリーズからデータ型を推定します。
+
+        Args:
+            series: Pandasシリーズ
+
+        Returns:
+            str: データ型（string/number/datetime/boolean）
+        """
+        # NaN以外の最初の値を取得
+        first_value = None
+        for value in series:
+            if not pd.isna(value):
+                first_value = value
+                break
+
+        if first_value is None:
+            return "string"
+
+        if isinstance(first_value, bool):
+            return "boolean"
+
+        if isinstance(first_value, (int, float)):
+            return "number"
+
+        if isinstance(first_value, pd.Timestamp):
+            return "datetime"
+
+        # 文字列の場合、日付として解析できるか試す
+        if isinstance(first_value, str):
+            try:
+                pd.to_datetime(first_value)
+                return "datetime"
+            except (ValueError, TypeError):
+                pass
+
+        return "string"
+
+    def _infer_role(self, column_name: str, data_type: str) -> str:
+        """カラム名とデータ型から役割を推定します。
+
+        Args:
+            column_name: カラム名
+            data_type: データ型
+
+        Returns:
+            str: 役割（推移/値/カテゴリ）
+        """
+        name_lower = column_name.lower()
+
+        # 日付関連の列名または日時型の場合は「推移」
+        if "date" in name_lower or "日付" in name_lower or "fy" in name_lower or data_type == "datetime":
+            return "推移"
+
+        # 数値型の場合は「値」
+        if data_type == "number":
+            return "値"
+
+        # その他は「カテゴリ」
+        return "カテゴリ"
+
+    def _build_sample_data(
+        self,
+        df_metadata: pd.DataFrame,
+        df_data: pd.DataFrame,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """サンプルデータを構築します。
+
+        Args:
+            df_metadata: メタデータDataFrame
+            df_data: データDataFrame
+            limit: 取得する行数
+
+        Returns:
+            list[dict[str, Any]]: サンプルデータ
+        """
+        sample_data = []
+
+        # メタデータとデータを結合してサンプルデータを作成
+        for idx in range(min(limit, len(df_metadata))):
+            row_data: dict[str, Any] = {}
+
+            # メタデータの値を追加
+            for column_name in df_metadata.columns:
+                if pd.isna(column_name):
+                    continue
+
+                column_name_str = str(column_name)
+                value = df_metadata.iloc[idx][column_name]
+
+                if pd.isna(value):
+                    row_data[column_name_str] = None
+                else:
+                    row_data[column_name_str] = str(value)
+
+            # データの最初の列の値を「科目」として追加（サンプル表示用）
+            if len(df_data.columns) > 0:
+                first_data_col = df_data.columns[0]
+                if idx < len(df_data):
+                    value = df_data.iloc[idx][first_data_col]
+                    if not pd.isna(value):
+                        row_data["科目"] = str(first_data_col)
+                        row_data["値"] = float(value) if isinstance(value, (int, float)) else str(value)
+
+            sample_data.append(row_data)
+
+        return sample_data

@@ -40,13 +40,17 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
         Returns:
             AnalysisSession | None: セッション（スナップショット、ファイル含む）
         """
+        from app.models.analysis.analysis_issue_master import AnalysisIssueMaster
+
         result = await self.db.execute(
             select(AnalysisSession)
             .where(AnalysisSession.id == session_id)
             .options(
                 selectinload(AnalysisSession.snapshots),
                 selectinload(AnalysisSession.files),
-                selectinload(AnalysisSession.issue),
+                selectinload(AnalysisSession.issue).selectinload(AnalysisIssueMaster.validation),
+                selectinload(AnalysisSession.creator),
+                selectinload(AnalysisSession.input_file),
             )
         )
         return result.scalar_one_or_none()
@@ -67,11 +71,13 @@ class AnalysisSessionRepository(BaseRepository[AnalysisSession, uuid.UUID]):
         Returns:
             list[AnalysisSession]: セッション一覧（作成日時降順）
         """
+        from app.models.analysis.analysis_issue_master import AnalysisIssueMaster
+
         result = await self.db.execute(
             select(AnalysisSession)
             .where(AnalysisSession.project_id == project_id)
             .options(
-                selectinload(AnalysisSession.issue),
+                selectinload(AnalysisSession.issue).selectinload(AnalysisIssueMaster.validation),
                 selectinload(AnalysisSession.creator),
                 selectinload(AnalysisSession.input_file).selectinload(AnalysisFile.project_file),
                 selectinload(AnalysisSession.current_snapshot),

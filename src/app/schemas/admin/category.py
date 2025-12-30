@@ -45,6 +45,7 @@ class DriverTreeCategoryResponse(BaseCamelCaseORMModel):
     industry_name: str = Field(..., description="業界名")
     driver_type_id: int = Field(..., description="ドライバー型ID")
     driver_type: str = Field(..., description="ドライバー型")
+    formula_count: int = Field(default=0, description="関連数式数")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
 

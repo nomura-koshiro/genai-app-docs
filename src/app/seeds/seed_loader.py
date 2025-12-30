@@ -28,6 +28,7 @@ from app.models import (
     AnalysisSnapshot,
     AnalysisStep,
     AnalysisValidationMaster,
+    AuditLog,
     DriverTree,
     DriverTreeCategory,
     DriverTreeDataFrame,
@@ -37,10 +38,16 @@ from app.models import (
     DriverTreePolicy,
     DriverTreeRelationship,
     DriverTreeRelationshipChild,
+    NotificationTemplate,
     Project,
     ProjectFile,
     ProjectMember,
+    SystemAlert,
+    SystemAnnouncement,
+    SystemSetting,
     UserAccount,
+    UserActivity,
+    UserSession,
 )
 from app.models.project.project_member import ProjectRole
 
@@ -744,6 +751,218 @@ async def load_analysis_steps(session: AsyncSession) -> int:
     return count
 
 
+async def load_system_settings(session: AsyncSession) -> int:
+    """システム設定を読み込みます。"""
+    rows = read_csv(MASTER_DIR / "system_setting.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(SystemSetting).where(SystemSetting.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = SystemSetting(
+            id=record_id,
+            category=row["category"],
+            key=row["key"],
+            value=parse_json(row["value"]),
+            value_type=row["value_type"],
+            description=row.get("description") or None,
+            is_secret=parse_bool(row["is_secret"]),
+            is_editable=parse_bool(row["is_editable"]),
+            updated_by=parse_uuid(row.get("updated_by", "")),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_notification_templates(session: AsyncSession) -> int:
+    """通知テンプレートを読み込みます。"""
+    rows = read_csv(MASTER_DIR / "notification_template.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(NotificationTemplate).where(NotificationTemplate.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = NotificationTemplate(
+            id=record_id,
+            name=row["name"],
+            event_type=row["event_type"],
+            subject=row["subject"],
+            body=row["body"],
+            variables=parse_json(row["variables"]),
+            is_active=parse_bool(row["is_active"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_user_activities(session: AsyncSession) -> int:
+    """ユーザー操作履歴を読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "user_activity.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(UserActivity).where(UserActivity.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = UserActivity(
+            id=record_id,
+            user_id=parse_uuid(row.get("user_id", "")),
+            action_type=row["action_type"],
+            resource_type=row.get("resource_type") or None,
+            resource_id=parse_uuid(row.get("resource_id", "")),
+            endpoint=row["endpoint"],
+            method=row["method"],
+            request_body=parse_json(row.get("request_body", "")),
+            response_status=int(row["response_status"]),
+            error_message=row.get("error_message") or None,
+            error_code=row.get("error_code") or None,
+            ip_address=row.get("ip_address") or None,
+            user_agent=row.get("user_agent") or None,
+            duration_ms=int(row["duration_ms"]),
+            created_at=parse_datetime(row["created_at"]),
+            updated_at=parse_datetime(row["updated_at"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_audit_logs(session: AsyncSession) -> int:
+    """監査ログを読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "audit_log.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(AuditLog).where(AuditLog.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = AuditLog(
+            id=record_id,
+            user_id=parse_uuid(row.get("user_id", "")),
+            event_type=row["event_type"],
+            action=row["action"],
+            resource_type=row["resource_type"],
+            resource_id=parse_uuid(row.get("resource_id", "")),
+            old_value=parse_json(row.get("old_value", "")),
+            new_value=parse_json(row.get("new_value", "")),
+            changed_fields=parse_json(row.get("changed_fields", "")),
+            ip_address=row.get("ip_address") or None,
+            user_agent=row.get("user_agent") or None,
+            severity=row["severity"],
+            extra_metadata=parse_json(row.get("extra_metadata", "")),
+            created_at=parse_datetime(row["created_at"]),
+            updated_at=parse_datetime(row["updated_at"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_system_alerts(session: AsyncSession) -> int:
+    """システムアラートを読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "system_alert.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(SystemAlert).where(SystemAlert.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = SystemAlert(
+            id=record_id,
+            name=row["name"],
+            condition_type=row["condition_type"],
+            threshold=parse_json(row["threshold"]),
+            comparison_operator=row["comparison_operator"],
+            notification_channels=parse_json(row["notification_channels"]),
+            is_enabled=parse_bool(row["is_enabled"]),
+            last_triggered_at=parse_datetime(row.get("last_triggered_at", "")),
+            trigger_count=int(row["trigger_count"]),
+            created_by=parse_uuid(row["created_by"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_system_announcements(session: AsyncSession) -> int:
+    """システムお知らせを読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "system_announcement.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(SystemAnnouncement).where(SystemAnnouncement.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = SystemAnnouncement(
+            id=record_id,
+            title=row["title"],
+            content=row["content"],
+            announcement_type=row["announcement_type"],
+            priority=int(row["priority"]),
+            start_at=parse_datetime(row["start_at"]),
+            end_at=parse_datetime(row.get("end_at", "")),
+            is_active=parse_bool(row["is_active"]),
+            target_roles=parse_json(row.get("target_roles", "")),
+            created_by=parse_uuid(row["created_by"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
+async def load_user_sessions(session: AsyncSession) -> int:
+    """ユーザーセッションを読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "user_session.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(UserSession).where(UserSession.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = UserSession(
+            id=record_id,
+            user_id=parse_uuid(row["user_id"]),
+            session_token_hash=row["session_token_hash"],
+            ip_address=row.get("ip_address") or None,
+            user_agent=row.get("user_agent") or None,
+            device_info=parse_json(row.get("device_info", "")),
+            login_at=parse_datetime(row["login_at"]),
+            last_activity_at=parse_datetime(row["last_activity_at"]),
+            expires_at=parse_datetime(row["expires_at"]),
+            is_active=parse_bool(row["is_active"]),
+            logout_at=parse_datetime(row.get("logout_at", "")),
+            logout_reason=row.get("logout_reason") or None,
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
 async def load_seed_data(session: AsyncSession) -> dict[str, int]:
     """すべてのシードデータを読み込みます。
 
@@ -763,6 +982,8 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("analysis_validation_master", load_analysis_validation_masters),
         ("driver_tree_category", load_driver_tree_categories),
         ("driver_tree_formula", load_driver_tree_formulas),
+        ("system_setting", load_system_settings),
+        ("notification_template", load_notification_templates),
         # マスタ系（依存あり）
         ("analysis_issue_master", load_analysis_issue_masters),
         ("analysis_graph_axis_master", load_analysis_graph_axis_masters),
@@ -788,6 +1009,12 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("driver_tree_relationship", load_driver_tree_relationships),
         ("driver_tree_relationship_child", load_driver_tree_relationship_children),
         ("driver_tree_policy", load_driver_tree_policies),
+        # トラン系（管理機能）
+        ("user_activity", load_user_activities),
+        ("audit_log", load_audit_logs),
+        ("system_alert", load_system_alerts),
+        ("system_announcement", load_system_announcements),
+        ("user_session", load_user_sessions),
     ]
 
     for table_name, loader in loaders:

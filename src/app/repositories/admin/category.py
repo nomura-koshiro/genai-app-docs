@@ -62,3 +62,59 @@ class DriverTreeCategoryRepository:
 
         result = await self.db.execute(select(func.count(DriverTree.id)).where(DriverTree.category_id == category_id))
         return result.scalar_one() > 0
+
+    async def get_with_formula_count(self, category_id: int) -> dict | None:
+        """関連数式数を含めてカテゴリを取得します。"""
+        from app.models.driver_tree.driver_tree_formula import DriverTreeFormula
+
+        stmt = (
+            select(
+                DriverTreeCategory,
+                func.count(DriverTreeFormula.id).label("formula_count"),
+            )
+            .outerjoin(DriverTreeFormula, DriverTreeFormula.category_id == DriverTreeCategory.id)
+            .where(DriverTreeCategory.id == category_id)
+            .group_by(DriverTreeCategory.id)
+        )
+
+        result = await self.db.execute(stmt)
+        row = result.first()
+
+        if not row:
+            return None
+
+        category, formula_count = row
+        return {
+            "category": category,
+            "formula_count": formula_count,
+        }
+
+    async def get_list_with_formula_counts(
+        self,
+        skip: int = 0,
+        limit: int = 100,
+    ) -> tuple[list[dict], int]:
+        """関連数式数を含めてカテゴリ一覧を取得します。"""
+        from app.models.driver_tree.driver_tree_formula import DriverTreeFormula
+
+        # カウント
+        count_stmt = select(func.count(DriverTreeCategory.id))
+        total = await self.db.scalar(count_stmt) or 0
+
+        # データ取得
+        stmt = (
+            select(
+                DriverTreeCategory,
+                func.count(DriverTreeFormula.id).label("formula_count"),
+            )
+            .outerjoin(DriverTreeFormula, DriverTreeFormula.category_id == DriverTreeCategory.id)
+            .group_by(DriverTreeCategory.id)
+            .order_by(DriverTreeCategory.category_id, DriverTreeCategory.industry_id)
+            .offset(skip)
+            .limit(limit)
+        )
+
+        result = await self.db.execute(stmt)
+        rows = result.all()
+
+        return [{"category": row[0], "formula_count": row[1]} for row in rows], total

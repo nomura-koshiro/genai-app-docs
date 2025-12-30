@@ -458,6 +458,20 @@ class InputFileInfo(BaseCamelCaseModel):
     original_filename: str = Field(..., description="元のファイル名")
 
 
+class ValidationInfo(BaseCamelCaseModel):
+    """検証カテゴリ情報（リレーション展開用）。
+
+    セッション詳細で検証カテゴリ名を表示するために使用します。
+
+    Attributes:
+        id (uuid.UUID): 検証カテゴリID
+        name (str): 検証カテゴリ名
+    """
+
+    id: uuid.UUID = Field(..., description="検証カテゴリID")
+    name: str = Field(..., description="検証カテゴリ名")
+
+
 # ================================================================================
 # 分析セッションスキーマ
 # ================================================================================
@@ -613,6 +627,7 @@ class AnalysisSessionResponse(BaseCamelCaseORMModel):
     creator_id: uuid.UUID = Field(..., description="作成者のユーザーID")
     creator: CreatorInfo | None = Field(default=None, description="作成者情報（リレーション展開）")
     input_file: InputFileInfo | None = Field(default=None, description="入力ファイル情報（リレーション展開）")
+    validation: ValidationInfo | None = Field(default=None, description="検証カテゴリ情報（リレーション展開）")
     custom_system_prompt: str | None = Field(default=None, description="カスタムシステムプロンプト")
     initial_message: str | None = Field(default=None, description="初期メッセージ")
     created_at: datetime = Field(..., description="作成日時")

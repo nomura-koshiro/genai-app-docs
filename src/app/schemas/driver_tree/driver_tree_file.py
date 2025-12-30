@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import Field
 
@@ -144,3 +145,37 @@ class DriverTreeSheetRefreshResponse(BaseCamelCaseModel):
     success: bool = Field(..., description="成功フラグ")
     updated_at: datetime = Field(..., description="更新日時")
     files: list[DriverTreeFileListItem] = Field(default_factory=list, description="ファイル一覧")
+
+
+class ColumnInfo(BaseCamelCaseModel):
+    """カラム情報。
+
+    Attributes:
+        name (str): カラム名（内部名）
+        display_name (str): 表示名
+        data_type (str): データ型（string/number/datetime/boolean）
+        role (str | None): 役割（推移/値/カテゴリ等）
+    """
+
+    name: str = Field(..., description="カラム名")
+    display_name: str = Field(..., description="表示名")
+    data_type: str = Field(..., description="データ型")
+    role: str | None = Field(default=None, description="役割")
+
+
+class SheetDetailResponse(BaseCamelCaseModel):
+    """シート詳細レスポンス。
+
+    Attributes:
+        sheet_id (uuid.UUID): シートID
+        sheet_name (str): シート名
+        columns (list[ColumnInfo]): カラム情報リスト
+        row_count (int): 行数
+        sample_data (list[dict]): サンプルデータ（最初の10行）
+    """
+
+    sheet_id: uuid.UUID = Field(..., description="シートID")
+    sheet_name: str = Field(..., description="シート名")
+    columns: list[ColumnInfo] = Field(default_factory=list, description="カラム情報リスト")
+    row_count: int = Field(..., description="行数")
+    sample_data: list[dict[str, Any]] = Field(default_factory=list, description="サンプルデータ")

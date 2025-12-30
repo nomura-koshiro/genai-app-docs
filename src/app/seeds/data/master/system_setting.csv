@@ -1,0 +1,6 @@
+id,category,key,value,value_type,description,is_secret,is_editable,updated_by,created_at,updated_at
+550e8400-e29b-41d4-a716-446655440301,GENERAL,app_name,"{""value"":""GenAI App""}",STRING,アプリケーション名,false,true,,2025-01-01T00:00:00Z,2025-01-01T00:00:00Z
+550e8400-e29b-41d4-a716-446655440302,GENERAL,max_upload_size,"{""value"":104857600}",NUMBER,最大ファイルアップロードサイズ（バイト）,false,true,00000000-0000-0000-0000-000000000001,2025-01-01T00:00:00Z,2025-01-10T10:00:00Z
+550e8400-e29b-41d4-a716-446655440303,MAINTENANCE,maintenance_mode,"{""value"":false}",BOOLEAN,メンテナンスモード有効フラグ,false,true,,2025-01-01T00:00:00Z,2025-01-01T00:00:00Z
+550e8400-e29b-41d4-a716-446655440304,SECURITY,session_timeout,"{""value"":3600}",NUMBER,セッションタイムアウト（秒）,false,true,00000000-0000-0000-0000-000000000001,2025-01-01T00:00:00Z,2025-01-05T14:30:00Z
+550e8400-e29b-41d4-a716-446655440305,SECURITY,api_key,"{""value"":""sk-***************************""}",STRING,外部APIキー,true,false,,2025-01-01T00:00:00Z,2025-01-01T00:00:00Z
