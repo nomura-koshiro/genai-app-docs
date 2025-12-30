@@ -1,0 +1,128 @@
+"""システム統計APIのテスト。
+
+このテストファイルは docs/specifications/08-testing/01-test-strategy.md に従い、
+Happy Pathとビジネスルールエラーのみをテストします。
+
+対応エンドポイント:
+    - GET /api/v1/admin/statistics/overview - 統計概要取得
+    - GET /api/v1/admin/statistics/users - ユーザー統計取得
+"""
+
+import pytest
+from httpx import AsyncClient
+
+
+# ================================================================================
+# GET /api/v1/admin/statistics/overview - 統計概要取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_statistics_overview_success(client: AsyncClient, override_auth, admin_user):
+    """[test_statistics-001] 統計概要取得の成功ケース。"""
+    # Arrange
+    override_auth(admin_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/overview")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "period" in data
+
+
+@pytest.mark.asyncio
+async def test_get_statistics_overview_with_period(client: AsyncClient, override_auth, admin_user):
+    """[test_statistics-002] 期間指定付き統計概要取得。"""
+    # Arrange
+    override_auth(admin_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/overview", params={"period": "week"})
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["period"] == "week"
+
+
+@pytest.mark.asyncio
+async def test_get_statistics_overview_unauthorized(client: AsyncClient):
+    """[test_statistics-003] 認証なしでの統計概要取得拒否。"""
+    # Act
+    response = await client.get("/api/v1/admin/statistics/overview")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_get_statistics_overview_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
+    """[test_statistics-004] 一般ユーザーでの統計概要取得拒否。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/overview")
+
+    # Assert
+    assert response.status_code == 403
+
+
+# ================================================================================
+# GET /api/v1/admin/statistics/users - ユーザー統計取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_user_statistics_success(client: AsyncClient, override_auth, admin_user):
+    """[test_statistics-005] ユーザー統計取得の成功ケース。"""
+    # Arrange
+    override_auth(admin_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/users")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "days" in data
+
+
+@pytest.mark.asyncio
+async def test_get_user_statistics_with_days(client: AsyncClient, override_auth, admin_user):
+    """[test_statistics-006] 日数指定付きユーザー統計取得。"""
+    # Arrange
+    override_auth(admin_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/users", params={"days": 7})
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["days"] == 7
+
+
+@pytest.mark.asyncio
+async def test_get_user_statistics_unauthorized(client: AsyncClient):
+    """[test_statistics-007] 認証なしでのユーザー統計取得拒否。"""
+    # Act
+    response = await client.get("/api/v1/admin/statistics/users")
+
+    # Assert
+    assert response.status_code in [401, 403]
+
+
+@pytest.mark.asyncio
+async def test_get_user_statistics_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
+    """[test_statistics-008] 一般ユーザーでのユーザー統計取得拒否。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/admin/statistics/users")
+
+    # Assert
+    assert response.status_code == 403

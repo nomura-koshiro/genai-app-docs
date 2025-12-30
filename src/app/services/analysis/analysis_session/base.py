@@ -27,6 +27,7 @@ from app.schemas.analysis import (
     AnalysisSessionDetailResponse,
     AnalysisSnapshotResponse,
     AnalysisStepResponse,
+    ValidationInfo,
 )
 from app.services import storage as storage_module
 from app.services.analysis.agent.agent import AnalysisAgent
@@ -157,6 +158,14 @@ class AnalysisSessionServiceBase:
             for f in files
         ]
 
+        # 検証カテゴリ情報を構築
+        validation_info = None
+        if hasattr(session, "issue") and session.issue and hasattr(session.issue, "validation") and session.issue.validation:
+            validation_info = ValidationInfo(
+                id=session.issue.validation.id,
+                name=session.issue.validation.name,
+            )
+
         current_snapshot_order = session.current_snapshot.snapshot_order if session.current_snapshot else 0
         return AnalysisSessionDetailResponse(
             id=session.id,
@@ -164,6 +173,7 @@ class AnalysisSessionServiceBase:
             issue_id=session.issue_id,
             creator_id=session.creator_id,
             status=session.status,
+            validation=validation_info,
             custom_system_prompt=session.custom_system_prompt,
             initial_message=session.initial_message,
             current_snapshot=current_snapshot_order,

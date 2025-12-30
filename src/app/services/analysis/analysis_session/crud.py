@@ -17,6 +17,7 @@ from app.schemas.analysis import (
     CreatorInfo,
     InputFileInfo,
     IssueInfo,
+    ValidationInfo,
 )
 from app.services.analysis.analysis_session.base import AnalysisSessionServiceBase
 
@@ -85,6 +86,14 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                     original_filename=s.input_file.project_file.original_filename,
                 )
 
+            # 検証カテゴリ情報を構築
+            validation_info = None
+            if s.issue and s.issue.validation:
+                validation_info = ValidationInfo(
+                    id=s.issue.validation.id,
+                    name=s.issue.validation.name,
+                )
+
             response.append(
                 AnalysisSessionResponse(
                     current_snapshot=current_snapshot_order,
@@ -96,6 +105,7 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
                     creator_id=s.creator_id,
                     creator=creator_info,
                     input_file=input_file_info,
+                    validation=validation_info,
                     status=s.status,
                     custom_system_prompt=s.custom_system_prompt,
                     initial_message=s.initial_message,

@@ -983,3 +983,70 @@ async def test_execute_chat_empty_message(client: AsyncClient, override_auth, te
 
     # Assert
     assert response.status_code in [400, 422]
+
+
+# ================================================================================
+# API拡張: ValidationInfo を含むセッションレスポンスのテスト
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_with_validation_info(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-038] ValidationInfo を含むセッション一覧取得。
+
+    07-api-extensions.md の実装により、セッションレスポンスに validation フィールドが追加されたことを確認。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    validation = data.get("validation")
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert "sessions" in result
+    assert len(result["sessions"]) > 0
+
+    # ValidationInfoフィールドの存在を確認
+    session_data = result["sessions"][0]
+    if validation:
+        assert "validation" in session_data
+        assert session_data["validation"] is not None
+        assert "id" in session_data["validation"]
+        assert "name" in session_data["validation"]
+        assert session_data["validation"]["id"] == str(validation.id)
+
+
+@pytest.mark.asyncio
+async def test_get_session_detail_with_validation_info(client: AsyncClient, override_auth, test_data_seeder):
+    """[test_analysis_sessions-039] ValidationInfo を含むセッション詳細取得。
+
+    セッション詳細レスポンスに validation フィールドが含まれることを確認。
+    """
+    # Arrange
+    data = await test_data_seeder.seed_analysis_session_dataset()
+    project = data["project"]
+    owner = data["owner"]
+    session = data["session"]
+    validation = data.get("validation")
+    override_auth(owner)
+
+    # Act
+    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}")
+
+    # Assert
+    assert response.status_code == 200
+    result = response.json()
+    assert result["id"] == str(session.id)
+
+    # ValidationInfoフィールドの存在を確認
+    if validation:
+        assert "validation" in result
+        assert result["validation"] is not None
+        assert result["validation"]["id"] == str(validation.id)
+        assert result["validation"]["name"] == validation.name

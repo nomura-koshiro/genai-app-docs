@@ -35,6 +35,7 @@ from app.schemas.driver_tree import (
     DriverTreeInfo,
     DriverTreeListResponse,
     DriverTreeResetResponse,
+    TreePoliciesResponse,
 )
 
 logger = get_logger(__name__)
@@ -219,6 +220,68 @@ async def get_tree(
     )
 
     return DriverTreeGetTreeResponse(tree=DriverTreeInfo.model_validate(tree))
+
+
+@driver_tree_trees_router.get(
+    "/project/{project_id}/driver-tree/tree/{tree_id}/policy",
+    response_model=TreePoliciesResponse,
+    status_code=status.HTTP_200_OK,
+    summary="ツリー施策一覧取得",
+    description="""
+    ツリーに紐づくすべてのノードの施策を一括で取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - tree_id: uuid - ツリーID（必須）
+
+    レスポンス:
+        - TreePoliciesResponse: ツリー施策一覧レスポンス
+            - tree_id (uuid): ツリーID
+            - policies (list[TreePolicyItem]): 施策一覧
+                - policy_id (uuid): 施策ID
+                - node_id (uuid): ノードID
+                - node_label (str): ノード名
+                - label (str): 施策名
+                - description (str | None): 説明
+                - impact_type (str): 影響タイプ（加算/減算/乗算/除算）
+                - impact_value (float): 影響値
+                - status (str): 施策状態（active/inactive）
+            - total_count (int): 施策総数
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ツリーが見つからない
+    """,
+)
+@handle_service_errors
+async def get_tree_policies(
+    project_id: uuid.UUID,
+    tree_id: uuid.UUID,
+    member: ProjectMemberDep,  # 権限チェック（プロジェクトメンバーであることを確認）
+    tree_service: DriverTreeServiceDep,
+) -> TreePoliciesResponse:
+    """ツリー施策一覧を取得します。"""
+    logger.info(
+        "ツリー施策一覧取得リクエスト",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        action="get_tree_policies",
+    )
+
+    result = await tree_service.get_tree_policies(project_id, tree_id, member.user_id)
+
+    logger.info(
+        "ツリー施策一覧を取得しました",
+        user_id=str(member.user_id),
+        tree_id=str(tree_id),
+        total_count=result.get("total_count", 0),
+    )
+
+    return TreePoliciesResponse(**result)
 
 
 @driver_tree_trees_router.post(

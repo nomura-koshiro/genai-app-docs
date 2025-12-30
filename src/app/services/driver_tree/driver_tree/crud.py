@@ -549,3 +549,74 @@ class DriverTreeCrudService(DriverTreeServiceBase):
         )
 
         return await self._build_tree_response(new_tree)
+
+    async def get_tree_policies(
+        self,
+        project_id: uuid.UUID,
+        tree_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> dict[str, Any]:
+        """ツリーに紐づくすべての施策を取得します。
+
+        Note:
+            権限チェックはルーター層の ProjectMemberDep で行われます。
+
+        Args:
+            project_id: プロジェクトID
+            tree_id: ツリーID
+            user_id: ユーザーID
+
+        Returns:
+            dict[str, Any]: ツリー施策一覧
+                - tree_id: uuid - ツリーID
+                - policies: list[dict] - 施策一覧
+                - total_count: int - 施策総数
+        """
+        logger.info(
+            "ツリー施策一覧取得中",
+            project_id=str(project_id),
+            tree_id=str(tree_id),
+            user_id=str(user_id),
+        )
+
+        # ツリーの存在確認
+        tree = await self.tree_repository.get(tree_id)
+        if not tree or tree.project_id != project_id:
+            from app.core.exceptions import NotFoundError
+
+            raise NotFoundError(
+                "ツリーが見つかりません",
+                details={"tree_id": str(tree_id)},
+            )
+
+        # ツリーに紐づくすべての施策を取得
+        policies = await self.policy_repository.list_by_tree(tree_id)
+
+        # レスポンスを構築
+        policy_items = []
+        for policy in policies:
+            policy_items.append(
+                {
+                    "policy_id": policy.id,
+                    "node_id": policy.node_id,
+                    "node_label": policy.node.label if policy.node else "",
+                    "label": policy.label,
+                    "description": policy.description,
+                    "impact_type": policy.impact_type,
+                    "impact_value": policy.impact_value,
+                    "status": policy.status,
+                }
+            )
+
+        logger.info(
+            "ツリー施策一覧を取得しました",
+            project_id=str(project_id),
+            tree_id=str(tree_id),
+            total_count=len(policy_items),
+        )
+
+        return {
+            "tree_id": tree_id,
+            "policies": policy_items,
+            "total_count": len(policy_items),
+        }

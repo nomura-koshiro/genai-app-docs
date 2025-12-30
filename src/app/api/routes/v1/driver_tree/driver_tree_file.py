@@ -20,6 +20,7 @@ from app.api.core import CurrentUserAccountDep, DriverTreeFileServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.driver_tree import (
+    ColumnInfo,
     DriverTreeColumnSetupRequest,
     DriverTreeColumnSetupResponse,
     DriverTreeFileDeleteResponse,
@@ -29,6 +30,7 @@ from app.schemas.driver_tree import (
     DriverTreeSheetRefreshResponse,
     DriverTreeSheetSelectResponse,
     DriverTreeUploadedFileListResponse,
+    SheetDetailResponse,
 )
 
 logger = get_logger(__name__)
@@ -158,6 +160,72 @@ async def list_selected_sheets(
     )
 
     return DriverTreeSelectedSheetListResponse(**result)
+
+
+@driver_tree_files_router.get(
+    "/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}",
+    response_model=SheetDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="シート詳細取得",
+    description="""
+    シートのカラム情報とサンプルデータを取得します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - file_id: uuid - ファイルID（必須）
+        - sheet_id: uuid - シートID（必須）
+
+    レスポンス:
+        - SheetDetailResponse: シート詳細レスポンス
+            - sheet_id (uuid): シートID
+            - sheet_name (str): シート名
+            - columns (list[ColumnInfo]): カラム情報リスト
+                - name (str): カラム名（内部名）
+                - display_name (str): 表示名
+                - data_type (str): データ型（string/number/datetime/boolean）
+                - role (str | None): 役割（推移/値/カテゴリ等）
+            - row_count (int): 行数
+            - sample_data (list[dict]): サンプルデータ（最初の10行）
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない）
+        - 404: ファイルまたはシートが見つからない
+    """,
+)
+@handle_service_errors
+async def get_sheet_detail(
+    project_id: uuid.UUID,
+    file_id: uuid.UUID,
+    sheet_id: uuid.UUID,
+    current_user: CurrentUserAccountDep,
+    file_service: DriverTreeFileServiceDep,
+) -> SheetDetailResponse:
+    """シート詳細を取得します。"""
+    logger.info(
+        "シート詳細取得リクエスト",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        file_id=str(file_id),
+        sheet_id=str(sheet_id),
+        action="get_sheet_detail",
+    )
+
+    result = await file_service.get_sheet_detail(project_id, file_id, sheet_id, current_user.id)
+
+    logger.info(
+        "シート詳細を取得しました",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        file_id=str(file_id),
+        sheet_id=str(sheet_id),
+        column_count=len(result.get("columns", [])),
+    )
+
+    return SheetDetailResponse(**result)
 
 
 # ================================================================================

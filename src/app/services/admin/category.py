@@ -27,24 +27,57 @@ class AdminCategoryService:
         skip: int = 0,
         limit: int = 100,
     ) -> DriverTreeCategoryListResponse:
-        """カテゴリマスタ一覧を取得。"""
-        categories = await self.repository.list(skip=skip, limit=limit)
-        total = await self.repository.count()
+        """カテゴリマスタ一覧を取得（関連数式数含む）。"""
+        categories_with_counts, total = await self.repository.get_list_with_formula_counts(skip=skip, limit=limit)
+
+        category_responses = []
+        for item in categories_with_counts:
+            category = item["category"]
+            formula_count = item["formula_count"]
+
+            category_responses.append(
+                DriverTreeCategoryResponse(
+                    id=category.id,
+                    category_id=category.category_id,
+                    category_name=category.category_name,
+                    industry_id=category.industry_id,
+                    industry_name=category.industry_name,
+                    driver_type_id=category.driver_type_id,
+                    driver_type=category.driver_type,
+                    formula_count=formula_count,
+                    created_at=category.created_at,
+                    updated_at=category.updated_at,
+                )
+            )
 
         return DriverTreeCategoryListResponse(
-            categories=[DriverTreeCategoryResponse.model_validate(category) for category in categories],
+            categories=category_responses,
             total=total,
             skip=skip,
             limit=limit,
         )
 
     async def get_category(self, category_id: int) -> DriverTreeCategoryResponse:
-        """カテゴリマスタ詳細を取得。"""
-        category = await self.repository.get_by_id(category_id)
-        if not category:
+        """カテゴリマスタ詳細を取得（関連数式数含む）。"""
+        result = await self.repository.get_with_formula_count(category_id)
+        if not result:
             raise NotFoundError(f"カテゴリマスタが見つかりません: {category_id}")
 
-        return DriverTreeCategoryResponse.model_validate(category)
+        category = result["category"]
+        formula_count = result["formula_count"]
+
+        return DriverTreeCategoryResponse(
+            id=category.id,
+            category_id=category.category_id,
+            category_name=category.category_name,
+            industry_id=category.industry_id,
+            industry_name=category.industry_name,
+            driver_type_id=category.driver_type_id,
+            driver_type=category.driver_type,
+            formula_count=formula_count,
+            created_at=category.created_at,
+            updated_at=category.updated_at,
+        )
 
     async def create_category(self, category_create: DriverTreeCategoryCreate) -> DriverTreeCategoryResponse:
         """カテゴリマスタを作成。"""

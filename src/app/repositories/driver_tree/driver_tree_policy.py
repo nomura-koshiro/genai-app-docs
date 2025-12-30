@@ -76,3 +76,25 @@ class DriverTreePolicyRepository(BaseRepository[DriverTreePolicy, uuid.UUID]):
 
         result = await self.db.execute(select(func.count()).select_from(DriverTreePolicy).where(DriverTreePolicy.node_id == node_id))
         return result.scalar_one()
+
+    async def list_by_tree(self, tree_id: uuid.UUID) -> list[DriverTreePolicy]:
+        """ツリーに紐づくすべての施策を取得します。
+
+        Args:
+            tree_id: ツリーID
+
+        Returns:
+            list[DriverTreePolicy]: 施策一覧（ノードとの関連を含む）
+        """
+        from sqlalchemy.orm import selectinload
+
+        from app.models.driver_tree import DriverTreeNode
+
+        result = await self.db.execute(
+            select(DriverTreePolicy)
+            .join(DriverTreeNode, DriverTreePolicy.node_id == DriverTreeNode.id)
+            .where(DriverTreeNode.tree_id == tree_id)
+            .options(selectinload(DriverTreePolicy.node))
+            .order_by(DriverTreeNode.label, DriverTreePolicy.created_at.asc())
+        )
+        return list(result.scalars().all())
