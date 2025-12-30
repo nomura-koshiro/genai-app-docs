@@ -1231,9 +1231,202 @@ sequenceDiagram
 
 ---
 
-## 10. DB設計課題まとめ（シーケンス図から抽出）
+## 10. システム管理
 
-### 10.1 課題一覧
+> **注記**: 以下のシーケンスはシステム管理者（SystemAdmin）ロールを持つユーザーのみが実行可能です。すべて将来実装予定の機能です。
+
+### 10.1 ユーザー操作履歴追跡
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as システム管理者
+    participant API as CAMPシステム
+    participant DB as Database
+
+    Admin->>API: 操作履歴検索要求（user_id, date_range, action_type）
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT roles FROM user_account WHERE id = {admin_id}
+        DB-->>API: ["SystemAdmin"]
+        API->>API: SystemAdmin権限確認OK
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: SA-001: 操作履歴検索
+        API->>DB: SELECT * FROM user_activity<br/>WHERE user_id = ? AND created_at BETWEEN ? AND ?<br/>ORDER BY created_at DESC
+        DB-->>API: 操作履歴一覧
+    end
+
+    API-->>Admin: 操作履歴一覧
+
+    Admin->>API: 詳細確認要求（activity_id）
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: SA-004: 詳細確認
+        API->>DB: SELECT * FROM user_activity WHERE id = ?
+        DB-->>API: 操作詳細（リクエスト内容、レスポンス、エラー情報）
+    end
+
+    API-->>Admin: 操作詳細
+:::
+
+### 10.2 通知・アラート管理
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as システム管理者
+    participant API as CAMPシステム
+    participant DB as Database
+    participant Notify as 通知サービス
+
+    Admin->>API: システムお知らせ作成（title, content, target_users, scheduled_at）
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT roles FROM user_account WHERE id = {admin_id}
+        DB-->>API: ["SystemAdmin"]
+    end
+
+    rect rgb(200, 230, 200)
+        Note over API,DB: SA-033: システムお知らせ配信
+        API->>DB: INSERT INTO system_announcement<br/>(title, content, target_users, scheduled_at, created_by)
+        DB-->>API: announcement_id
+    end
+
+    alt 即時配信
+        API->>Notify: 通知送信要求
+        Notify-->>API: 送信完了
+        API->>DB: UPDATE system_announcement SET status = 'sent'
+    else 予約配信
+        Note over API: スケジューラに登録
+    end
+
+    API-->>Admin: お知らせ登録完了
+
+    Note over Admin,DB: メンテナンス予告も同様のフローで登録（SA-034）
+:::
+
+### 10.3 セキュリティ管理（セッション管理）
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as システム管理者
+    participant API as CAMPシステム
+    participant DB as Database
+    participant Auth as 認証サービス
+
+    Admin->>API: アクティブセッション一覧要求
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT roles FROM user_account WHERE id = {admin_id}
+        DB-->>API: ["SystemAdmin"]
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: SA-035: アクティブセッション一覧
+        API->>DB: SELECT us.*, ua.email, ua.display_name<br/>FROM user_session us<br/>JOIN user_account ua ON us.user_id = ua.id<br/>WHERE us.expires_at > NOW()
+        DB-->>API: アクティブセッション一覧
+    end
+
+    API-->>Admin: セッション一覧（user_id, login_time, ip_address, user_agent）
+
+    Admin->>API: 強制ログアウト要求（user_id）
+
+    rect rgb(255, 200, 200)
+        Note over API,DB: SA-036: 強制ログアウト
+        API->>DB: DELETE FROM user_session WHERE user_id = ?
+        DB-->>API: 削除完了
+        API->>Auth: トークン無効化要求
+        Auth-->>API: 無効化完了
+    end
+
+    API-->>Admin: 強制ログアウト完了
+
+    Note over Admin,DB: 【補足】IP制限・認証ポリシーはAzure ADで管理
+:::
+
+### 10.4 データ管理・クリーンアップ
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as システム管理者
+    participant API as CAMPシステム
+    participant DB as Database
+    participant Storage as ファイルストレージ
+
+    Admin->>API: 孤立ファイルクリーンアップ要求
+
+    rect rgb(255, 230, 200)
+        Note over API,DB: 権限確認
+        API->>DB: SELECT roles FROM user_account WHERE id = {admin_id}
+        DB-->>API: ["SystemAdmin"]
+    end
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: SA-038: 孤立ファイル検出
+        API->>DB: SELECT pf.* FROM project_file pf<br/>LEFT JOIN analysis_file af ON pf.id = af.project_file_id<br/>LEFT JOIN driver_tree_file dtf ON pf.id = dtf.project_file_id<br/>WHERE af.id IS NULL AND dtf.id IS NULL<br/>AND pf.created_at < NOW() - INTERVAL '90 days'
+        DB-->>API: 孤立ファイル一覧
+    end
+
+    API-->>Admin: 孤立ファイル一覧（確認用）
+
+    Admin->>API: クリーンアップ実行（file_ids[]）
+
+    rect rgb(255, 200, 200)
+        Note over API,DB: 削除実行
+        loop 各ファイル
+            API->>Storage: ファイル削除（file_path）
+            Storage-->>API: 削除完了
+            API->>DB: DELETE FROM project_file WHERE id = ?
+            DB-->>API: 削除完了
+        end
+    end
+
+    API-->>Admin: クリーンアップ完了（削除件数）
+:::
+
+### 10.5 サポートツール
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as システム管理者
+    participant API as CAMPシステム
+    participant DB as Database
+
+    Admin->>API: システムヘルスチェック要求
+
+    rect rgb(200, 220, 240)
+        Note over API,DB: SA-043: ヘルスチェック実行
+        par 並列チェック
+            API->>DB: SELECT 1（DB接続確認）
+            API->>API: メモリ使用率確認
+            API->>API: ディスク使用率確認
+            API->>API: 外部サービス接続確認
+        end
+        DB-->>API: OK
+    end
+
+    API-->>Admin: ヘルスチェック結果
+
+    Note over Admin,DB: 結果には以下を含む:
+    Note over Admin,DB: - DB接続状態
+    Note over Admin,DB: - メモリ/ディスク使用率
+    Note over Admin,DB: - Azure AD接続状態
+    Note over Admin,DB: - ストレージ接続状態
+:::
+
+---
+
+## 11. DB設計課題まとめ（シーケンス図から抽出）
+
+### 11.1 課題一覧
 
 ::: mermaid
 sequenceDiagram
@@ -1292,9 +1485,9 @@ sequenceDiagram
 
 ---
 
-## 11. 改善後の理想的なシーケンス
+## 12. 改善後の理想的なシーケンス
 
-### 11.1 スナップショット分岐（改善後）
+### 12.1 スナップショット分岐（改善後）
 
 ::: mermaid
 sequenceDiagram
@@ -1334,7 +1527,7 @@ sequenceDiagram
     Note over User,DB: - ツリー構造の履歴を完全に再現可能
 :::
 
-### 11.2 ノード作成（改善後）
+### 12.2 ノード作成（改善後）
 
 ::: mermaid
 sequenceDiagram
@@ -1362,7 +1555,7 @@ sequenceDiagram
 #### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
-- **更新日**: 2025年12月28日
+- **更新日**: 2025年12月29日
 - **目的**: ユースケースフローの可視化とDB設計課題の抽出
 - **関連**: 02-usecase-flow-analysis.md, ../03-database/02-er-diagram.md
-- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理のシーケンス図を追加
+- **更新内容**: システム管理のシーケンス図（操作履歴追跡、通知・アラート、セキュリティ、データ管理、サポートツール）を追加

@@ -734,7 +734,144 @@ graph TD
 
 ---
 
-## 11. 今後の対応（オプション）
+## 11. システム管理フロー
+
+### 11.1 システム管理全体フロー
+
+::: mermaid
+graph TD
+    subgraph システム管理機能
+        SA_USER[ユーザー操作履歴追跡]
+        SA_PROJECT[全プロジェクト閲覧]
+        SA_AUDIT[詳細監査ログ]
+        SA_SETTING[システム設定]
+        SA_STATS[システム統計ダッシュボード]
+        SA_BATCH[一括操作]
+        SA_NOTIFY[通知・アラート管理]
+        SA_SECURITY[セキュリティ管理]
+        SA_DATA[データ管理・クリーンアップ]
+        SA_SUPPORT[サポートツール]
+    end
+
+    subgraph データソース
+        UA[UserAccount]
+        P[Project]
+        UActivity[UserActivity]
+        AuditLog[AuditLog]
+        SS[SystemSetting]
+        Session[UserSession]
+    end
+
+    UA --> SA_USER
+    UA --> SA_BATCH
+    P --> SA_PROJECT
+    P --> SA_BATCH
+    UActivity --> SA_USER
+    UActivity --> SA_STATS
+    AuditLog --> SA_AUDIT
+    SS --> SA_SETTING
+    SS --> SA_NOTIFY
+    Session --> SA_SECURITY
+:::
+
+### 11.2 ユーザー操作履歴追跡フロー
+
+::: mermaid
+graph TD
+    subgraph 操作履歴追跡
+        SA001[SA-001: 操作履歴を検索]
+        SA002[SA-002: 日時・ユーザーで絞込]
+        SA003[SA-003: エラー履歴を取得]
+        SA004[SA-004: 詳細を確認]
+        SA005[SA-005: UI操作イベント記録]
+        SA006[SA-006: API呼び出し自動記録]
+
+        SA001 --> SA002
+        SA001 --> SA003
+        SA002 --> SA004
+        SA003 --> SA004
+        SA005 --> SA001
+        SA006 --> SA001
+    end
+:::
+
+### 11.3 通知・アラート管理フロー
+
+::: mermaid
+graph TD
+    subgraph 通知管理
+        SA031[SA-031: システムアラート設定]
+        SA032[SA-032: 通知テンプレート管理]
+        SA033[SA-033: システムお知らせ配信]
+        SA034[SA-034: メンテナンス予告登録]
+
+        SA031 --> SA032
+        SA032 --> SA033
+        SA032 --> SA034
+    end
+:::
+
+### 11.4 セキュリティ管理フロー
+
+::: mermaid
+graph TD
+    subgraph セキュリティ管理
+        SA035[SA-035: アクティブセッション一覧取得]
+        SA036[SA-036: ユーザー強制ログアウト]
+
+        SA035 --> SA036
+    end
+
+    Note[Azure ADでIP制限・認証ポリシーを管理]
+:::
+
+### 11.5 データ管理・クリーンアップフロー
+
+::: mermaid
+graph TD
+    subgraph データ管理
+        SA037[SA-037: 古いデータ一括削除]
+        SA038[SA-038: 孤立ファイルクリーンアップ]
+        SA039[SA-039: データ保持ポリシー設定]
+        SA040[SA-040: マスタデータ一括インポート]
+
+        SA039 --> SA037
+        SA039 --> SA038
+    end
+:::
+
+### 11.6 サポートツールフロー
+
+::: mermaid
+graph TD
+    subgraph サポートツール
+        SA041[SA-041: ユーザー操作代行]
+        SA042[SA-042: デバッグモード有効化]
+        SA043[SA-043: システムヘルスチェック]
+
+        SA041 --> SA042
+        SA043 --> SA042
+    end
+:::
+
+### 11.7 前提条件分析
+
+| ユースケース | 前提条件（先行UC） | 後続可能UC | 必要権限 |
+|-------------|-------------------|-----------|---------|
+| SA-001〜SA-006: 操作履歴追跡 | U-001（ログイン） | - | SystemAdmin |
+| SA-007〜SA-011: 全プロジェクト閲覧 | U-001（ログイン） | - | SystemAdmin |
+| SA-012〜SA-016: 詳細監査ログ | U-001（ログイン） | - | SystemAdmin |
+| SA-017〜SA-021: システム設定 | U-001（ログイン） | - | SystemAdmin |
+| SA-022〜SA-026: システム統計 | U-001（ログイン） | - | SystemAdmin |
+| SA-027〜SA-030: 一括操作 | U-001（ログイン）、対象データ存在 | - | SystemAdmin |
+| SA-031〜SA-034: 通知・アラート管理 | U-001（ログイン） | - | SystemAdmin |
+| SA-035〜SA-036: セキュリティ管理 | U-001（ログイン） | - | SystemAdmin |
+| SA-037〜SA-040: データ管理 | U-001（ログイン）、SA-039（ポリシー設定） | - | SystemAdmin |
+| SA-041〜SA-043: サポートツール | U-001（ログイン） | - | SystemAdmin |
+
+---
+
+## 12. 今後の対応（オプション）
 
 1. **パフォーマンス最適化**: インデックス追加やクエリ最適化
 2. **監査ログ拡張**: アカウント状態変更の履歴追跡（必要に応じて）
@@ -745,7 +882,7 @@ graph TD
 ### ドキュメント管理情報
 
 - **作成日**: 2025年12月24日
-- **更新日**: 2025年12月28日
+- **更新日**: 2025年12月29日
 - **分析元**: 01-usecases.md, ../03-database/02-er-diagram.md
 - **目的**: ユースケースフロー分析によるDB設計検証
-- **更新内容**: ダッシュボード・統計、複製・エクスポート、テンプレート、ファイルバージョン管理フローを追加
+- **更新内容**: システム管理フロー（通知・アラート、セキュリティ、データ管理、サポートツール）を追加
