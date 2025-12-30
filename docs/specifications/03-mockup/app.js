@@ -84,7 +84,15 @@ function initTabs() {
                 this.classList.add('active');
 
                 // タブコンテンツの表示を更新（もしあれば）
-                const tabContents = tabsContainer.parentElement.querySelectorAll('.tab-content');
+                // まず親要素から探し、見つからなければページ全体から探す
+                let tabContents = tabsContainer.parentElement.querySelectorAll(':scope > .tab-content');
+                if (tabContents.length === 0) {
+                    // 親要素の直下になければ、より広い範囲で検索
+                    const pageContent = document.getElementById('page-content');
+                    if (pageContent) {
+                        tabContents = pageContent.querySelectorAll('.tab-content');
+                    }
+                }
                 if (tabContents.length > 0) {
                     tabContents.forEach(content => content.classList.remove('active'));
                     if (tabContents[index]) {

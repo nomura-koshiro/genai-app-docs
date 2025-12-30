@@ -55,7 +55,9 @@
       "Bash(powershell:*)",
       "mcp__serena__*",
       "WebSearch",
-      "WebFetch(domain:*)"
+      "WebFetch(domain:*)",
+      "Bash(.venvScriptspython -m mypy srcappservicesadminbulk_operations.py --ignore-missing-imports)",
+      "Bash(.venv/Scripts/python.exe:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
