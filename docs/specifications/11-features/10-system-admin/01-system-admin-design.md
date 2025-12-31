@@ -1473,7 +1473,7 @@ EXCLUDE_PATTERNS = [
 
 ### 5.2 サイドバー構成
 
-```
+```text
 システム管理
 ├─ ユーザー管理 (users) [既存]
 ├─ ロール管理 (roles) [既存]
@@ -1978,7 +1978,7 @@ EXCLUDE_PATTERNS = [
 
 ### 6.1 モデル（8ファイル追加）
 
-```
+```text
 src/app/models/
 ├── audit/
 │   ├── __init__.py
@@ -1996,7 +1996,7 @@ src/app/models/
 
 ### 6.2 スキーマ（16ファイル追加）
 
-```
+```text
 src/app/schemas/admin/
 ├── activity_log.py           # 操作履歴スキーマ
 ├── audit_log.py              # 監査ログスキーマ
@@ -2017,7 +2017,7 @@ src/app/schemas/admin/
 
 ### 6.3 サービス（8ファイル追加）
 
-```
+```text
 src/app/services/admin/
 ├── __init__.py
 ├── activity_tracking_service.py   # 操作履歴記録・検索
@@ -2032,7 +2032,7 @@ src/app/services/admin/
 
 ### 6.4 リポジトリ（8ファイル追加）
 
-```
+```text
 src/app/repositories/admin/
 ├── __init__.py
 ├── user_activity_repository.py
@@ -2046,7 +2046,7 @@ src/app/repositories/admin/
 
 ### 6.5 ルーター（10ファイル追加）
 
-```
+```text
 src/app/api/routes/v1/admin/
 ├── activity_logs.py      # 操作履歴API
 ├── audit_logs.py         # 監査ログAPI
@@ -2062,14 +2062,14 @@ src/app/api/routes/v1/admin/
 
 ### 6.6 ミドルウェア（1ファイル追加）
 
-```
+```text
 src/app/api/middlewares/
 └── activity_tracking.py   # 操作履歴記録ミドルウェア
 ```
 
 ### 6.7 マイグレーション（1ファイル追加）
 
-```
+```text
 alembic/versions/
 └── xxxx_add_system_admin_tables.py  # 8テーブル追加
 ```

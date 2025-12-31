@@ -15,11 +15,15 @@
 ### 1.2 ファイル構成
 
 ```
-src/app/api/middleware/
+src/app/api/middlewares/
 ├── __init__.py
 ├── activity_tracking.py    # 操作履歴記録ミドルウェア
+├── audit_log.py           # 監査ログミドルウェア
+├── logging.py             # ロギングミドルウェア
 ├── maintenance_mode.py     # メンテナンスモードミドルウェア
-└── audit_log.py           # 監査ログミドルウェア
+├── metrics.py             # メトリクスミドルウェア
+├── rate_limit.py          # レート制限ミドルウェア
+└── security_headers.py    # セキュリティヘッダーミドルウェア
 ```
 
 ---
@@ -941,7 +945,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from app.api.middleware import (
+from app.api.middlewares import (
     ActivityTrackingMiddleware,
     AuditLogMiddleware,
     MaintenanceModeMiddleware,
@@ -988,16 +992,24 @@ def create_app() -> FastAPI:
 ### 5.2 ミドルウェアパッケージ初期化
 
 ```python
-# src/app/api/middleware/__init__.py
+# src/app/api/middlewares/__init__.py
 
 from .activity_tracking import ActivityTrackingMiddleware
 from .audit_log import AuditLogMiddleware
+from .logging import LoggingMiddleware
 from .maintenance_mode import MaintenanceModeMiddleware
+from .metrics import PrometheusMetricsMiddleware
+from .rate_limit import RateLimitMiddleware
+from .security_headers import SecurityHeadersMiddleware
 
 __all__ = [
     "ActivityTrackingMiddleware",
     "AuditLogMiddleware",
+    "LoggingMiddleware",
     "MaintenanceModeMiddleware",
+    "PrometheusMetricsMiddleware",
+    "RateLimitMiddleware",
+    "SecurityHeadersMiddleware",
 ]
 ```
 
@@ -1058,7 +1070,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api.middleware import (
+from app.api.middlewares import (
     ActivityTrackingMiddleware,
     MaintenanceModeMiddleware,
 )

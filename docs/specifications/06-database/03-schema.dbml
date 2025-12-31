@@ -356,6 +356,141 @@ Table driver_tree_policy {
   updated_at timestamptz [default: `now()`]
 }
 
+// 監査・操作履歴部分 --------------------------
+Table audit_log {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [note: '操作ユーザーID（NULL可）']
+  event_type varchar(50) [not null, note: 'イベント種別（DATA_CHANGE/ACCESS/SECURITY）']
+  action varchar(50) [not null, note: 'アクション（CREATE/UPDATE/DELETE等）']
+  resource_type varchar(50) [not null, note: 'リソース種別']
+  resource_id uuid [note: 'リソースID']
+  old_value jsonb [note: '変更前の値']
+  new_value jsonb [note: '変更後の値']
+  changed_fields jsonb [note: '変更されたフィールド一覧']
+  ip_address varchar(45) [note: 'IPアドレス']
+  user_agent varchar(500) [note: 'ユーザーエージェント']
+  severity varchar(20) [not null, default: 'INFO', note: '重要度（INFO/WARNING/CRITICAL）']
+  extra_metadata jsonb [note: '追加メタデータ']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    user_id [name: 'idx_audit_log_user_id']
+    event_type [name: 'idx_audit_log_event_type']
+    (resource_type, resource_id) [name: 'idx_audit_log_resource']
+    severity [name: 'idx_audit_log_severity']
+    created_at [name: 'idx_audit_log_created_at']
+  }
+}
+
+Table user_activity {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [note: '操作ユーザーID（NULL可）']
+  action_type varchar(50) [not null, note: '操作種別（CREATE/READ/UPDATE/DELETE/ERROR）']
+  resource_type varchar(50) [note: 'リソース種別']
+  resource_id uuid [note: 'リソースID']
+  endpoint varchar(255) [not null, note: 'APIエンドポイント']
+  method varchar(10) [not null, note: 'HTTPメソッド']
+  request_body jsonb [note: 'リクエストボディ（機密情報除外）']
+  response_status int [not null, note: 'HTTPレスポンスステータス']
+  error_message text [note: 'エラーメッセージ']
+  error_code varchar(50) [note: 'エラーコード']
+  ip_address varchar(45) [note: 'IPアドレス']
+  user_agent varchar(500) [note: 'ユーザーエージェント']
+  duration_ms int [not null, default: 0, note: '処理時間（ミリ秒）']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    user_id [name: 'idx_user_activity_user_id']
+    action_type [name: 'idx_user_activity_action_type']
+    (resource_type, resource_id) [name: 'idx_user_activity_resource']
+    created_at [name: 'idx_user_activity_created_at']
+    response_status [name: 'idx_user_activity_status']
+  }
+}
+
+// システム管理部分 --------------------------
+Table system_setting {
+  id uuid [pk, default: `gen_random_uuid()`]
+  category varchar(50) [not null, note: 'カテゴリ（GENERAL/SECURITY/MAINTENANCE）']
+  key varchar(100) [not null, note: '設定キー']
+  value jsonb [not null, note: '設定値']
+  value_type varchar(20) [not null, note: '値の型（STRING/NUMBER/BOOLEAN/JSON）']
+  description text [note: '説明']
+  is_secret bool [not null, default: false, note: '機密設定フラグ']
+  is_editable bool [not null, default: true, note: '編集可能フラグ']
+  updated_by uuid [note: '更新者ID']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    (category, key) [unique, name: 'uq_system_setting_category_key']
+  }
+}
+
+Table system_announcement {
+  id uuid [pk, default: `gen_random_uuid()`]
+  title varchar(200) [not null, note: 'タイトル']
+  content text [not null, note: '本文']
+  announcement_type varchar(30) [not null, note: '種別（INFO/WARNING/MAINTENANCE）']
+  priority int [not null, default: 5, note: '優先度（1が最高）']
+  start_at timestamptz [not null, note: '表示開始日時']
+  end_at timestamptz [note: '表示終了日時（NULLは無期限）']
+  is_active bool [not null, default: true, note: '有効フラグ']
+  target_roles jsonb [note: '対象ロール（NULLは全員）']
+  created_by uuid [not null, note: '作成者ID']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+  indexes {
+    (is_active, start_at, end_at) [name: 'idx_announcement_active']
+  }
+}
+
+Table system_alert {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [not null, note: 'アラート名']
+  condition_type varchar(50) [not null, note: '条件種別（ERROR_RATE/STORAGE_USAGE等）']
+  threshold jsonb [not null, note: '閾値設定']
+  comparison_operator varchar(10) [not null, note: '比較演算子（GT/GTE/LT/LTE/EQ）']
+  notification_channels jsonb [not null, default: '[]', note: '通知先（EMAIL/SLACK等）']
+  is_enabled bool [not null, default: true, note: '有効フラグ']
+  last_triggered_at timestamptz [note: '最終発火日時']
+  trigger_count int [not null, default: 0, note: '発火回数']
+  created_by uuid [not null, note: '作成者ID']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table notification_template {
+  id uuid [pk, default: `gen_random_uuid()`]
+  name varchar(100) [not null, note: 'テンプレート名']
+  event_type varchar(50) [not null, unique, note: 'イベント種別']
+  subject varchar(200) [not null, note: '件名テンプレート']
+  body text [not null, note: '本文テンプレート']
+  variables jsonb [not null, default: '[]', note: '利用可能変数リスト']
+  is_active bool [not null, default: true, note: '有効フラグ']
+  created_at timestamptz [default: `now()`]
+  updated_at timestamptz [default: `now()`]
+}
+
+Table user_session {
+  id uuid [pk, default: `gen_random_uuid()`]
+  user_id uuid [not null, note: 'ユーザーID']
+  session_token_hash varchar(64) [not null, note: 'セッショントークンハッシュ（SHA-256）']
+  ip_address varchar(45) [note: 'IPアドレス']
+  user_agent varchar(500) [note: 'ユーザーエージェント']
+  device_info jsonb [note: 'デバイス情報']
+  login_at timestamptz [not null, note: 'ログイン日時']
+  last_activity_at timestamptz [not null, note: '最終アクティビティ日時']
+  expires_at timestamptz [not null, note: '有効期限']
+  is_active bool [not null, default: true, note: 'アクティブフラグ']
+  logout_at timestamptz [note: 'ログアウト日時']
+  logout_reason varchar(50) [note: 'ログアウト理由']
+  indexes {
+    user_id [name: 'idx_user_session_user_id']
+    (is_active, expires_at) [name: 'idx_user_session_active']
+    session_token_hash [name: 'idx_user_session_token']
+  }
+}
+
 // Project Member部分
 Ref user_member: user_account.id < project_member.user_id
 Ref member_project: project.id < project_member.project_id
@@ -405,3 +540,13 @@ Ref node_policy_group: driver_tree_node.id < driver_tree_policy.node_id [delete:
 Ref file_data: driver_tree_data_frame.driver_tree_file_id > driver_tree_file.id
 Ref node_data: driver_tree_node.data_frame_id - driver_tree_data_frame.id
 Ref: project_file.id < driver_tree_file.project_file_id
+
+// 監査・操作履歴部分
+Ref user_audit_log: user_account.id < audit_log.user_id [delete: set null]
+Ref user_activity_log: user_account.id < user_activity.user_id [delete: set null]
+
+// システム管理部分
+Ref user_setting_update: user_account.id < system_setting.updated_by [delete: set null]
+Ref user_announcement: user_account.id < system_announcement.created_by [delete: cascade]
+Ref user_alert: user_account.id < system_alert.created_by [delete: cascade]
+Ref user_session_ref: user_account.id < user_session.user_id [delete: cascade]

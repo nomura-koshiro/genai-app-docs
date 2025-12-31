@@ -41,6 +41,9 @@ erDiagram
 erDiagram
     UserAccount ||--o{ ProjectMember : "participates"
     UserAccount ||--o{ AnalysisSession : "creates"
+    UserAccount ||--o{ AuditLog : "logs"
+    UserAccount ||--o{ UserActivity : "activity"
+    UserAccount ||--o{ UserSession : "sessions"
 
     Project ||--o{ ProjectMember : "has"
     Project ||--o{ ProjectFile : "contains"
@@ -313,6 +316,84 @@ erDiagram
         float value
         timestamp created_at
         timestamp updated_at
+    }
+
+    AuditLog {
+        uuid id PK
+        uuid user_id FK
+        string event_type
+        string action
+        string resource_type
+        uuid resource_id
+        jsonb old_value
+        jsonb new_value
+        string severity
+        timestamp created_at
+    }
+
+    UserActivity {
+        uuid id PK
+        uuid user_id FK
+        string action_type
+        string endpoint
+        string method
+        integer response_status
+        integer duration_ms
+        timestamp created_at
+    }
+
+    SystemSetting {
+        uuid id PK
+        string category
+        string key UK
+        jsonb value
+        string value_type
+        boolean is_secret
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    SystemAnnouncement {
+        uuid id PK
+        string title
+        text content
+        string announcement_type
+        timestamp start_at
+        timestamp end_at
+        boolean is_active
+        uuid created_by FK
+        timestamp created_at
+    }
+
+    SystemAlert {
+        uuid id PK
+        string name
+        string condition_type
+        jsonb threshold
+        boolean is_enabled
+        uuid created_by FK
+        timestamp created_at
+    }
+
+    NotificationTemplate {
+        uuid id PK
+        string name
+        string event_type UK
+        string subject
+        text body
+        boolean is_active
+        timestamp created_at
+    }
+
+    UserSession {
+        uuid id PK
+        uuid user_id FK
+        string session_token_hash
+        string ip_address
+        timestamp login_at
+        timestamp expires_at
+        boolean is_active
+        timestamp created_at
     }
 :::
 
@@ -707,6 +788,140 @@ DriverTreeFile (ファイル) ← ProjectFile
 
 ---
 
+### 3.5 監査・操作履歴モジュール
+
+::: mermaid
+erDiagram
+    UserAccount ||--o{ AuditLog : "logs"
+    UserAccount ||--o{ UserActivity : "activity"
+
+    AuditLog {
+        uuid id PK "主キー"
+        uuid user_id FK "操作ユーザーID（NULL可）"
+        string event_type "イベント種別（DATA_CHANGE/SECURITY）"
+        string action "アクション（CREATE/UPDATE/DELETE）"
+        string resource_type "リソース種別"
+        uuid resource_id "リソースID"
+        jsonb old_value "変更前の値"
+        jsonb new_value "変更後の値"
+        jsonb changed_fields "変更フィールド一覧"
+        string ip_address "IPアドレス"
+        string severity "重要度（INFO/WARNING/CRITICAL）"
+        timestamp created_at "作成日時"
+    }
+
+    UserActivity {
+        uuid id PK "主キー"
+        uuid user_id FK "操作ユーザーID（NULL可）"
+        string action_type "操作種別（CREATE/READ/UPDATE/DELETE）"
+        string resource_type "リソース種別"
+        uuid resource_id "リソースID"
+        string endpoint "APIエンドポイント"
+        string method "HTTPメソッド"
+        jsonb request_body "リクエストボディ（マスク済み）"
+        integer response_status "レスポンスステータス"
+        string error_message "エラーメッセージ"
+        integer duration_ms "処理時間（ミリ秒）"
+        timestamp created_at "作成日時"
+    }
+:::
+
+**監査・操作履歴の特徴:**
+
+- **AuditLog**: 重要なデータ変更・セキュリティイベントのみ記録
+- **UserActivity**: 全APIリクエストを自動記録
+- **機密情報マスク**: パスワード、トークン等は自動マスク
+- **ユーザー削除時**: 外部キーはSET NULLで履歴は保持
+
+---
+
+### 3.6 システム管理モジュール
+
+::: mermaid
+erDiagram
+    UserAccount ||--o{ UserSession : "has sessions"
+    UserAccount ||--o{ SystemAnnouncement : "creates"
+    UserAccount ||--o{ SystemAlert : "creates"
+
+    SystemSetting {
+        uuid id PK "主キー"
+        string category "カテゴリ（GENERAL/SECURITY/MAINTENANCE）"
+        string key UK "設定キー（カテゴリ内ユニーク）"
+        jsonb value "設定値"
+        string value_type "値の型（STRING/NUMBER/BOOLEAN/JSON）"
+        text description "説明"
+        boolean is_secret "機密設定フラグ"
+        boolean is_editable "編集可能フラグ"
+        uuid updated_by FK "更新者ID"
+        timestamp created_at "作成日時"
+        timestamp updated_at "更新日時"
+    }
+
+    SystemAnnouncement {
+        uuid id PK "主キー"
+        string title "タイトル"
+        text content "本文"
+        string announcement_type "種別（INFO/WARNING/MAINTENANCE）"
+        integer priority "優先度（1が最高）"
+        timestamp start_at "表示開始日時"
+        timestamp end_at "表示終了日時"
+        boolean is_active "有効フラグ"
+        jsonb target_roles "対象ロール"
+        uuid created_by FK "作成者ID"
+        timestamp created_at "作成日時"
+    }
+
+    SystemAlert {
+        uuid id PK "主キー"
+        string name "アラート名"
+        string condition_type "条件種別（ERROR_RATE/STORAGE_USAGE等）"
+        jsonb threshold "閾値設定"
+        string comparison_operator "比較演算子"
+        jsonb notification_channels "通知先"
+        boolean is_enabled "有効フラグ"
+        timestamp last_triggered_at "最終発火日時"
+        integer trigger_count "発火回数"
+        uuid created_by FK "作成者ID"
+        timestamp created_at "作成日時"
+    }
+
+    NotificationTemplate {
+        uuid id PK "主キー"
+        string name "テンプレート名"
+        string event_type UK "イベント種別（ユニーク）"
+        string subject "件名テンプレート"
+        text body "本文テンプレート"
+        jsonb variables "利用可能変数リスト"
+        boolean is_active "有効フラグ"
+        timestamp created_at "作成日時"
+    }
+
+    UserSession {
+        uuid id PK "主キー"
+        uuid user_id FK "ユーザーID"
+        string session_token_hash "セッショントークンハッシュ"
+        string ip_address "IPアドレス"
+        string user_agent "ユーザーエージェント"
+        jsonb device_info "デバイス情報"
+        timestamp login_at "ログイン日時"
+        timestamp last_activity_at "最終アクティビティ"
+        timestamp expires_at "有効期限"
+        boolean is_active "アクティブフラグ"
+        timestamp logout_at "ログアウト日時"
+        string logout_reason "ログアウト理由"
+    }
+:::
+
+**システム管理の特徴:**
+
+- **SystemSetting**: メンテナンスモード、セキュリティ設定等を管理
+- **SystemAnnouncement**: システムお知らせ（期間・対象ロール指定可能）
+- **SystemAlert**: 監視アラート設定（閾値超過時に通知）
+- **NotificationTemplate**: メール通知テンプレート
+- **UserSession**: セッション管理（強制ログアウト、同時接続数制限）
+
+---
+
 ## 4. リレーションシップ詳細
 
 ### 4.1 主要なリレーションシップ一覧
@@ -734,6 +949,11 @@ DriverTreeFile (ファイル) ← ProjectFile
 | driver_tree_relationship | driver_tree_relationship_child | 1:N | relationship_id | CASCADE | リレーションシップの子 |
 | driver_tree_file | driver_tree_data_frame | 1:N | driver_tree_file_id | CASCADE | ファイルのデータフレーム |
 | driver_tree_node | driver_tree_policy | 1:N | node_id | CASCADE | ノードの施策 |
+| user_account | audit_log | 1:N | user_id | SET NULL | ユーザーの監査ログ |
+| user_account | user_activity | 1:N | user_id | SET NULL | ユーザーの操作履歴 |
+| user_account | user_session | 1:N | user_id | CASCADE | ユーザーのセッション |
+| user_account | system_announcement | 1:N | created_by | CASCADE | ユーザーが作成したお知らせ |
+| user_account | system_alert | 1:N | created_by | CASCADE | ユーザーが作成したアラート |
 
 ### 4.2 削除動作（ON DELETE）の説明
 
@@ -755,6 +975,8 @@ DriverTreeFile (ファイル) ← ProjectFile
 **適用箇所:**
 
 - ユーザー削除 → 分析セッションの`creator_id`がNULLに
+- ユーザー削除 → 監査ログの`user_id`がNULLに（履歴保持）
+- ユーザー削除 → 操作履歴の`user_id`がNULLに（履歴保持）
 - ドライバーツリーノード削除 → ツリーの`root_node_id`がNULLに
 - ドライバーツリー数式削除 → ツリーの`formula_id`がNULLに
 - データフレーム削除 → ノードの`data_frame_id`がNULLに
@@ -799,6 +1021,18 @@ DriverTreeFile (ファイル) ← ProjectFile
 | driver_tree_relationship_child | idx (relationship_id) | relationship_id | BTREE | リレーションシップ別 |
 | driver_tree_relationship_child | idx (child_node_id) | child_node_id | BTREE | 子ノード別 |
 | driver_tree_policy | idx_driver_tree_policy_node_id | node_id | BTREE | ノード別施策 |
+| audit_log | idx_audit_log_user_id | user_id | BTREE | ユーザー別監査ログ |
+| audit_log | idx_audit_log_event_type | event_type | BTREE | イベント種別別 |
+| audit_log | idx_audit_log_resource | (resource_type, resource_id) | BTREE | リソース別 |
+| audit_log | idx_audit_log_created_at | created_at DESC | BTREE | 日時順 |
+| user_activity | idx_user_activity_user_id | user_id | BTREE | ユーザー別操作履歴 |
+| user_activity | idx_user_activity_created_at | created_at DESC | BTREE | 日時順 |
+| system_setting | uq_system_setting_category_key | (category, key) | UNIQUE | 設定キー重複防止 |
+| system_announcement | idx_announcement_active | (is_active, start_at, end_at) | BTREE | 有効なお知らせ取得 |
+| user_session | idx_user_session_user_id | user_id | BTREE | ユーザー別セッション |
+| user_session | idx_user_session_active | (is_active, expires_at) | BTREE | 有効セッション取得 |
+| user_session | idx_user_session_token | session_token_hash | BTREE | トークン検索 |
+| notification_template | uq_notification_template_event | event_type | UNIQUE | イベント種別重複防止 |
 
 ### 5.2 JSONB列のGINインデックス
 
@@ -829,6 +1063,8 @@ ON driver_tree_formula USING GIN (formulas);
 | user_account | email | メールアドレスの重複防止 |
 | project | code | プロジェクトコードの重複防止 |
 | project_member | (project_id, user_id) | 同じユーザーが同じプロジェクトに重複参加防止 |
+| system_setting | (category, key) | 同一カテゴリ内での設定キー重複防止 |
+| notification_template | event_type | イベント種別の重複防止 |
 
 ### 6.2 NOT NULL制約
 
@@ -852,12 +1088,14 @@ ON driver_tree_formula USING GIN (formulas);
 
 ### 7.1 テーブル数
 
-合計: 21テーブル
+合計: 28テーブル
 
 - ユーザー管理: 1テーブル
 - プロジェクト管理: 3テーブル
 - 個別施策分析: 10テーブル（マスタ5 + セッション系5）
 - ドライバーツリー: 7テーブル
+- 監査・操作履歴: 2テーブル（audit_log, user_activity）
+- システム管理: 5テーブル（system_setting, system_announcement, system_alert, notification_template, user_session）
 
 ### 7.2 主要な設計思想
 
@@ -868,17 +1106,21 @@ ON driver_tree_formula USING GIN (formulas);
 - **参照整合性**: 外部キー制約とON DELETE動作の適切な設定
 - **インデックス最適化**: 検索頻度の高いカラムにインデックスを配置
 - **非同期対応**: SQLAlchemy 2.0非同期ORMで実装
+- **監査ログ**: 重要操作の追跡とセキュリティ監査
+- **システム管理**: メンテナンスモード、お知らせ、アラート機能
 
 ### 7.3 関連ドキュメント
 
 - **データベース設計書**: `01-database-design.md`
-- **システムアーキテクチャ**: `../02-architecture/01-system-architecture.md`
-- **API仕様書**: `../05-api/01-api-specifications.md`
+- **DBMLスキーマ**: `03-schema.dbml`
+- **システムアーキテクチャ**: `../04-architecture/01-system-architecture.md`
+- **セキュリティ実装**: `../05-security/03-security-implementation.md`
+- **ミドルウェア設計書**: `../09-middleware/01-middleware-design.md`
 
 ---
 
 #### ドキュメント管理情報
 
 - **作成日**: 2025年
+- **最終更新日**: 2026年1月（監査・システム管理テーブル追加）
 - **対象バージョン**: 現行実装
-- **最終更新**: 実装に合わせてER図を更新

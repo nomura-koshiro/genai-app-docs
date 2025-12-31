@@ -36,11 +36,14 @@ graph TB
         FastAPI[FastAPI Application]
 
         subgraph "ミドルウェア"
+            SecurityHeaders[SecurityHeadersMiddleware]
             CORS[CORSMiddleware]
             RateLimit[RateLimitMiddleware]
+            Maintenance[MaintenanceModeMiddleware]
             Logging[LoggingMiddleware]
+            AuditLog[AuditLogMiddleware]
+            Activity[ActivityTrackingMiddleware]
             Metrics[PrometheusMetricsMiddleware]
-            SecurityHeaders[SecurityHeadersMiddleware]
         end
 
         subgraph "APIレイヤー"
@@ -77,13 +80,16 @@ graph TB
     end
 
     Client --> FastAPI
-    FastAPI --> CORS
+    FastAPI --> SecurityHeaders
+    SecurityHeaders --> CORS
     CORS --> RateLimit
-    RateLimit --> Logging
-    Logging --> Metrics
-    Metrics --> SecurityHeaders
-    SecurityHeaders --> SystemAPI
-    SecurityHeaders --> V1API
+    RateLimit --> Maintenance
+    Maintenance --> Logging
+    Logging --> AuditLog
+    AuditLog --> Activity
+    Activity --> Metrics
+    Metrics --> SystemAPI
+    Metrics --> V1API
 
     V1API --> UserService
     V1API --> ProjectService
@@ -403,7 +409,7 @@ sequenceDiagram
 
     C->>MW: HTTP Request
 
-    Note over MW: 1. CORS<br/>2. Rate Limit (100req/min)<br/>3. Logging<br/>4. Metrics<br/>5. Security Headers
+    Note over MW: 1. SecurityHeaders<br/>2. CORS<br/>3. RateLimit (100req/min)<br/>4. MaintenanceMode<br/>5. Logging<br/>6. AuditLog<br/>7. ActivityTracking<br/>8. Metrics
 
     MW->>API: Validated Request
 
@@ -683,8 +689,21 @@ graph LR
 
 - `http_requests_total`: リクエスト総数
 - `http_request_duration_seconds`: レスポンスタイム
-- `http_requests_in_progress`: 実行中リクエスト数
+- `http_request_size_bytes`: リクエストサイズ
+- `http_response_size_bytes`: レスポンスサイズ
 - カスタムメトリクス（ビジネスメトリクス）
+
+**監査ログ（src/app/api/middlewares/audit_log.py）:**
+
+- 重要なデータ変更操作の監査記録
+- セキュリティイベント（セッション終了、代行操作）
+- システム設定変更の追跡
+
+**操作履歴（src/app/api/middlewares/activity_tracking.py）:**
+
+- 全APIリクエストの自動記録
+- ユーザー操作の詳細履歴
+- 機密情報のマスク処理
 
 **トレーシング:**
 
@@ -723,8 +742,8 @@ graph TB
     end
 
     subgraph "Layer 5: 監査"
-        L5A[監査ログ]
-        L5B[アクセスログ]
+        L5A[監査ログ<br/>AuditLogMiddleware]
+        L5B[操作履歴<br/>ActivityTrackingMiddleware]
         L5C[エラートラッキング]
     end
 
@@ -873,8 +892,10 @@ graph TB
 **ドキュメント管理情報:**
 
 - **作成日**: 2025年（リバースエンジニアリング実施）
+- **最終更新日**: 2026年1月（ミドルウェア構成更新）
 - **対象バージョン**: 現行実装
 - **関連ドキュメント**:
-  - データベース設計書: `02-database/01-database-design.md`
-  - セキュリティ設計書: `03-security/`
-  - API仕様書: `04-api/01-api-specifications.md`
+  - データベース設計書: `06-database/01-database-design.md`
+  - セキュリティ設計書: `05-security/`
+  - ミドルウェア設計書: `09-middleware/01-middleware-design.md`
+  - API仕様書: `11-features/01-api-overview/01-api-overview.md`

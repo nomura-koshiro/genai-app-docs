@@ -40,13 +40,17 @@
 📁 個別施策分析
 ├─ 分析セッション一覧
 ├─ 新規セッション作成
+├─ 分析画面（チャット）
+├─ セッション詳細（結果）
 └─ スナップショット履歴
 
 📁 ドライバーツリー
 ├─ ツリー一覧
 ├─ ツリー作成
-├─ 数式マスタ管理
-└─ カテゴリマスタ管理
+├─ ツリー編集
+├─ 施策設定
+├─ データ紐付け
+└─ 計算結果
 
 📁 ファイル管理
 ├─ ファイル一覧
@@ -55,8 +59,7 @@
 📁 システム管理（Admin）
 ├─ ユーザー管理
 ├─ ロール管理
-├─ 検証マスタ管理
-└─ 課題マスタ管理
+└─ カテゴリマスタ管理
 ```
 
 ---
@@ -74,47 +77,54 @@
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| DASH-001 | ダッシュボード | /dashboard | ホーム画面、概要表示 |
+| DASH-001 | ダッシュボード | /dashboard | ホーム画面、統計、アクティビティ、クイックアクセス |
 
 ### 2.3 プロジェクト管理系画面
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| PROJ-001 | プロジェクト一覧 | /projects | プロジェクト一覧表示 |
+| PROJ-001 | プロジェクト一覧 | /projects | プロジェクト一覧表示・検索・ステータスフィルタ |
 | PROJ-002 | プロジェクト作成 | /projects/new | 新規プロジェクト作成フォーム |
-| PROJ-003 | プロジェクト詳細 | /projects/:id | プロジェクト詳細・編集 |
+| PROJ-003 | プロジェクト詳細 | /projects/:id | プロジェクト概要・セッション・ツリー・ファイル一覧 |
 | PROJ-004 | メンバー管理 | /projects/:id/members | メンバー追加・削除・ロール変更 |
-| PROJ-005 | ファイル管理 | /projects/:id/files | プロジェクトファイル一覧 |
 
 ### 2.4 個別施策分析系画面
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| ANAL-001 | セッション一覧 | /projects/:id/sessions | 分析セッション一覧 |
-| ANAL-002 | セッション作成 | /projects/:id/sessions/new | 新規セッション作成 |
-| ANAL-003 | 分析画面 | /sessions/:id | チャット＆ステップ操作画面 |
-| ANAL-004 | スナップショット履歴 | /sessions/:id/snapshots | スナップショット一覧・分岐 |
+| ANAL-001 | セッション一覧 | /projects/:id/sessions | 分析セッション一覧・検索・課題フィルタ |
+| ANAL-002 | セッション作成 | /projects/:id/sessions/new | 3ステップ作成（テーマ選択→データ準備→確認） |
+| ANAL-003 | 分析画面 | /sessions/:id | チャット＆ステップパネル操作画面 |
+| ANAL-004 | セッション詳細 | /sessions/:id/detail | 分析結果サマリー・インサイト・グラフ表示 |
+| ANAL-005 | スナップショット履歴 | /sessions/:id/snapshots | スナップショット一覧・分岐操作 |
 
 ### 2.5 ドライバーツリー系画面
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
 | TREE-001 | ツリー一覧 | /projects/:id/trees | ドライバーツリー一覧 |
-| TREE-002 | ツリー作成 | /projects/:id/trees/new | 新規ツリー作成 |
-| TREE-003 | ツリー編集 | /trees/:id | ノード・リレーション編集 |
-| TREE-004 | 施策設定 | /trees/:id/policies | 施策の追加・編集 |
-| TREE-005 | 数式マスタ一覧 | /admin/formulas | 数式マスタ管理 |
-| TREE-006 | カテゴリマスタ一覧 | /admin/categories | カテゴリマスタ管理 |
+| TREE-002 | ツリー作成 | /projects/:id/trees/new | テンプレート選択＆基本情報入力 |
+| TREE-003 | ツリー編集 | /trees/:id | ノード・リレーション編集（キャンバス） |
+| TREE-004 | 施策設定 | /trees/:id/policies | 施策の追加・編集・影響値設定 |
+| TREE-005 | データ紐付け | /trees/:id/data-binding | ノードとExcelデータ列の紐付け |
+| TREE-006 | 計算結果 | /trees/:id/results | 施策効果シミュレーション結果 |
 
-### 2.6 システム管理系画面
+### 2.6 ファイル管理系画面
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| ADMIN-001 | ユーザー一覧 | /admin/users | ユーザー一覧・検索 |
+| FILE-001 | ファイル一覧 | /projects/:id/files | プロジェクトファイル一覧 |
+| FILE-002 | ファイルアップロード | /projects/:id/files/upload | ファイルアップロード画面 |
+
+### 2.7 システム管理系画面
+
+| 画面ID | 画面名 | パス | 説明 |
+|--------|--------|------|------|
+| ADMIN-001 | ユーザー一覧 | /admin/users | ユーザー一覧・検索・ロール/ステータスフィルタ |
 | ADMIN-002 | ユーザー詳細 | /admin/users/:id | ユーザー詳細・ロール管理 |
-| ADMIN-003 | 検証マスタ一覧 | /admin/verifications | 検証マスタ管理 |
-| ADMIN-004 | 課題マスタ一覧 | /admin/issues | 課題マスタ管理 |
-| ADMIN-005 | 課題マスタ詳細 | /admin/issues/:id | プロンプト・初期メッセージ設定 |
+| ADMIN-003 | ロール管理 | /admin/roles | システムロール・プロジェクトロール一覧 |
+| ADMIN-004 | カテゴリマスタ一覧 | /admin/categories | カテゴリマスタ管理 |
+| ADMIN-005 | カテゴリマスタ編集 | /admin/categories/:id | 基本情報・含まれる数式編集 |
 
 ---
 
@@ -149,18 +159,16 @@ graph TD
         PNEW[PROJ-002: プロジェクト作成]
         PDETAIL[PROJ-003: プロジェクト詳細]
         PMEMBER[PROJ-004: メンバー管理]
-        PFILE[PROJ-005: ファイル管理]
     end
 
     DASH[ダッシュボード] -->|サイドメニュー| PLIST
+    DASH -->|クイックアクセス| PNEW
     PLIST -->|新規作成ボタン| PNEW
     PLIST -->|行クリック| PDETAIL
     PNEW -->|作成完了| PDETAIL
     PNEW -->|キャンセル| PLIST
-    PDETAIL -->|タブ: メンバー| PMEMBER
-    PDETAIL -->|タブ: ファイル| PFILE
-    PMEMBER -->|タブ: 詳細| PDETAIL
-    PFILE -->|タブ: 詳細| PDETAIL
+    PDETAIL -->|メンバー管理リンク| PMEMBER
+    PMEMBER -->|戻る| PDETAIL
 :::
 
 ### 3.3 個別施策分析フロー
@@ -170,27 +178,33 @@ graph TD
     subgraph 個別施策分析
         SLIST[ANAL-001: セッション一覧]
         SNEW[ANAL-002: セッション作成]
-        SDETAIL[ANAL-003: 分析画面]
-        SSNAP[ANAL-004: スナップショット履歴]
+        SANALYSIS[ANAL-003: 分析画面]
+        SDETAIL[ANAL-004: セッション詳細]
+        SSNAP[ANAL-005: スナップショット履歴]
     end
 
-    PDETAIL[プロジェクト詳細] -->|分析タブ| SLIST
+    PDETAIL[プロジェクト詳細] -->|新規セッション| SNEW
+    PDETAIL -->|セッション行クリック| SANALYSIS
     SLIST -->|新規作成| SNEW
-    SLIST -->|行クリック| SDETAIL
-    SNEW -->|作成完了| SDETAIL
-    SDETAIL -->|履歴ボタン| SSNAP
-    SSNAP -->|スナップショット選択| SDETAIL
-    SSNAP -->|戻る| SDETAIL
+    SLIST -->|行クリック| SANALYSIS
+    SNEW -->|分析を開始| SANALYSIS
+    SNEW -->|キャンセル| SLIST
+    SANALYSIS -->|スナップショット履歴| SSNAP
+    SANALYSIS -->|分析完了後| SDETAIL
+    SDETAIL -->|分析を続ける| SANALYSIS
+    SDETAIL -->|履歴を見る| SSNAP
+    SSNAP -->|スナップショット選択| SANALYSIS
+    SSNAP -->|戻る| SANALYSIS
 
     subgraph 分析画面内操作
         CHAT[チャットパネル]
         STEP[ステップパネル]
-        FILE[ファイル選択]
+        FILE[ファイル情報]
     end
 
-    SDETAIL --> CHAT
-    SDETAIL --> STEP
-    SDETAIL --> FILE
+    SANALYSIS --> CHAT
+    SANALYSIS --> STEP
+    SANALYSIS --> FILE
     CHAT -->|AI応答| STEP
 :::
 
@@ -203,24 +217,35 @@ graph TD
         TNEW[TREE-002: ツリー作成]
         TEDIT[TREE-003: ツリー編集]
         TPOLICY[TREE-004: 施策設定]
+        TDATA[TREE-005: データ紐付け]
+        TRESULT[TREE-006: 計算結果]
     end
 
-    PDETAIL[プロジェクト詳細] -->|ツリータブ| TLIST
+    PDETAIL[プロジェクト詳細] -->|新規ツリー| TNEW
+    PDETAIL -->|ツリー行クリック| TEDIT
     TLIST -->|新規作成| TNEW
     TLIST -->|行クリック| TEDIT
-    TNEW -->|作成完了| TEDIT
-    TEDIT -->|施策タブ| TPOLICY
-    TPOLICY -->|ツリータブ| TEDIT
+    TNEW -->|作成して編集| TEDIT
+    TNEW -->|キャンセル| TLIST
+
+    subgraph ツリー編集タブ
+        TEDIT -->|施策設定タブ| TPOLICY
+        TEDIT -->|データ紐付けタブ| TDATA
+        TEDIT -->|計算結果タブ| TRESULT
+        TPOLICY -->|ツリー編集タブ| TEDIT
+        TDATA -->|ツリー編集タブ| TEDIT
+        TRESULT -->|ツリー編集タブ| TEDIT
+    end
 
     subgraph ツリー編集内操作
         NODE[ノード追加/編集]
         REL[リレーション定義]
-        DATA[データ紐付け]
+        TOOLBAR[ツールバー操作]
     end
 
     TEDIT --> NODE
     TEDIT --> REL
-    TEDIT --> DATA
+    TEDIT --> TOOLBAR
 :::
 
 ### 3.5 システム管理フロー
@@ -230,26 +255,23 @@ graph TD
     subgraph ユーザー管理
         ULIST[ADMIN-001: ユーザー一覧]
         UDETAIL[ADMIN-002: ユーザー詳細]
+        ROLES[ADMIN-003: ロール管理]
     end
 
     subgraph マスタ管理
-        VLIST[ADMIN-003: 検証マスタ一覧]
-        ILIST[ADMIN-004: 課題マスタ一覧]
-        IDETAIL[ADMIN-005: 課題マスタ詳細]
-        FLIST[TREE-005: 数式マスタ一覧]
-        CLIST[TREE-006: カテゴリマスタ一覧]
+        CLIST[ADMIN-004: カテゴリマスタ一覧]
+        CEDIT[ADMIN-005: カテゴリマスタ編集]
     end
 
     DASH[ダッシュボード] -->|サイドメニュー| ULIST
     ULIST -->|行クリック| UDETAIL
     UDETAIL -->|戻る| ULIST
 
-    DASH -->|サイドメニュー| VLIST
-    DASH -->|サイドメニュー| ILIST
-    ILIST -->|行クリック| IDETAIL
-    IDETAIL -->|戻る| ILIST
+    DASH -->|サイドメニュー| ROLES
 
-    VLIST -->|課題作成| ILIST
+    DASH -->|サイドメニュー| CLIST
+    CLIST -->|編集ボタン| CEDIT
+    CEDIT -->|保存/キャンセル| CLIST
 :::
 
 ### 3.6 全体遷移図
@@ -271,19 +293,26 @@ graph LR
     end
 
     subgraph 分析
-        SESSION[セッション]
-        CHAT[チャット分析]
+        SESSION[セッション一覧]
+        SNEW[セッション作成]
+        ANALYSIS[分析画面]
+        SDETAIL[セッション詳細]
         SNAP[スナップショット]
     end
 
     subgraph ツリー
-        TREE[ツリー編集]
+        TREE[ツリー一覧]
+        TNEW[ツリー作成]
+        TEDIT[ツリー編集]
         POLICY[施策設定]
+        DATA[データ紐付け]
+        RESULT[計算結果]
     end
 
     subgraph 管理
         USER[ユーザー管理]
-        MASTER[マスタ管理]
+        ROLE[ロール管理]
+        MASTER[カテゴリマスタ]
     end
 
     LOGIN --> DASH
@@ -291,11 +320,18 @@ graph LR
     PROJ --> MEMBER
     PROJ --> FILE
     PROJ --> SESSION
-    SESSION --> CHAT
-    CHAT --> SNAP
+    SESSION --> SNEW
+    SESSION --> ANALYSIS
+    ANALYSIS --> SDETAIL
+    ANALYSIS --> SNAP
     PROJ --> TREE
-    TREE --> POLICY
+    TREE --> TNEW
+    TREE --> TEDIT
+    TEDIT --> POLICY
+    TEDIT --> DATA
+    TEDIT --> RESULT
     DASH --> USER
+    DASH --> ROLE
     DASH --> MASTER
 :::
 
@@ -310,7 +346,7 @@ graph LR
 | ログイン | ✓ | - | - | - | - | - | - |
 | ダッシュボード | - | ✓ | ✓ | - | - | - | - |
 | プロジェクト一覧 | ✓ | - | ✓ | - | - | - | - |
-| プロジェクト詳細 | ✓ | ✓ | - | ✓ | - | ✓ | - |
+| プロジェクト詳細 | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
 | セッション一覧 | ✓ | - | ✓ | - | ✓ | - | - |
 | 分析画面 | ✓ | - | - | ✓ | - | - | - |
 | ツリー一覧 | ✓ | - | ✓ | - | - | - | ✓ |
@@ -323,9 +359,10 @@ graph LR
 | サイドメニュークリック | 任意 | 対象画面 | メニュー項目クリック |
 | 一覧行クリック | 一覧画面 | 詳細画面 | テーブル行クリック |
 | 新規作成ボタン | 一覧画面 | 作成画面 | ボタンクリック |
-| タブ切り替え | 詳細画面 | 同画面別タブ | タブクリック |
+| タブ切り替え | ツリー編集画面 | 同画面別タブ | タブクリック |
 | 戻るボタン | 詳細/作成画面 | 一覧画面 | ボタンクリック |
 | パンくずリスト | 任意 | 上位階層 | リンククリック |
+| クイックアクセス | ダッシュボード | 各作成画面 | ショートカットクリック |
 
 ---
 
@@ -336,32 +373,170 @@ graph LR
 ```text
 components/
 ├── layout/
-│   ├── Header.tsx           # ヘッダー
+│   ├── Header.tsx           # ヘッダー（ロゴ、通知、ユーザーメニュー）
 │   ├── Sidebar.tsx          # サイドバーメニュー
 │   ├── Footer.tsx           # フッター
 │   └── MainLayout.tsx       # メインレイアウト
 ├── common/
 │   ├── Breadcrumb.tsx       # パンくずリスト
-│   ├── DataTable.tsx        # データテーブル
+│   ├── DataTable.tsx        # データテーブル（検索・ソート・ページネーション）
 │   ├── Modal.tsx            # モーダルダイアログ
 │   ├── Tabs.tsx             # タブコンポーネント
+│   ├── Alert.tsx            # アラート（info, warning, success, danger）
+│   ├── Badge.tsx            # バッジ（ステータス表示）
+│   ├── Card.tsx             # カードコンポーネント
+│   ├── StatsCard.tsx        # 統計カード（アイコン付き）
 │   ├── Form/                # フォーム系
 │   │   ├── Input.tsx
 │   │   ├── Select.tsx
+│   │   ├── Textarea.tsx
 │   │   ├── Button.tsx
 │   │   └── FileUpload.tsx
-│   └── Notification.tsx     # 通知
+│   ├── Toast.tsx            # トースト通知
+│   └── Pagination.tsx       # ページネーション
 └── features/
+    ├── dashboard/           # ダッシュボード関連
+    │   ├── ActivityList.tsx
+    │   ├── QuickAccess.tsx
+    │   ├── ProgressList.tsx
+    │   └── BarChart.tsx
     ├── project/             # プロジェクト関連
+    │   ├── ProjectList.tsx
+    │   ├── ProjectDetail.tsx
+    │   └── MemberList.tsx
     ├── analysis/            # 分析関連
+    │   ├── SessionList.tsx
+    │   ├── SessionNewWizard.tsx
+    │   ├── ChatPanel.tsx
+    │   ├── StepsPanel.tsx
+    │   ├── SnapshotTimeline.tsx
+    │   ├── InsightCards.tsx
+    │   └── ConversationSummary.tsx
     ├── driver-tree/         # ドライバーツリー関連
+    │   ├── TreeList.tsx
+    │   ├── TreeCanvas.tsx
+    │   ├── TreeNode.tsx
+    │   ├── NodeEditor.tsx
+    │   ├── PolicyCard.tsx
+    │   ├── DataBindingTable.tsx
+    │   ├── ResultsSummary.tsx
+    │   └── TemplateCard.tsx
+    ├── file/                # ファイル管理関連
+    │   ├── FileList.tsx
+    │   └── FileUploader.tsx
     └── admin/               # 管理画面関連
+        ├── UserList.tsx
+        ├── RoleList.tsx
+        └── CategoryEditor.tsx
 ```
+
+---
+
+## 6. 画面別詳細
+
+### 6.1 ダッシュボード（DASH-001）
+
+**構成要素:**
+
+- 統計カード（4つ）: 参加プロジェクト数、進行中セッション数、ドライバーツリー数、アップロードファイル数
+- 分析アクティビティチャート: 日別のセッション・スナップショット数
+- プロジェクト進捗: プロジェクトごとの進捗バー
+- 最近のアクティビティ: ユーザーアクション履歴
+- クイックアクセス: 新規プロジェクト、分析開始、ツリー作成、ファイルアップロード
+- 最近のプロジェクト: 直近アクセスしたプロジェクト一覧
+
+### 6.2 セッション作成（ANAL-002）
+
+**3ステップウィザード:**
+
+1. **STEP 1: 分析テーマ選択**
+   - 検証カテゴリ（カード選択）: 時系列分析、比較分析、相関分析、セグメント分析
+   - 分析課題（ドロップダウン）
+2. **STEP 2: データ準備**
+   - 入力ファイル選択
+   - 対象シート選択
+   - 軸の設定（時間軸、分析対象値、グループ化）
+3. **STEP 3: 確認**
+   - セッション名入力（オプション）
+   - 設定内容サマリー表示
+   - 分析開始ボタン
+
+**サイドバー:** 選択した課題の説明・推奨データ・分析でできること
+
+### 6.3 分析画面（ANAL-003）
+
+**構成要素:**
+
+- ページヘッダー: セッション名、スナップショット履歴ボタン、スナップショット保存ボタン
+- アラートバナー: 現在のスナップショット番号、入力ファイル、課題
+- チャットコンテナ: AI対話パネル（メッセージ表示、入力エリア）
+- ステップパネル: 実行ステップ一覧（完了/実行中ステータス）
+- ファイル情報カード: ファイル名、サイズ、行数、列数
+
+### 6.4 セッション詳細（ANAL-004）
+
+**構成要素:**
+
+- ステータスバナー: 分析完了ステータス、完了日時、スナップショット数
+- 分析結果サマリー: インサイトカード（予測値、精度、累計など）
+- キーインサイト: 番号付きインサイト一覧
+- 分析グラフ: グラフプレースホルダー（月別推移、構成比、曜日別など）
+- 分析履歴: 主要な質問と回答のサマリー
+- セッション情報: 課題、カテゴリ、ファイル、作成者、日時
+- アクション: 複製、共有、削除ボタン
+- 関連セッション: 同プロジェクト内の関連セッション
+
+### 6.5 ツリー作成（TREE-002）
+
+**構成要素:**
+
+- テンプレートフィルター: 業種、分析タイプでフィルタ
+- テンプレートカード: 各テンプレートの詳細（アイコン、名前、説明、タグ、ノード数、利用実績）
+- 空のツリーカード: ゼロから作成オプション
+- 基本情報サイドバー: ツリー名、説明、選択テンプレート表示、構造プレビュー
+
+### 6.6 ツリー編集（TREE-003）
+
+**タブ構成:**
+
+1. **ツリー編集**: ノード・リレーションのビジュアル編集
+2. **施策設定**: 施策カード一覧、新規施策追加モーダル
+3. **データ紐付け**: ノード別のExcelデータ列紐付けテーブル
+4. **計算結果**: 施策効果シミュレーション結果サマリー
+
+**ツリー編集タブ内:**
+
+- ツールバー: ノード追加、リレーション追加、整列、ズーム
+- キャンバス: ノード配置・接続線表示
+- ノード編集パネル: 選択ノードの詳細設定（ラベル、タイプ、データフレーム紐付け）
+
+### 6.7 施策設定（TREE-004）
+
+**構成要素:**
+
+- 施策カード一覧: 各施策の詳細（アイコン、名前、対象ノード、説明、影響値、コスト、期間、ステータス）
+- 新規施策モーダル: 施策名、対象ノード選択、影響値、コスト、期間、説明入力
+
+### 6.8 データ紐付け（TREE-005）
+
+**構成要素:**
+
+- データソース選択: ファイル、シート、期間選択
+- ノード別紐付けテーブル: ノード名、タイプ、データ列選択、集計方法、現在値、ステータス
+
+### 6.9 計算結果（TREE-006）
+
+**構成要素:**
+
+- 結果サマリーカード: 現在の売上高、施策適用後、増加額、施策コスト合計
+- ノード別計算結果テーブル: ノード、現在値、施策後、変化率、適用施策
+- 施策効果比較: 施策ごとの効果バー、コスト、ROI
 
 ---
 
 #### ドキュメント管理情報
 
 - **作成日**: 2025年12月25日
-- **関連文書**: 02-usecase-flow-analysis.md
+- **最終更新日**: 2026年1月（モックアップとの整合性更新）
+- **関連文書**: 03-mockup/（HTMLモックアップ）
 - **目的**: 画面構成と遷移の定義

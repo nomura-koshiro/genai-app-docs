@@ -607,6 +607,224 @@ class ProjectRole(str, Enum):
 
 ---
 
+### 3.6 監査・操作履歴
+
+#### 3.6.1 audit_log（監査ログ）
+
+**テーブル名**: `audit_log`
+**実装**: `src/app/models/audit/audit_log.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| user_id | UUID | FK(user_account.id), NULLABLE | 操作ユーザーID |
+| event_type | String(50) | NOT NULL | イベント種別（DATA_CHANGE/ACCESS/SECURITY） |
+| action | String(50) | NOT NULL | アクション（CREATE/UPDATE/DELETE等） |
+| resource_type | String(50) | NOT NULL | リソース種別 |
+| resource_id | UUID | NULLABLE | リソースID |
+| old_value | JSONB | NULLABLE | 変更前の値 |
+| new_value | JSONB | NULLABLE | 変更後の値 |
+| changed_fields | JSONB | NULLABLE | 変更されたフィールド一覧 |
+| ip_address | String(45) | NULLABLE | IPアドレス |
+| user_agent | String(500) | NULLABLE | ユーザーエージェント |
+| severity | String(20) | NOT NULL, DEFAULT 'INFO' | 重要度（INFO/WARNING/CRITICAL） |
+| extra_metadata | JSONB | NULLABLE | 追加メタデータ |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### インデックス
+
+- PRIMARY KEY: `id`
+- INDEX: `user_id` (idx_audit_log_user_id)
+- INDEX: `event_type` (idx_audit_log_event_type)
+- INDEX: `(resource_type, resource_id)` (idx_audit_log_resource)
+- INDEX: `severity` (idx_audit_log_severity)
+- INDEX: `created_at DESC` (idx_audit_log_created_at)
+- FOREIGN KEY: `user_id` → `user_account(id)` ON DELETE SET NULL
+
+#### 3.6.2 user_activity（ユーザー操作履歴）
+
+**テーブル名**: `user_activity`
+**実装**: `src/app/models/audit/user_activity.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| user_id | UUID | FK(user_account.id), NULLABLE | 操作ユーザーID |
+| action_type | String(50) | NOT NULL | 操作種別（CREATE/READ/UPDATE/DELETE/ERROR） |
+| resource_type | String(50) | NULLABLE | リソース種別 |
+| resource_id | UUID | NULLABLE | リソースID |
+| endpoint | String(255) | NOT NULL | APIエンドポイント |
+| method | String(10) | NOT NULL | HTTPメソッド |
+| request_body | JSONB | NULLABLE | リクエストボディ（機密情報除外） |
+| response_status | Integer | NOT NULL | HTTPレスポンスステータス |
+| error_message | Text | NULLABLE | エラーメッセージ |
+| error_code | String(50) | NULLABLE | エラーコード |
+| ip_address | String(45) | NULLABLE | IPアドレス |
+| user_agent | String(500) | NULLABLE | ユーザーエージェント |
+| duration_ms | Integer | NOT NULL, DEFAULT 0 | 処理時間（ミリ秒） |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### インデックス
+
+- PRIMARY KEY: `id`
+- INDEX: `user_id` (idx_user_activity_user_id)
+- INDEX: `action_type` (idx_user_activity_action_type)
+- INDEX: `(resource_type, resource_id)` (idx_user_activity_resource)
+- INDEX: `created_at DESC` (idx_user_activity_created_at)
+- INDEX: `response_status` (idx_user_activity_status)
+- PARTIAL INDEX: `created_at DESC WHERE error_message IS NOT NULL` (idx_user_activity_error)
+- FOREIGN KEY: `user_id` → `user_account(id)` ON DELETE SET NULL
+
+---
+
+### 3.7 システム管理
+
+#### 3.7.1 system_setting（システム設定）
+
+**テーブル名**: `system_setting`
+**実装**: `src/app/models/system/system_setting.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| category | String(50) | NOT NULL | カテゴリ（GENERAL/SECURITY/MAINTENANCE） |
+| key | String(100) | NOT NULL | 設定キー |
+| value | JSONB | NOT NULL | 設定値 |
+| value_type | String(20) | NOT NULL | 値の型（STRING/NUMBER/BOOLEAN/JSON） |
+| description | Text | NULLABLE | 説明 |
+| is_secret | Boolean | NOT NULL, DEFAULT FALSE | 機密設定フラグ |
+| is_editable | Boolean | NOT NULL, DEFAULT TRUE | 編集可能フラグ |
+| updated_by | UUID | FK(user_account.id), NULLABLE | 更新者ID |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### ユニーク制約
+
+- UNIQUE: `(category, key)` (uq_system_setting_category_key)
+
+##### 主要な設定キー
+
+| カテゴリ | キー | 説明 |
+|---------|------|------|
+| MAINTENANCE | maintenance_mode | メンテナンスモード有効/無効 |
+| MAINTENANCE | maintenance_message | メンテナンスメッセージ |
+| MAINTENANCE | allow_admin_access | 管理者アクセス許可 |
+| SECURITY | max_login_attempts | 最大ログイン試行回数 |
+| SECURITY | session_timeout_minutes | セッションタイムアウト |
+| GENERAL | app_name | アプリケーション名 |
+
+#### 3.7.2 system_announcement（システムお知らせ）
+
+**テーブル名**: `system_announcement`
+**実装**: `src/app/models/system/system_announcement.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| title | String(200) | NOT NULL | タイトル |
+| content | Text | NOT NULL | 本文 |
+| announcement_type | String(30) | NOT NULL | 種別（INFO/WARNING/MAINTENANCE） |
+| priority | Integer | NOT NULL, DEFAULT 5 | 優先度（1が最高） |
+| start_at | DateTime | NOT NULL | 表示開始日時 |
+| end_at | DateTime | NULLABLE | 表示終了日時（NULLは無期限） |
+| is_active | Boolean | NOT NULL, DEFAULT TRUE | 有効フラグ |
+| target_roles | JSONB | NULLABLE | 対象ロール（NULLは全員） |
+| created_by | UUID | FK(user_account.id), NOT NULL | 作成者ID |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### インデックス
+
+- PRIMARY KEY: `id`
+- INDEX: `(is_active, start_at, end_at)` (idx_announcement_active)
+- FOREIGN KEY: `created_by` → `user_account(id)` ON DELETE CASCADE
+
+#### 3.7.3 system_alert（システムアラート）
+
+**テーブル名**: `system_alert`
+**実装**: `src/app/models/system/system_alert.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| name | String(100) | NOT NULL | アラート名 |
+| condition_type | String(50) | NOT NULL | 条件種別（ERROR_RATE/STORAGE_USAGE等） |
+| threshold | JSONB | NOT NULL | 閾値設定 |
+| comparison_operator | String(10) | NOT NULL | 比較演算子（GT/GTE/LT/LTE/EQ） |
+| notification_channels | JSONB | NOT NULL, DEFAULT [] | 通知先（EMAIL/SLACK等） |
+| is_enabled | Boolean | NOT NULL, DEFAULT TRUE | 有効フラグ |
+| last_triggered_at | DateTime | NULLABLE | 最終発火日時 |
+| trigger_count | Integer | NOT NULL, DEFAULT 0 | 発火回数 |
+| created_by | UUID | FK(user_account.id), NOT NULL | 作成者ID |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### 外部キー
+
+- FOREIGN KEY: `created_by` → `user_account(id)` ON DELETE CASCADE
+
+#### 3.7.4 notification_template（通知テンプレート）
+
+**テーブル名**: `notification_template`
+**実装**: `src/app/models/system/notification_template.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| name | String(100) | NOT NULL | テンプレート名 |
+| event_type | String(50) | NOT NULL, UNIQUE | イベント種別 |
+| subject | String(200) | NOT NULL | 件名テンプレート |
+| body | Text | NOT NULL | 本文テンプレート |
+| variables | JSONB | NOT NULL, DEFAULT [] | 利用可能変数リスト |
+| is_active | Boolean | NOT NULL, DEFAULT TRUE | 有効フラグ |
+| created_at | DateTime | NOT NULL | 作成日時 |
+| updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### ユニーク制約
+
+- UNIQUE: `event_type`
+
+#### 3.7.5 user_session（ユーザーセッション）
+
+**テーブル名**: `user_session`
+**実装**: `src/app/models/user_account/user_session.py`
+
+| カラム名 | 型 | 制約 | 説明 |
+|---------|-----|------|------|
+| id | UUID | PK | 主キー |
+| user_id | UUID | FK(user_account.id), NOT NULL | ユーザーID |
+| session_token_hash | String(64) | NOT NULL | セッショントークンハッシュ（SHA-256） |
+| ip_address | String(45) | NULLABLE | IPアドレス |
+| user_agent | String(500) | NULLABLE | ユーザーエージェント |
+| device_info | JSONB | NULLABLE | デバイス情報 |
+| login_at | DateTime | NOT NULL | ログイン日時 |
+| last_activity_at | DateTime | NOT NULL | 最終アクティビティ日時 |
+| expires_at | DateTime | NOT NULL | 有効期限 |
+| is_active | Boolean | NOT NULL, DEFAULT TRUE | アクティブフラグ |
+| logout_at | DateTime | NULLABLE | ログアウト日時 |
+| logout_reason | String(50) | NULLABLE | ログアウト理由 |
+
+##### インデックス
+
+- PRIMARY KEY: `id`
+- INDEX: `user_id` (idx_user_session_user_id)
+- INDEX: `(is_active, expires_at)` (idx_user_session_active)
+- INDEX: `session_token_hash` (idx_user_session_token)
+- FOREIGN KEY: `user_id` → `user_account(id)` ON DELETE CASCADE
+
+##### ログアウト理由
+
+| 値 | 説明 |
+|----|------|
+| MANUAL | 手動ログアウト |
+| FORCED | 強制ログアウト（管理者操作） |
+| EXPIRED | セッション期限切れ |
+| SESSION_LIMIT | セッション数上限超過 |
+
+---
+
 ## 4. JSONB列の活用
 
 ### 4.1 JSONB使用箇所と目的
@@ -808,12 +1026,14 @@ async def get_multi(
 
 ### 8.1 テーブル数
 
-合計: 21テーブル
+合計: 28テーブル
 
 - ユーザー管理: 1テーブル
 - プロジェクト管理: 3テーブル
 - 個別施策分析: 10テーブル（マスタ5 + セッション系5）
 - ドライバーツリー: 7テーブル
+- 監査・操作履歴: 2テーブル（audit_log, user_activity）
+- システム管理: 5テーブル（system_setting, system_announcement, system_alert, notification_template, user_session）
 
 ### 8.2 データベース設計の特徴
 
@@ -824,14 +1044,18 @@ async def get_multi(
 - **N+1対策**: selectinload/joinedload標準実装
 - **トランザクション管理**: flush/commit分離パターン
 - **非同期ORM**: AsyncSession、asyncpg
+- **監査ログ**: 重要操作の追跡とセキュリティ監査
+- **システム管理**: メンテナンスモード、アナウンス、アラート機能
 
 ---
 
 #### ドキュメント管理情報
 
 - **作成日**: 2025年
+- **最終更新日**: 2026年1月
 - **対象バージョン**: 現行実装
 - **関連ドキュメント**:
-  - システムアーキテクチャ設計書: `01-architecture/01-system-architecture.md`
-  - ER図: `02-er-diagram.md`
-  - API仕様書: `04-api/01-api-specifications.md`
+  - システムアーキテクチャ設計書: `04-architecture/01-system-architecture.md`
+  - ER図: `06-database/02-er-diagram.md`
+  - セキュリティ実装: `05-security/03-security-implementation.md`
+  - ミドルウェア設計書: `09-middleware/01-middleware-design.md`

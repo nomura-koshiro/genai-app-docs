@@ -27,8 +27,8 @@ graph TB
 
     subgraph "Layer 2: アプリケーション境界"
         L2A[レート制限<br/>100req/min]
-        L2B[セキュリティヘッダー<br/>10種類]
-        L2C[リクエストサイズ制限<br/>100MB]
+        L2B[セキュリティヘッダー<br/>CSP, HSTS等]
+        L2C[メンテナンスモード<br/>アクセス制御]
     end
 
     subgraph "Layer 3: 認証・認可"
@@ -44,9 +44,9 @@ graph TB
     end
 
     subgraph "Layer 5: 監視層"
-        L5A[構造化ログ<br/>structlog]
-        L5B[監査ログ]
-        L5C[異常検知]
+        L5A[構造化ログ<br/>LoggingMiddleware]
+        L5B[監査ログ<br/>AuditLogMiddleware]
+        L5C[操作履歴<br/>ActivityTrackingMiddleware]
     end
 
     Client[Client] --> L1A
@@ -172,45 +172,44 @@ graph LR
 ```python
 # src/app/api/middlewares/security_headers.py
 
-from fastapi import Request
+from collections.abc import Callable
+import structlog
+from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import Response
+from app.core.config import settings
+
+logger = structlog.get_logger(__name__)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """セキュリティヘッダー追加ミドルウェア"""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response = await call_next(request)
 
-        # X-Content-Type-Options: MIMEスニッフィング防止
+        # 基本的なセキュリティヘッダー
         response.headers["X-Content-Type-Options"] = "nosniff"
-
-        # X-Frame-Options: クリックジャッキング防止
         response.headers["X-Frame-Options"] = "DENY"
-
-        # X-XSS-Protection: XSSフィルタ有効化
         response.headers["X-XSS-Protection"] = "1; mode=block"
 
-        # Strict-Transport-Security: HTTPS強制（本番のみ）
-        if not request.url.scheme == "http":
+        # 本番環境のみ: HSTS (HTTP Strict Transport Security)
+        if not settings.DEBUG:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=31536000; includeSubDomains"
             )
 
-        # Content-Security-Policy: リソース制限
-        csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
-        response.headers["Content-Security-Policy"] = csp
-
-        # Referrer-Policy: リファラー情報制限
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-
-        # Permissions-Policy: ブラウザ機能制限
-        response.headers["Permissions-Policy"] = (
-            "geolocation=(), camera=(), microphone=()"
-        )
+        # Content Security Policy (CSP) - 設定で有効化
+        if settings.ENABLE_CSP:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "img-src 'self' data: https:; "
+                "font-src 'self' data:; "
+                "connect-src 'self'"
+            )
 
         return response
-:::
+```
 
 ---
 
@@ -254,131 +253,155 @@ sequenceDiagram
 |----------|--------|------|
 | **制限値** | 100リクエスト | 1分あたりの最大リクエスト数 |
 | **ウィンドウ** | 60秒 | レート制限の時間枠 |
-| **識別方法** | IP or User ID | 認証済み: User ID、未認証: IP |
-| **バックエンド** | Redis or Memory | Redisが利用可能ならRedis、なければメモリ |
-| **アルゴリズム** | Token Bucket | トークンバケットアルゴリズム |
+| **識別方法** | User ID → API Key → IP | 優先順位に従って識別 |
+| **バックエンド** | Redis / Memory | Redisが利用可能ならRedis、なければインメモリ |
+| **アルゴリズム** | Sliding Window | スライディングウィンドウアルゴリズム |
+| **最大メモリエントリ** | 10000 | インメモリストアの上限 |
 
 ### 5.3 実装コード
 
 ```python
 # src/app/api/middlewares/rate_limit.py
 
+import hashlib
 import time
-from collections import defaultdict
-from fastapi import Request, HTTPException, status
+from collections.abc import Callable
+import structlog
+from fastapi import Request, Response, status
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from app.core.cache import cache_manager
+from app.core.config import settings
+
+logger = structlog.get_logger(__name__)
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    """レート制限ミドルウェア（Token Bucket）"""
+    """Redisベースのリクエストレート制限ミドルウェア（スライディングウィンドウ）"""
 
-    def __init__(self, app, requests_per_minute: int = 100):
+    def __init__(self, app, calls: int = 100, period: int = 60, max_memory_entries: int = 10000):
         super().__init__(app)
-        self.requests_per_minute = requests_per_minute
-        self.window_seconds = 60
-        self.buckets = defaultdict(lambda: {"tokens": requests_per_minute, "last_refill": time.time()})
+        self.calls = calls
+        self.period = period
+        self.max_memory_entries = max_memory_entries
+        self._memory_store: dict[str, list[float]] = {}
 
-    def _get_client_id(self, request: Request) -> str:
-        """クライアント識別子取得（User ID優先、なければIP）"""
-        # 認証済みユーザーの場合はUser IDを使用
-        if hasattr(request.state, "user"):
+    def _get_client_identifier(self, request: Request) -> str:
+        """クライアント識別子取得（優先順位: User ID → API Key → IP）"""
+        # 認証済みユーザー
+        if hasattr(request.state, "user") and request.state.user:
             return f"user:{request.state.user.id}"
 
-        # 未認証の場合はIPアドレスを使用
-        client_ip = request.client.host
+        # APIキー（ハッシュ化）
+        api_key = request.headers.get("X-API-Key")
+        if api_key:
+            return f"apikey:{hashlib.sha256(api_key.encode()).hexdigest()}"
+
+        # IPアドレス（X-Forwarded-For対応）
+        forwarded_for = request.headers.get("X-Forwarded-For")
+        if forwarded_for:
+            client_ip = forwarded_for.split(",")[0].strip()
+        else:
+            client_ip = request.client.host if request.client else "unknown"
+
         return f"ip:{client_ip}"
 
-    def _refill_tokens(self, client_id: str):
-        """トークン補充"""
-        bucket = self.buckets[client_id]
-        now = time.time()
-        elapsed = now - bucket["last_refill"]
+    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        # 開発環境ではレート制限をスキップ
+        if settings.DEBUG:
+            return await call_next(request)
 
-        # 経過時間に応じてトークン補充
-        tokens_to_add = (elapsed / self.window_seconds) * self.requests_per_minute
-        bucket["tokens"] = min(bucket["tokens"] + tokens_to_add, self.requests_per_minute)
-        bucket["last_refill"] = now
+        client_identifier = self._get_client_identifier(request)
+        current_time = int(time.time())
 
-    async def dispatch(self, request: Request, call_next):
-        client_id = self._get_client_id(request)
+        try:
+            # Redisが利用できない場合はインメモリフォールバック
+            if not cache_manager.is_redis_available():
+                is_limited, request_count = self._check_rate_limit_memory(
+                    client_identifier, current_time
+                )
+                if is_limited:
+                    return self._create_rate_limit_response()
 
-        # トークン補充
-        self._refill_tokens(client_id)
+                response = await call_next(request)
+                remaining = max(0, self.calls - request_count - 1)
+                response.headers["X-RateLimit-Limit"] = str(self.calls)
+                response.headers["X-RateLimit-Remaining"] = str(remaining)
+                response.headers["X-RateLimit-Reset"] = str(current_time + self.period)
+                return response
 
-        bucket = self.buckets[client_id]
+            # Redis Sorted Setを使用したスライディングウィンドウ
+            cache_key = f"rate_limit:{client_identifier}"
+            window_start = current_time - self.period
 
-        if bucket["tokens"] >= 1:
-            # トークン消費
-            bucket["tokens"] -= 1
+            await cache_manager.zremrangebyscore(cache_key, 0, window_start)
+            request_count = await cache_manager.zcard(cache_key)
+
+            if request_count >= self.calls:
+                return self._create_rate_limit_response()
+
+            # 現在のリクエストを追加
+            request_id = f"{current_time}:{hashlib.sha256(str(time.time()).encode()).hexdigest()}"
+            await cache_manager.zadd(cache_key, {request_id: current_time})
+            await cache_manager.expire_key(cache_key, self.period)
 
             response = await call_next(request)
 
-            # レート制限ヘッダー追加
-            response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
-            response.headers["X-RateLimit-Remaining"] = str(int(bucket["tokens"]))
-            response.headers["X-RateLimit-Reset"] = str(int(bucket["last_refill"] + self.window_seconds))
+            # レート制限ヘッダー
+            remaining = max(0, self.calls - request_count - 1)
+            response.headers["X-RateLimit-Limit"] = str(self.calls)
+            response.headers["X-RateLimit-Remaining"] = str(remaining)
+            response.headers["X-RateLimit-Reset"] = str(current_time + self.period)
 
             return response
-        else:
-            # レート制限超過
-            retry_after = int(self.window_seconds - (time.time() - bucket["last_refill"]))
 
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Rate limit exceeded. Retry after {retry_after} seconds.",
-                headers={
-                    "Retry-After": str(retry_after),
-                    "X-RateLimit-Limit": str(self.requests_per_minute),
-                    "X-RateLimit-Remaining": "0",
-                }
-            )
-:::
+        except Exception as e:
+            logger.exception("レート制限エラー", error=str(e))
+            # エラー時はインメモリフォールバック
+            return await call_next(request)
 
-### 5.4 Redisバックエンド（本番推奨）
+    def _create_rate_limit_response(self) -> JSONResponse:
+        """レート制限超過レスポンス"""
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={
+                "error": "Rate limit exceeded",
+                "details": {
+                    "limit": self.calls,
+                    "period": self.period,
+                    "retry_after": self.period,
+                },
+            },
+            headers={"Retry-After": str(self.period)},
+        )
+```
+
+### 5.4 クライアント識別の優先順位
+
+| 優先順位 | 識別方法 | フォーマット | 説明 |
+|---------|---------|-------------|------|
+| 1 | 認証済みユーザー | `user:{user_id}` | 最も信頼性が高い |
+| 2 | APIキー | `apikey:{SHA256ハッシュ}` | セキュリティのためハッシュ化 |
+| 3 | IPアドレス | `ip:{ip_address}` | X-Forwarded-For対応 |
+
+### 5.5 グレースフルデグラデーション
 
 ```python
-# src/app/api/middlewares/rate_limit.py (Redis版)
-
-import redis.asyncio as redis
-from app.core.config import settings
-
-class RedisRateLimitMiddleware(BaseHTTPMiddleware):
-    """Redisベースレート制限ミドルウェア"""
-
-    def __init__(self, app, requests_per_minute: int = 100):
-        super().__init__(app)
-        self.requests_per_minute = requests_per_minute
-        self.window_seconds = 60
-        self.redis = redis.from_url(settings.REDIS_URL, decode_responses=True)
-
-    async def dispatch(self, request: Request, call_next):
-        client_id = self._get_client_id(request)
-        key = f"rate_limit:{client_id}"
-
-        # 現在のカウント取得
-        current_count = await self.redis.get(key)
-
-        if current_count is None:
-            # 初回リクエスト
-            await self.redis.setex(key, self.window_seconds, 1)
-            remaining = self.requests_per_minute - 1
-        elif int(current_count) < self.requests_per_minute:
-            # 制限内
-            await self.redis.incr(key)
-            remaining = self.requests_per_minute - int(current_count) - 1
-        else:
-            # 制限超過
-            ttl = await self.redis.ttl(key)
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Rate limit exceeded. Retry after {ttl} seconds.",
-                headers={"Retry-After": str(ttl)}
-            )
-
-        response = await call_next(request)
-        response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
-        return response
+# Redis障害時のフォールバック戦略
+try:
+    if not cache_manager.is_redis_available():
+        # インメモリフォールバック
+        is_limited, count = self._check_rate_limit_memory(client_id, current_time)
+        ...
+except Exception:
+    # エラー時は制限をスキップ（可用性優先）
+    return await call_next(request)
 ```
+
+**特徴:**
+
+- Redis障害時は自動的にインメモリストアにフォールバック
+- インメモリストアはLRU戦略でメモリリーク防止（最大10000エントリ）
+- 致命的エラー時は制限をスキップし可用性を優先
 
 ---
 
@@ -754,89 +777,161 @@ async def validate_upload_file(file: UploadFile):
 
 ---
 
-## 11. 監査ログ
+## 11. 監査ログ・操作履歴
 
-### 11.1 監査ログ対象
+### 11.1 2つのミドルウェアによる記録
+
+システムでは2つのミドルウェアで操作を記録します：
+
+| ミドルウェア | 目的 | 記録対象 |
+|------------|------|---------|
+| **AuditLogMiddleware** | 重要な操作の監査記録 | データ変更、セキュリティイベント |
+| **ActivityTrackingMiddleware** | 全操作の履歴記録 | 全APIリクエスト |
 
 ::: mermaid
 mindmap
-  root((監査ログ))
-    認証イベント
-      ログイン成功
-      ログイン失敗
-      ログアウト
-    認可イベント
-      権限拒否
-      ロール変更
-      メンバー追加削除
-    データ操作
-      プロジェクト作成削除
-      ファイルアップロード削除
-      重要データ更新
-    セキュリティイベント
-      レート制限超過
-      不正アクセス試行
-      異常なリクエスト
+  root((監査・操作記録))
+    AuditLogMiddleware
+      プロジェクト変更
+      ユーザー変更
+      システム設定変更
+      セッション終了
+      一括操作
+      データ削除
+      代行操作
+    ActivityTrackingMiddleware
+      全APIリクエスト
+      リクエストボディ
+      レスポンスステータス
+      処理時間
+      エラー情報
 :::
 
-### 11.2 実装
+### 11.2 AuditLogMiddleware
 
-**実装**: `src/app/api/decorators/security.py`
+**実装**: `src/app/api/middlewares/audit_log.py`
 
 ```python
-from functools import wraps
-from app.core.logging import logger
+class AuditLogMiddleware(BaseHTTPMiddleware):
+    """監査ログミドルウェア"""
 
-def audit_log(action: str):
-    """監査ログデコレータ"""
+    # 監査対象のパスパターンと設定
+    AUDIT_TARGETS: list[dict[str, Any]] = [
+        # プロジェクト変更
+        {
+            "pattern": re.compile(r"^/api/v1/projects?/([0-9a-f-]{36})$"),
+            "methods": {"PUT", "PATCH", "DELETE"},
+            "resource_type": "PROJECT",
+            "event_type": AuditEventType.DATA_CHANGE,
+            "severity": AuditSeverity.INFO,
+        },
+        # システム設定変更
+        {
+            "pattern": re.compile(r"^/api/v1/admin/settings/"),
+            "methods": {"PATCH", "POST"},
+            "resource_type": "SYSTEM_SETTING",
+            "event_type": AuditEventType.DATA_CHANGE,
+            "severity": AuditSeverity.WARNING,
+        },
+        # 代行操作（最高重要度）
+        {
+            "pattern": re.compile(r"^/api/v1/admin/impersonate/"),
+            "methods": {"POST"},
+            "resource_type": "IMPERSONATION",
+            "event_type": AuditEventType.SECURITY,
+            "severity": AuditSeverity.CRITICAL,
+        },
+    ]
 
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            # リクエスト情報取得
-            current_user = kwargs.get("current_user")
-            request_id = kwargs.get("request_id")
+    async def dispatch(self, request: Request, call_next) -> Response:
+        # 監査対象かチェック
+        audit_config = self._get_audit_config(request.url.path, request.method)
+        if not audit_config:
+            return await call_next(request)
 
-            # 操作前ログ
-            logger.info(
-                f"Audit: {action} started",
-                user_id=current_user.id if current_user else None,
-                action=action,
-                request_id=request_id
-            )
+        # リクエスト処理
+        response = await call_next(request)
 
-            try:
-                result = await func(*args, **kwargs)
+        # 成功時のみ監査ログを記録（2xxのみ）
+        if 200 <= response.status_code < 300:
+            await self._record_audit_log(request, response, audit_config)
 
-                # 操作成功ログ
-                logger.info(
-                    f"Audit: {action} succeeded",
-                    user_id=current_user.id if current_user else None,
-                    action=action,
-                    request_id=request_id
-                )
-
-                return result
-
-            except Exception as e:
-                # 操作失敗ログ
-                logger.error(
-                    f"Audit: {action} failed",
-                    user_id=current_user.id if current_user else None,
-                    action=action,
-                    error=str(e),
-                    request_id=request_id
-                )
-                raise
-
-        return wrapper
-    return decorator
-
-# 使用例
-@audit_log(action="delete_project")
-async def delete_project(project_id: UUID, current_user: UserAccount):
-    ...
+        return response
 ```
+
+### 11.3 ActivityTrackingMiddleware
+
+**実装**: `src/app/api/middlewares/activity_tracking.py`
+
+```python
+class ActivityTrackingMiddleware(BaseHTTPMiddleware):
+    """ユーザー操作履歴を自動記録するミドルウェア"""
+
+    # 除外パス
+    EXCLUDE_PATHS: set[str] = {
+        "/health", "/healthz", "/ready", "/metrics",
+        "/docs", "/openapi.json", "/redoc", "/favicon.ico",
+    }
+
+    # 機密情報キー（マスク対象）
+    SENSITIVE_KEYS: set[str] = {
+        "password", "token", "secret", "api_key",
+        "credential", "authorization",
+    }
+
+    async def dispatch(self, request: Request, call_next) -> Response:
+        if self._should_skip(request.url.path):
+            return await call_next(request)
+
+        start_time = time.perf_counter()
+
+        # リクエストボディ取得（機密情報マスク）
+        request_body = await self._get_masked_request_body(request)
+
+        response = await call_next(request)
+
+        # 処理時間計算
+        duration_ms = int((time.perf_counter() - start_time) * 1000)
+
+        # 操作履歴を記録
+        await self._record_activity(
+            request=request,
+            request_body=request_body,
+            response_status=response.status_code,
+            duration_ms=duration_ms,
+        )
+
+        return response
+```
+
+### 11.4 監査対象と重要度
+
+| リソース | HTTPメソッド | イベント種別 | 重要度 |
+|---------|-------------|-------------|--------|
+| **PROJECT** | PUT, PATCH, DELETE | DATA_CHANGE | INFO |
+| **USER** | PUT, PATCH, DELETE | DATA_CHANGE | INFO |
+| **SYSTEM_SETTING** | PATCH, POST | DATA_CHANGE | WARNING |
+| **SESSION** | POST (terminate) | SECURITY | WARNING |
+| **BULK_OPERATION** | POST | DATA_CHANGE | WARNING |
+| **DATA_CLEANUP** | POST | DATA_CHANGE | CRITICAL |
+| **IMPERSONATION** | POST | SECURITY | CRITICAL |
+
+### 11.5 操作履歴の記録内容
+
+| フィールド | 説明 |
+|-----------|------|
+| **user_id** | 認証済みユーザーID |
+| **action_type** | CREATE, READ, UPDATE, DELETE, ERROR |
+| **resource_type** | PROJECT, USER, SESSION等 |
+| **resource_id** | リソースのUUID |
+| **endpoint** | APIエンドポイント |
+| **method** | HTTPメソッド |
+| **request_body** | マスク済みリクエストボディ |
+| **response_status** | HTTPステータスコード |
+| **error_message** | エラーメッセージ |
+| **ip_address** | クライアントIPアドレス |
+| **user_agent** | ユーザーエージェント |
+| **duration_ms** | 処理時間（ミリ秒） |
 
 ---
 
@@ -846,14 +941,16 @@ async def delete_project(project_id: UUID, current_user: UserAccount):
 
 ✅ **多層防御**: 5層のセキュリティレイヤー
 ✅ **OWASP Top 10対策**: 10項目すべて対策済み
-✅ **セキュリティヘッダー**: 7種類のヘッダー実装
-✅ **レート制限**: 100req/min（Token Bucket）
+✅ **セキュリティヘッダー**: CSP, HSTS等（本番環境で有効）
+✅ **レート制限**: 100req/min（Sliding Window、Redis/Memoryフォールバック）
+✅ **メンテナンスモード**: 管理者アクセスを許可しつつサービス停止
 ✅ **パスワードハッシュ**: bcrypt 12ラウンド
 ✅ **SQLインジェクション対策**: ORM + Pydantic
 ✅ **XSS対策**: Pydantic + CSP
 ✅ **CSRF対策**: Bearer Token + CORS
 ✅ **ファイルアップロードセキュリティ**: サイズ・拡張子検証
-✅ **監査ログ**: 主要操作のログ記録
+✅ **監査ログ**: AuditLogMiddlewareによる重要操作の記録
+✅ **操作履歴**: ActivityTrackingMiddlewareによる全操作の記録
 
 ### 12.2 今後の改善提案
 
@@ -869,8 +966,9 @@ async def delete_project(project_id: UUID, current_user: UserAccount):
 **ドキュメント管理情報:**
 
 - **作成日**: 2025年（リバースエンジニアリング実施）
+- **最終更新日**: 2026年1月（ミドルウェア実装更新）
 - **対象バージョン**: 現行実装
 - **関連ドキュメント**:
-  - 認証・認可設計書: `03-security/02-authentication-design.md`
-  - RBAC設計書: `03-security/01-rbac-design.md`
-  - ミドルウェア設計書: `06-middleware/01-middleware-design.md`
+  - 認証・認可設計書: `05-security/02-authentication-design.md`
+  - RBAC設計書: `05-security/01-rbac-design.md`
+  - ミドルウェア設計書: `09-middleware/01-middleware-design.md`
