@@ -11,6 +11,7 @@ from sqlalchemy import Date, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.analysis.analysis_session import AnalysisSession
+from app.models.analysis.analysis_snapshot import AnalysisSnapshot
 from app.models.driver_tree.driver_tree import DriverTree
 from app.models.project.project import Project
 from app.models.project.project_file import ProjectFile
@@ -151,6 +152,9 @@ class DashboardService:
         # ツリー作成トレンド（日別）
         tree_trend_data = await self._get_creation_trend(DriverTree, start_date, days)
 
+        # スナップショット作成トレンド（日別）
+        snapshot_trend_data = await self._get_snapshot_trend(days)
+
         # プロジェクト状態分布
         project_active = await self.db.scalar(
             select(func.count(Project.id)).where(Project.is_active == True)  # noqa: E712
@@ -167,6 +171,9 @@ class DashboardService:
                 ChartDataPoint(label="アーカイブ", value=float(project_archived or 0)),
             ],
         )
+
+        # プロジェクト進捗率
+        project_progress_data = await self._get_project_progress()
 
         # ユーザーアクティビティ（直近のログイン状況）
         user_active = await self.db.scalar(
@@ -200,7 +207,15 @@ class DashboardService:
                 x_axis_label="日付",
                 y_axis_label="作成数",
             ),
+            snapshot_trend=ChartDataResponse(
+                chart_type="line",
+                title="スナップショット作成トレンド",
+                data=snapshot_trend_data,
+                x_axis_label="日付",
+                y_axis_label="作成数",
+            ),
             project_distribution=project_distribution,
+            project_progress=project_progress_data,
             user_activity=user_activity,
             generated_at=datetime.now(UTC),
         )
@@ -251,6 +266,96 @@ class DashboardService:
             )
 
         return data_points
+
+    async def _get_snapshot_trend(self, days: int) -> list[ChartDataPoint]:
+        """スナップショット作成トレンドを取得。
+
+        Args:
+            days: 集計対象日数
+
+        Returns:
+            list[ChartDataPoint]: データポイントリスト（0埋め済み）
+        """
+        start_date = datetime.now(UTC) - timedelta(days=days)
+        end_date = start_date + timedelta(days=days)
+
+        # 日別のスナップショット数を一括集計
+        result = await self.db.execute(
+            select(
+                cast(AnalysisSnapshot.created_at, Date).label("date"),
+                func.count(AnalysisSnapshot.id).label("count"),
+            )
+            .where(
+                AnalysisSnapshot.created_at >= start_date,
+                AnalysisSnapshot.created_at < end_date,
+            )
+            .group_by(cast(AnalysisSnapshot.created_at, Date))
+        )
+
+        # 結果をマップに変換
+        count_map = {row[0]: row[1] for row in result.all()}
+
+        # 全日付のデータポイントを作成（0埋め）
+        data_points = []
+        for i in range(days):
+            current_date = start_date + timedelta(days=i)
+            date_key = current_date.date()
+
+            data_points.append(
+                ChartDataPoint(
+                    label=current_date.strftime("%Y-%m-%d"),
+                    value=float(count_map.get(date_key, 0)),
+                )
+            )
+
+        return data_points
+
+    async def _get_project_progress(self) -> ChartDataResponse:
+        """個別プロジェクトの進捗率を取得。
+
+        各プロジェクトのセッション完了率を計算します。
+        進捗率 = 完了セッション数 / 総セッション数 * 100
+
+        Returns:
+            ChartDataResponse: プロジェクト進捗率チャート
+        """
+        # プロジェクトごとの総セッション数と完了セッション数を集計
+        result = await self.db.execute(
+            select(
+                Project.name,
+                func.count(AnalysisSession.id).label("total_sessions"),
+                func.count(case((AnalysisSession.status == "completed", 1))).label("completed_sessions"),
+            )
+            .outerjoin(AnalysisSession, Project.id == AnalysisSession.project_id)
+            .where(Project.is_active == True)  # noqa: E712
+            .group_by(Project.id, Project.name)
+            .order_by(Project.name)
+        )
+
+        # データポイントを作成
+        data_points = []
+        for row in result.all():
+            project_name = row.name
+            total_sessions = row.total_sessions or 0
+            completed_sessions = row.completed_sessions or 0
+
+            # 進捗率を計算（総セッション数が0の場合は0%）
+            progress_rate = (completed_sessions / total_sessions * 100) if total_sessions > 0 else 0.0
+
+            data_points.append(
+                ChartDataPoint(
+                    label=project_name,
+                    value=round(progress_rate, 2),
+                )
+            )
+
+        return ChartDataResponse(
+            chart_type="bar",
+            title="プロジェクト進捗率",
+            data=data_points,
+            x_axis_label="プロジェクト",
+            y_axis_label="進捗率（%）",
+        )
 
     async def get_activities(self, skip: int = 0, limit: int = 20) -> DashboardActivitiesResponse:
         """アクティビティログを効率的に取得。

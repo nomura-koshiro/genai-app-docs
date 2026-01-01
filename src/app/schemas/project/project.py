@@ -151,6 +151,7 @@ class ProjectResponse(BaseCamelCaseORMModel):
         budget (Decimal | None): プロジェクト予算
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
+        stats (ProjectStatsResponse | None): プロジェクト統計情報（オプション）
 
     Example:
         >>> from datetime import UTC
@@ -165,11 +166,18 @@ class ProjectResponse(BaseCamelCaseORMModel):
         ...     end_date=date(2024, 12, 31),
         ...     budget=Decimal("1000000.00"),
         ...     created_at=datetime.now(UTC),
-        ...     updated_at=datetime.now(UTC)
+        ...     updated_at=datetime.now(UTC),
+        ...     stats=ProjectStatsResponse(
+        ...         member_count=5,
+        ...         file_count=10,
+        ...         session_count=2,
+        ...         tree_count=1
+        ...     )
         ... )
 
     Note:
         - from_attributesを有効にしているため、ORMモデルから直接変換可能です
+        - stats フィールドはオプションで、一覧表示や詳細表示で必要に応じて含めます
     """
 
     id: uuid.UUID = Field(..., description="プロジェクトID（UUID）")
@@ -183,18 +191,23 @@ class ProjectResponse(BaseCamelCaseORMModel):
     budget: Decimal | None = Field(default=None, description="プロジェクト予算")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
+    stats: ProjectStatsResponse | None = Field(default=None, description="プロジェクト統計情報")
 
 
 class ProjectDetailResponse(ProjectResponse):
     """プロジェクト詳細レスポンススキーマ。
 
     プロジェクト詳細APIで統計情報を含めて返す際に使用します。
+    現在は ProjectResponse を継承しているだけですが、将来的に詳細専用のフィールドを
+    追加する可能性があるため、明示的に詳細レスポンス用のスキーマとして定義しています。
 
-    Attributes:
-        stats (ProjectStatsResponse | None): プロジェクト統計情報
+    Note:
+        - ProjectResponse に stats フィールドが追加されたため、
+          このクラスは現在 ProjectResponse と同じフィールドを持ちます
+        - 詳細APIでは常に stats フィールドを含めることを推奨します
     """
 
-    stats: ProjectStatsResponse | None = Field(default=None, description="プロジェクト統計情報")
+    pass
 
 
 class ProjectListResponse(BaseCamelCaseModel):

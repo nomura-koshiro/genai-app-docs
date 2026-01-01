@@ -66,7 +66,12 @@ projects_router = APIRouter()
 
     レスポンス:
         - ProjectListResponse: プロジェクト一覧レスポンス
-            - projects (list[ProjectResponse]): プロジェクト情報リスト
+            - projects (list[ProjectResponse]): プロジェクト情報リスト（統計情報を含む）
+                - stats (ProjectStatsResponse): プロジェクト統計情報
+                    - member_count (int): メンバー数
+                    - file_count (int): ファイル数
+                    - session_count (int): 分析セッション数
+                    - tree_count (int): ドライバーツリー数
             - total (int): 総件数
             - skip (int): スキップ数
             - limit (int): 取得件数
@@ -101,6 +106,18 @@ async def list_projects(
         is_active=is_active,
     )
 
+    # 統計情報を一括取得
+    project_ids = [project.id for project in projects]
+    stats_dict = await project_service.get_projects_stats_bulk(project_ids)
+
+    # プロジェクトレスポンスを構築（統計情報を含む）
+    project_responses = []
+    for project in projects:
+        project_response = ProjectResponse.model_validate(project)
+        # 統計情報を追加
+        project_response.stats = stats_dict.get(project.id)
+        project_responses.append(project_response)
+
     logger.info(
         "プロジェクト一覧を取得しました",
         user_id=str(current_user.id),
@@ -109,7 +126,7 @@ async def list_projects(
     )
 
     return ProjectListResponse(
-        projects=[ProjectResponse.model_validate(project) for project in projects],
+        projects=project_responses,
         total=total,
         skip=skip,
         limit=limit,

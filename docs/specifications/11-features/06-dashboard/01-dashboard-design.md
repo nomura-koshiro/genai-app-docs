@@ -173,6 +173,17 @@ FROM project_file;
     "xAxisLabel": "日付",
     "yAxisLabel": "件数"
   },
+  "snapshotTrend": {
+    "chartType": "bar",
+    "title": "スナップショット作成トレンド",
+    "data": [
+      {"label": "12/19", "value": 2},
+      {"label": "12/20", "value": 3},
+      {"label": "12/21", "value": 1}
+    ],
+    "xAxisLabel": "日付",
+    "yAxisLabel": "件数"
+  },
   "treeTrend": {
     "chartType": "bar",
     "title": "ツリー作成トレンド",
@@ -193,6 +204,17 @@ FROM project_file;
     ],
     "xAxisLabel": null,
     "yAxisLabel": null
+  },
+  "projectProgress": {
+    "chartType": "bar",
+    "title": "プロジェクト進捗",
+    "data": [
+      {"label": "売上分析プロジェクト", "value": 75},
+      {"label": "市場調査プロジェクト", "value": 45},
+      {"label": "製品改善プロジェクト", "value": 90}
+    ],
+    "xAxisLabel": null,
+    "yAxisLabel": "進捗率（%）"
   },
   "userActivity": {
     "chartType": "line",
@@ -298,8 +320,10 @@ class ChartDataResponse(BaseCamelCaseModel):
 class DashboardChartsResponse(BaseCamelCaseModel):
     """チャート一覧レスポンス"""
     session_trend: ChartDataResponse
+    snapshot_trend: ChartDataResponse
     tree_trend: ChartDataResponse
     project_distribution: ChartDataResponse
+    project_progress: ChartDataResponse
     user_activity: ChartDataResponse
     generated_at: datetime
 ```
@@ -344,14 +368,18 @@ class DashboardService:
     async def get_charts(self, days: int = 30) -> DashboardChartsResponse:
         """チャートデータを取得"""
         session_trend = await self._get_session_trend(days)
+        snapshot_trend = await self._get_snapshot_trend(days)
         tree_trend = await self._get_tree_trend(days)
         project_distribution = await self._get_project_distribution()
+        project_progress = await self._get_project_progress()
         user_activity = await self._get_user_activity_trend(days)
 
         return DashboardChartsResponse(
             session_trend=session_trend,
+            snapshot_trend=snapshot_trend,
             tree_trend=tree_trend,
             project_distribution=project_distribution,
+            project_progress=project_progress,
             user_activity=user_activity,
             generated_at=datetime.utcnow()
         )
@@ -380,12 +408,20 @@ class DashboardService:
         """セッション作成トレンドを取得"""
         ...
 
+    async def _get_snapshot_trend(self, days: int) -> ChartDataResponse:
+        """スナップショット作成トレンドを取得"""
+        ...
+
     async def _get_tree_trend(self, days: int) -> ChartDataResponse:
         """ツリー作成トレンドを取得"""
         ...
 
     async def _get_project_distribution(self) -> ChartDataResponse:
         """プロジェクト状態分布を取得"""
+        ...
+
+    async def _get_project_progress(self) -> ChartDataResponse:
+        """プロジェクト進捗を取得"""
         ...
 
     async def _get_user_activity_trend(self, days: int) -> ChartDataResponse:
@@ -478,7 +514,7 @@ features/dashboard/
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
 | セッションバー | 棒グラフ | GET /dashboard/charts | sessionTrend.data[] | label→X軸, value→幅 |
-| スナップショットバー | 棒グラフ | GET /dashboard/charts | （追加データ） | - |
+| スナップショットバー | 棒グラフ | GET /dashboard/charts | snapshotTrend.data[] | label→X軸, value→幅 |
 | 日付ラベル | テキスト | GET /dashboard/charts | sessionTrend.data[].label | MM/DD形式 |
 | 値表示 | テキスト | GET /dashboard/charts | sessionTrend.data[].value | n / m 形式 |
 | 凡例 | テキスト | - | - | 固定値 |
@@ -487,9 +523,9 @@ features/dashboard/
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
-| プロジェクト名 | テキスト | GET /dashboard/charts | projectDistribution.data[].label | - |
-| 進捗率 | 数値+% | GET /dashboard/charts | projectDistribution.data[].value | n% 表示 |
-| プログレスバー | バー | GET /dashboard/charts | projectDistribution.data[].value | width: n% |
+| プロジェクト名 | テキスト | GET /dashboard/charts | projectProgress.data[].label | - |
+| 進捗率 | 数値+% | GET /dashboard/charts | projectProgress.data[].value | n% 表示 |
+| プログレスバー | バー | GET /dashboard/charts | projectProgress.data[].value | width: n% |
 | バー色 | 色 | - | - | 進捗率に応じて変更 |
 
 ### 7.4 最近のアクティビティ
@@ -517,10 +553,12 @@ features/dashboard/
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
-| プロジェクト名 | テキスト | GET /dashboard/activities | （projects取得が別途必要） | - |
-| メンバー数 | テキスト | - | - | n人のメンバー |
-| 更新時間 | テキスト | - | - | 更新: n分前 |
+| プロジェクト名 | テキスト | GET /api/v1/projects?sort=updated_at&order=desc&limit=5 | projects[].name | - |
+| メンバー数 | テキスト | GET /api/v1/projects | projects[].member_count | n人のメンバー |
+| 更新時間 | テキスト | GET /api/v1/projects | projects[].updated_at | 更新: n分前 |
 | プロジェクトアイコン | アイコン | - | - | 固定 📁 |
+
+**補足**: 最近のプロジェクトは、既存のプロジェクト一覧API（GET /api/v1/projects）を利用し、更新日時で降順ソート、上位5件を取得します。
 
 ### 7.7 期間選択
 
@@ -551,4 +589,7 @@ features/dashboard/
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 1.0
+- **バージョン**: 1.1
+- **変更履歴**:
+  - v1.1 (2026-01-01): snapshotTrend、projectProgressのAPI定義追加、最近のプロジェクト取得方法を明確化
+  - v1.0 (2026-01-01): 初版作成

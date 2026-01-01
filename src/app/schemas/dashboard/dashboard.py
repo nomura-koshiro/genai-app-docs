@@ -189,13 +189,17 @@ class DashboardChartsResponse(BaseCamelCaseModel):
     Attributes:
         session_trend: セッション作成トレンド
         tree_trend: ツリー作成トレンド
+        snapshot_trend: スナップショット作成トレンド
         project_distribution: プロジェクト状態分布
+        project_progress: 個別プロジェクトの進捗率
         user_activity: ユーザーアクティビティ
         generated_at: 統計生成日時
     """
 
     session_trend: ChartDataResponse = Field(..., description="セッション作成トレンド")
     tree_trend: ChartDataResponse = Field(..., description="ツリー作成トレンド")
+    snapshot_trend: ChartDataResponse = Field(..., description="スナップショット作成トレンド")
     project_distribution: ChartDataResponse = Field(..., description="プロジェクト状態分布")
+    project_progress: ChartDataResponse = Field(..., description="個別プロジェクトの進捗率")
     user_activity: ChartDataResponse = Field(..., description="ユーザーアクティビティ")
     generated_at: datetime = Field(..., description="統計生成日時")
