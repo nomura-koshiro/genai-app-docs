@@ -549,7 +549,8 @@ async def load_driver_trees(session: AsyncSession) -> int:
             project_id=parse_uuid(row["project_id"]),
             name=row["name"],
             description=row.get("description") or "",
-            root_node_id=parse_uuid(row["root_node_id"]) if row.get("root_node_id") else None,
+            status=row.get("status") or "draft",
+            created_by=parse_uuid(row["created_by"]) if row.get("created_by") else None,
             formula_id=parse_uuid(row["formula_id"]) if row.get("formula_id") else None,
         )
         session.add(record)
@@ -645,7 +646,7 @@ async def load_analysis_sessions(session: AsyncSession) -> int:
             creator_id=parse_uuid(row["creator_id"]),
             project_id=parse_uuid(row["project_id"]),
             input_file_id=parse_uuid(row["input_file_id"]) if row.get("input_file_id") else None,
-            current_snapshot=int(row["current_snapshot"]),
+            status=row.get("status") or "draft",
         )
         session.add(record)
         count += 1
