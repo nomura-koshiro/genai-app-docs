@@ -159,6 +159,7 @@ async def load_user_accounts(session: AsyncSession) -> int:
             display_name=row["display_name"],
             roles=parse_json(row["roles"]),
             is_active=parse_bool(row["is_active"]),
+            login_count=parse_int(row.get("login_count", "0")) or 0,
         )
         session.add(user)
         count += 1
