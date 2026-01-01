@@ -1,4 +1,4 @@
-# ドライバーツリー 統合設計書（DTC-001〜DTP-006）
+# ドライバーツリー バックエンド設計書（DTC-001〜DTP-006）
 
 ## 1. 概要
 
@@ -611,218 +611,13 @@ class DriverTreeFileService:
 
 ## 6. フロントエンド設計
 
-### 6.1 画面一覧
+フロントエンド設計の詳細は以下を参照してください：
 
-| 画面ID | 画面名 | パス | 説明 |
-|--------|--------|------|------|
-| trees | ドライバーツリー一覧 | /projects/{id}/trees | ツリー一覧表示 |
-| tree-new | ツリー作成 | /projects/{id}/trees/new | テンプレート選択・新規作成 |
-| tree-edit | ツリー編集 | /projects/{id}/trees/{treeId} | ツリー編集画面 |
-| tree-policies | 施策設定 | /projects/{id}/trees/{treeId}/policies | 施策一覧・編集 |
-| tree-data-binding | データ紐付け | /projects/{id}/trees/{treeId}/data-binding | データ紐付け設定 |
-| tree-results | 計算結果 | /projects/{id}/trees/{treeId}/results | 計算結果・シミュレーション |
-
-### 6.2 コンポーネント構成
-
-```text
-features/driver-tree/
-├── components/
-│   ├── TreeList/
-│   │   ├── TreeList.tsx
-│   │   └── TreeListItem.tsx
-│   ├── TreeCanvas/
-│   │   ├── TreeCanvas.tsx
-│   │   ├── TreeNode.tsx
-│   │   ├── TreeConnection.tsx
-│   │   └── TreeToolbar.tsx
-│   ├── NodeEditor/
-│   │   ├── NodeEditor.tsx
-│   │   └── NodeTypeSelector.tsx
-│   ├── PolicyEditor/
-│   │   ├── PolicyList.tsx
-│   │   ├── PolicyCard.tsx
-│   │   └── PolicyModal.tsx
-│   ├── DataBinding/
-│   │   ├── DataSourceSelector.tsx
-│   │   ├── NodeBindingTable.tsx
-│   │   └── ColumnRoleSelector.tsx
-│   ├── Results/
-│   │   ├── ResultsSummary.tsx
-│   │   ├── NodeCalculationTable.tsx
-│   │   └── PolicyEffectChart.tsx
-│   └── TemplateSelector/
-│       ├── TemplateGrid.tsx
-│       ├── TemplateCard.tsx
-│       └── TemplatePreview.tsx
-├── hooks/
-│   ├── useDriverTree.ts
-│   ├── useDriverTreeNodes.ts
-│   ├── useDriverTreePolicies.ts
-│   ├── useDriverTreeFiles.ts
-│   └── useTreeCalculation.ts
-├── api/
-│   ├── driverTreeApi.ts
-│   ├── driverTreeNodeApi.ts
-│   └── driverTreeFileApi.ts
-└── types/
-    └── driverTree.ts
-```
+- [ドライバーツリー フロントエンド設計書](./02-driver-tree-frontend-design.md)
 
 ---
 
-## 7. 画面項目・APIマッピング
-
-### 7.1 ドライバーツリー一覧画面（trees）
-
-| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
-|---------|---------|------------------|---------------------|---------|
-| ツリー名 | テキスト（リンク） | GET /driver-tree/tree | trees[].name | - |
-| 数式マスタ | テキスト | GET /driver-tree/tree | trees[].formulaName | formulaId→名前解決 |
-| ノード数 | 数値 | GET /driver-tree/tree | trees[].nodeCount | - |
-| 施策数 | 数値 | GET /driver-tree/tree | trees[].policyCount | - |
-| 更新日時 | 日時 | GET /driver-tree/tree | trees[].updatedAt | ISO8601→YYYY/MM/DD HH:mm |
-| 編集ボタン | ボタン | - | - | tree-edit画面へ遷移 |
-| 複製ボタン | ボタン | POST /driver-tree/tree/{id}/duplicate | - | 確認ダイアログ後実行 |
-| 新規作成ボタン | ボタン | - | - | tree-new画面へ遷移 |
-
-### 7.2 ツリー作成画面（tree-new）
-
-| 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
-|---------|---------|------|------------------|---------------------|---------------|
-| 業種フィルター | チップ選択 | - | GET /driver-tree/category | （クエリ用） | - |
-| 分析タイプフィルター | チップ選択 | - | GET /driver-tree/category | （クエリ用） | - |
-| テンプレートカード | 選択カード | - | GET /driver-tree/category | - | - |
-| テンプレート人気バッジ | バッジ | - | - | - | 人気テンプレートに表示 |
-| テンプレート利用実績 | テキスト | - | - | - | "利用実績: n+" 形式 |
-| ツリー名 | テキスト入力 | ○ | POST /driver-tree/tree | name | 1-255文字 |
-| 説明 | テキストエリア | - | POST /driver-tree/tree | description | 任意 |
-| 選択中のテンプレート | 表示 | - | - | - | テンプレート名とアイコン |
-| 構造プレビュー | ツリービュー | - | - | - | テンプレートのノード構造 |
-| キャンセルボタン | ボタン | - | - | - | ツリー一覧に戻る |
-| 作成して編集ボタン | ボタン | - | POST /driver-tree/tree + POST /import | - | - |
-
-### 7.3 ツリー編集画面（tree-edit）
-
-#### 共通タブナビゲーション
-
-| タブ名 | 遷移先 | 説明 |
-|--------|--------|------|
-| ツリー編集 | tree-edit | ツリー構造の編集（アクティブ） |
-| 施策設定 | tree-policies | 施策の追加・編集 |
-| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
-| 計算結果 | tree-results | 計算結果とシミュレーション |
-
-#### 画面項目
-
-| 画面項目 | 入力/表示形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
-|---------|-------------|------------------|-----------|----------------------|
-| ツリー名 | 表示 | GET /driver-tree/tree/{id} | tree.name | - |
-| ツールバー（ノード追加） | ボタン | POST /driver-tree/tree/{id}/node | label, nodeType, positionX, positionY | - |
-| ツールバー（リレーション追加） | ボタン | - | - | リレーション作成モード |
-| ツールバー（整列） | ボタン | - | - | ノード自動配置 |
-| ツールバー（ズームイン） | ボタン | - | - | キャンバス拡大 |
-| ツールバー（ズームアウト） | ボタン | - | - | キャンバス縮小 |
-| ノード（ビジュアル） | キャンバス | GET /driver-tree/tree/{id} | tree.nodes[] | position_x/y→座標 |
-| 接続線 | SVG | GET /driver-tree/tree/{id} | tree.relationships[] | 親子座標から算出 |
-| ノードラベル | テキスト入力 | PATCH /driver-tree/node/{id} | label | 1-255文字 |
-| ノードタイプ | セレクト | PATCH /driver-tree/node/{id} | nodeType | driver/kpi/metric |
-| データフレーム紐付け | セレクト | PATCH /driver-tree/node/{id} | dataFrameId | - |
-| 保存ボタン | ボタン | PATCH /driver-tree/node/{id} | - | - |
-| データ取込ボタン | ボタン | - | - | tree-data-binding画面へ |
-
-### 7.4 施策設定画面（tree-policies）
-
-#### 共通タブナビゲーション
-
-| タブ名 | 遷移先 | 説明 |
-|--------|--------|------|
-| ツリー編集 | tree-edit | ツリー構造の編集 |
-| 施策設定 | tree-policies | 施策の追加・編集（アクティブ） |
-| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
-| 計算結果 | tree-results | 計算結果とシミュレーション |
-
-#### 画面項目
-
-| 画面項目 | 表示/入力形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
-|---------|-------------|------------------|-----------|----------------------|
-| 施策カード一覧 | カードリスト | GET /driver-tree/tree/{id}/policy | policies[] | - |
-| 施策アイコン | アイコン | - | - | 施策タイプに応じた絵文字 |
-| 施策名 | テキスト | GET/PATCH | policies[].label | - |
-| 対象ノード | テキスト | GET | policies[].nodeLabel | nodeId→ラベル解決 |
-| 影響値 | 数値+% | GET/PATCH | policies[].value | 正負で色分け |
-| コスト | 通貨表示 | GET/PATCH | policies[].cost | ¥フォーマット |
-| 期間 | テキスト | GET/PATCH | policies[].durationMonths | n + "ヶ月" |
-| ステータス | バッジ | GET/PATCH | policies[].status | planned/in_progress/completed |
-| 編集ボタン | ボタン | - | - | モーダル表示 |
-| 削除ボタン | ボタン | DELETE /driver-tree/node/{id}/policy/{id} | - | 確認ダイアログ |
-| 新規施策ボタン | ボタン | POST /driver-tree/node/{id}/policy | name, value | モーダルフォーム |
-
-#### 施策追加モーダル
-
-| 画面項目 | 入力形式 | 必須 | リクエストフィールド | バリデーション |
-|---------|---------|------|---------------------|---------------|
-| 施策名 | テキスト | ○ | name | 1-255文字 |
-| 対象ノード | セレクト | ○ | nodeId（パス） | ノード一覧から選択 |
-| 影響値 | 数値 | ○ | value | 数値（正負可） |
-| コスト | 数値 | - | cost | 正の数値 |
-| 実施期間 | セレクト | - | durationMonths | 1/3/6/12 |
-| 説明 | テキストエリア | - | description | 任意 |
-
-### 7.5 データ紐付け画面（tree-data-binding）
-
-#### 共通タブナビゲーション
-
-| タブ名 | 遷移先 | 説明 |
-|--------|--------|------|
-| ツリー編集 | tree-edit | ツリー構造の編集 |
-| 施策設定 | tree-policies | 施策の追加・編集 |
-| データ紐付け | tree-data-binding | ノードへのデータ紐付け（アクティブ） |
-| 計算結果 | tree-results | 計算結果とシミュレーション |
-
-#### 画面項目
-
-| 画面項目 | 表示/入力形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
-|---------|-------------|------------------|-----------|----------------------|
-| ファイル選択 | セレクト | GET /driver-tree/file | files[] | - |
-| シート選択 | セレクト | GET /driver-tree/file | files[].sheets[] | - |
-| 期間選択 | セレクト | - | - | フロントエンドフィルター |
-| ノード一覧テーブル | テーブル | GET /driver-tree/tree/{id} | tree.nodes[] | - |
-| ノード名 | テキスト | - | nodes[].label | 階層インデント |
-| タイプ | バッジ | - | nodes[].nodeType | root/計算/データ/未設定 |
-| データ列 | セレクト | GET /driver-tree/sheet | columns[] | シートのカラム一覧 |
-| 集計方法 | セレクト | PATCH | - | 合計/平均/最新 |
-| 現在値 | 数値 | GET /driver-tree/tree/{id}/data | - | 計算結果表示 |
-| ステータス | バッジ | - | - | 紐付済/計算済/未紐付 |
-| データ更新ボタン | ボタン | POST /sheet/{id}/refresh | - | - |
-| 保存ボタン | ボタン | PATCH /driver-tree/file/{id}/sheet/{id}/column | columns[] | - |
-
-### 7.6 計算結果画面（tree-results）
-
-#### 共通タブナビゲーション
-
-| タブ名 | 遷移先 | 説明 |
-|--------|--------|------|
-| ツリー編集 | tree-edit | ツリー構造の編集 |
-| 施策設定 | tree-policies | 施策の追加・編集 |
-| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
-| 計算結果 | tree-results | 計算結果とシミュレーション（アクティブ） |
-
-#### 画面項目
-
-| 画面項目 | 表示形式 | APIエンドポイント | フィールド | 変換処理 |
-|---------|---------|------------------|-----------|---------|
-| 現在の売上高 | サマリカード | GET /driver-tree/tree/{id}/data | calculatedDataList[0] | ルートノード値 |
-| 施策適用後 | サマリカード | GET /driver-tree/tree/{id}/data | （計算値） | シミュレーション結果 |
-| 増加額 | サマリカード | - | - | 施策後 - 現在 |
-| 施策コスト合計 | サマリカード | GET /driver-tree/tree/{id}/policy | sum(policies[].cost) | ¥フォーマット |
-| ノード別計算結果テーブル | テーブル | GET /driver-tree/tree/{id}/data | calculatedDataList[] | - |
-| 施策効果比較 | 棒グラフ | GET /driver-tree/tree/{id}/policy | policies[] + 計算 | ROI算出 |
-| エクスポートボタン | ボタン | GET /driver-tree/tree/{id}/output | - | ファイルダウンロード |
-| 再計算ボタン | ボタン | GET /driver-tree/tree/{id}/data | - | 最新データで再計算 |
-
----
-
-## 8. ユースケースカバレッジ表
+## 7. ユースケースカバレッジ表
 
 | UC ID | 機能名 | API | 画面 | ステータス |
 |-------|--------|-----|------|-----------|
@@ -872,7 +667,7 @@ features/driver-tree/
 
 ---
 
-## 9. 関連ドキュメント
+## 8. 関連ドキュメント
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **モックアップ**: [../../03-mockup/pages/projects.js](../../03-mockup/pages/projects.js)
@@ -880,7 +675,7 @@ features/driver-tree/
 
 ---
 
-## 10. ドキュメント管理情報
+## 9. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
