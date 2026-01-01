@@ -159,3 +159,35 @@ features/dashboard/
 | 過去90日間 | 選択肢 | GET /dashboard/charts | days | 90 |
 
 ---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| D-001 | 参加プロジェクト数表示 | `GET /dashboard/stats` | StatisticsCards | 実装済 |
+| D-002 | 進行中セッション数表示 | `GET /dashboard/stats` | StatisticsCards | 実装済 |
+| D-003 | ドライバーツリー数表示 | `GET /dashboard/stats` | StatisticsCards | 実装済 |
+| D-004 | アップロードファイル数表示 | `GET /dashboard/stats` | StatisticsCards | 実装済 |
+| D-005 | 最近のアクティビティ表示 | `GET /dashboard/activities` | RecentActivities | 実装済 |
+| D-006 | クイックアクセス・最近のプロジェクト表示 | `GET /projects` | QuickAccess, RecentProjects | 実装済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-dashboard-design.md](./01-dashboard-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **モックアップ**: [../../03-mockup/pages/dashboard.js](../../03-mockup/pages/dashboard.js)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | DB-FRONTEND-001 |
+| 対象ユースケース | D-001〜D-006 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `pages/dashboard/` |
+
+---

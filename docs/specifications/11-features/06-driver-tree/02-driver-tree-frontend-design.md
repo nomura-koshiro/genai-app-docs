@@ -210,3 +210,42 @@ features/driver-tree/
 | 施策効果比較 | 棒グラフ | GET /driver-tree/tree/{id}/policy | policies[] + 計算 | ROI算出 |
 | エクスポートボタン | ボタン | GET /driver-tree/tree/{id}/output | - | ファイルダウンロード |
 | 再計算ボタン | ボタン | GET /driver-tree/tree/{id}/data | - | 最新データで再計算 |
+
+---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| DTC-001 | ツリー一覧を取得する | `GET /driver-tree/tree` | trees | 実装済 |
+| DTC-002 | ツリーを作成する | `POST /driver-tree/tree` | tree-new | 実装済 |
+| DTC-003 | ツリー情報を更新する | `PUT /driver-tree/tree/{id}` | tree-edit | 実装済 |
+| DTC-004 | ツリーを削除する | `DELETE /driver-tree/tree/{id}` | trees | 実装済 |
+| DTN-001 | ノードを追加する | `POST /driver-tree/tree/{id}/node` | tree-edit | 実装済 |
+| DTN-002 | ノードを更新する | `PATCH /driver-tree/node/{id}` | tree-edit | 実装済 |
+| DTN-003 | ノードを削除する | `DELETE /driver-tree/node/{id}` | tree-edit | 実装済 |
+| DTR-001 | リレーションを作成する | `POST /driver-tree/tree/{id}/relationship` | tree-edit | 実装済 |
+| DTP-001 | 施策を追加する | `POST /driver-tree/tree/{id}/policy` | tree-policies | 実装済 |
+| DTP-002 | 施策を更新する | `PATCH /driver-tree/policy/{id}` | tree-policies | 実装済 |
+| DTP-003 | 施策を削除する | `DELETE /driver-tree/policy/{id}` | tree-policies | 実装済 |
+| DTD-001 | データを紐付ける | `PATCH /driver-tree/file/{id}/sheet/{id}/column` | tree-data-binding | 実装済 |
+| DTD-002 | 計算結果を取得する | `GET /driver-tree/tree/{id}/data` | tree-results | 実装済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-driver-tree-design.md](./01-driver-tree-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **モックアップ**: [../../03-mockup/pages/trees.js](../../03-mockup/pages/trees.js)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | DT-FRONTEND-001 |
+| 対象ユースケース | DTC-001〜DTC-007, DTN-001〜DTN-008, DTR-001〜DTR-006, DTP-001〜DTP-006 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `pages/projects/[id]/trees/` |

@@ -127,3 +127,38 @@ pages/admin/
 | ロール名 | バッジ | 固定値 | PROJECT_MANAGER, MODERATOR, MEMBER, VIEWER |
 | 説明 | テキスト | 固定値 | 定義済み説明文 |
 | 権限 | テキスト | 固定値 | 権限説明文 |
+
+---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| U-003 | ユーザー情報を更新する | `PATCH /user_account/me` | user-detail | 実装済 |
+| U-004 | ユーザーを無効化する | `PATCH /user_account/{id}/deactivate` | users, user-detail | 実装済 |
+| U-005 | ユーザーを有効化する | `PATCH /user_account/{id}/activate` | users, user-detail | 実装済 |
+| U-007 | ユーザー一覧を取得する | `GET /user_account` | users | 実装済 |
+| U-008 | ユーザー詳細を取得する | `GET /user_account/{id}` | user-detail | 実装済 |
+| U-009 | システムロールを付与する | `PUT /user_account/{id}/role` | user-detail | 実装済 |
+| U-010 | システムロールを剥奪する | `PUT /user_account/{id}/role` | user-detail | 実装済 |
+| U-011 | ユーザーのロールを確認する | `GET /user_account/{id}/role_history` | user-detail | 実装済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-user-management-design.md](./01-user-management-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **モックアップ**: [../../03-mockup/pages/admin.js](../../03-mockup/pages/admin.js)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | UM-FRONTEND-001 |
+| 対象ユースケース | U-003〜U-011 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `pages/admin/users/` |
+|  | `pages/admin/roles/` |

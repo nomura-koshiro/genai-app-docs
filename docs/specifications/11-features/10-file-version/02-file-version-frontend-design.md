@@ -338,3 +338,33 @@ features/file-management/
 | シート変更一覧 | リスト | GET /compare | comparison.sheetChanges[] | - |
 | 行追加数 | テキスト | GET /compare | sheetChanges[].rowsAdded | +n行 |
 | 行削除数 | テキスト | GET /compare | sheetChanges[].rowsRemoved | -n行 |
+
+---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| FV-001 | バージョン一覧表示 | `GET /file/{id}/version` | file-versions | 設計済 |
+| FV-002 | 新規バージョンアップロード | `POST /file/{id}/version` | VersionUploadModal | 設計済 |
+| FV-003 | バージョン復元 | `POST /version/{id}/restore` | file-versions | 設計済 |
+| FV-004 | バージョン比較 | `GET /file/{id}/version/compare` | VersionCompareModal | 設計済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-file-version-design.md](./01-file-version-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **プロジェクト管理設計書**: [../04-project-management/01-project-management-design.md](../04-project-management/01-project-management-design.md)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | FV-FRONTEND-001 |
+| 対象ユースケース | FV-001〜FV-004 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `features/file-management/` |

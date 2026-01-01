@@ -208,7 +208,27 @@ pages/admin/
 
 ---
 
-## 3. 関連ドキュメント
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| AS-001 | セッション一覧表示 | `GET /project/{id}/analysis/sessions` | sessions | 実装済 |
+| AS-002 | セッション作成 | `POST /project/{id}/analysis/session` | session-new | 実装済 |
+| AS-003 | セッション詳細取得 | `GET /project/{id}/analysis/session/{id}` | session-detail | 実装済 |
+| AS-004 | セッション削除 | `DELETE /project/{id}/analysis/session/{id}` | sessions | 実装済 |
+| AF-001 | 分析ファイル一覧 | `GET /session/{id}/files` | analysis | 実装済 |
+| AF-002 | 分析ファイル設定 | `PATCH /session/{id}/file/{id}` | analysis | 実装済 |
+| ASN-001 | スナップショット作成 | `POST /session/{id}/snapshot` | analysis | 実装済 |
+| ASN-002 | スナップショット一覧 | `GET /session/{id}/snapshots` | snapshots | 実装済 |
+| ASN-003 | スナップショット復元 | `POST /snapshot/{id}/restore` | snapshots | 実装済 |
+| AC-001 | チャット送信 | `POST /session/{id}/chat` | analysis | 実装済 |
+| AC-002 | チャット履歴取得 | `GET /session/{id}/messages` | analysis | 実装済 |
+| AST-001 | ステップ追加 | `POST /session/{id}/step` | analysis | 実装済 |
+| AST-002 | ステップ更新 | `PATCH /step/{id}` | analysis | 実装済 |
+
+---
+
+## 8. 関連ドキュメント
 
 - **バックエンド設計**: [01-analysis-design.md](./01-analysis-design.md)
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
@@ -217,7 +237,7 @@ pages/admin/
 
 ---
 
-## 4. ドキュメント管理情報
+## 9. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|

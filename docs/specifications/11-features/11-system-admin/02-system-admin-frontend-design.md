@@ -326,3 +326,38 @@ pages/admin/
 | キャッシュ接続 | カード | GET /api/v1/admin/health-check/detailed | checks.cache.status | ステータス+応答時間 |
 | ストレージ接続 | カード | GET /api/v1/admin/health-check/detailed | checks.storage.status | ステータス+応答時間 |
 | 外部API接続 | カード | GET /api/v1/admin/health-check/detailed | checks.external_apis.* | ステータス+応答時間 |
+
+---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| SA-001〜SA-006 | 操作履歴管理 | `GET/POST /admin/activity-logs` | admin-activity-logs | 設計済 |
+| SA-007〜SA-011 | 全プロジェクト管理 | `GET/PATCH /admin/projects` | admin-projects | 設計済 |
+| SA-012〜SA-016 | 監査ログ管理 | `GET /admin/audit-logs` | admin-audit-logs | 設計済 |
+| SA-017〜SA-021 | システム設定 | `GET/PATCH /admin/settings` | admin-settings | 設計済 |
+| SA-022〜SA-026 | システム統計 | `GET /admin/statistics` | admin-statistics | 設計済 |
+| SA-027〜SA-030 | 一括操作 | `POST /admin/bulk-operations` | admin-bulk-operations | 設計済 |
+| SA-031〜SA-034 | 通知管理 | `GET/POST /admin/notifications` | admin-notifications | 設計済 |
+| SA-035〜SA-036 | セキュリティ管理 | `GET/POST /admin/security` | admin-security | 設計済 |
+| SA-037〜SA-040 | データ管理 | `GET/POST /admin/data` | admin-data-management | 設計済 |
+| SA-041〜SA-043 | サポートツール | `POST /admin/impersonate` | admin-support-tools | 設計済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-system-admin-design.md](./01-system-admin-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | SA-FRONTEND-001 |
+| 対象ユースケース | SA-001〜SA-043 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `pages/admin/` |

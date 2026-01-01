@@ -103,3 +103,31 @@ features/templates/
 | 削除ボタン | ボタン | DELETE /template/{id} | - | 確認ダイアログ |
 
 ---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| TM-001 | テンプレート一覧表示 | `GET /template` | templates, tree-new | 設計済 |
+| TM-002 | テンプレート作成（セッションから） | `POST /analysis/template` | session-detail | 設計済 |
+| TM-003 | テンプレート作成（ツリーから） | `POST /driver-tree/template` | tree-edit | 設計済 |
+| TM-004 | テンプレート適用 | `POST /session`, `POST /tree/import` | session-new, tree-new | 設計済 |
+| TM-005 | テンプレート削除 | `DELETE /template/{id}` | templates | 設計済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-template-design.md](./01-template-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | TM-FRONTEND-001 |
+| 対象ユースケース | TM-001〜TM-005 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `pages/templates/` |

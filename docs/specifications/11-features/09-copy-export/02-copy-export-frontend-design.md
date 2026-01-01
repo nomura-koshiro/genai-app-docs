@@ -106,3 +106,31 @@
 | エクスポートボタン | ボタン | GET /tree/{id}/output | - | - |
 
 ---
+
+## 7. ユースケースカバレッジ表
+
+| UC ID | 機能名 | API | 画面コンポーネント | ステータス |
+|-------|-------|-----|-------------------|-----------|
+| CP-001 | 分析セッション複製 | `POST /session/{id}/duplicate` | sessions | 実装済 |
+| CP-002 | ドライバーツリー複製 | `POST /tree/{id}/duplicate` | trees | 実装済 |
+| EX-001 | 分析結果エクスポート | `GET /session/{id}/export` | analysis | 未実装 |
+| EX-002 | ツリー計算結果エクスポート | `GET /tree/{id}/output` | tree-results | 実装済 |
+| EX-003 | ノードデータエクスポート | `GET /node/{id}/preview/output` | tree-edit | 実装済 |
+
+---
+
+## 8. 関連ドキュメント
+
+- **バックエンド設計書**: [01-copy-export-design.md](./01-copy-export-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
+## 9. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | CE-FRONTEND-001 |
+| 対象ユースケース | CP-001〜CP-002, EX-001〜EX-003 |
+| 最終更新日 | 2026-01-01 |
+| 対象フロントエンド | `features/copy-export/` |
