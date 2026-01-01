@@ -88,9 +88,9 @@ graph TB
 | **ドライバーツリー** | `/api/v1/driver-tree/tree/*` | ツリー管理 | [06-driver-tree](../06-driver-tree/) |
 | **ドライバーツリーノード** | `/api/v1/driver-tree/node/*` | ノード管理 | [06-driver-tree](../06-driver-tree/) |
 | **ダッシュボード** | `/api/v1/dashboard/*` | ダッシュボード | [07-dashboard](../07-dashboard/) |
-| **検索** | `/api/v1/search` | グローバル検索 | [11-search](../11-search/) |
-| **通知** | `/api/v1/notifications/*` | ユーザー通知 | [12-notification](../12-notification/) |
-| **システム管理** | `/api/v1/admin/*` | システム管理 | [13-system-admin](../13-system-admin/) |
+| **検索** | `/api/v1/search` | グローバル検索 | [01-common-ui](../01-common-ui/) |
+| **通知** | `/api/v1/notifications/*` | ユーザー通知 | [01-common-ui](../01-common-ui/) |
+| **システム管理** | `/api/v1/admin/*` | システム管理 | [11-system-admin](../11-system-admin/) |
 
 ---
 

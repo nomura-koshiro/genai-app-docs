@@ -1,10 +1,10 @@
-# 共通UI バックエンド設計書（UI-001〜UI-004）
+# 共通UI バックエンド設計書（UI-001〜UI-011）
 
 ## 1. 概要
 
 ### 1.1 目的
 
-本設計書は、CAMPシステムの共通UIコンポーネント（ヘッダー、サイドバー）の動的表示に必要なバックエンドの設計を定義する。
+本設計書は、CAMPシステムの共通UIコンポーネント（ヘッダー、サイドバー）に関するバックエンドの設計を定義する。
 
 ### 1.2 対象ユースケース
 
@@ -12,28 +12,79 @@
 |---------|-------|---------|
 | **サイドバー** | UI-001 | 権限に応じたメニューを表示する |
 | | UI-002 | 参画プロジェクト数に応じて遷移先を切り替える |
-| **ヘッダー** | UI-003 | ユーザーコンテキスト情報を取得する |
-| | UI-004 | 未読通知バッジを表示する |
+| **ヘッダー（コンテキスト）** | UI-003 | ユーザーコンテキスト情報を取得する |
+| **ヘッダー（検索）** | UI-004 | プロジェクト・セッション・ファイル・ツリーを横断検索する |
+| | UI-005 | 検索結果をフィルタリングする |
+| **ヘッダー（通知）** | UI-006 | 未読通知一覧を取得する |
+| | UI-007 | 通知詳細を取得する |
+| | UI-008 | 通知を既読にする |
+| | UI-009 | すべての通知を既読にする |
+| | UI-010 | 通知を削除する |
+| | UI-011 | 未読通知バッジを表示する |
 
 ### 1.3 コンポーネント数
 
 | レイヤー | 項目数 |
 |---------|--------|
-| APIエンドポイント | 1エンドポイント |
-| Pydanticスキーマ | 4スキーマ |
-| サービス | 1サービス |
+| データベーステーブル | 1テーブル（user_notification） |
+| APIエンドポイント | 7エンドポイント |
+| Pydanticスキーマ | 16スキーマ |
+| サービス | 3サービス |
 
 ---
 
-## 2. APIエンドポイント設計
+## 2. データベース設計
 
-### 2.1 エンドポイント一覧
+### 2.1 関連テーブル一覧
+
+| テーブル名 | 説明 |
+|-----------|------|
+| user_notification | ユーザー通知 |
+
+### 2.2 テーブル定義
+
+#### user_notification
+
+| カラム名 | 型 | NULL | デフォルト | 説明 |
+|---------|---|------|----------|------|
+| id | UUID | NO | gen_random_uuid() | 主キー |
+| user_id | UUID | NO | - | 対象ユーザーID（FK: user_account.id） |
+| type | VARCHAR(50) | NO | - | 通知タイプ |
+| title | VARCHAR(255) | NO | - | 通知タイトル |
+| message | TEXT | YES | - | 通知メッセージ |
+| icon | VARCHAR(10) | YES | - | 通知アイコン（絵文字） |
+| link_url | VARCHAR(500) | YES | - | 遷移先URL |
+| reference_type | VARCHAR(50) | YES | - | 参照タイプ（project/session/file/tree） |
+| reference_id | UUID | YES | - | 参照ID |
+| is_read | BOOLEAN | NO | false | 既読フラグ |
+| read_at | TIMESTAMP | YES | - | 既読日時 |
+| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
+
+**インデックス**:
+
+| インデックス名 | カラム | 説明 |
+|---------------|-------|------|
+| ix_user_notification_user_id | user_id | ユーザーID検索 |
+| ix_user_notification_user_unread | user_id, is_read | 未読通知検索 |
+| ix_user_notification_created_at | created_at DESC | 新着順ソート |
+
+---
+
+## 3. APIエンドポイント設計
+
+### 3.1 エンドポイント一覧
 
 | メソッド | エンドポイント | 説明 | 権限 | 対応UC |
 |---------|---------------|------|------|--------|
-| GET | `/api/v1/user_account/me/context` | ユーザーコンテキスト取得 | 認証済 | UI-001〜UI-004 |
+| GET | `/api/v1/user_account/me/context` | ユーザーコンテキスト取得 | 認証済 | UI-001〜UI-003, UI-011 |
+| GET | `/api/v1/search` | グローバル検索 | 認証済 | UI-004, UI-005 |
+| GET | `/api/v1/notifications` | 通知一覧取得 | 認証済 | UI-006 |
+| GET | `/api/v1/notifications/{notification_id}` | 通知詳細取得 | 認証済 | UI-007 |
+| PATCH | `/api/v1/notifications/{notification_id}/read` | 通知を既読にする | 認証済 | UI-008 |
+| PATCH | `/api/v1/notifications/read-all` | すべて既読にする | 認証済 | UI-009 |
+| DELETE | `/api/v1/notifications/{notification_id}` | 通知削除 | 認証済 | UI-010 |
 
-### 2.2 リクエスト/レスポンス定義
+### 3.2 リクエスト/レスポンス定義
 
 #### GET /api/v1/user_account/me/context（ユーザーコンテキスト取得）
 
@@ -66,71 +117,132 @@
     "unreadCount": 3
   },
   "sidebar": {
-    "visibleSections": [
-      "dashboard",
-      "project",
-      "analysis",
-      "driver-tree",
-      "file"
-    ],
-    "hiddenSections": [
-      "system-admin",
-      "monitoring",
-      "operations"
-    ]
+    "visibleSections": ["dashboard", "project", "analysis", "driver-tree", "file"],
+    "hiddenSections": ["system-admin", "monitoring", "operations"]
   }
 }
 ```
 
-**レスポンス例（管理者の場合）**:
+#### GET /api/v1/search（グローバル検索）
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|---|------|------|
+| q | string | ○ | 検索クエリ（2文字以上） |
+| type | string | - | 検索対象タイプ（project/session/file/tree）、カンマ区切りで複数指定可 |
+| project_id | UUID | - | プロジェクトIDで絞り込み |
+| limit | int | - | 取得件数（デフォルト: 20、最大: 100） |
+
+**レスポンス**: `SearchResponse`
 
 ```json
 {
-  "user": {
-    "id": "uuid",
-    "displayName": "管理者",
-    "email": "admin@example.com",
-    "roles": ["system_admin", "user"]
-  },
-  "permissions": {
-    "isSystemAdmin": true,
-    "canAccessAdminPanel": true,
-    "canManageUsers": true,
-    "canManageMasters": true,
-    "canViewAuditLogs": true
-  },
-  "navigation": {
-    "projectCount": 5,
-    "defaultProjectId": null,
-    "defaultProjectName": null,
-    "projectNavigationType": "list"
-  },
-  "notifications": {
-    "unreadCount": 0
-  },
-  "sidebar": {
-    "visibleSections": [
-      "dashboard",
-      "project",
-      "analysis",
-      "driver-tree",
-      "file",
-      "system-admin",
-      "monitoring",
-      "operations"
-    ],
-    "hiddenSections": []
-  }
+  "results": [
+    {
+      "type": "project",
+      "id": "uuid",
+      "name": "売上分析プロジェクト",
+      "description": "Q4売上の分析...",
+      "matchedField": "name",
+      "highlightedText": "<mark>売上</mark>分析プロジェクト",
+      "projectId": null,
+      "projectName": null,
+      "updatedAt": "datetime",
+      "url": "/projects/uuid"
+    }
+  ],
+  "total": 15,
+  "query": "売上",
+  "types": ["project", "session", "file", "tree"]
+}
+```
+
+#### GET /api/v1/notifications（通知一覧取得）
+
+**クエリパラメータ**:
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|---|------|------|
+| is_read | boolean | - | 既読/未読フィルター |
+| skip | int | - | スキップ数（デフォルト: 0） |
+| limit | int | - | 取得件数（デフォルト: 20、最大: 100） |
+
+**レスポンス**: `NotificationListResponse`
+
+```json
+{
+  "notifications": [
+    {
+      "id": "uuid",
+      "type": "member_added",
+      "title": "新しいメンバーが追加されました",
+      "message": "佐藤 次郎が売上分析プロジェクトに追加されました",
+      "icon": "👥",
+      "linkUrl": "/projects/uuid/members",
+      "referenceType": "project",
+      "referenceId": "uuid",
+      "isRead": false,
+      "createdAt": "datetime"
+    }
+  ],
+  "total": 10,
+  "unreadCount": 3,
+  "skip": 0,
+  "limit": 20
+}
+```
+
+#### PATCH /api/v1/notifications/{notification_id}/read（既読にする）
+
+**レスポンス**: `NotificationInfo`
+
+#### PATCH /api/v1/notifications/read-all（すべて既読にする）
+
+**レスポンス**: `ReadAllResponse`
+
+```json
+{
+  "updatedCount": 5
 }
 ```
 
 ---
 
-## 3. Pydanticスキーマ設計
+## 4. Pydanticスキーマ設計
 
-### 3.1 Info/Dataスキーマ
+### 4.1 Enum定義
 
 ```python
+class SearchTypeEnum(str, Enum):
+    """検索対象タイプ"""
+    project = "project"
+    session = "session"
+    file = "file"
+    tree = "tree"
+
+class NotificationTypeEnum(str, Enum):
+    """通知タイプ"""
+    member_added = "member_added"
+    member_removed = "member_removed"
+    session_complete = "session_complete"
+    file_uploaded = "file_uploaded"
+    tree_updated = "tree_updated"
+    project_invitation = "project_invitation"
+    system_announcement = "system_announcement"
+
+class ReferenceTypeEnum(str, Enum):
+    """参照タイプ"""
+    project = "project"
+    session = "session"
+    file = "file"
+    tree = "tree"
+```
+
+### 4.2 Info/Dataスキーマ
+
+```python
+# ユーザーコンテキスト関連
 class UserContextInfo(CamelCaseModel):
     """ユーザー基本情報"""
     id: UUID
@@ -161,52 +273,132 @@ class SidebarInfo(CamelCaseModel):
     """サイドバー表示情報"""
     visible_sections: list[str]
     hidden_sections: list[str]
+
+# 検索関連
+class SearchResultInfo(CamelCaseModel):
+    """検索結果情報"""
+    type: SearchTypeEnum
+    id: UUID
+    name: str
+    description: str | None = None
+    matched_field: str
+    highlighted_text: str
+    project_id: UUID | None = None
+    project_name: str | None = None
+    updated_at: datetime
+    url: str
+
+# 通知関連
+class NotificationInfo(CamelCaseModel):
+    """通知情報"""
+    id: UUID
+    type: NotificationTypeEnum
+    title: str
+    message: str | None = None
+    icon: str | None = None
+    link_url: str | None = None
+    reference_type: ReferenceTypeEnum | None = None
+    reference_id: UUID | None = None
+    is_read: bool
+    read_at: datetime | None = None
+    created_at: datetime
 ```
 
-### 3.2 Responseスキーマ
+### 4.3 Request/Responseスキーマ
 
 ```python
+# ユーザーコンテキスト
 class UserContextResponse(CamelCaseModel):
-    """ユーザーコンテキストレスポンス"""
     user: UserContextInfo
     permissions: PermissionsInfo
     navigation: NavigationInfo
     notifications: NotificationBadgeInfo
     sidebar: SidebarInfo
+
+# 検索
+class SearchQuery(CamelCaseModel):
+    q: str = Field(..., min_length=2, max_length=100)
+    type: list[SearchTypeEnum] | None = None
+    project_id: UUID | None = None
+    limit: int = Field(default=20, ge=1, le=100)
+
+class SearchResponse(CamelCaseModel):
+    results: list[SearchResultInfo]
+    total: int
+    query: str
+    types: list[SearchTypeEnum]
+
+# 通知
+class NotificationListResponse(CamelCaseModel):
+    notifications: list[NotificationInfo]
+    total: int
+    unread_count: int
+    skip: int
+    limit: int
+
+class ReadAllResponse(CamelCaseModel):
+    updated_count: int
 ```
 
 ---
 
-## 4. サービス層設計
+## 5. サービス層設計
 
-### 4.1 サービスクラス構成
+### 5.1 サービスクラス構成
 
 | サービス | 責務 |
 |---------|------|
 | UserContextService | ユーザーコンテキスト情報の集約・生成 |
+| GlobalSearchService | 横断検索、結果マージ、ハイライト生成 |
+| NotificationService | 通知CRUD、既読管理、通知生成 |
 
-### 4.2 主要メソッド
+### 5.2 主要メソッド
+
+#### UserContextService
 
 ```python
 class UserContextService:
-    async def get_user_context(user_id: UUID) -> UserContextResponse:
-        """ユーザーコンテキストを取得"""
-        pass
-
-    def _build_permissions(roles: list[str]) -> PermissionsInfo:
-        """権限情報を構築"""
-        pass
-
-    async def _build_navigation(user_id: UUID) -> NavigationInfo:
-        """ナビゲーション情報を構築"""
-        pass
-
-    def _build_sidebar(permissions: PermissionsInfo) -> SidebarInfo:
-        """サイドバー表示情報を構築"""
-        pass
+    async def get_user_context(user_id: UUID) -> UserContextResponse
+    def _build_permissions(roles: list[str]) -> PermissionsInfo
+    async def _build_navigation(user_id: UUID) -> NavigationInfo
+    def _build_sidebar(permissions: PermissionsInfo) -> SidebarInfo
 ```
 
-### 4.3 ビジネスロジック
+#### GlobalSearchService
+
+```python
+class GlobalSearchService:
+    async def search(
+        query: str,
+        types: list[SearchTypeEnum] | None,
+        project_id: UUID | None,
+        user_id: UUID,
+        limit: int = 20
+    ) -> SearchResponse
+
+    async def _search_projects(query: str, user_id: UUID, limit: int) -> list[SearchResultInfo]
+    async def _search_sessions(query: str, user_id: UUID, project_id: UUID | None, limit: int) -> list[SearchResultInfo]
+    async def _search_files(query: str, user_id: UUID, project_id: UUID | None, limit: int) -> list[SearchResultInfo]
+    async def _search_trees(query: str, user_id: UUID, project_id: UUID | None, limit: int) -> list[SearchResultInfo]
+    def _highlight_text(text: str, query: str) -> str
+    def _merge_results(results: list[list[SearchResultInfo]], limit: int) -> list[SearchResultInfo]
+```
+
+#### NotificationService
+
+```python
+class NotificationService:
+    async def list_notifications(user_id: UUID, is_read: bool | None, skip: int, limit: int) -> list[UserNotification]
+    async def count_notifications(user_id: UUID, is_read: bool | None) -> int
+    async def count_unread(user_id: UUID) -> int
+    async def get_notification(notification_id: UUID, user_id: UUID) -> UserNotification | None
+    async def mark_as_read(notification_id: UUID, user_id: UUID) -> UserNotification
+    async def mark_all_as_read(user_id: UUID) -> int
+    async def create_notification(data: NotificationCreate) -> UserNotification
+    async def delete_notification(notification_id: UUID, user_id: UUID) -> None
+```
+
+### 5.3 ビジネスロジック
 
 #### 権限判定ロジック
 
@@ -226,12 +418,10 @@ def _build_permissions(roles: list[str]) -> PermissionsInfo:
 
 ```python
 async def _build_navigation(user_id: UUID) -> NavigationInfo:
-    # ユーザーが参画しているアクティブなプロジェクト数を取得
     projects = await project_member_repo.get_user_projects(user_id, status="active")
     project_count = len(projects)
 
     if project_count == 1:
-        # 1つのプロジェクトのみ → 詳細画面に直接遷移
         return NavigationInfo(
             project_count=1,
             default_project_id=projects[0].id,
@@ -239,7 +429,6 @@ async def _build_navigation(user_id: UUID) -> NavigationInfo:
             project_navigation_type="detail",
         )
     else:
-        # 0または複数のプロジェクト → 一覧画面に遷移
         return NavigationInfo(
             project_count=project_count,
             default_project_id=None,
@@ -251,7 +440,6 @@ async def _build_navigation(user_id: UUID) -> NavigationInfo:
 #### サイドバー表示判定ロジック
 
 ```python
-# セクション定義
 SIDEBAR_SECTIONS = {
     "dashboard": {"roles": ["user", "system_admin"]},
     "project": {"roles": ["user", "system_admin"]},
@@ -262,26 +450,11 @@ SIDEBAR_SECTIONS = {
     "monitoring": {"roles": ["system_admin"]},
     "operations": {"roles": ["system_admin"]},
 }
-
-def _build_sidebar(permissions: PermissionsInfo) -> SidebarInfo:
-    visible = []
-    hidden = []
-
-    for section, config in SIDEBAR_SECTIONS.items():
-        if permissions.is_system_admin or "user" in config["roles"]:
-            visible.append(section)
-        else:
-            hidden.append(section)
-
-    return SidebarInfo(
-        visible_sections=visible,
-        hidden_sections=hidden,
-    )
 ```
 
 ---
 
-## 5. フロントエンド設計
+## 6. フロントエンド設計
 
 フロントエンド設計の詳細は以下を参照してください：
 
@@ -289,32 +462,46 @@ def _build_sidebar(permissions: PermissionsInfo) -> SidebarInfo:
 
 ---
 
-## 6. ユースケースカバレッジ表
+## 7. ユースケースカバレッジ表
 
 | UC ID | 機能名 | API | 画面 | ステータス |
 |-------|-------|-----|------|-----------|
 | UI-001 | 権限に応じたメニューを表示する | `GET /user_account/me/context` | sidebar | 設計済 |
 | UI-002 | 参画プロジェクト数に応じて遷移先を切り替える | `GET /user_account/me/context` | sidebar | 設計済 |
 | UI-003 | ユーザーコンテキスト情報を取得する | `GET /user_account/me/context` | header | 設計済 |
-| UI-004 | 未読通知バッジを表示する | `GET /user_account/me/context` | header | 設計済 |
+| UI-004 | プロジェクト・セッション・ファイル・ツリーを横断検索する | `GET /search` | header-search | 設計済 |
+| UI-005 | 検索結果をフィルタリングする | `GET /search?type=` | header-search | 設計済 |
+| UI-006 | 未読通知一覧を取得する | `GET /notifications` | header-notification | 設計済 |
+| UI-007 | 通知詳細を取得する | `GET /notifications/{id}` | header-notification | 設計済 |
+| UI-008 | 通知を既読にする | `PATCH /notifications/{id}/read` | header-notification | 設計済 |
+| UI-009 | すべての通知を既読にする | `PATCH /notifications/read-all` | header-notification | 設計済 |
+| UI-010 | 通知を削除する | `DELETE /notifications/{id}` | header-notification | 設計済 |
+| UI-011 | 未読通知バッジを表示する | `GET /user_account/me/context` | header | 設計済 |
 
 ---
 
-## 7. 関連ドキュメント
+## 8. 関連ドキュメント
 
 - **ユーザー管理**: [../03-user-management/01-user-management-design.md](../03-user-management/01-user-management-design.md)
-- **通知**: [../12-notification/01-notification-design.md](../12-notification/01-notification-design.md)
 - **モックアップ**: [../../03-mockup/index.html](../../03-mockup/index.html)
+- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
+- **システム管理（管理者通知）**: [../11-system-admin/01-system-admin-design.md](../11-system-admin/01-system-admin-design.md)
 
 ---
 
-## 8. ドキュメント管理情報
+## 9. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | COMMON-UI-DESIGN-001 |
-| 対象ユースケース | UI-001〜UI-004 |
+| 対象ユースケース | UI-001〜UI-011 |
 | 最終更新日 | 2026-01-01 |
 | 対象ソースコード | `src/app/schemas/common/user_context.py` |
+|  | `src/app/schemas/search/search.py` |
+|  | `src/app/schemas/notification/notification.py` |
 |  | `src/app/api/routes/v1/user_accounts/context.py` |
+|  | `src/app/api/routes/v1/search/search.py` |
+|  | `src/app/api/routes/v1/notifications/notification.py` |
 |  | `src/app/services/common/user_context_service.py` |
+|  | `src/app/services/search/global_search.py` |
+|  | `src/app/services/notification/notification_service.py` |

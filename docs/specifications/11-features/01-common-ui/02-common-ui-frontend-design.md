@@ -6,8 +6,9 @@
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| - | ヘッダー | 全ページ共通 | グローバルナビゲーション |
-| - | サイドバー | 全ページ共通 | サイドナビゲーション |
+| - | ヘッダー | 全ページ共通 | グローバルナビゲーション（検索、通知、ユーザーメニュー） |
+| - | サイドバー | 全ページ共通 | サイドナビゲーション（権限ベース表示） |
+| notifications | 通知一覧 | /notifications | 全通知一覧ページ（オプション） |
 
 ### 1.2 コンポーネント構成
 
@@ -18,7 +19,12 @@ features/common/
 │   │   ├── Header.tsx
 │   │   ├── UserMenu.tsx
 │   │   ├── NotificationBell.tsx
-│   │   └── GlobalSearch.tsx
+│   │   ├── NotificationBadge.tsx
+│   │   ├── NotificationDropdown.tsx
+│   │   ├── GlobalSearch.tsx
+│   │   ├── SearchInput.tsx
+│   │   ├── SearchDropdown.tsx
+│   │   └── SearchResultItem.tsx
 │   ├── Sidebar/
 │   │   ├── Sidebar.tsx
 │   │   ├── SidebarSection.tsx
@@ -29,13 +35,22 @@ features/common/
 ├── hooks/
 │   ├── useUserContext.ts
 │   ├── usePermissions.ts
-│   └── useNavigation.ts
+│   ├── useNavigation.ts
+│   ├── useGlobalSearch.ts
+│   ├── useSearchDebounce.ts
+│   ├── useNotifications.ts
+│   ├── useUnreadCount.ts
+│   └── useNotificationPolling.ts
 ├── contexts/
 │   └── UserContextProvider.tsx
 ├── api/
-│   └── userContextApi.ts
+│   ├── userContextApi.ts
+│   ├── searchApi.ts
+│   └── notificationApi.ts
 └── types/
-    └── userContext.ts
+    ├── userContext.ts
+    ├── search.ts
+    └── notification.ts
 ```
 
 ---
@@ -58,17 +73,6 @@ features/common/
 ### 2.2 権限ベース表示ロジック
 
 ```typescript
-// hooks/usePermissions.ts
-export function usePermissions() {
-  const { userContext } = useUserContext();
-
-  return {
-    isSystemAdmin: userContext?.permissions.isSystemAdmin ?? false,
-    canAccessAdminPanel: userContext?.permissions.canAccessAdminPanel ?? false,
-    // ...
-  };
-}
-
 // components/Sidebar/Sidebar.tsx
 export function Sidebar() {
   const { userContext } = useUserContext();
@@ -107,10 +111,8 @@ export function ProjectNavigator() {
     const nav = userContext?.navigation;
 
     if (nav?.projectNavigationType === 'detail' && nav.defaultProjectId) {
-      // 1つのプロジェクトのみ → 詳細画面へ
       router.push(`/projects/${nav.defaultProjectId}`);
     } else {
-      // 0または複数 → 一覧画面へ
       router.push('/projects');
     }
   };
@@ -133,7 +135,7 @@ export function ProjectNavigator() {
 
 ## 3. ヘッダー設計
 
-### 3.1 コンポーネント構成
+### 3.1 ヘッダーコンポーネント構成
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
@@ -153,12 +155,98 @@ export function ProjectNavigator() {
 
 ---
 
-## 4. コンテキスト管理
+## 4. グローバル検索設計
 
-### 4.1 UserContextProvider
+### 4.1 検索入力
+
+| 画面項目 | 入力形式 | APIエンドポイント | リクエストフィールド | バリデーション |
+|---------|---------|------------------|---------------------|---------------|
+| 検索ボックス | テキスト入力 | GET /search | q | 2文字以上で検索実行 |
+| ショートカットキー表示 | kbd要素 | - | - | Ctrl+K / Cmd+K |
+| クリアボタン | アイコンボタン | - | - | 入力クリア |
+
+### 4.2 検索結果ドロップダウン
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| 検索結果件数 | テキスト | GET /search | total | "n件" 形式 |
+| 結果アイテム（アイコン） | アイコン | GET /search | results[].type | type→絵文字マッピング |
+| 結果アイテム（名前） | テキスト | GET /search | results[].highlightedText | HTMLとしてレンダリング |
+| 結果アイテム（説明） | テキスト | GET /search | results[].description | 50文字で切り詰め |
+| 結果アイテム（プロジェクト名） | テキスト | GET /search | results[].projectName | 親プロジェクト表示 |
+| 結果アイテム（更新日時） | テキスト | GET /search | results[].updatedAt | 相対時間表示 |
+| 空状態 | アイコン+テキスト | - | - | 検索結果なしメッセージ |
+
+### 4.3 検索タイプアイコンマッピング
+
+| type | アイコン | 説明 |
+|------|---------|------|
+| project | 📁 | プロジェクト |
+| session | 📊 | 分析セッション |
+| file | 📄 | ファイル |
+| tree | 🌳 | ドライバーツリー |
+
+### 4.4 検索キーボードショートカット
+
+| キー | 動作 |
+|------|------|
+| Ctrl+K / Cmd+K | 検索ボックスにフォーカス |
+| ↑ | 前の結果を選択 |
+| ↓ | 次の結果を選択 |
+| Enter | 選択中の結果に遷移 |
+| Esc | ドロップダウンを閉じる |
+
+---
+
+## 5. 通知設計
+
+### 5.1 通知ベルコンポーネント
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| 通知ベルアイコン | アイコンボタン | - | - | 🔔 |
+| 未読バッジ | バッジ | GET /notifications | unreadCount | 0の場合非表示、99+表示 |
+
+### 5.2 通知ドロップダウン
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| ヘッダータイトル | テキスト | - | - | "通知" |
+| すべて既読ボタン | リンクボタン | PATCH /notifications/read-all | - | 未読がある場合のみ表示 |
+| 通知アイテム（アイコン） | アイコン | GET /notifications | notifications[].icon | 絵文字表示 |
+| 通知アイテム（メッセージ） | テキスト | GET /notifications | notifications[].message | 1行表示、100文字切り詰め |
+| 通知アイテム（時間） | テキスト | GET /notifications | notifications[].createdAt | 相対時間表示 |
+| 通知アイテム（未読マーク） | スタイル | GET /notifications | notifications[].isRead | 未読時に背景色変更 |
+| 空状態 | アイコン+テキスト | - | - | "通知はありません" |
+| フッターリンク | リンク | - | - | "すべての通知を見る" |
+
+### 5.3 通知タイプアイコンマッピング
+
+| type | icon | 説明 |
+|------|------|------|
+| member_added | 👥 | メンバー追加 |
+| member_removed | 👤 | メンバー削除 |
+| session_complete | ✅ | セッション完了 |
+| file_uploaded | 📄 | ファイルアップロード |
+| tree_updated | 🌳 | ツリー更新 |
+| project_invitation | 📨 | プロジェクト招待 |
+| system_announcement | 📢 | システムお知らせ |
+
+### 5.4 通知ポーリング設定
+
+| 設定 | 値 | 説明 |
+|------|---|------|
+| ポーリング間隔 | 60秒 | 未読件数の定期取得 |
+| 初期取得 | ページロード時 | 未読件数を即座に取得 |
+| 再取得トリガー | ドロップダウン表示時 | 最新の通知を取得 |
+
+---
+
+## 6. コンテキスト管理
+
+### 6.1 UserContextProvider
 
 ```typescript
-// contexts/UserContextProvider.tsx
 interface UserContextState {
   userContext: UserContextResponse | null;
   isLoading: boolean;
@@ -178,25 +266,6 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
     fetchUserContext();
   }, []);
 
-  const fetchUserContext = async () => {
-    try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      const response = await userContextApi.getContext();
-      setState({
-        userContext: response,
-        isLoading: false,
-        error: null,
-        refetch: fetchUserContext,
-      });
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        isLoading: false,
-        error: error as Error,
-      }));
-    }
-  };
-
   return (
     <UserContext.Provider value={state}>
       {children}
@@ -205,7 +274,7 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
 }
 ```
 
-### 4.2 初期化フロー
+### 6.2 初期化フロー
 
 ```text
 1. アプリ起動 / ページリロード
@@ -218,7 +287,7 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
 
 ---
 
-## 5. API呼び出しタイミング
+## 7. API呼び出しタイミング
 
 | トリガー | API呼び出し | 備考 |
 |---------|------------|------|
@@ -226,11 +295,15 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
 | ページリロード | GET /user_account/me/context | キャッシュ無効時 |
 | ログイン成功後 | GET /user_account/me/context | 強制リフレッシュ |
 | プロジェクト参加/離脱後 | refetch() | ナビゲーション更新 |
-| 通知既読後 | 部分更新 | unreadCount のみ |
+| 検索入力変更 | GET /search | 300msデバウンス、2文字以上 |
+| ベルクリック | GET /notifications?limit=10 | ドロップダウン用 |
+| 通知クリック | PATCH /notifications/{id}/read | 既読化 |
+| すべて既読クリック | PATCH /notifications/read-all | 一括既読 |
+| 60秒ごと | GET /notifications?limit=1 | ポーリング（未読件数） |
 
 ---
 
-## 6. エラーハンドリング
+## 8. エラーハンドリング
 
 | エラー | 対応 |
 |-------|------|
@@ -241,7 +314,7 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
 
 ---
 
-## 7. パフォーマンス考慮
+## 9. パフォーマンス考慮
 
 | 項目 | 対策 |
 |-----|------|
@@ -249,3 +322,5 @@ export function UserContextProvider({ children }: { children: ReactNode }) {
 | キャッシュ | React Query で5分間キャッシュ |
 | 再レンダリング | useMemo でセクション表示を最適化 |
 | バンドルサイズ | セクションコンポーネントは遅延ロード |
+| 検索 | 300msデバウンスでAPI呼び出しを最適化 |
+| 通知 | 60秒ポーリングで負荷軽減 |
