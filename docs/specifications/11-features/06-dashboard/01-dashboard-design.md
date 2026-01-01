@@ -4,11 +4,11 @@
 
 ### 1.1 目的
 
-本ドキュメントは、CAMPシステムにおけるダッシュボード機能の統合設計仕様を定義します。ダッシュボードはユーザーのホーム画面として、参加プロジェクト・分析セッション・ドライバーツリーの統計情報、最近のアクティビティ、クイックアクセスを提供します。
+本設計書は、CAMPシステムにおけるダッシュボード機能の統合設計仕様を定義します。ダッシュボードはユーザーのホーム画面として、参加プロジェクト・分析セッション・ドライバーツリーの統計情報、最近のアクティビティ、クイックアクセスを提供します。
 
 ### 1.2 対象ユースケース
 
-| カテゴリ | UC ID | 機能名 |
+| カテゴリ | UC ID | 機能概要 |
 |---------|-------|--------|
 | **統計表示** | D-001 | 参加プロジェクト数表示 |
 | | D-002 | 進行中セッション数表示 |
@@ -19,8 +19,8 @@
 
 ### 1.3 コンポーネント数
 
-| コンポーネント | 数量 |
-|--------------|------|
+| レイヤー | 項目数 |
+|---------|--------|
 | データベーステーブル | 0（既存テーブル利用） |
 | APIエンドポイント | 3 |
 | Pydanticスキーマ | 11 |
@@ -34,7 +34,7 @@
 
 ダッシュボードは専用テーブルを持たず、既存テーブルから統計情報を集計します。
 
-| テーブル名 | 用途 |
+| テーブル名 | 説明 |
 |-----------|------|
 | project | プロジェクト統計 |
 | project_member | ユーザー参加プロジェクト数 |
@@ -240,21 +240,21 @@ FROM project_file;
 ```python
 from enum import Enum
 
-class ActivityAction(str, Enum):
+class ActivityActionEnum(str, Enum):
     """アクティビティアクション種別"""
     CREATED = "created"
     UPDATED = "updated"
     DELETED = "deleted"
     ACCESSED = "accessed"
 
-class ResourceType(str, Enum):
+class ResourceTypeEnum(str, Enum):
     """リソース種別"""
     PROJECT = "project"
     SESSION = "session"
     TREE = "tree"
     FILE = "file"
 
-class ChartType(str, Enum):
+class ChartTypeEnum(str, Enum):
     """チャート種別"""
     LINE = "line"
     BAR = "bar"
@@ -265,56 +265,56 @@ class ChartType(str, Enum):
 ### 4.2 Info/Dataスキーマ
 
 ```python
-class ProjectStats(BaseCamelCaseModel):
+class ProjectStats(CamelCaseModel):
     """プロジェクト統計"""
     total: int
     active: int
     archived: int
 
-class SessionStats(BaseCamelCaseModel):
+class SessionStats(CamelCaseModel):
     """セッション統計"""
     total: int
     draft: int = 0
     active: int = 0
     completed: int = 0
 
-class TreeStats(BaseCamelCaseModel):
+class TreeStats(CamelCaseModel):
     """ツリー統計"""
     total: int
     draft: int = 0
     active: int = 0
     completed: int = 0
 
-class UserStats(BaseCamelCaseModel):
+class UserStats(CamelCaseModel):
     """ユーザー統計"""
     total: int
     active: int
 
-class FileStats(BaseCamelCaseModel):
+class FileStats(CamelCaseModel):
     """ファイル統計"""
     total: int
     total_size_bytes: int = 0
 
-class ChartDataPoint(BaseCamelCaseModel):
+class ChartDataPoint(CamelCaseModel):
     """チャートデータポイント"""
     label: str
     value: float
 
-class ChartDataInfo(BaseCamelCaseModel):
+class ChartDataInfo(CamelCaseModel):
     """チャートデータ情報"""
-    chart_type: ChartType
+    chart_type: ChartTypeEnum
     title: str
     data: list[ChartDataPoint] = []
     x_axis_label: str | None = None
     y_axis_label: str | None = None
 
-class ActivityLogInfo(BaseCamelCaseModel):
+class ActivityLogInfo(CamelCaseModel):
     """アクティビティログ情報"""
     id: UUID
     user_id: UUID
     user_name: str
-    action: ActivityAction
-    resource_type: ResourceType
+    action: ActivityActionEnum
+    resource_type: ResourceTypeEnum
     resource_id: UUID
     resource_name: str
     details: dict[str, Any] | None = None
@@ -324,7 +324,7 @@ class ActivityLogInfo(BaseCamelCaseModel):
 ### 4.3 Request/Responseスキーマ
 
 ```python
-class DashboardStatsResponse(BaseCamelCaseModel):
+class DashboardStatsResponse(CamelCaseModel):
     """ダッシュボード統計レスポンス"""
     projects: ProjectStats
     sessions: SessionStats
@@ -333,14 +333,14 @@ class DashboardStatsResponse(BaseCamelCaseModel):
     files: FileStats
     generated_at: datetime
 
-class DashboardActivitiesResponse(BaseCamelCaseModel):
+class DashboardActivitiesResponse(CamelCaseModel):
     """アクティビティ一覧レスポンス"""
     activities: list[ActivityLogInfo] = []
     total: int
     skip: int
     limit: int
 
-class DashboardChartsResponse(BaseCamelCaseModel):
+class DashboardChartsResponse(CamelCaseModel):
     """チャート一覧レスポンス"""
     session_trend: ChartDataInfo
     snapshot_trend: ChartDataInfo
@@ -357,9 +357,9 @@ class DashboardChartsResponse(BaseCamelCaseModel):
 
 ### 5.1 サービスクラス構成
 
-| サービスクラス | 責務 | 主要メソッド |
-|--------------|------|------------|
-| DashboardService | ダッシュボード統計・チャート・アクティビティ管理 | get_stats()<br>get_activities()<br>get_charts() |
+| サービス | 責務 |
+|---------|------|
+| DashboardService | ダッシュボード統計・チャート・アクティビティ管理 |
 
 **DashboardServiceメソッド一覧:**
 
@@ -454,8 +454,8 @@ class DashboardService:
                 id=activity.id,
                 user_id=activity.user_id,
                 user_name=activity.user_name,
-                action=ActivityAction(activity.action),
-                resource_type=ResourceType(activity.resource_type),
+                action=ActivityActionEnum(activity.action),
+                resource_type=ResourceTypeEnum(activity.resource_type),
                 resource_id=activity.resource_id,
                 resource_name=activity.resource_name,
                 details=activity.details,
@@ -576,7 +576,7 @@ class DashboardService:
         ]
 
         return ChartDataInfo(
-            chart_type=ChartType.BAR,
+            chart_type=ChartTypeEnum.BAR,
             title="セッション作成トレンド",
             data=data_points,
             x_axis_label="日付",

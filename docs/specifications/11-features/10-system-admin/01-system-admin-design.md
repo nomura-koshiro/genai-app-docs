@@ -8,7 +8,7 @@
 
 ### 1.2 対象ユースケース
 
-| カテゴリ | ユースケース | 機能概要 |
+| カテゴリ | UC ID | 機能概要 |
 |---------|-------------|---------|
 | ユーザー操作履歴追跡 | SA-001〜SA-006 | 操作ログの記録・検索・エラー追跡 |
 | 全プロジェクト閲覧 | SA-007〜SA-011 | 管理者による全プロジェクト管理 |
@@ -23,13 +23,13 @@
 
 ### 1.3 コンポーネント数
 
-| レイヤー | 追加項目数 |
-|---------|----------|
-| データベーステーブル | 8テーブル |
-| APIエンドポイント | 40エンドポイント |
-| Pydanticスキーマ | 16ファイル |
-| サービス | 8サービス |
-| フロントエンド画面 | 10画面 |
+| レイヤー | 項目数 |
+|---------|--------|
+| データベーステーブル | 8 |
+| APIエンドポイント | 40 |
+| Pydanticスキーマ | 16 |
+| サービス | 8 |
+| フロントエンド画面 | 10 |
 
 ### 1.4 機能カテゴリ一覧
 
@@ -56,15 +56,15 @@
 
 ### 2.1 関連テーブル一覧
 
-| テーブル名 | 対応ユースケース | 説明 |
-|-----------|----------------|------|
-| user_activity | SA-001〜SA-006 | ユーザー操作履歴 |
-| audit_log | SA-012〜SA-016 | 監査ログ |
-| system_setting | SA-017〜SA-020 | システム設定 |
-| system_announcement | SA-033〜SA-034 | システムお知らせ |
-| notification_template | SA-032 | 通知テンプレート |
-| system_alert | SA-031 | システムアラート設定 |
-| user_session | SA-035〜SA-036 | ユーザーセッション |
+| テーブル名 | 説明 |
+|-----------|------|
+| user_activity | ユーザー操作履歴 |
+| audit_log | 監査ログ |
+| system_setting | システム設定 |
+| system_announcement | システムお知らせ |
+| notification_template | 通知テンプレート |
+| system_alert | システムアラート設定 |
+| user_session | ユーザーセッション |
 
 ---
 
@@ -1769,18 +1769,18 @@ class SupportToolsService:
 
 ### 6.1 画面一覧
 
-| 画面ID | 画面名 | 対応ユースケース |
-|--------|-------|----------------|
-| admin-activity-logs | 操作履歴 | SA-001〜SA-006 |
-| admin-projects | 全プロジェクト管理 | SA-007〜SA-011 |
-| admin-audit-logs | 監査ログ | SA-012〜SA-016 |
-| admin-settings | システム設定 | SA-017〜SA-021 |
-| admin-statistics | システム統計 | SA-022〜SA-026 |
-| admin-bulk-operations | 一括操作 | SA-027〜SA-030 |
-| admin-notifications | 通知管理 | SA-031〜SA-034 |
-| admin-security | セキュリティ管理 | SA-035〜SA-036 |
-| admin-data-management | データ管理 | SA-037〜SA-040 |
-| admin-support-tools | サポートツール | SA-041〜SA-043 |
+| 画面ID | 画面名 | パス | 説明 |
+|--------|-------|------|------|
+| admin-activity-logs | 操作履歴 | /admin/activity-logs | 操作ログの記録・検索・エラー追跡 |
+| admin-projects | 全プロジェクト管理 | /admin/projects | 管理者による全プロジェクト管理 |
+| admin-audit-logs | 監査ログ | /admin/audit-logs | データ変更・アクセス・セキュリティログ |
+| admin-settings | システム設定 | /admin/settings | アプリ設定・メンテナンス |
+| admin-statistics | システム統計 | /admin/statistics | ダッシュボード・統計情報 |
+| admin-bulk-operations | 一括操作 | /admin/bulk-operations | ユーザー/プロジェクトの一括処理 |
+| admin-notifications | 通知管理 | /admin/notifications | お知らせ・アラート・テンプレート |
+| admin-security | セキュリティ管理 | /admin/security | セッション管理・強制ログアウト |
+| admin-data-management | データ管理 | /admin/data-management | クリーンアップ・保持ポリシー |
+| admin-support-tools | サポートツール | /admin/support-tools | 代行操作・デバッグ・ヘルスチェック |
 
 ### 6.2 コンポーネント構成
 

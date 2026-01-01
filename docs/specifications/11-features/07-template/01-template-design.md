@@ -4,11 +4,11 @@
 
 ### 1.1 目的
 
-本ドキュメントは、CAMPシステムにおけるテンプレート機能の統合設計仕様を定義します。テンプレート機能は、分析セッションやドライバーツリーの構成を再利用可能なテンプレートとして保存・共有し、効率的な分析開始を支援します。
+本設計書は、CAMPシステムにおけるテンプレート機能の統合設計仕様を定義します。テンプレート機能は、分析セッションやドライバーツリーの構成を再利用可能なテンプレートとして保存・共有し、効率的な分析開始を支援します。
 
 ### 1.2 対象ユースケース
 
-| カテゴリ | UC ID | 機能名 |
+| カテゴリ | UC ID | 機能概要 |
 |---------|-------|--------|
 | **テンプレート管理** | TM-001 | テンプレート一覧表示 |
 | | TM-002 | テンプレート作成（セッションから） |
@@ -18,12 +18,12 @@
 
 ### 1.3 コンポーネント数
 
-| コンポーネント | 数量 | 備考 |
-|--------------|------|------|
-| データベーステーブル | 2 | 実装済 |
-| APIエンドポイント | 7 | 実装済: 7/7 |
-| Pydanticスキーマ | 10 | 実装済 |
-| フロントエンド画面 | 2 | 未実装 |
+| レイヤー | 項目数 |
+|---------|--------|
+| データベーステーブル | 2 |
+| APIエンドポイント | 7 |
+| Pydanticスキーマ | 10 |
+| フロントエンド画面 | 2 |
 
 ---
 
@@ -290,7 +290,7 @@ class TemplateCategory(str, Enum):
 ### 4.2 Info/Dataスキーマ
 
 ```python
-class AnalysisTemplateInfo(BaseCamelCaseModel):
+class AnalysisTemplateInfo(CamelCaseModel):
     """分析テンプレート情報"""
     template_id: UUID
     name: str
@@ -302,14 +302,14 @@ class AnalysisTemplateInfo(BaseCamelCaseModel):
     created_by_name: str | None = None
     created_at: datetime
 
-class AnalysisTemplateConfig(BaseCamelCaseModel):
+class AnalysisTemplateConfig(CamelCaseModel):
     """分析テンプレート設定"""
     initial_prompt: str | None = None
     steps: list[dict] = []
     default_file_types: list[str] = []
     analysis_type: str | None = None
 
-class DriverTreeTemplateInfo(BaseCamelCaseModel):
+class DriverTreeTemplateInfo(CamelCaseModel):
     """ドライバーツリーテンプレート情報"""
     template_id: UUID
     name: str
@@ -322,7 +322,7 @@ class DriverTreeTemplateInfo(BaseCamelCaseModel):
     created_by_name: str | None = None
     created_at: datetime
 
-class DriverTreeTemplateConfig(BaseCamelCaseModel):
+class DriverTreeTemplateConfig(CamelCaseModel):
     """ドライバーツリーテンプレート設定"""
     nodes: list[dict] = []
     relationships: list[dict] = []
@@ -332,19 +332,19 @@ class DriverTreeTemplateConfig(BaseCamelCaseModel):
 ### 4.3 Request/Responseスキーマ
 
 ```python
-class AnalysisTemplateCreateRequest(BaseCamelCaseModel):
+class AnalysisTemplateCreateRequest(CamelCaseModel):
     """分析テンプレート作成リクエスト"""
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
     source_session_id: UUID
     is_public: bool = False
 
-class AnalysisTemplateListResponse(BaseCamelCaseModel):
+class AnalysisTemplateListResponse(CamelCaseModel):
     """分析テンプレート一覧レスポンス"""
     templates: list[AnalysisTemplateInfo] = []
     total: int
 
-class DriverTreeTemplateCreateRequest(BaseCamelCaseModel):
+class DriverTreeTemplateCreateRequest(CamelCaseModel):
     """ドライバーツリーテンプレート作成リクエスト"""
     name: str = Field(..., min_length=1, max_length=255)
     description: str | None = None
@@ -352,7 +352,7 @@ class DriverTreeTemplateCreateRequest(BaseCamelCaseModel):
     source_tree_id: UUID
     is_public: bool = False
 
-class DriverTreeTemplateListResponse(BaseCamelCaseModel):
+class DriverTreeTemplateListResponse(CamelCaseModel):
     """ドライバーツリーテンプレート一覧レスポンス"""
     templates: list[DriverTreeTemplateInfo] = []
     total: int
@@ -364,10 +364,10 @@ class DriverTreeTemplateListResponse(BaseCamelCaseModel):
 
 ### 5.1 サービスクラス構成
 
-| サービスクラス | 責務 | 主要メソッド |
-|-------------|------|------------|
-| AnalysisTemplateService | 分析テンプレートの管理 | list_templates, create_template, delete_template, apply_template |
-| DriverTreeTemplateService | ドライバーツリーテンプレートの管理 | list_templates, create_template, delete_template, apply_template |
+| サービス | 責務 |
+|---------|------|
+| AnalysisTemplateService | 分析テンプレートの管理 |
+| DriverTreeTemplateService | ドライバーツリーテンプレートの管理 |
 
 ### 5.2 主要メソッド
 

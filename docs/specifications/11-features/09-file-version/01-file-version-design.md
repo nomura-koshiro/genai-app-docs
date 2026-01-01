@@ -4,11 +4,11 @@
 
 ### 1.1 目的
 
-本ドキュメントは、CAMPシステムにおけるファイル管理・バージョン管理機能の統合設計仕様を定義します。本機能は、プロジェクトファイルの一覧表示、アップロード、バージョン履歴管理、特定バージョンへの復元、バージョン間の比較を提供します。
+本設計書は、CAMPシステムにおけるファイル管理・バージョン管理機能の統合設計仕様を定義します。本機能は、プロジェクトファイルの一覧表示、アップロード、バージョン履歴管理、特定バージョンへの復元、バージョン間の比較を提供します。
 
 ### 1.2 対象ユースケース
 
-| カテゴリ | UC ID | 機能名 |
+| カテゴリ | UC ID | 機能概要 |
 |---------|-------|--------|
 | **ファイル管理** | FM-001 | ファイル一覧表示 |
 | | FM-002 | ファイル検索・フィルタ |
@@ -21,12 +21,12 @@
 
 ### 1.3 コンポーネント数
 
-| コンポーネント | 数量 | 備考 |
-|--------------|------|------|
-| データベーステーブル | 1 | 実装済（project_file_versionの代わりにproject_file.parent_file_idで管理） |
-| APIエンドポイント | 8 | 実装済: 5/8（ファイル一覧・アップロード・ダウンロードが未実装） |
-| Pydanticスキーマ | 11 | 実装済: 8/11（ファイル管理用スキーマが未実装） |
-| フロントエンド画面 | 3 | 未実装（ファイル一覧、アップロード、バージョン履歴） |
+| レイヤー | 項目数 |
+|---------|--------|
+| データベーステーブル | 1 |
+| APIエンドポイント | 8 |
+| Pydanticスキーマ | 11 |
+| フロントエンド画面 | 3 |
 
 ---
 
@@ -340,7 +340,7 @@ class FileType(str, Enum):
 ### 4.2 Info/Dataスキーマ
 
 ```python
-class FileInfo(BaseCamelCaseModel):
+class FileInfo(CamelCaseModel):
     """ファイル情報"""
     file_id: UUID
     name: str
@@ -353,7 +353,7 @@ class FileInfo(BaseCamelCaseModel):
     updated_at: datetime
     created_at: datetime
 
-class FileVersionInfo(BaseCamelCaseModel):
+class FileVersionInfo(CamelCaseModel):
     """ファイルバージョン情報"""
     version_id: UUID
     version_number: int
@@ -365,7 +365,7 @@ class FileVersionInfo(BaseCamelCaseModel):
     uploaded_by_name: str | None = None
     created_at: datetime
 
-class SheetChangeInfo(BaseCamelCaseModel):
+class SheetChangeInfo(CamelCaseModel):
     """シート変更情報"""
     sheet_name: str
     rows_added: int = 0
@@ -373,7 +373,7 @@ class SheetChangeInfo(BaseCamelCaseModel):
     columns_added: int = 0
     columns_removed: int = 0
 
-class VersionComparisonInfo(BaseCamelCaseModel):
+class VersionComparisonInfo(CamelCaseModel):
     """バージョン比較情報"""
     size_change: int
     size_change_percent: float
@@ -384,12 +384,12 @@ class VersionComparisonInfo(BaseCamelCaseModel):
 
 ```python
 # Request スキーマ
-class FileVersionRestoreRequest(BaseCamelCaseModel):
+class FileVersionRestoreRequest(CamelCaseModel):
     """バージョン復元リクエスト"""
     comment: str | None = None
 
 # Response スキーマ
-class FileListResponse(BaseCamelCaseModel):
+class FileListResponse(CamelCaseModel):
     """ファイル一覧レスポンス"""
     files: list[FileInfo] = []
     total: int
@@ -397,7 +397,7 @@ class FileListResponse(BaseCamelCaseModel):
     limit: int = 20
     total_pages: int
 
-class FileUploadResponse(BaseCamelCaseModel):
+class FileUploadResponse(CamelCaseModel):
     """ファイルアップロードレスポンス"""
     file_id: UUID
     name: str
@@ -410,7 +410,7 @@ class FileUploadResponse(BaseCamelCaseModel):
     uploaded_by_name: str
     created_at: datetime
 
-class FileVersionListResponse(BaseCamelCaseModel):
+class FileVersionListResponse(CamelCaseModel):
     """バージョン履歴レスポンス"""
     file_id: UUID
     file_name: str
@@ -418,7 +418,7 @@ class FileVersionListResponse(BaseCamelCaseModel):
     versions: list[FileVersionInfo] = []
     total_versions: int
 
-class FileVersionUploadResponse(BaseCamelCaseModel):
+class FileVersionUploadResponse(CamelCaseModel):
     """バージョンアップロードレスポンス"""
     version_id: UUID
     version_number: int
@@ -427,7 +427,7 @@ class FileVersionUploadResponse(BaseCamelCaseModel):
     checksum: str | None = None
     created_at: datetime
 
-class FileVersionRestoreResponse(BaseCamelCaseModel):
+class FileVersionRestoreResponse(CamelCaseModel):
     """バージョン復元レスポンス"""
     file_id: UUID
     new_version_id: UUID
@@ -436,7 +436,7 @@ class FileVersionRestoreResponse(BaseCamelCaseModel):
     comment: str | None = None
     created_at: datetime
 
-class FileVersionCompareResponse(BaseCamelCaseModel):
+class FileVersionCompareResponse(CamelCaseModel):
     """バージョン比較レスポンス"""
     file_id: UUID
     file_name: str
@@ -451,10 +451,10 @@ class FileVersionCompareResponse(BaseCamelCaseModel):
 
 ### 5.1 サービスクラス構成
 
-| サービスクラス | 責務 | 主要メソッド |
-|--------------|------|------------|
-| FileManagementService | ファイル管理（一覧・アップロード・ダウンロード） | list_files, upload_file, download_file |
-| FileVersionService | バージョン管理（履歴・アップロード・復元・比較） | list_versions, upload_version, download_version, restore_version, compare_versions |
+| サービス | 責務 |
+|---------|------|
+| FileManagementService | ファイル管理（一覧・アップロード・ダウンロード） |
+| FileVersionService | バージョン管理（履歴・アップロード・復元・比較） |
 
 ### 5.2 主要メソッド
 
