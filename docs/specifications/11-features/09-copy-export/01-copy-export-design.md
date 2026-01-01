@@ -1,14 +1,14 @@
-# 複製・エクスポート機能 統合設計書（CP-001〜EX-003）
+# 複製・エクスポート機能 バックエンド設計書（CP-001〜EX-003）
 
 ## 1. 概要
 
 ### 1.1 目的
 
-本ドキュメントは、CAMPシステムにおける複製・エクスポート機能の統合設計仕様を定義します。本機能は、分析セッション・ドライバーツリー・プロジェクトの複製、および分析結果・ツリーデータのエクスポートを提供します。
+本設計書は、CAMPシステムにおける複製・エクスポート機能の統合設計仕様を定義します。本機能は、分析セッション・ドライバーツリー・プロジェクトの複製、および分析結果・ツリーデータのエクスポートを提供します。
 
 ### 1.2 対象ユースケース
 
-| カテゴリ | UC ID | 機能名 |
+| カテゴリ | UC ID | 機能概要 |
 |---------|-------|--------|
 | **複製機能** | CP-001 | 分析セッション複製 |
 | | CP-002 | ドライバーツリー複製 |
@@ -16,24 +16,24 @@
 | | EX-002 | ツリー計算結果エクスポート |
 | | EX-003 | ノードデータエクスポート |
 
-### 1.3 追加コンポーネント数
+### 1.3 コンポーネント数
 
-| コンポーネント | 数量 | 備考 |
-|--------------|------|------|
-| データベーステーブル | 0 | 既存テーブル利用 |
-| APIエンドポイント | 5 | 実装済: 4、未実装: 1 |
-| Pydanticスキーマ | 6 | 部分的に実装済 |
-| フロントエンド画面 | 0 | 既存画面にボタン追加 |
+| レイヤー | 項目数 |
+|---------|--------|
+| データベーステーブル | 0 |
+| APIエンドポイント | 5 |
+| Pydanticスキーマ | 6 |
+| フロントエンド画面 | 0 |
 
 ---
 
 ## 2. データベース設計
 
-### 2.1 利用テーブル
+### 2.1 関連テーブル一覧
 
 複製・エクスポート機能は専用テーブルを持たず、既存テーブルを利用します。
 
-| テーブル名 | 用途 |
+| テーブル名 | 説明 |
 |-----------|------|
 | analysis_session | セッション複製元/先 |
 | analysis_step | ステップ複製 |
@@ -216,15 +216,31 @@ Sheet3: 施策効果比較
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 複製スキーマ
+### 4.1 Enum定義
 
 ```python
-class SessionDuplicateRequest(BaseCamelCaseModel):
+class ExportFormatEnum(str, Enum):
+    """エクスポート形式"""
+    xlsx = "xlsx"
+    csv = "csv"
+    pdf = "pdf"
+```
+
+### 4.2 Info/Dataスキーマ
+
+複製・エクスポート機能では専用のInfo/Dataスキーマは使用せず、既存のドメインモデル（Session, Tree, Node等）を利用します。
+
+### 4.3 Request/Responseスキーマ
+
+#### 複製関連スキーマ
+
+```python
+class SessionDuplicateRequest(CamelCaseModel):
     """セッション複製リクエスト"""
     name: str | None = None
     include_snapshots: bool = True
 
-class SessionDuplicateResponse(BaseCamelCaseModel):
+class SessionDuplicateResponse(CamelCaseModel):
     """セッション複製レスポンス"""
     session_id: UUID
     name: str
@@ -233,29 +249,23 @@ class SessionDuplicateResponse(BaseCamelCaseModel):
     snapshot_count: int
     created_at: datetime
 
-class TreeDuplicateRequest(BaseCamelCaseModel):
+class TreeDuplicateRequest(CamelCaseModel):
     """ツリー複製リクエスト"""
     name: str | None = None
 
 # TreeDuplicateResponse は既存の DriverTreeGetTreeResponse を使用
 ```
 
-### 4.2 エクスポートスキーマ
+#### エクスポート関連スキーマ
 
 ```python
-class ExportFormatEnum(str, Enum):
-    """エクスポート形式"""
-    xlsx = "xlsx"
-    csv = "csv"
-    pdf = "pdf"
-
-class SessionExportRequest(BaseCamelCaseModel):
+class SessionExportRequest(CamelCaseModel):
     """セッションエクスポートリクエスト"""
     format: ExportFormatEnum = ExportFormatEnum.xlsx
     include_steps: bool = True
     include_chat: bool = True
 
-class TreeExportRequest(BaseCamelCaseModel):
+class TreeExportRequest(CamelCaseModel):
     """ツリーエクスポートリクエスト"""
     format: ExportFormatEnum = ExportFormatEnum.xlsx
 ```
@@ -264,7 +274,16 @@ class TreeExportRequest(BaseCamelCaseModel):
 
 ## 5. サービス層設計
 
-### 5.1 複製サービス
+### 5.1 サービスクラス構成
+
+| サービス | 責務 |
+|---------|------|
+| DuplicationService | セッション・ツリーの複製処理 |
+| ExportService | 分析結果・ツリーデータのエクスポート処理 |
+
+### 5.2 主要メソッド
+
+#### DuplicationService - セッション複製
 
 ```python
 class DuplicationService:
@@ -332,7 +351,7 @@ class DuplicationService:
         return await self._get_full_tree(new_tree.id)
 ```
 
-### 5.2 エクスポートサービス
+#### ExportService - セッションエクスポート
 
 ```python
 class ExportService:
@@ -413,98 +432,13 @@ class ExportService:
 
 ## 6. フロントエンド設計
 
-### 6.1 ボタン配置
+フロントエンド設計の詳細は以下を参照してください：
 
-複製・エクスポート機能は既存画面にボタンとして追加されます。
-
-| 画面 | ボタン | アクション |
-|------|--------|-----------|
-| セッション一覧 | 複製ボタン | POST /session/{id}/duplicate |
-| 分析画面 | エクスポートボタン | GET /session/{id}/export |
-| ツリー一覧 | 複製ボタン | POST /tree/{id}/duplicate |
-| 計算結果画面 | エクスポートボタン | GET /tree/{id}/output |
-| ノード編集パネル | データダウンロードボタン | GET /node/{id}/preview/output |
-
-### 6.2 UI設計
-
-#### 複製確認ダイアログ
-
-```text
-┌────────────────────────────────────────┐
-│  セッションを複製                        │
-├────────────────────────────────────────┤
-│  新しいセッション名:                     │
-│  ┌──────────────────────────────────┐  │
-│  │ Q4売上分析 (コピー)              │  │
-│  └──────────────────────────────────┘  │
-│                                        │
-│  ☑ スナップショットも複製する           │
-│                                        │
-├────────────────────────────────────────┤
-│  [キャンセル]              [複製する]   │
-└────────────────────────────────────────┘
-```
-
-#### エクスポートオプションダイアログ
-
-```text
-┌────────────────────────────────────────┐
-│  分析結果をエクスポート                  │
-├────────────────────────────────────────┤
-│  ファイル形式:                          │
-│  ○ Excel (.xlsx)                       │
-│  ○ CSV (.csv)                          │
-│  ○ PDF (.pdf)                          │
-│                                        │
-│  含めるデータ:                          │
-│  ☑ ステップ詳細                        │
-│  ☑ チャット履歴                        │
-│                                        │
-├────────────────────────────────────────┤
-│  [キャンセル]           [エクスポート]   │
-└────────────────────────────────────────┘
-```
+- [複製・エクスポート フロントエンド設計書](./02-copy-export-frontend-design.md)
 
 ---
 
-## 7. 画面項目・APIマッピング
-
-### 7.1 セッション複製
-
-| 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
-|---------|---------|------|------------------|---------------------|---------------|
-| セッション名 | テキスト | - | POST /session/{id}/duplicate | name | 省略時は自動生成 |
-| スナップショット複製 | チェックボックス | - | POST /session/{id}/duplicate | includeSnapshots | デフォルトtrue |
-| 複製ボタン | ボタン | - | POST /session/{id}/duplicate | - | - |
-
-### 7.2 ツリー複製
-
-| 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
-|---------|---------|------|------------------|---------------------|---------------|
-| ツリー名 | テキスト | - | POST /tree/{id}/duplicate | name | 省略時は自動生成 |
-| 複製ボタン | ボタン | - | POST /tree/{id}/duplicate | - | - |
-
-### 7.3 セッションエクスポート
-
-| 画面項目 | 入力形式 | APIエンドポイント | クエリパラメータ | 値 |
-|---------|---------|------------------|-----------------|-----|
-| Excel形式 | ラジオ | GET /session/{id}/export | format | xlsx |
-| CSV形式 | ラジオ | GET /session/{id}/export | format | csv |
-| PDF形式 | ラジオ | GET /session/{id}/export | format | pdf |
-| ステップ詳細 | チェックボックス | GET /session/{id}/export | include_steps | true/false |
-| チャット履歴 | チェックボックス | GET /session/{id}/export | include_chat | true/false |
-
-### 7.4 ツリーエクスポート
-
-| 画面項目 | 入力形式 | APIエンドポイント | クエリパラメータ | 値 |
-|---------|---------|------------------|-----------------|-----|
-| Excel形式 | ラジオ | GET /tree/{id}/output | format | xlsx |
-| CSV形式 | ラジオ | GET /tree/{id}/output | format | csv |
-| エクスポートボタン | ボタン | GET /tree/{id}/output | - | - |
-
----
-
-## 8. ユースケースカバレッジ表
+## 7. ユースケースカバレッジ表
 
 | UC ID | 機能名 | API | 画面 | ステータス |
 |-------|--------|-----|------|-----------|
@@ -518,31 +452,23 @@ class ExportService:
 
 ---
 
-## 9. 備考
+## 8. 関連ドキュメント
 
-### 9.1 複製時の注意事項
-
-- **セッション複製**: ファイル参照は複製されるが、ファイル本体は共有される
-- **ツリー複製**: ノードのデータフレーム紐付けは解除される（新規紐付けが必要）
-- **施策複製**: ツリー複製時に施策は複製されない（新規設定が必要）
-
-### 9.2 エクスポートファイルサイズ制限
-
-- 最大ファイルサイズ: 50MB
-- 大規模データの場合はバックグラウンドジョブで処理
-- 完了時にダウンロードリンクを通知
-
-### 9.3 将来拡張
-
-- プロジェクト全体の複製機能
-- 他プロジェクトへの複製（クロスプロジェクトコピー）
-- エクスポートテンプレートのカスタマイズ
-- スケジュールエクスポート機能
+- **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
+- **分析機能設計書**: [../05-analysis/01-analysis-design.md](../05-analysis/01-analysis-design.md)
+- **ドライバーツリー設計書**: [../06-driver-tree/01-driver-tree-design.md](../06-driver-tree/01-driver-tree-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
 
 ---
 
-### ドキュメント管理情報
+## 9. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **バージョン**: 1.0
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | CE-DESIGN-001 |
+| 対象ユースケース | CP-001〜CP-002, EX-001〜EX-003 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/services/analysis/` |
+|  | `src/app/services/driver_tree/` |
+|  | `src/app/api/routes/v1/analysis/` |
+|  | `src/app/api/routes/v1/driver_tree/` |

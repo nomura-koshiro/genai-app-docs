@@ -78,17 +78,19 @@ graph TB
 | **システム** | `GET /` | ルート（アプリ情報） | - |
 | | `GET /health` | ヘルスチェック | - |
 | | `GET /metrics` | Prometheusメトリクス | - |
-| **ユーザー** | `/api/v1/user_account/*` | ユーザー管理 | [02-user-management](../02-user-management/) |
-| **プロジェクト** | `/api/v1/project/*` | プロジェクト管理 | [03-project-management](../03-project-management/) |
-| **メンバー** | `/api/v1/project/{id}/member/*` | プロジェクトメンバー管理 | [03-project-management](../03-project-management/) |
-| **ファイル** | `/api/v1/project/{id}/file/*` | プロジェクトファイル管理 | [03-project-management](../03-project-management/) |
-| **分析セッション** | `/api/v1/analysis/session/*` | 分析セッション管理 | [04-analysis](../04-analysis/) |
-| **分析テンプレート** | `/api/v1/analysis/template/*` | 分析テンプレート | [07-template](../07-template/) |
-| **ドライバーツリーファイル** | `/api/v1/driver-tree/file/*` | ファイル管理 | [05-driver-tree](../05-driver-tree/) |
-| **ドライバーツリー** | `/api/v1/driver-tree/tree/*` | ツリー管理 | [05-driver-tree](../05-driver-tree/) |
-| **ドライバーツリーノード** | `/api/v1/driver-tree/node/*` | ノード管理 | [05-driver-tree](../05-driver-tree/) |
-| **ダッシュボード** | `/api/v1/dashboard/*` | ダッシュボード | [06-dashboard](../06-dashboard/) |
-| **システム管理** | `/api/v1/admin/*` | システム管理 | [10-system-admin](../10-system-admin/) |
+| **ユーザー** | `/api/v1/user_account/*` | ユーザー管理 | [03-user-management](../03-user-management/) |
+| **プロジェクト** | `/api/v1/project/*` | プロジェクト管理 | [04-project-management](../04-project-management/) |
+| **メンバー** | `/api/v1/project/{id}/member/*` | プロジェクトメンバー管理 | [04-project-management](../04-project-management/) |
+| **ファイル** | `/api/v1/project/{id}/file/*` | プロジェクトファイル管理 | [04-project-management](../04-project-management/) |
+| **分析セッション** | `/api/v1/analysis/session/*` | 分析セッション管理 | [05-analysis](../05-analysis/) |
+| **分析テンプレート** | `/api/v1/analysis/template/*` | 分析テンプレート | [08-template](../08-template/) |
+| **ドライバーツリーファイル** | `/api/v1/driver-tree/file/*` | ファイル管理 | [06-driver-tree](../06-driver-tree/) |
+| **ドライバーツリー** | `/api/v1/driver-tree/tree/*` | ツリー管理 | [06-driver-tree](../06-driver-tree/) |
+| **ドライバーツリーノード** | `/api/v1/driver-tree/node/*` | ノード管理 | [06-driver-tree](../06-driver-tree/) |
+| **ダッシュボード** | `/api/v1/dashboard/*` | ダッシュボード | [07-dashboard](../07-dashboard/) |
+| **検索** | `/api/v1/search` | グローバル検索 | [02-common-ui](../02-common-ui/) |
+| **通知** | `/api/v1/notifications/*` | ユーザー通知 | [02-common-ui](../02-common-ui/) |
+| **システム管理** | `/api/v1/admin/*` | システム管理 | [11-system-admin](../11-system-admin/) |
 
 ---
 

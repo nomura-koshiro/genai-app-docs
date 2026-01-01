@@ -4,6 +4,147 @@
 
 ---
 
+## 0. 共通UI
+
+### 0.1 ログイン後のコンテキスト取得
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant FE as フロントエンド
+    participant API as CAMPシステム
+    participant DB as Database
+
+    Note over User,DB: ログイン成功後
+
+    rect rgb(200, 230, 200)
+        Note over FE,DB: UI-003: ユーザーコンテキスト取得
+        FE->>API: GET /api/v1/user_account/me/context
+        API->>DB: SELECT * FROM user_account WHERE id = ?
+        API->>DB: SELECT COUNT(*) FROM project_member WHERE user_id = ?
+        API->>DB: SELECT COUNT(*) FROM notification WHERE user_id = ? AND is_read = false
+        DB-->>API: ユーザー情報、プロジェクト数、未読通知数
+        API-->>FE: { permissions, navigation, sidebar, unread_count }
+    end
+
+    rect rgb(200, 220, 240)
+        Note over FE: UI-001: 権限に応じたメニュー表示
+        FE->>FE: サイドバーメニュー構築（role別）
+    end
+
+    rect rgb(200, 220, 240)
+        Note over FE: UI-002: 参画プロジェクト数で遷移先切替
+        alt プロジェクト数 = 1
+            FE->>FE: 遷移先 = /projects/{id}
+        else プロジェクト数 > 1 or 0
+            FE->>FE: 遷移先 = /projects
+        end
+    end
+
+    rect rgb(200, 220, 240)
+        Note over FE: UI-011: 未読通知バッジ表示
+        FE->>FE: ヘッダーにバッジ表示
+    end
+:::
+
+### 0.2 グローバル検索
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant FE as フロントエンド
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>FE: 検索キーワード入力
+
+    rect rgb(200, 230, 200)
+        Note over FE,DB: UI-004: 横断検索
+        FE->>API: GET /api/v1/search?q={keyword}
+        API->>DB: SELECT * FROM project WHERE name LIKE ?
+        API->>DB: SELECT * FROM analysis_session WHERE name LIKE ?
+        API->>DB: SELECT * FROM project_file WHERE name LIKE ?
+        API->>DB: SELECT * FROM driver_tree WHERE name LIKE ?
+        DB-->>API: 検索結果
+        API-->>FE: { items: [...], total }
+    end
+
+    FE-->>User: 検索結果表示
+
+    opt フィルタリング
+        rect rgb(200, 220, 240)
+            Note over FE,DB: UI-005: 検索結果フィルタリング
+            User->>FE: タイプ選択（project/session/file/tree）
+            FE->>API: GET /api/v1/search?q={keyword}&type={type}
+            API-->>FE: フィルタ済み結果
+        end
+    end
+:::
+
+### 0.3 通知管理
+
+::: mermaid
+sequenceDiagram
+    autonumber
+    actor User as ユーザー
+    participant FE as フロントエンド
+    participant API as CAMPシステム
+    participant DB as Database
+
+    User->>FE: 通知アイコンクリック
+
+    rect rgb(200, 230, 200)
+        Note over FE,DB: UI-006: 未読通知一覧取得
+        FE->>API: GET /api/v1/notifications?is_read=false
+        API->>DB: SELECT * FROM notification WHERE user_id = ? AND is_read = false ORDER BY created_at DESC
+        DB-->>API: 未読通知一覧
+        API-->>FE: { items: [...], total }
+    end
+
+    FE-->>User: 通知一覧表示
+
+    alt 通知をクリック
+        rect rgb(200, 220, 240)
+            Note over FE,DB: UI-007: 通知詳細取得
+            User->>FE: 通知クリック
+            FE->>API: GET /api/v1/notifications/{id}
+            API->>DB: SELECT * FROM notification WHERE id = ?
+            DB-->>API: 通知詳細
+            API-->>FE: { id, title, message, ... }
+        end
+
+        rect rgb(200, 220, 240)
+            Note over FE,DB: UI-008: 通知を既読にする
+            FE->>API: PATCH /api/v1/notifications/{id}/read
+            API->>DB: UPDATE notification SET is_read = true WHERE id = ?
+            DB-->>API: 更新完了
+            API-->>FE: 200 OK
+        end
+    else すべて既読にする
+        rect rgb(200, 220, 240)
+            Note over FE,DB: UI-009: すべて既読にする
+            User->>FE: 「すべて既読」クリック
+            FE->>API: PATCH /api/v1/notifications/read-all
+            API->>DB: UPDATE notification SET is_read = true WHERE user_id = ? AND is_read = false
+            DB-->>API: 更新完了
+            API-->>FE: 200 OK
+        end
+    else 通知を削除
+        rect rgb(255, 220, 220)
+            Note over FE,DB: UI-010: 通知を削除する
+            User->>FE: 削除ボタンクリック
+            FE->>API: DELETE /api/v1/notifications/{id}
+            API->>DB: DELETE FROM notification WHERE id = ?
+            DB-->>API: 削除完了
+            API-->>FE: 204 No Content
+        end
+    end
+:::
+
+---
+
 ## 1. ユーザー管理
 
 ### 1.1 初回ログイン〜アカウント作成
