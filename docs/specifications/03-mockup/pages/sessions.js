@@ -95,24 +95,6 @@ const sessionPages = {
             <h1 class="page-title">新規セッション作成</h1>
         </div>
 
-        <!-- ステップインジケーター -->
-        <div class="steps-indicator mb-5">
-            <div class="step-indicator active">
-                <div class="step-indicator-number">1</div>
-                <div class="step-indicator-label">分析テーマ選択</div>
-            </div>
-            <div class="step-indicator-line"></div>
-            <div class="step-indicator">
-                <div class="step-indicator-number">2</div>
-                <div class="step-indicator-label">データ準備</div>
-            </div>
-            <div class="step-indicator-line"></div>
-            <div class="step-indicator">
-                <div class="step-indicator-number">3</div>
-                <div class="step-indicator-label">確認</div>
-            </div>
-        </div>
-
         <div class="session-new-grid">
             <!-- メインフォーム -->
             <div class="session-new-main">

@@ -17,6 +17,9 @@
       "Bash(mypy:*)",
       "Bash(ruff:*)",
       "Bash(alembic:*)",
+      "Bash(.venv/Scripts/python:*)",
+      "Bash(.venv/Scripts/python.exe:*)",
+      "Bash(.venv\\\\Scripts\\\\python.exe:*)",
       "Bash(docker:*)",
       "Bash(docker-compose:*)",
       "Bash(ls:*)",
@@ -53,11 +56,14 @@
       "Bash(while:*)",
       "Bash(test:*)",
       "Bash(powershell:*)",
+      "Bash(Select-String:*)",
       "mcp__serena__*",
       "WebSearch",
       "WebFetch(domain:*)",
-      "Bash(.venvScriptspython -m mypy srcappservicesadminbulk_operations.py --ignore-missing-imports)",
-      "Bash(.venv/Scripts/python.exe:*)"
+      "Bash(.venv\\\\Scripts\\\\python.exe -m pytest:*)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venvScriptspython.exe -m mypy src/app --ignore-missing-imports)",
+      "Bash(c:\\\\developments\\\\genai-app-docs\\\\.venv\\\\Scripts\\\\python.exe -m mypy:*)"
     ],
     "deny": [
       "Bash(rm -rf /)",
