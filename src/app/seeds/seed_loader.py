@@ -474,6 +474,7 @@ async def load_driver_tree_nodes(session: AsyncSession) -> int:
 
         record = DriverTreeNode(
             id=record_id,
+            driver_tree_id=parse_uuid(row["driver_tree_id"]),
             label=row["label"],
             position_x=parse_int(row["position_x"]),
             position_y=parse_int(row["position_y"]),
@@ -1020,7 +1021,6 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("project", load_projects),
         ("project_member", load_project_members),
         ("project_file", load_project_files),
-        ("driver_tree_node", load_driver_tree_nodes),
         ("driver_tree_file", load_driver_tree_files),
         ("driver_tree_data_frame", load_driver_tree_data_frames),
         # トラン系（セッション）
@@ -1032,7 +1032,9 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("analysis_chat", load_analysis_chats),
         ("analysis_step", load_analysis_steps),
         # トラン系（ドライバーツリー）
+        # NOTE: driver_tree_nodeはdriver_treeを外部キー参照するため、先にdriver_treeを投入
         ("driver_tree", load_driver_trees),
+        ("driver_tree_node", load_driver_tree_nodes),
         ("driver_tree_relationship", load_driver_tree_relationships),
         ("driver_tree_relationship_child", load_driver_tree_relationship_children),
         ("driver_tree_policy", load_driver_tree_policies),
