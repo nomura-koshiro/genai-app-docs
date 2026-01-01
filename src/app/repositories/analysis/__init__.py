@@ -27,6 +27,7 @@ from app.repositories.analysis.analysis_template import (
     AnalysisIssueRepository,
     AnalysisValidationRepository,
 )
+from app.repositories.analysis.analysis_template_repository import AnalysisTemplateRepository
 
 __all__ = [
     "AnalysisChatRepository",
@@ -36,4 +37,5 @@ __all__ = [
     "AnalysisStepRepository",
     "AnalysisIssueRepository",
     "AnalysisValidationRepository",
+    "AnalysisTemplateRepository",
 ]

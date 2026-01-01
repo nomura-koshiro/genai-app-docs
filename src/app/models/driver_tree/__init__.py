@@ -11,6 +11,7 @@ from app.models.driver_tree.driver_tree_relationship import DriverTreeRelationsh
 from app.models.driver_tree.driver_tree_relationship_child import (
     DriverTreeRelationshipChild,
 )
+from app.models.driver_tree.driver_tree_template import DriverTreeTemplate
 
 __all__ = [
     "DriverTree",
@@ -22,4 +23,5 @@ __all__ = [
     "DriverTreeFile",
     "DriverTreeDataFrame",
     "DriverTreePolicy",
+    "DriverTreeTemplate",
 ]

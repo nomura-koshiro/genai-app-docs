@@ -1,10 +1,12 @@
 """分析テンプレートAPIエンドポイント。
 
-このモジュールは、分析テンプレート(施策・課題)の取得に関するAPIエンドポイントを定義します。
+このモジュールは、分析テンプレート(施策・課題)の取得・作成・削除に関するAPIエンドポイントを定義します。
 
 主な機能:
     - テンプレート一覧取得（GET /api/v1/project/{project_id}/analysis/template）
     - テンプレート詳細取得（GET /api/v1/project/{project_id}/analysis/template/{issue_id}）
+    - テンプレート作成（POST /api/v1/project/{project_id}/analysis/template）
+    - テンプレート削除（DELETE /api/v1/project/{project_id}/analysis/template/{template_id}）
 
 """
 
@@ -12,12 +14,15 @@ import uuid
 
 from fastapi import APIRouter, Path, status
 
-from app.api.core import AnalysisTemplateServiceDep, CurrentUserAccountDep
+from app.api.core import AnalysisTemplateServiceDep, CurrentUserAccountDep, ProjectMemberDep
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.analysis import (
     AnalysisIssueCatalogListResponse,
     AnalysisIssueDetailResponse,
+    AnalysisTemplateCreateRequest,
+    AnalysisTemplateCreateResponse,
+    AnalysisTemplateDeleteResponse,
 )
 
 logger = get_logger(__name__)
@@ -171,3 +176,156 @@ async def get_template(
     )
 
     return template
+
+
+# ================================================================================
+# POST Endpoints
+# ================================================================================
+
+
+@analysis_templates_router.post(
+    "/project/{project_id}/analysis/template",
+    response_model=AnalysisTemplateCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="テンプレート作成",
+    description="""
+    セッションからテンプレートを作成します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+
+    リクエストボディ:
+        - AnalysisTemplateCreateRequest: テンプレート作成リクエスト
+            - name (str): テンプレート名（必須）
+            - description (str | None): 説明
+            - sourceSessionId (UUID): 元セッションID（必須）
+            - isPublic (bool): 公開フラグ（デフォルト: false）
+
+    レスポンス:
+        - AnalysisTemplateCreateResponse: 作成されたテンプレート情報
+            - templateId (UUID): テンプレートID
+            - name (str): テンプレート名
+            - description (str | None): 説明
+            - templateType (str): テンプレートタイプ
+            - templateConfig (dict): テンプレート設定
+            - createdAt (datetime): 作成日時
+
+    ステータスコード:
+        - 201: 作成成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない、または他プロジェクトのセッション）
+        - 404: 元セッションが見つからない
+    """,
+)
+@handle_service_errors
+async def create_template(
+    project_id: uuid.UUID,
+    request: AnalysisTemplateCreateRequest,
+    current_user: CurrentUserAccountDep,
+    member: ProjectMemberDep,  # 権限チェック
+    template_service: AnalysisTemplateServiceDep,
+) -> AnalysisTemplateCreateResponse:
+    """テンプレートを作成します。
+
+    Args:
+        project_id: プロジェクトID
+        request: テンプレート作成リクエスト
+        current_user: 認証済みユーザー
+        member: プロジェクトメンバー（権限チェック用）
+        template_service: 分析テンプレートサービス
+
+    Returns:
+        AnalysisTemplateCreateResponse: 作成されたテンプレート情報
+    """
+    logger.info(
+        "テンプレート作成",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        action="create_template",
+    )
+
+    template = await template_service.create_template(
+        project_id=project_id, request=request, user_id=current_user.id
+    )
+
+    logger.info(
+        "テンプレートを作成しました",
+        user_id=str(current_user.id),
+        template_id=str(template.template_id),
+    )
+
+    return template
+
+
+# ================================================================================
+# DELETE Endpoints
+# ================================================================================
+
+
+@analysis_templates_router.delete(
+    "/project/{project_id}/analysis/template/{template_id}",
+    response_model=AnalysisTemplateDeleteResponse,
+    status_code=status.HTTP_200_OK,
+    summary="テンプレート削除",
+    description="""
+    テンプレートを削除します。
+
+    **認証が必要です。**
+
+    パスパラメータ:
+        - project_id: uuid - プロジェクトID（必須）
+        - template_id: uuid - テンプレートID（必須）
+
+    レスポンス:
+        - AnalysisTemplateDeleteResponse: 削除結果
+            - success (bool): 削除成功フラグ
+            - deletedAt (datetime): 削除日時
+
+    ステータスコード:
+        - 200: 削除成功
+        - 401: 認証されていない
+        - 403: 権限なし（メンバーではない、または作成者ではない）
+        - 404: テンプレートが見つからない
+    """,
+)
+@handle_service_errors
+async def delete_template(
+    project_id: uuid.UUID,
+    template_id: uuid.UUID,
+    current_user: CurrentUserAccountDep,
+    member: ProjectMemberDep,  # 権限チェック
+    template_service: AnalysisTemplateServiceDep,
+) -> AnalysisTemplateDeleteResponse:
+    """テンプレートを削除します。
+
+    Args:
+        project_id: プロジェクトID
+        template_id: テンプレートID
+        current_user: 認証済みユーザー
+        member: プロジェクトメンバー（権限チェック用）
+        template_service: 分析テンプレートサービス
+
+    Returns:
+        AnalysisTemplateDeleteResponse: 削除結果
+    """
+    logger.info(
+        "テンプレート削除",
+        user_id=str(current_user.id),
+        project_id=str(project_id),
+        template_id=str(template_id),
+        action="delete_template",
+    )
+
+    result = await template_service.delete_template(
+        project_id=project_id, template_id=template_id, user_id=current_user.id
+    )
+
+    logger.info(
+        "テンプレートを削除しました",
+        user_id=str(current_user.id),
+        template_id=str(template_id),
+    )
+
+    return result

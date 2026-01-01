@@ -91,3 +91,19 @@ class ProjectStorageListResponse(BaseCamelCaseModel):
     items: list[ProjectStorageResponse] = Field(..., description="ストレージ使用量リスト")
     total_storage_bytes: int = Field(..., description="合計ストレージ使用量（バイト）")
     total_storage_display: str = Field(..., description="合計ストレージ使用量（表示用）")
+
+
+class AdminProjectDetailResponse(BaseCamelCaseORMModel):
+    """管理者用プロジェクト詳細レスポンス。"""
+
+    id: uuid.UUID = Field(..., description="プロジェクトID")
+    name: str = Field(..., description="プロジェクト名")
+    description: str | None = Field(default=None, description="プロジェクト説明")
+    owner: ProjectOwnerInfo = Field(..., description="オーナー情報")
+    status: str = Field(..., description="ステータス")
+    member_count: int = Field(..., description="メンバー数")
+    storage_used_bytes: int = Field(..., description="ストレージ使用量（バイト）")
+    storage_used_display: str = Field(..., description="ストレージ使用量（表示用）")
+    last_activity_at: datetime | None = Field(default=None, description="最終アクティビティ")
+    created_at: datetime = Field(..., description="作成日時")
+    updated_at: datetime = Field(..., description="更新日時")

@@ -147,6 +147,10 @@ from app.schemas.analysis.analysis_template import (
     AnalysisValidationCreate,
     AnalysisValidationResponse,
     AnalysisValidationUpdate,
+    # 分析テンプレート（ユーザー作成）
+    AnalysisTemplateCreateRequest,
+    AnalysisTemplateCreateResponse,
+    AnalysisTemplateDeleteResponse,
 )
 
 __all__ = [
@@ -217,4 +221,8 @@ __all__ = [
     "AnalysisDummyChartCreate",
     "AnalysisDummyChartUpdate",
     "AnalysisDummyChartResponse",
+    # 分析テンプレート（ユーザー作成）
+    "AnalysisTemplateCreateRequest",
+    "AnalysisTemplateCreateResponse",
+    "AnalysisTemplateDeleteResponse",
 ]

@@ -22,7 +22,10 @@ from app.api.core.dependencies.system_admin import (
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.admin.statistics import (
+    ApiStatisticsDetailResponse,
+    ErrorStatisticsDetailResponse,
     StatisticsOverviewResponse,
+    StorageStatisticsDetailResponse,
     UserStatisticsDetailResponse,
 )
 
@@ -98,5 +101,104 @@ async def get_user_statistics(
     )
 
     result = await service.get_user_statistics(days=days)
+
+    return result
+
+
+@statistics_router.get(
+    "/storage",
+    response_model=StorageStatisticsDetailResponse,
+    summary="ストレージ使用量推移取得",
+    description="""
+    ストレージ使用量推移を取得します。
+
+    **権限**: システム管理者
+
+    クエリパラメータ:
+        - days: 取得日数
+    """,
+)
+@handle_service_errors
+async def get_storage_statistics(
+    _: RequireSystemAdminDep,
+    service: StatisticsServiceDep,
+    current_user: CurrentUserAccountDep,
+    days: int = Query(30, ge=1, le=365, description="取得日数"),
+) -> StorageStatisticsDetailResponse:
+    """ストレージ使用量推移を取得します。"""
+    logger.info(
+        "ストレージ統計取得",
+        user_id=str(current_user.id),
+        days=days,
+        action="get_storage_statistics",
+    )
+
+    result = await service.get_storage_statistics(days=days)
+
+    return result
+
+
+@statistics_router.get(
+    "/api-requests",
+    response_model=ApiStatisticsDetailResponse,
+    summary="APIリクエスト統計取得",
+    description="""
+    APIリクエスト統計を取得します。
+
+    **権限**: システム管理者
+
+    クエリパラメータ:
+        - days: 取得日数
+    """,
+)
+@handle_service_errors
+async def get_api_request_statistics(
+    _: RequireSystemAdminDep,
+    service: StatisticsServiceDep,
+    current_user: CurrentUserAccountDep,
+    days: int = Query(30, ge=1, le=365, description="取得日数"),
+) -> ApiStatisticsDetailResponse:
+    """APIリクエスト統計を取得します。"""
+    logger.info(
+        "APIリクエスト統計取得",
+        user_id=str(current_user.id),
+        days=days,
+        action="get_api_request_statistics",
+    )
+
+    result = await service.get_api_request_statistics(days=days)
+
+    return result
+
+
+@statistics_router.get(
+    "/errors",
+    response_model=ErrorStatisticsDetailResponse,
+    summary="エラー発生率統計取得",
+    description="""
+    エラー発生率統計を取得します。
+
+    **権限**: システム管理者
+
+    クエリパラメータ:
+        - days: 取得日数
+    """,
+)
+@handle_service_errors
+async def get_error_statistics(
+    _: RequireSystemAdminDep,
+    service: StatisticsServiceDep,
+    current_user: CurrentUserAccountDep,
+    days: int = Query(30, ge=1, le=365, description="取得日数"),
+) -> ErrorStatisticsDetailResponse:
+    """エラー発生率統計を取得します。"""
+    logger.info(
+        "エラー統計取得",
+        user_id=str(current_user.id),
+        days=days,
+        action="get_error_statistics",
+    )
+
+    result = await service.get_error_statistics(days=days)
 
     return result

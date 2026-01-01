@@ -130,3 +130,24 @@ class StorageService(ABC):
             ValidationError: ダウンロード失敗時
         """
         pass
+
+    @abstractmethod
+    async def copy(self, container: str, source_path: str, dest_path: str) -> bool:
+        """ファイルをコピーします。
+
+        同じコンテナ内でファイルをコピーします。
+        バージョン復元などで使用します。
+
+        Args:
+            container (str): コンテナ名
+            source_path (str): コピー元ファイルパス
+            dest_path (str): コピー先ファイルパス
+
+        Returns:
+            bool: 成功時True
+
+        Raises:
+            NotFoundError: コピー元ファイルが存在しない場合
+            ValidationError: コピー失敗時
+        """
+        pass

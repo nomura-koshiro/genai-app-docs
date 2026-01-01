@@ -817,7 +817,7 @@ async def update_file_config(
 
 
 @analysis_sessions_router.get(
-    "/project/{project_id}/analysis/session/{session_id}/snapshots",
+    "/project/{project_id}/analysis/session/{session_id}/snapshot",
     response_model=AnalysisSnapshotListResponse,
     status_code=status.HTTP_200_OK,
     summary="スナップショット一覧取得",
@@ -891,7 +891,7 @@ async def list_snapshots(
 
 
 @analysis_sessions_router.post(
-    "/project/{project_id}/analysis/session/{session_id}/snapshots",
+    "/project/{project_id}/analysis/session/{session_id}/snapshot",
     response_model=AnalysisSnapshotResponse,
     status_code=status.HTTP_201_CREATED,
     summary="手動スナップショット保存",

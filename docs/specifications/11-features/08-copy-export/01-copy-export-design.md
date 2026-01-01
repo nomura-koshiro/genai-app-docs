@@ -18,12 +18,12 @@
 
 ### 1.3 追加コンポーネント数
 
-| コンポーネント | 数量 |
-|--------------|------|
-| データベーステーブル | 0（既存テーブル利用） |
-| APIエンドポイント | 5 |
-| Pydanticスキーマ | 6 |
-| フロントエンド画面 | 0（既存画面にボタン追加） |
+| コンポーネント | 数量 | 備考 |
+|--------------|------|------|
+| データベーステーブル | 0 | 既存テーブル利用 |
+| APIエンドポイント | 5 | 実装済: 4、未実装: 1 |
+| Pydanticスキーマ | 6 | 部分的に実装済 |
+| フロントエンド画面 | 0 | 既存画面にボタン追加 |
 
 ---
 
@@ -80,18 +80,18 @@ FROM driver_tree WHERE id = :source_id;
 
 #### 複製機能
 
-| メソッド | パス | 説明 |
-|---------|------|------|
-| POST | /project/{project_id}/analysis/session/{session_id}/duplicate | セッション複製 |
-| POST | /project/{project_id}/driver-tree/tree/{tree_id}/duplicate | ツリー複製 |
+| メソッド | パス | 説明 | 備考 |
+|---------|------|------|------|
+| POST | /api/v1/project/{project_id}/analysis/session/{session_id}/duplicate | セッション複製 | 実装済 |
+| POST | /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/duplicate | ツリー複製 | 実装済 |
 
 #### エクスポート機能
 
-| メソッド | パス | 説明 |
-|---------|------|------|
-| GET | /project/{project_id}/analysis/session/{session_id}/export | 分析結果エクスポート |
-| GET | /project/{project_id}/driver-tree/tree/{tree_id}/output | ツリー計算結果エクスポート |
-| GET | /project/{project_id}/driver-tree/node/{node_id}/preview/output | ノードデータエクスポート |
+| メソッド | パス | 説明 | 備考 |
+|---------|------|------|------|
+| GET | /api/v1/project/{project_id}/analysis/session/{session_id}/export | 分析結果エクスポート | 未実装 |
+| GET | /api/v1/project/{project_id}/driver-tree/tree/{tree_id}/output | ツリー計算結果エクスポート | 実装済 |
+| GET | /api/v1/project/{project_id}/driver-tree/node/{node_id}/preview/output | ノードデータエクスポート | 実装済 |
 
 ### 3.2 リクエスト/レスポンス定義
 
@@ -508,13 +508,13 @@ class ExportService:
 
 | UC ID | 機能名 | API | 画面 | ステータス |
 |-------|--------|-----|------|-----------|
-| CP-001 | 分析セッション複製 | POST /session/{id}/duplicate | sessions | 設計済 |
+| CP-001 | 分析セッション複製 | POST /session/{id}/duplicate | sessions | 実装済 |
 | CP-002 | ドライバーツリー複製 | POST /tree/{id}/duplicate | trees | 実装済 |
-| EX-001 | 分析結果エクスポート | GET /session/{id}/export | analysis | 設計済 |
+| EX-001 | 分析結果エクスポート | GET /session/{id}/export | analysis | 未実装 |
 | EX-002 | ツリー計算結果エクスポート | GET /tree/{id}/output | tree-results | 実装済 |
 | EX-003 | ノードデータエクスポート | GET /node/{id}/preview/output | tree-edit | 実装済 |
 
-カバレッジ: 5/5 = 100%
+カバレッジ: 4/5 = 80%（実装済のみ）
 
 ---
 

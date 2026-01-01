@@ -330,3 +330,70 @@ class LocalStorageService(StorageService):
             )
 
         return str(file_path)
+
+    @async_timeout(30.0)
+    async def copy(self, container: str, source_path: str, dest_path: str) -> bool:
+        """ファイルをコピーします。
+
+        Args:
+            container (str): コンテナ名
+            source_path (str): コピー元ファイルパス
+            dest_path (str): コピー先ファイルパス
+
+        Returns:
+            bool: 成功時True
+
+        Raises:
+            NotFoundError: コピー元ファイルが存在しない場合
+            ValidationError: コピー失敗時
+
+        Example:
+            >>> await storage.copy("analysis", "data_v1.csv", "data_v2.csv")
+            True
+        """
+        source_file_path = self._get_file_path(container, source_path)
+        dest_file_path = self._get_file_path(container, dest_path)
+
+        if not await aiofiles.os.path.exists(source_file_path):
+            logger.warning(
+                "コピー元ファイルが見つかりません",
+                container=container,
+                source_path=source_path,
+            )
+            raise NotFoundError(
+                f"Source file not found: {source_path}",
+                details={"container": container, "source_path": source_path},
+            )
+
+        try:
+            # コピー先の親ディレクトリを作成
+            dest_file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # ファイルをコピー
+            async with aiofiles.open(source_file_path, "rb") as source:
+                content = await source.read()
+                async with aiofiles.open(dest_file_path, "wb") as dest:
+                    await dest.write(content)
+
+            logger.info(
+                "ファイルをコピーしました",
+                container=container,
+                source_path=source_path,
+                dest_path=dest_path,
+            )
+            return True
+
+        except Exception as e:
+            logger.error(
+                "ファイルのコピーに失敗しました",
+                container=container,
+                source_path=source_path,
+                dest_path=dest_path,
+                error_type=type(e).__name__,
+                error_message=str(e),
+                exc_info=True,
+            )
+            raise ValidationError(
+                f"Failed to copy file: {str(e)}",
+                details={"container": container, "source_path": source_path, "dest_path": dest_path},
+            ) from e

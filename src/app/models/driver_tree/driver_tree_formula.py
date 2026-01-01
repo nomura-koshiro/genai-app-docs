@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -24,7 +24,7 @@ class DriverTreeFormula(Base, TimestampMixin):
     Attributes:
         id: 主キー（UUID）
         category_id: カテゴリID（外部キー、任意）
-        driver_type_id: ドライバー型ID（1-24）
+        driver_type_id: ドライバー型ID（UUID）
         driver_type: ドライバー型
         kpi: KPI種別（売上、原価、販管費、粗利、営業利益、EBITDA）
         formulas: 数式リスト（JSONB配列）
@@ -54,15 +54,15 @@ class DriverTreeFormula(Base, TimestampMixin):
         default=uuid.uuid4,
     )
 
-    category_id: Mapped[int | None] = mapped_column(
-        Integer,
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("driver_tree_category.id", ondelete="SET NULL"),
         nullable=True,
         comment="カテゴリID",
     )
 
-    driver_type_id: Mapped[int] = mapped_column(
-        Integer,
+    driver_type_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
         comment="ドライバー型ID",
     )

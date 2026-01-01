@@ -6,12 +6,14 @@
 
 例外階層:
     AppException（基底クラス）
-    ├── NotFoundError (404) - リソース未検出
-    ├── ValidationError (422) - バリデーションエラー
+    ├── BadRequestError (400) - リクエスト形式エラー
     ├── AuthenticationError (401) - 認証失敗
     ├── AuthorizationError (403) - 権限不足
+    ├── NotFoundError (404) - リソース未検出
+    ├── ConflictError (409) - リソース競合
     ├── PayloadTooLargeError (413) - ペイロードサイズ超過
     ├── UnsupportedMediaTypeError (415) - 非対応ファイルタイプ
+    ├── ValidationError (422) - バリデーションエラー
     ├── DatabaseError (500) - データベース操作エラー
     └── ExternalServiceError (502) - 外部サービスエラー
 
@@ -86,6 +88,33 @@ class AppException(Exception):
         self.status_code = status_code
         self.details = details or {}
         super().__init__(self.message)
+
+
+class BadRequestError(AppException):
+    """リクエストの形式が不正な場合に発生する例外（HTTPステータス: 400）。
+
+    この例外は、リクエストの構文エラーや不正なパラメータなど、
+    クライアント側のリクエスト形式に問題がある場合に発生させます。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Bad request"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: エラーの原因となったパラメータや値を含める
+
+    Example:
+        >>> # 不正なパラメータ
+        >>> raise BadRequestError(
+        ...     "Invalid parameter format",
+        ...     details={"parameter": "date", "value": "invalid-date"}
+        ... )
+
+    Note:
+        - クライアントに400レスポンスが返されます
+        - ValidationError (422) とは異なり、構文レベルのエラーに使用します
+    """
+
+    def __init__(self, message: str = "Bad request", details: dict[str, Any] | None = None):
+        super().__init__(message, status_code=400, details=details)
 
 
 class NotFoundError(AppException):

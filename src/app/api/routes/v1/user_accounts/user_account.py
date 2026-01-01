@@ -4,11 +4,11 @@
 パスワード認証は含まず、Azure AD Object IDをキーとしたユーザー管理に特化しています。
 
 主な機能:
-    - ユーザー一覧取得（GET /api/v1/user_accounts - 管理者のみ、ページネーション対応）
-    - 現在のユーザー情報取得（GET /api/v1/user_accounts/me - 認証必須）
-    - 特定ユーザー取得（GET /api/v1/user_accounts/{user_id} - 管理者のみ）
-    - ユーザー情報更新（PATCH /api/v1/user_accounts/me）
-    - ユーザー削除（DELETE /api/v1/user_accounts/{user_id} - 管理者のみ）
+    - ユーザー一覧取得（GET /api/v1/user_account - 管理者のみ、ページネーション対応）
+    - 現在のユーザー情報取得（GET /api/v1/user_account/me - 認証必須）
+    - 特定ユーザー取得（GET /api/v1/user_account/{user_id} - 管理者のみ）
+    - ユーザー情報更新（PATCH /api/v1/user_account/me）
+    - ユーザー削除（DELETE /api/v1/user_account/{user_id} - 管理者のみ）
 
 セキュリティ:
     - Azure AD Bearer認証（本番環境）
@@ -17,7 +17,7 @@
 
 使用例:
     >>> # 現在のユーザー情報取得
-    >>> GET /api/v1/user_accounts/me
+    >>> GET /api/v1/user_account/me
     >>> Authorization: Bearer <Azure_AD_Token>
     >>> {
     ...     "id": "12345678-1234-1234-1234-123456789abc",

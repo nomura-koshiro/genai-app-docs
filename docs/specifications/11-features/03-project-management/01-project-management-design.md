@@ -35,7 +35,7 @@
 | レイヤー | 項目数 |
 |---------|--------|
 | データベーステーブル | 3テーブル（project, project_member, project_file） |
-| APIエンドポイント | 18エンドポイント |
+| APIエンドポイント | 21エンドポイント |
 | Pydanticスキーマ | 20スキーマ |
 | サービス | 3サービス |
 | フロントエンド画面 | 6画面 |
@@ -78,8 +78,7 @@
 | role | VARCHAR(50) | NO | プロジェクトロール |
 | joined_at | TIMESTAMP | NO | 参加日時 |
 | added_by | UUID | YES | 追加者ユーザーID |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+| last_activity_at | TIMESTAMP | YES | 最終アクティビティ日時 |
 
 **プロジェクトロール**:
 
@@ -104,18 +103,20 @@
 | project_id | UUID | NO | プロジェクトID（FK: project） |
 | filename | VARCHAR(255) | NO | 保存ファイル名 |
 | original_filename | VARCHAR(255) | NO | 元のファイル名 |
-| file_path | VARCHAR(500) | NO | ファイルパス |
-| file_size | BIGINT | NO | ファイルサイズ（バイト） |
+| file_path | VARCHAR(512) | NO | ファイルパス |
+| file_size | INTEGER | NO | ファイルサイズ（バイト） |
 | mime_type | VARCHAR(100) | YES | MIMEタイプ |
 | uploaded_by | UUID | NO | アップロード者ID |
+| uploaded_at | TIMESTAMP | NO | アップロード日時 |
 | version | INTEGER | NO | バージョン番号（デフォルト: 1） |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+| parent_file_id | UUID | YES | 親ファイルID（バージョン管理用、FK: project_file） |
+| is_latest | BOOLEAN | NO | 最新バージョンフラグ（デフォルト: true） |
 
 **インデックス**:
 
 - `idx_project_file_project` ON (project_id)
 - `idx_project_file_uploaded_by` ON (uploaded_by)
+- `idx_project_file_parent` ON (parent_file_id)
 
 ---
 
@@ -151,7 +152,10 @@
 | GET | `/api/v1/project/{project_id}/file` | ファイル一覧取得 | メンバー | PF-004 |
 | GET | `/api/v1/project/{project_id}/file/{file_id}` | ファイル詳細取得 | メンバー | PF-005, PF-006 |
 | GET | `/api/v1/project/{project_id}/file/{file_id}/download` | ファイルダウンロード | メンバー | PF-002 |
+| GET | `/api/v1/project/{project_id}/file/{file_id}/usage` | ファイル使用状況取得 | メンバー | - |
+| GET | `/api/v1/project/{project_id}/file/{file_id}/versions` | バージョン履歴取得 | メンバー | - |
 | POST | `/api/v1/project/{project_id}/file` | ファイルアップロード | メンバー | PF-001 |
+| POST | `/api/v1/project/{project_id}/file/{file_id}/version` | 新バージョンアップロード | メンバー | - |
 | DELETE | `/api/v1/project/{project_id}/file/{file_id}` | ファイル削除 | PM/Mod | PF-003 |
 
 ### 3.4 主要レスポンス定義

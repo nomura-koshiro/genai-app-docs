@@ -44,6 +44,15 @@ class ErrorResponse(BaseCamelCaseModel):
     timestamp: datetime = Field(default_factory=datetime.now, description="エラー発生日時")
 
 
+class BadRequestErrorResponse(ErrorResponse):
+    """リクエスト形式エラーレスポンス。
+
+    HTTP 400 エラー用のレスポンス。
+    """
+
+    error: str = Field(default="BadRequest", description="エラー種別")
+
+
 class NotFoundErrorResponse(ErrorResponse):
     """リソース未発見エラーレスポンス。
 

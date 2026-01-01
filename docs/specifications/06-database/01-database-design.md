@@ -156,7 +156,7 @@ class TimestampMixin:
 | azure_oid | String(255) | UNIQUE, NOT NULL | Azure AD Object ID |
 | email | String(255) | UNIQUE, NOT NULL | メールアドレス |
 | display_name | String(255) | NULLABLE | 表示名 |
-| roles | JSON | NOT NULL | システムロール（例: ["SystemAdmin", "User"]） |
+| roles | JSON | NOT NULL | システムロール（例: ["system_admin", "user"]） |
 | is_active | Boolean | DEFAULT TRUE | アクティブフラグ |
 | last_login | DateTime | NULLABLE | 最終ログイン日時 |
 | created_at | DateTime | NOT NULL | 作成日時 |
@@ -379,7 +379,10 @@ class ProjectRole(str, Enum):
 | creator_id | UUID | FK, NOT NULL | 作成者ID |
 | project_id | UUID | FK, NOT NULL | プロジェクトID |
 | input_file_id | UUID | FK, NULLABLE | 入力ファイルID |
-| current_snapshot | Integer | NOT NULL, DEFAULT 0 | 現在のスナップショット番号 |
+| current_snapshot_id | UUID | FK, NULLABLE | 現在のスナップショットID |
+| status | String(20) | NOT NULL, DEFAULT 'draft' | セッション状態（draft/active/completed/archived） |
+| custom_system_prompt | Text | NULLABLE | カスタムシステムプロンプト |
+| initial_message | Text | NULLABLE | 初期メッセージ |
 | created_at | DateTime | NOT NULL | 作成日時 |
 | updated_at | DateTime | NOT NULL | 更新日時 |
 
@@ -455,13 +458,13 @@ class ProjectRole(str, Enum):
 
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
-| id | Integer | PK, AUTO INCREMENT | 主キー（自動採番） |
-| category_id | Integer | NOT NULL | 業界分類ID |
+| id | UUID | PK | 主キー |
+| category_id | UUID | NOT NULL | 業界分類ID |
 | category_name | String(255) | NOT NULL | 業界分類 |
-| industry_id | Integer | NOT NULL | 業界名ID |
+| industry_id | UUID | NOT NULL | 業界名ID |
 | industry_name | String(255) | NOT NULL | 業界名 |
-| driver_type_id | Integer | NOT NULL | ドライバー型ID（1-24） |
-| driver_type_name | String(255) | NOT NULL | ドライバー型 |
+| driver_type_id | UUID | NOT NULL | ドライバー型ID |
+| driver_type | String(255) | NOT NULL | ドライバー型 |
 | description | Text | NULLABLE | カテゴリ説明 |
 | created_by | UUID | FK(user_account.id), NULLABLE | 作成者ID |
 | created_at | DateTime | NOT NULL | 作成日時 |
@@ -482,7 +485,8 @@ class ProjectRole(str, Enum):
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
 | id | UUID | PK | 主キー |
-| driver_type_id | Integer | NOT NULL | ドライバー型ID（1-24） |
+| category_id | UUID | FK(driver_tree_category.id), NULLABLE | カテゴリID |
+| driver_type_id | UUID | NOT NULL | ドライバー型ID |
 | driver_type | String(255) | NOT NULL | ドライバー型 |
 | kpi | String(50) | NOT NULL | KPI（売上、原価、販管費、粗利、営業利益、EBITDA） |
 | formulas | JSONB | NOT NULL | 数式リスト（配列） |
@@ -494,6 +498,8 @@ class ProjectRole(str, Enum):
 - PRIMARY KEY: `id`
 - UNIQUE: `(driver_type_id, kpi)` (uq_driver_kpi)
 - INDEX: `(driver_type_id, kpi)` (ix_formula_driver_kpi)
+- INDEX: `category_id` (ix_formula_category)
+- FOREIGN KEY: `category_id` → `driver_tree_category(id)` ON DELETE SET NULL
 
 #### 3.5.3 driver_tree（ドライバーツリー）
 
@@ -508,6 +514,8 @@ class ProjectRole(str, Enum):
 | description | Text | NOT NULL, DEFAULT '' | 説明 |
 | root_node_id | UUID | FK, NULLABLE | ルートノードID |
 | formula_id | UUID | FK, NULLABLE | 数式テンプレートID |
+| status | String(20) | NOT NULL, DEFAULT 'draft' | ツリー状態（draft/active/completed） |
+| created_by | UUID | FK(user_account.id), NULLABLE | 作成者ユーザーID |
 | created_at | DateTime | NOT NULL | 作成日時 |
 | updated_at | DateTime | NOT NULL | 更新日時 |
 
@@ -515,9 +523,11 @@ class ProjectRole(str, Enum):
 
 - PRIMARY KEY: `id`
 - INDEX: `project_id` (idx_driver_tree_project_id)
+- CHECK: `status IN ('draft', 'active', 'completed')` (ck_driver_tree_status)
 - FOREIGN KEY: `project_id` → `project(id)` ON DELETE CASCADE
 - FOREIGN KEY: `root_node_id` → `driver_tree_node(id)` ON DELETE SET NULL
 - FOREIGN KEY: `formula_id` → `driver_tree_formula(id)` ON DELETE SET NULL
+- FOREIGN KEY: `created_by` → `user_account(id)` ON DELETE SET NULL
 
 #### 3.5.4 driver_tree_node（ノード）
 
@@ -527,6 +537,7 @@ class ProjectRole(str, Enum):
 | カラム名 | 型 | 制約 | 説明 |
 |---------|-----|------|------|
 | id | UUID | PK | 主キー |
+| driver_tree_id | UUID | FK, NOT NULL | ドライバーツリーID |
 | label | String(255) | NOT NULL | ノードラベル |
 | position_x | Integer | NULLABLE, DEFAULT 0 | X座標 |
 | position_y | Integer | NULLABLE, DEFAULT 0 | Y座標 |
@@ -534,6 +545,13 @@ class ProjectRole(str, Enum):
 | data_frame_id | UUID | FK, NULLABLE | データフレームID |
 | created_at | DateTime | NOT NULL | 作成日時 |
 | updated_at | DateTime | NOT NULL | 更新日時 |
+
+##### インデックス
+
+- PRIMARY KEY: `id`
+- INDEX: `driver_tree_id`
+- FOREIGN KEY: `driver_tree_id` → `driver_tree(id)` ON DELETE CASCADE
+- FOREIGN KEY: `data_frame_id` → `driver_tree_data_frame(id)` ON DELETE SET NULL
 
 #### 3.5.5 driver_tree_relationship（リレーションシップ）
 

@@ -13,9 +13,13 @@ from app.core.logging import get_logger
 from app.models import ProjectFile, ProjectRole
 from app.schemas.project.project_file import (
     FileUsageItem,
+    FileVersionCompareResponse,
+    FileVersionRestoreResponse,
     ProjectFileUsageResponse,
     ProjectFileVersionHistoryResponse,
     ProjectFileVersionItem,
+    VersionComparisonBasicInfo,
+    VersionComparisonInfo,
 )
 from app.services.project.project_file.base import ProjectFileServiceBase
 
@@ -317,4 +321,257 @@ class ProjectFileCrudService(ProjectFileServiceBase):
             original_filename=latest_file.original_filename,
             total_versions=len(version_items),
             versions=version_items,
+        )
+
+    @measure_performance
+    @async_timeout(30.0)
+    async def download_version(
+        self,
+        version_id: uuid.UUID,
+        requester_id: uuid.UUID,
+    ) -> str:
+        """特定バージョンをダウンロードします（ファイルパスを返却）。
+
+        Args:
+            version_id: バージョンファイルID
+            requester_id: リクエスター（ユーザー）ID
+
+        Returns:
+            str: ファイルの完全パス（FileResponseで使用可能）
+
+        Raises:
+            NotFoundError: ファイルが見つからない場合
+            AuthorizationError: 権限が不足している場合
+        """
+        logger.debug("特定バージョンダウンロード", version_id=str(version_id), requester_id=str(requester_id))
+
+        # バージョンファイルを取得
+        version_file = await self.repository.get(version_id)
+        if not version_file:
+            raise NotFoundError(f"バージョンファイルが見つかりません: {version_id}", details={"version_id": str(version_id)})
+
+        # 権限チェック（VIEWER以上）
+        await self._check_member_role(
+            version_file.project_id,
+            requester_id,
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
+        )
+
+        # ファイルの存在確認
+        storage_path = version_file.file_path
+        if not await self.storage.exists("", storage_path):
+            logger.error(
+                "ストレージにファイルが見つかりません",
+                version_id=str(version_id),
+                storage_path=storage_path,
+            )
+            raise NotFoundError(
+                f"ストレージにファイルが見つかりません: {version_id}",
+                details={"version_id": str(version_id)},
+            )
+
+        # ファイルパスを返却（Azure Blobの場合は一時ファイルにダウンロード）
+        return await self.storage.download_to_temp_file("", storage_path)
+
+    @measure_performance
+    @async_timeout(60.0)
+    @transactional
+    async def restore_version(
+        self,
+        version_id: uuid.UUID,
+        requester_id: uuid.UUID,
+        comment: str | None = None,
+    ) -> FileVersionRestoreResponse:
+        """特定バージョンに復元します（新バージョンとして登録）。
+
+        Args:
+            version_id: 復元元のバージョンファイルID
+            requester_id: リクエスター（ユーザー）ID
+            comment: 復元コメント（省略時は自動生成）
+
+        Returns:
+            FileVersionRestoreResponse: 復元レスポンス
+
+        Raises:
+            NotFoundError: ファイルが見つからない場合
+            AuthorizationError: 権限が不足している場合
+        """
+        logger.info("バージョン復元", version_id=str(version_id), requester_id=str(requester_id))
+
+        # 復元元バージョンを取得
+        source_version = await self.repository.get(version_id)
+        if not source_version:
+            raise NotFoundError(f"復元元バージョンが見つかりません: {version_id}", details={"version_id": str(version_id)})
+
+        # 権限チェック（MEMBER以上）
+        await self._check_member_role(
+            source_version.project_id,
+            requester_id,
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER],
+        )
+
+        # 同じファミリーのバージョン履歴を取得して最大バージョン番号を確認
+        versions = await self.repository.get_version_history(source_version.id)
+        max_version = max((v.version for v in versions), default=0)
+        new_version_number = max_version + 1
+
+        # ストレージからファイルをコピー
+        source_storage_path = source_version.file_path
+        new_file_id = uuid.uuid4()
+        new_storage_path = self._generate_storage_path(
+            source_version.project_id, new_file_id, source_version.original_filename
+        )
+
+        # ファイルの存在確認
+        if not await self.storage.exists("", source_storage_path):
+            raise NotFoundError(
+                f"復元元のファイルがストレージに見つかりません: {version_id}",
+                details={"version_id": str(version_id), "storage_path": source_storage_path},
+            )
+
+        # ファイルをコピー
+        await self.storage.copy("", source_storage_path, new_storage_path)
+        logger.info(
+            "ファイルをコピーしました",
+            source_path=source_storage_path,
+            new_path=new_storage_path,
+        )
+
+        # 復元コメントを生成
+        restore_comment = comment or f"v{source_version.version}から復元"
+
+        # 最新バージョンを特定
+        latest_version = next((v for v in versions if v.is_latest), versions[0] if versions else source_version)
+
+        # 既存の最新バージョンのis_latestをFalseに更新
+        if latest_version and latest_version.is_latest:
+            await self.repository.update(latest_version.id, {"is_latest": False})
+
+        # 新規バージョンレコードを作成
+        new_version_data = {
+            "id": new_file_id,
+            "project_id": source_version.project_id,
+            "filename": source_version.filename,
+            "original_filename": source_version.original_filename,
+            "file_path": new_storage_path,
+            "file_size": source_version.file_size,
+            "mime_type": source_version.mime_type,
+            "version": new_version_number,
+            "parent_file_id": source_version.parent_file_id or source_version.id,
+            "is_latest": True,
+            "uploaded_by": requester_id,
+        }
+
+        new_version = await self.repository.create(ProjectFile(**new_version_data))
+        await self.db.commit()
+        await self.db.refresh(new_version)
+
+        logger.info(
+            "バージョン復元完了",
+            new_version_id=str(new_version.id),
+            new_version_number=new_version_number,
+            restored_from_version=source_version.version,
+        )
+
+        return FileVersionRestoreResponse(
+            file_id=latest_version.id if latest_version else new_version.id,
+            new_version_id=new_version.id,
+            new_version_number=new_version_number,
+            restored_from_version=source_version.version,
+            comment=restore_comment,
+            created_at=new_version.uploaded_at,
+        )
+
+    @measure_performance
+    async def compare_versions(
+        self,
+        file_id: uuid.UUID,
+        version1: int,
+        version2: int,
+        requester_id: uuid.UUID,
+    ) -> FileVersionCompareResponse:
+        """バージョン間を比較します（ファイルサイズ比較のみ）。
+
+        Args:
+            file_id: ファイルID
+            version1: 比較元バージョン番号
+            version2: 比較先バージョン番号
+            requester_id: リクエスター（ユーザー）ID
+
+        Returns:
+            FileVersionCompareResponse: 比較結果
+
+        Raises:
+            NotFoundError: ファイルが見つからない場合
+            AuthorizationError: 権限が不足している場合
+        """
+        logger.debug(
+            "バージョン比較",
+            file_id=str(file_id),
+            version1=version1,
+            version2=version2,
+            requester_id=str(requester_id),
+        )
+
+        # ファイルを取得して権限チェック
+        file = await self.repository.get(file_id)
+        if not file:
+            raise NotFoundError(f"ファイルが見つかりません: {file_id}", details={"file_id": str(file_id)})
+
+        # 権限チェック（VIEWER以上）
+        await self._check_member_role(
+            file.project_id,
+            requester_id,
+            [ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, ProjectRole.VIEWER],
+        )
+
+        # バージョン履歴を取得
+        versions = await self.repository.get_version_history(file_id)
+
+        # 指定されたバージョン番号のファイルを検索
+        v1_file = next((v for v in versions if v.version == version1), None)
+        v2_file = next((v for v in versions if v.version == version2), None)
+
+        if not v1_file:
+            raise NotFoundError(
+                f"バージョン{version1}が見つかりません",
+                details={"file_id": str(file_id), "version": version1},
+            )
+
+        if not v2_file:
+            raise NotFoundError(
+                f"バージョン{version2}が見つかりません",
+                details={"file_id": str(file_id), "version": version2},
+            )
+
+        # サイズ比較
+        size_change = v2_file.file_size - v1_file.file_size
+        size_change_percent = (size_change / v1_file.file_size * 100) if v1_file.file_size > 0 else 0.0
+
+        logger.debug(
+            "バージョン比較完了",
+            file_id=str(file_id),
+            version1=version1,
+            version2=version2,
+            size_change=size_change,
+            size_change_percent=size_change_percent,
+        )
+
+        return FileVersionCompareResponse(
+            file_id=file_id,
+            file_name=file.original_filename,
+            version1=VersionComparisonBasicInfo(
+                version_number=v1_file.version,
+                file_size=v1_file.file_size,
+                created_at=v1_file.uploaded_at,
+            ),
+            version2=VersionComparisonBasicInfo(
+                version_number=v2_file.version,
+                file_size=v2_file.file_size,
+                created_at=v2_file.uploaded_at,
+            ),
+            comparison=VersionComparisonInfo(
+                size_change=size_change,
+                size_change_percent=round(size_change_percent, 2),
+            ),
         )

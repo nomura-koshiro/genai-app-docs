@@ -22,7 +22,12 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ProjectFile
-from app.schemas.project.project_file import ProjectFileUsageResponse, ProjectFileVersionHistoryResponse
+from app.schemas.project.project_file import (
+    FileVersionCompareResponse,
+    FileVersionRestoreResponse,
+    ProjectFileUsageResponse,
+    ProjectFileVersionHistoryResponse,
+)
 from app.services.project.project_file.crud import ProjectFileCrudService
 from app.services.project.project_file.download import ProjectFileDownloadService
 from app.services.project.project_file.upload import ALLOWED_MIME_TYPES, ProjectFileUploadService
@@ -97,6 +102,26 @@ class ProjectFileService:
     async def download_file(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> str:
         """ファイルをダウンロードします（ファイルパスを返却）。"""
         return await self._download_service.download_file(file_id, requester_id)
+
+    # ================================================================================
+    # バージョン管理
+    # ================================================================================
+
+    async def download_version(self, version_id: uuid.UUID, requester_id: uuid.UUID) -> str:
+        """特定バージョンをダウンロードします（ファイルパスを返却）。"""
+        return await self._crud_service.download_version(version_id, requester_id)
+
+    async def restore_version(
+        self, version_id: uuid.UUID, requester_id: uuid.UUID, comment: str | None = None
+    ) -> FileVersionRestoreResponse:
+        """特定バージョンに復元します（新バージョンとして登録）。"""
+        return await self._crud_service.restore_version(version_id, requester_id, comment)
+
+    async def compare_versions(
+        self, file_id: uuid.UUID, version1: int, version2: int, requester_id: uuid.UUID
+    ) -> FileVersionCompareResponse:
+        """バージョン間を比較します。"""
+        return await self._crud_service.compare_versions(file_id, version1, version2, requester_id)
 
 
 __all__ = ["ProjectFileService", "MAX_FILE_SIZE", "ALLOWED_MIME_TYPES"]

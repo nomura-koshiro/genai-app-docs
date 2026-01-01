@@ -6,7 +6,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Index, Integer, String, Text
+from sqlalchemy import ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -22,12 +22,12 @@ class DriverTreeCategory(Base, TimestampMixin):
     業界分類・業界名とドライバー型の対応関係を管理します。
 
     Attributes:
-        id: 主キー（自動採番）
-        category_id: 業界分類ID（業務ID）
+        id: 主キー（UUID）
+        category_id: 業界分類ID（UUID）
         category_name: 業界分類名
-        industry_id: 業界名ID（業務ID）
+        industry_id: 業界名ID（UUID）
         industry_name: 業界名
-        driver_type_id: ドライバー型ID（1-24）
+        driver_type_id: ドライバー型ID（UUID）
         driver_type: ドライバー型
         description: カテゴリ説明
         created_by: 作成者ID
@@ -44,14 +44,14 @@ class DriverTreeCategory(Base, TimestampMixin):
         Index("ix_category_driver", "driver_type_id"),
     )
 
-    id: Mapped[int] = mapped_column(
-        Integer,
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         primary_key=True,
-        autoincrement=True,
+        default=uuid.uuid4,
     )
 
-    category_id: Mapped[int] = mapped_column(
-        Integer,
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
         comment="業界分類ID",
     )
@@ -62,8 +62,8 @@ class DriverTreeCategory(Base, TimestampMixin):
         comment="業界分類",
     )
 
-    industry_id: Mapped[int] = mapped_column(
-        Integer,
+    industry_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
         comment="業界名ID",
     )
@@ -74,8 +74,8 @@ class DriverTreeCategory(Base, TimestampMixin):
         comment="業界名",
     )
 
-    driver_type_id: Mapped[int] = mapped_column(
-        Integer,
+    driver_type_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
         nullable=False,
         comment="ドライバー型ID",
     )

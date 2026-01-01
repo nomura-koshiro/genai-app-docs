@@ -19,7 +19,7 @@
 
 使用例:
     >>> # メンバー追加
-    >>> POST /api/v1/projects/{project_id}/members
+    >>> POST /api/v1/project/{project_id}/member
     >>> Authorization: Bearer <Azure_AD_Token>
     >>> {
     ...     "user_id": "user-uuid",

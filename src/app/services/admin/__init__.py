@@ -10,6 +10,7 @@ from app.services.admin.dummy_formula import AdminDummyFormulaService
 from app.services.admin.graph_axis import AdminGraphAxisService
 from app.services.admin.issue import AdminIssueService
 from app.services.admin.notification_service import NotificationService
+from app.services.admin.projects_admin_service import ProjectsAdminService
 from app.services.admin.session_management_service import SessionManagementService
 from app.services.admin.statistics_service import StatisticsService
 from app.services.admin.support_tools_service import SupportToolsService
@@ -34,4 +35,5 @@ __all__ = [
     "BulkOperationService",
     "DataManagementService",
     "SupportToolsService",
+    "ProjectsAdminService",
 ]

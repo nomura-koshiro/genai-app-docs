@@ -25,6 +25,7 @@ from app.api.routes.v1.admin.dummy_formula import admin_dummy_formula_router
 from app.api.routes.v1.admin.graph_axis import admin_graph_axis_router
 from app.api.routes.v1.admin.issue import admin_issue_router
 from app.api.routes.v1.admin.notifications import notifications_router
+from app.api.routes.v1.admin.projects_admin import admin_projects_router
 from app.api.routes.v1.admin.role import admin_role_router
 from app.api.routes.v1.admin.security import security_router
 from app.api.routes.v1.admin.settings import settings_router
@@ -43,6 +44,7 @@ __all__ = [
     "admin_validation_router",
     # システム管理機能ルーター
     "activity_logs_router",
+    "admin_projects_router",
     "audit_logs_router",
     "bulk_operations_router",
     "data_management_router",

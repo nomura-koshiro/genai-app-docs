@@ -37,6 +37,7 @@ from app.api.routes.v1 import (
     admin_dummy_formula_router,
     admin_graph_axis_router,
     admin_issue_router,
+    admin_projects_router,
     admin_role_router,
     admin_validation_router,
     # 分析API
@@ -232,6 +233,7 @@ def create_app() -> FastAPI:
 
     # システム管理API（SA-001〜SA-043）
     app.include_router(activity_logs_router, prefix="/api/v1/admin", tags=["system-admin-activity"])
+    app.include_router(admin_projects_router, prefix="/api/v1/admin", tags=["system-admin-projects"])
     app.include_router(audit_logs_router, prefix="/api/v1/admin", tags=["system-admin-audit"])
     app.include_router(settings_router, prefix="/api/v1/admin", tags=["system-admin-settings"])
     app.include_router(statistics_router, prefix="/api/v1/admin", tags=["system-admin-statistics"])

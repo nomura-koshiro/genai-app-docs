@@ -5,22 +5,33 @@
 主な機能:
     - テンプレート一覧取得
     - テンプレート詳細取得
+    - テンプレート作成（セッションから）
+    - テンプレート削除
 """
 
 import json
 import uuid
+from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
-from app.repositories.analysis import AnalysisIssueRepository, AnalysisValidationRepository
+from app.repositories.analysis import (
+    AnalysisIssueRepository,
+    AnalysisSessionRepository,
+    AnalysisTemplateRepository,
+    AnalysisValidationRepository,
+)
 from app.schemas.analysis import (
     AnalysisDummyChartResponse,
     AnalysisDummyFormulaResponse,
     AnalysisGraphAxisResponse,
     AnalysisIssueCatalogResponse,
     AnalysisIssueDetailResponse,
+    AnalysisTemplateCreateRequest,
+    AnalysisTemplateCreateResponse,
+    AnalysisTemplateDeleteResponse,
 )
 
 logger = get_logger(__name__)
@@ -41,6 +52,8 @@ class AnalysisTemplateService:
         self.db = db
         self.validation_repository = AnalysisValidationRepository(db)
         self.issue_repository = AnalysisIssueRepository(db)
+        self.template_repository = AnalysisTemplateRepository(db)
+        self.session_repository = AnalysisSessionRepository(db)
 
     async def list_templates(
         self,
@@ -164,3 +177,116 @@ class AnalysisTemplateService:
             )
 
             return response
+
+    async def create_template(
+        self,
+        project_id: uuid.UUID,
+        request: AnalysisTemplateCreateRequest,
+        user_id: uuid.UUID,
+    ) -> AnalysisTemplateCreateResponse:
+        """セッションからテンプレートを作成します。
+
+        Args:
+            project_id: プロジェクトID
+            request: テンプレート作成リクエスト
+            user_id: 作成者ユーザーID
+
+        Returns:
+            作成されたテンプレート情報
+
+        Raises:
+            NotFoundError: 元セッションが見つからない
+        """
+        # 元セッションの取得
+        source_session = await self.session_repository.get(request.source_session_id)
+        if not source_session:
+            raise NotFoundError("元セッションが見つかりません")
+
+        # プロジェクトIDの検証
+        if source_session.project_id != project_id:
+            raise AuthorizationError("他のプロジェクトのセッションからテンプレートを作成できません")
+
+        # テンプレート設定を抽出（簡易版）
+        template_config = {
+            "initialPrompt": source_session.custom_system_prompt or "",
+            "initialMessage": source_session.initial_message or "",
+            "issueName": source_session.issue.name if source_session.issue else "",
+        }
+
+        # テンプレート作成
+        template = await self.template_repository.create(
+            project_id=project_id if not request.is_public else None,  # 公開テンプレートはグローバル
+            name=request.name,
+            description=request.description,
+            template_type="session",
+            template_config=template_config,
+            source_session_id=request.source_session_id,
+            is_public=request.is_public,
+            created_by=user_id,
+        )
+
+        logger.info(
+            "分析テンプレート作成完了",
+            template_id=str(template.id),
+            project_id=str(project_id),
+            user_id=str(user_id),
+        )
+
+        return AnalysisTemplateCreateResponse(
+            template_id=template.id,
+            name=template.name,
+            description=template.description,
+            template_type=template.template_type,
+            template_config=template.template_config,
+            created_at=template.created_at,
+        )
+
+    async def delete_template(
+        self,
+        project_id: uuid.UUID,
+        template_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> AnalysisTemplateDeleteResponse:
+        """テンプレートを削除します。
+
+        Args:
+            project_id: プロジェクトID
+            template_id: テンプレートID
+            user_id: リクエストユーザーID
+
+        Returns:
+            削除レスポンス
+
+        Raises:
+            NotFoundError: テンプレートが見つからない
+            AuthorizationError: 削除権限がない
+        """
+        # テンプレートの取得
+        template = await self.template_repository.get_by_id(template_id)
+        if not template:
+            raise NotFoundError("テンプレートが見つかりません")
+
+        # 権限チェック: プロジェクト固有テンプレートの場合、同じプロジェクトであること
+        if template.project_id and template.project_id != project_id:
+            raise AuthorizationError("他のプロジェクトのテンプレートは削除できません")
+
+        # 作成者のみ削除可能
+        if template.created_by != user_id:
+            raise AuthorizationError("テンプレートの作成者のみ削除できます")
+
+        # 削除実行
+        deleted = await self.template_repository.delete(template_id)
+        if not deleted:
+            raise NotFoundError("テンプレートが見つかりません")
+
+        logger.info(
+            "分析テンプレート削除完了",
+            template_id=str(template_id),
+            project_id=str(project_id),
+            user_id=str(user_id),
+        )
+
+        return AnalysisTemplateDeleteResponse(
+            success=True,
+            deleted_at=datetime.now(UTC),
+        )
