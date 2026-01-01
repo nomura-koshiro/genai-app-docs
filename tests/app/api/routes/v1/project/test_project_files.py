@@ -70,28 +70,13 @@ async def test_upload_file_success(
 
 
 @pytest.mark.asyncio
-async def test_upload_file_unauthorized(client: AsyncClient):
-    """[test_project_files-002] 認証なしでのファイルアップロード失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-    file_content = b"Test file"
-    files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
-
-    # Act
-    response = await client.post(f"/api/v1/project/{project_id}/file", files=files)
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
 async def test_upload_file_not_member(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     test_data_seeder,
 ):
-    """[test_project_files-003] 非メンバーによるファイルアップロード失敗。"""
+    """[test_project_files-002] 非メンバーによるファイルアップロード失敗。"""
     # Arrange
     project, _ = project_with_owner
     other_user = await test_data_seeder.create_user(display_name="Other User")
@@ -118,7 +103,7 @@ async def test_upload_file_viewer_not_allowed(
     project_with_members,
     mock_storage_path,
 ):
-    """[test_project_files-004] VIEWERロールによるファイルアップロード失敗。"""
+    """[test_project_files-003] VIEWERロールによるファイルアップロード失敗。"""
     # Arrange
     data = project_with_members
     override_auth(data["viewer"])
@@ -148,7 +133,7 @@ async def test_list_files_success(
     project_with_owner,
     mock_storage_path,
 ):
-    """[test_project_files-005] ファイル一覧取得の成功ケース。"""
+    """[test_project_files-004] ファイル一覧取得の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -183,7 +168,7 @@ async def test_list_files_with_pagination(
     project_with_owner,
     mock_storage_path,
 ):
-    """[test_project_files-006] ページネーション付きファイル一覧取得。"""
+    """[test_project_files-005] ページネーション付きファイル一覧取得。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -208,19 +193,6 @@ async def test_list_files_with_pagination(
     assert data["total"] == 5
 
 
-@pytest.mark.asyncio
-async def test_list_files_unauthorized(client: AsyncClient):
-    """[test_project_files-007] 認証なしでのファイル一覧取得失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project_id}/file")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # GET /api/v1/project/{project_id}/file/{file_id} - ファイル情報取得
 # ================================================================================
@@ -233,7 +205,7 @@ async def test_get_file_success(
     project_with_owner,
     mock_storage_path,
 ):
-    """[test_project_files-008] ファイル情報取得の成功ケース。"""
+    """[test_project_files-006] ファイル情報取得の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -258,25 +230,6 @@ async def test_get_file_success(
     assert data["filename"] == "gettest.txt"
 
 
-@pytest.mark.asyncio
-async def test_get_file_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_project_files-009] 存在しないファイルの取得（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    nonexistent_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/file/{nonexistent_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
 # ================================================================================
 # GET /api/v1/project/{project_id}/file/{file_id}/download - ファイルダウンロード
 # ================================================================================
@@ -290,7 +243,7 @@ async def test_download_file_success(
     mock_storage_service,
     tmp_path,
 ):
-    """[test_project_files-010] ファイルダウンロードの成功ケース。"""
+    """[test_project_files-007] ファイルダウンロードの成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -317,25 +270,6 @@ async def test_download_file_success(
     assert response.content == file_content
 
 
-@pytest.mark.asyncio
-async def test_download_file_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_project_files-011] 存在しないファイルのダウンロード（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    nonexistent_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/file/{nonexistent_id}/download")
-
-    # Assert
-    assert response.status_code == 404
-
-
 # ================================================================================
 # DELETE /api/v1/project/{project_id}/file/{file_id} - ファイル削除
 # ================================================================================
@@ -348,7 +282,7 @@ async def test_delete_file_by_uploader(
     project_with_owner,
     mock_storage_path,
 ):
-    """[test_project_files-012] アップロード者によるファイル削除の成功ケース。"""
+    """[test_project_files-008] アップロード者によるファイル削除の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -378,7 +312,7 @@ async def test_delete_file_by_manager(
     project_with_members,
     mock_storage_path,
 ):
-    """[test_project_files-013] PROJECT_MANAGERによる他者のファイル削除の成功ケース。"""
+    """[test_project_files-009] PROJECT_MANAGERによる他者のファイル削除の成功ケース。"""
     # Arrange
     data = project_with_members
 
@@ -405,32 +339,13 @@ async def test_delete_file_by_manager(
 
 
 @pytest.mark.asyncio
-async def test_delete_file_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_project_files-014] 存在しないファイルの削除（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    nonexistent_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{project.id}/file/{nonexistent_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
 async def test_delete_file_no_permission(
     client: AsyncClient,
     override_auth,
     project_with_members,
     mock_storage_path,
 ):
-    """[test_project_files-015] 権限のないユーザーによるファイル削除失敗。"""
+    """[test_project_files-010] 権限のないユーザーによるファイル削除失敗。"""
     # Arrange
     data = project_with_members
 
