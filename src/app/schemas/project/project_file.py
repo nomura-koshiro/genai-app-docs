@@ -282,3 +282,77 @@ class ProjectFileVersionHistoryResponse(BaseCamelCaseModel):
     original_filename: str = Field(..., description="元のファイル名")
     total_versions: int = Field(..., description="総バージョン数")
     versions: list[ProjectFileVersionItem] = Field(..., description="バージョン履歴リスト")
+
+
+class FileVersionRestoreRequest(BaseCamelCaseModel):
+    """バージョン復元リクエスト。
+
+    Attributes:
+        comment (str | None): 復元時のコメント
+    """
+
+    comment: str | None = Field(default=None, description="復元時のコメント")
+
+
+class FileVersionRestoreResponse(BaseCamelCaseModel):
+    """バージョン復元レスポンス。
+
+    Attributes:
+        file_id (uuid.UUID): 最新バージョンのファイルID
+        new_version_id (uuid.UUID): 新しく作成されたバージョンのID
+        new_version_number (int): 新しいバージョン番号
+        restored_from_version (int): 復元元のバージョン番号
+        comment (str | None): 復元コメント
+        created_at (datetime): 作成日時
+    """
+
+    file_id: uuid.UUID = Field(..., description="最新バージョンのファイルID")
+    new_version_id: uuid.UUID = Field(..., description="新しく作成されたバージョンのID")
+    new_version_number: int = Field(..., description="新しいバージョン番号")
+    restored_from_version: int = Field(..., description="復元元のバージョン番号")
+    comment: str | None = Field(default=None, description="復元コメント")
+    created_at: datetime = Field(..., description="作成日時")
+
+
+class VersionComparisonBasicInfo(BaseCamelCaseModel):
+    """バージョン基本情報（比較用）。
+
+    Attributes:
+        version_number (int): バージョン番号
+        file_size (int): ファイルサイズ（バイト）
+        created_at (datetime): 作成日時
+    """
+
+    version_number: int = Field(..., description="バージョン番号")
+    file_size: int = Field(..., description="ファイルサイズ（バイト）")
+    created_at: datetime = Field(..., description="作成日時")
+
+
+class VersionComparisonInfo(BaseCamelCaseModel):
+    """バージョン比較情報。
+
+    Attributes:
+        size_change (int): サイズ変更量（バイト）
+        size_change_percent (float): サイズ変更率（%）
+    """
+
+    size_change: int = Field(..., description="サイズ変更量（バイト）")
+    size_change_percent: float = Field(..., description="サイズ変更率（%）")
+
+
+class FileVersionCompareResponse(BaseCamelCaseModel):
+    """バージョン比較レスポンス。
+
+    Attributes:
+        file_id (uuid.UUID): ファイルID
+        file_name (str): ファイル名
+        version1 (VersionComparisonBasicInfo): 比較元バージョン情報
+        version2 (VersionComparisonBasicInfo): 比較先バージョン情報
+        comparison (VersionComparisonInfo): 比較結果
+    """
+
+    file_id: uuid.UUID = Field(..., description="ファイルID")
+    file_name: str = Field(..., description="ファイル名")
+    version1: VersionComparisonBasicInfo = Field(..., description="比較元バージョン情報")
+    version2: VersionComparisonBasicInfo = Field(..., description="比較先バージョン情報")
+    comparison: VersionComparisonInfo = Field(..., description="比較結果")

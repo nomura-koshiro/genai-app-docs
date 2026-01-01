@@ -27,6 +27,7 @@ from app.services.admin import (
     BulkOperationService,
     DataManagementService,
     NotificationService,
+    ProjectsAdminService,
     SessionManagementService,
     StatisticsService,
     SupportToolsService,
@@ -40,6 +41,7 @@ __all__ = [
     "BulkOperationServiceDep",
     "DataManagementServiceDep",
     "NotificationServiceDep",
+    "ProjectsAdminServiceDep",
     "SessionManagementServiceDep",
     "StatisticsServiceDep",
     "SupportToolsServiceDep",
@@ -50,6 +52,7 @@ __all__ = [
     "get_bulk_operation_service",
     "get_data_management_service",
     "get_notification_service",
+    "get_projects_admin_service",
     "get_session_management_service",
     "get_statistics_service",
     "get_support_tools_service",
@@ -237,3 +240,19 @@ def get_support_tools_service(db: DatabaseDep) -> SupportToolsService:
 
 SupportToolsServiceDep = Annotated[SupportToolsService, Depends(get_support_tools_service)]
 """サポートツールサービスの依存性型。"""
+
+
+def get_projects_admin_service(db: DatabaseDep) -> ProjectsAdminService:
+    """プロジェクト管理サービスインスタンスを生成するDIファクトリ関数。
+
+    Args:
+        db: データベースセッション（自動注入）
+
+    Returns:
+        ProjectsAdminService: 初期化されたプロジェクト管理サービスインスタンス
+    """
+    return ProjectsAdminService(db)
+
+
+ProjectsAdminServiceDep = Annotated[ProjectsAdminService, Depends(get_projects_admin_service)]
+"""プロジェクト管理サービスの依存性型。"""

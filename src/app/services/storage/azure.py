@@ -371,3 +371,68 @@ class AzureStorageService(StorageService):
                 f"Failed to write to temporary file: {str(e)}",
                 details={"container": container, "path": path},
             ) from e
+
+    @async_timeout(30.0)
+    async def copy(self, container: str, source_path: str, dest_path: str) -> bool:
+        """ファイルをコピーします。
+
+        Args:
+            container (str): コンテナ名
+            source_path (str): コピー元ファイルパス
+            dest_path (str): コピー先ファイルパス
+
+        Returns:
+            bool: 成功時True
+
+        Raises:
+            NotFoundError: コピー元ファイルが存在しない場合
+            ValidationError: コピー失敗時
+        """
+        try:
+            container_client = self._get_container_client(container)
+
+            # コピー元Blobの存在確認
+            source_blob_client = container_client.get_blob_client(source_path)
+            if not await source_blob_client.exists():
+                logger.warning(
+                    "コピー元ファイルが見つかりません",
+                    container=container,
+                    source_path=source_path,
+                )
+                raise NotFoundError(
+                    f"Source file not found: {source_path}",
+                    details={"container": container, "source_path": source_path},
+                )
+
+            # コピー先Blobクライアントを取得
+            dest_blob_client = container_client.get_blob_client(dest_path)
+
+            # Azure Blob Storageのcopy操作を実行
+            # コピー元のURLを取得してコピーを開始
+            source_url = source_blob_client.url
+            await dest_blob_client.start_copy_from_url(source_url)
+
+            logger.info(
+                "Azure Blob Storageでファイルをコピーしました",
+                container=container,
+                source_path=source_path,
+                dest_path=dest_path,
+            )
+            return True
+
+        except NotFoundError:
+            raise
+        except Exception as e:
+            logger.error(
+                "Azure Blob Storageでのコピーに失敗しました",
+                container=container,
+                source_path=source_path,
+                dest_path=dest_path,
+                error_type=type(e).__name__,
+                error_message=str(e),
+                exc_info=True,
+            )
+            raise ValidationError(
+                f"Failed to copy file: {str(e)}",
+                details={"container": container, "source_path": source_path, "dest_path": dest_path},
+            ) from e

@@ -11,6 +11,7 @@ from app.models.analysis import (
     AnalysisSession,
     AnalysisSnapshot,
     AnalysisStep,
+    AnalysisTemplate,
     AnalysisValidationMaster,
 )
 
@@ -31,6 +32,7 @@ from app.models.driver_tree import (
     DriverTreePolicy,
     DriverTreeRelationship,
     DriverTreeRelationshipChild,
+    DriverTreeTemplate,
 )
 
 # Enum definitions
@@ -104,6 +106,8 @@ __all__ = [
     "AnalysisSnapshot",
     "AnalysisChat",
     "AnalysisStep",
+    # Analysis models - Template
+    "AnalysisTemplate",
     # Driver Tree models
     "DriverTree",
     "DriverTreeCategory",
@@ -114,6 +118,7 @@ __all__ = [
     "DriverTreeFile",
     "DriverTreeDataFrame",
     "DriverTreePolicy",
+    "DriverTreeTemplate",
     # Audit models
     "UserActivity",
     "AuditLog",

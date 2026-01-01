@@ -1,3 +1,8 @@
+"""分析テンプレート関連スキーマ。
+
+このモジュールは、分析セッションテンプレートのリクエスト/レスポンススキーマを定義します。
+"""
+
 import json
 import uuid
 from datetime import datetime
@@ -635,3 +640,80 @@ class AnalysisIssueDetailResponse(BaseCamelCaseORMModel):
     dummy_chart: list[AnalysisDummyChartResponse] = Field(default_factory=list, description="ダミーチャート(結合データ)")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
+
+
+# ================================================================================
+# 分析セッションテンプレートスキーマ（CRUD用）
+# ================================================================================
+class AnalysisTemplateCreateRequest(BaseCamelCaseModel):
+    """分析テンプレート作成リクエスト。
+
+    セッションからテンプレートを作成する際のリクエストスキーマです。
+
+    Attributes:
+        name (str): テンプレート名
+        description (str | None): 説明
+        source_session_id (UUID): 元セッションID
+        is_public (bool): 公開フラグ
+
+    Example:
+        >>> request = AnalysisTemplateCreateRequest(
+        ...     name="売上分析テンプレート",
+        ...     description="四半期売上分析用",
+        ...     source_session_id=uuid.UUID("..."),
+        ...     is_public=False
+        ... )
+    """
+
+    name: str = Field(..., min_length=1, max_length=255, description="テンプレート名")
+    description: str | None = Field(None, description="説明")
+    source_session_id: uuid.UUID = Field(..., description="元セッションID")
+    is_public: bool = Field(False, description="公開フラグ")
+
+
+class AnalysisTemplateCreateResponse(BaseCamelCaseORMModel):
+    """分析テンプレート作成レスポンス。
+
+    Attributes:
+        template_id (UUID): テンプレートID
+        name (str): テンプレート名
+        description (str | None): 説明
+        template_type (str): テンプレートタイプ
+        template_config (dict): テンプレート設定
+        created_at (datetime): 作成日時
+
+    Example:
+        >>> {
+        ...     "templateId": "...",
+        ...     "name": "売上分析テンプレート",
+        ...     "description": "四半期売上分析用",
+        ...     "templateType": "session",
+        ...     "templateConfig": {...},
+        ...     "createdAt": "2026-01-01T00:00:00Z"
+        ... }
+    """
+
+    template_id: uuid.UUID = Field(..., description="テンプレートID")
+    name: str = Field(..., description="テンプレート名")
+    description: str | None = Field(None, description="説明")
+    template_type: str = Field(..., description="テンプレートタイプ")
+    template_config: dict = Field(..., description="テンプレート設定")
+    created_at: datetime = Field(..., description="作成日時")
+
+
+class AnalysisTemplateDeleteResponse(BaseCamelCaseModel):
+    """分析テンプレート削除レスポンス。
+
+    Attributes:
+        success (bool): 削除成功フラグ
+        deleted_at (datetime): 削除日時
+
+    Example:
+        >>> {
+        ...     "success": true,
+        ...     "deletedAt": "2026-01-01T00:00:00Z"
+        ... }
+    """
+
+    success: bool = Field(..., description="削除成功フラグ")
+    deleted_at: datetime = Field(..., description="削除日時")

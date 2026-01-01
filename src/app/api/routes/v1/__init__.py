@@ -14,6 +14,7 @@ from app.api.routes.v1.admin import (
     admin_validation_router,
     # システム管理機能ルーター
     activity_logs_router,
+    admin_projects_router,
     audit_logs_router,
     bulk_operations_router,
     data_management_router,
@@ -51,6 +52,7 @@ __all__ = [
     "admin_validation_router",
     # Admin API（システム管理）
     "activity_logs_router",
+    "admin_projects_router",
     "audit_logs_router",
     "bulk_operations_router",
     "data_management_router",

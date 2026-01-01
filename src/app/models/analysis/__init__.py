@@ -9,6 +9,7 @@ from app.models.analysis.analysis_issue_master import AnalysisIssueMaster
 from app.models.analysis.analysis_session import AnalysisSession
 from app.models.analysis.analysis_snapshot import AnalysisSnapshot
 from app.models.analysis.analysis_step import AnalysisStep
+from app.models.analysis.analysis_template import AnalysisTemplate
 from app.models.analysis.analysis_validation_master import AnalysisValidationMaster
 
 __all__ = [
@@ -24,4 +25,6 @@ __all__ = [
     "AnalysisSnapshot",
     "AnalysisChat",
     "AnalysisStep",
+    # テンプレート系
+    "AnalysisTemplate",
 ]

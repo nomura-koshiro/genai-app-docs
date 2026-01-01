@@ -38,5 +38,6 @@
 from app.api.routes.v1.driver_tree.driver_tree import driver_tree_trees_router
 from app.api.routes.v1.driver_tree.driver_tree_file import driver_tree_files_router
 from app.api.routes.v1.driver_tree.driver_tree_node import driver_tree_nodes_router
+from app.api.routes.v1.driver_tree.driver_tree_template import driver_tree_templates_router
 
-__all__ = ["driver_tree_files_router", "driver_tree_trees_router", "driver_tree_nodes_router"]
+__all__ = ["driver_tree_files_router", "driver_tree_trees_router", "driver_tree_nodes_router", "driver_tree_templates_router"]

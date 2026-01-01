@@ -25,6 +25,7 @@ from app.repositories.driver_tree.driver_tree_file import DriverTreeFileReposito
 from app.repositories.driver_tree.driver_tree_formula import DriverTreeFormulaRepository
 from app.repositories.driver_tree.driver_tree_node import DriverTreeNodeRepository
 from app.repositories.driver_tree.driver_tree_policy import DriverTreePolicyRepository
+from app.repositories.driver_tree.driver_tree_template_repository import DriverTreeTemplateRepository
 
 __all__ = [
     "DriverTreeRepository",
@@ -34,4 +35,5 @@ __all__ = [
     "DriverTreeNodeRepository",
     "DriverTreeFormulaRepository",
     "DriverTreePolicyRepository",
+    "DriverTreeTemplateRepository",
 ]

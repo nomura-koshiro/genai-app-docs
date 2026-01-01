@@ -91,6 +91,15 @@ from app.schemas.driver_tree.driver_tree_node import (
     DriverTreeNodeUpdateResponse,
 )
 
+# Template schemas (Request/Response)
+from app.schemas.driver_tree.driver_tree_template import (
+    DriverTreeTemplateCreateRequest,
+    DriverTreeTemplateCreateResponse,
+    DriverTreeTemplateDeleteResponse,
+    DriverTreeTemplateInfo,
+    DriverTreeTemplateListResponse,
+)
+
 __all__ = [
     # Common (Info/Data/Enum)
     "CategoryInfo",
@@ -155,4 +164,10 @@ __all__ = [
     "PolicyEffectInfo",
     "TreePoliciesResponse",
     "TreePolicyItem",
+    # Template (Request/Response)
+    "DriverTreeTemplateCreateRequest",
+    "DriverTreeTemplateCreateResponse",
+    "DriverTreeTemplateDeleteResponse",
+    "DriverTreeTemplateInfo",
+    "DriverTreeTemplateListResponse",
 ]
