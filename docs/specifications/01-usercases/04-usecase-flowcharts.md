@@ -7,12 +7,120 @@
 
 ## 目次
 
+0. [共通UI](#0-共通ui)
 1. [システム全体の概要](#1-システム全体の概要)
 2. [ユーザー管理](#2-ユーザー管理)
 3. [プロジェクト管理](#3-プロジェクト管理)
 4. [個別施策分析](#4-個別施策分析)
 5. [ドライバーツリー分析](#5-ドライバーツリー分析)
 6. [データの流れ](#6-データの流れ)
+
+---
+
+## 0. 共通UI
+
+### 0.1 ログイン後の画面構成
+
+::: mermaid
+graph TB
+    subgraph Header["🔝 ヘッダー"]
+        direction LR
+        Logo["🏠 ロゴ"]
+        Search["🔍 グローバル検索"]
+        Notify["🔔 通知"]
+        User["👤 ユーザーメニュー"]
+    end
+
+    subgraph Sidebar["📋 サイドバー"]
+        direction TB
+        Nav1["📊 ダッシュボード"]
+        Nav2["📁 プロジェクト"]
+        Nav3["🔍 分析"]
+        Nav4["🌳 ドライバーツリー"]
+        Nav5["⚙️ 管理者メニュー<br/>※管理者のみ表示"]
+    end
+
+    subgraph Main["📄 メインコンテンツ"]
+        Content["選択した機能の画面"]
+    end
+
+    Header --> Main
+    Sidebar --> Main
+
+    style Header fill:#4a90d9,color:#fff
+    style Sidebar fill:#f5f6fa
+    style Main fill:#fff
+    style Nav5 fill:#ff6b6b,color:#fff
+:::
+
+### 0.2 グローバル検索の流れ
+
+::: mermaid
+graph TD
+    Start([🔍 検索ボックスに入力]) --> Search[キーワードで横断検索]
+    Search --> Results{検索結果}
+
+    Results --> |プロジェクト| Project["📁 プロジェクト一覧"]
+    Results --> |分析| Session["🔍 分析セッション一覧"]
+    Results --> |ファイル| File["📄 ファイル一覧"]
+    Results --> |ツリー| Tree["🌳 ドライバーツリー一覧"]
+
+    Project --> Filter[🏷️ タイプでフィルタリング]
+    Session --> Filter
+    File --> Filter
+    Tree --> Filter
+
+    Filter --> Click[結果をクリック]
+    Click --> Navigate([📍 該当画面へ遷移])
+
+    style Start fill:#4a90d9,color:#fff
+    style Navigate fill:#27ae60,color:#fff
+:::
+
+### 0.3 通知の確認フロー
+
+::: mermaid
+graph TD
+    Start([🔔 通知アイコンをクリック]) --> List[未読通知一覧を表示]
+
+    List --> Action{アクション選択}
+
+    Action --> |通知をクリック| Detail[📋 通知詳細を表示]
+    Action --> |すべて既読| ReadAll[✅ 全て既読にする]
+    Action --> |削除| Delete[🗑️ 通知を削除]
+
+    Detail --> Read[✅ 自動で既読にする]
+    Detail --> Navigate([📍 関連画面へ遷移])
+
+    ReadAll --> Badge[🔔 バッジを非表示]
+    Read --> Badge
+    Delete --> Update[リスト更新]
+
+    style Start fill:#f39c12,color:#fff
+    style Navigate fill:#27ae60,color:#fff
+    style Badge fill:#3498db,color:#fff
+:::
+
+### 0.4 サイドバーメニューの表示ルール
+
+::: mermaid
+graph TD
+    Login([ログイン完了]) --> GetContext[ユーザー情報取得]
+    GetContext --> CheckRole{ロール判定}
+
+    CheckRole --> |SystemAdmin| AdminMenu["📋 全メニュー表示<br/>+ 管理者メニュー"]
+    CheckRole --> |User| UserMenu["📋 基本メニューのみ"]
+
+    AdminMenu --> CheckProjects{プロジェクト数?}
+    UserMenu --> CheckProjects
+
+    CheckProjects --> |1件のみ| Direct["📁 プロジェクト詳細へ直接遷移"]
+    CheckProjects --> |複数 or 0件| List["📁 プロジェクト一覧を表示"]
+
+    style Login fill:#4a90d9,color:#fff
+    style AdminMenu fill:#ff6b6b,color:#fff
+    style UserMenu fill:#3498db,color:#fff
+:::
 
 ---
 
