@@ -68,7 +68,7 @@
 
 ---
 
-## 3. API設計
+## 3. APIエンドポイント設計
 
 ### 3.1 操作履歴API（SA-001〜SA-006）
 
@@ -1140,166 +1140,634 @@ APIリクエスト統計を取得する。
 
 ---
 
-## 4. ミドルウェア設計
+## 4. Pydanticスキーマ設計
 
-### 4.1 ActivityTrackingMiddleware（操作履歴記録）
-
-全APIリクエストを自動的に記録するミドルウェア。
+### 4.1 Enum定義
 
 ```python
-class ActivityTrackingMiddleware:
-    """
-    ユーザー操作履歴を自動記録するミドルウェア。
-    - 全リクエストの基本情報を記録
-    - エラー発生時もエラー情報を含めて記録
-    - 除外パスは記録をスキップ
-    """
+class ActionTypeEnum(str, Enum):
+    """操作種別"""
+    CREATE = "CREATE"
+    READ = "READ"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+    LOGIN = "LOGIN"
+    LOGOUT = "LOGOUT"
+    ERROR = "ERROR"
+    OTHER = "OTHER"
 
-    EXCLUDE_PATHS = [
-        "/health",
-        "/metrics",
-        "/docs",
-        "/openapi.json",
-        "/redoc",
-        "/favicon.ico"
-    ]
+class ResourceTypeEnum(str, Enum):
+    """リソース種別"""
+    PROJECT = "PROJECT"
+    ANALYSIS_SESSION = "ANALYSIS_SESSION"
+    DRIVER_TREE = "DRIVER_TREE"
+    USER = "USER"
+    SYSTEM_SETTING = "SYSTEM_SETTING"
+    NOTIFICATION = "NOTIFICATION"
 
-    EXCLUDE_PATTERNS = [
-        r"^/static/",
-        r"^/assets/"
-    ]
+class EventTypeEnum(str, Enum):
+    """監査ログイベント種別"""
+    DATA_CHANGE = "DATA_CHANGE"
+    ACCESS = "ACCESS"
+    SECURITY = "SECURITY"
 
-    async def __call__(self, request: Request, call_next):
-        # 除外パスチェック
-        if self._should_skip(request.url.path):
-            return await call_next(request)
+class SeverityEnum(str, Enum):
+    """重要度"""
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
-        start_time = time.time()
-        response_status = 200
-        error_message = None
-        error_code = None
+class SystemSettingCategoryEnum(str, Enum):
+    """システム設定カテゴリ"""
+    GENERAL = "GENERAL"
+    SECURITY = "SECURITY"
+    MAINTENANCE = "MAINTENANCE"
 
-        # リクエストボディの取得（機密情報をマスク）
-        request_body = await self._get_masked_request_body(request)
-
-        try:
-            response = await call_next(request)
-            response_status = response.status_code
-
-            # エラーレスポンスの場合、エラー情報を抽出
-            if response_status >= 400:
-                error_message, error_code = await self._extract_error_info(response)
-
-            return response
-
-        except HTTPException as e:
-            response_status = e.status_code
-            error_message = e.detail
-            raise
-
-        except Exception as e:
-            response_status = 500
-            error_message = str(e)
-            raise
-
-        finally:
-            # 成功・失敗に関わらず記録
-            duration_ms = int((time.time() - start_time) * 1000)
-
-            await self._record_activity(
-                request=request,
-                request_body=request_body,
-                response_status=response_status,
-                error_message=error_message,
-                error_code=error_code,
-                duration_ms=duration_ms
-            )
-
-    async def _record_activity(self, ...):
-        """操作履歴をDBに記録"""
-        # URLパターンからresource_type, resource_idを抽出
-        resource_type, resource_id = self._extract_resource_info(request.url.path)
-
-        # action_typeをHTTPメソッドから推定
-        action_type = self._infer_action_type(request.method, response_status)
-
-        activity = UserActivity(
-            user_id=request.state.user.id if hasattr(request.state, 'user') else None,
-            action_type=action_type,
-            resource_type=resource_type,
-            resource_id=resource_id,
-            endpoint=request.url.path,
-            method=request.method,
-            request_body=request_body,
-            response_status=response_status,
-            error_message=error_message,
-            error_code=error_code,
-            ip_address=self._get_client_ip(request),
-            user_agent=request.headers.get("user-agent"),
-            duration_ms=duration_ms
-        )
-
-        # 非同期でDB保存（レスポンスをブロックしない）
-        await self.activity_repository.create(activity)
-
-    def _extract_resource_info(self, path: str) -> tuple[str, UUID]:
-        """
-        URLパスからリソース情報を抽出
-        例: /api/v1/projects/123 -> ("PROJECT", "123")
-        """
-        patterns = {
-            r"/api/v1/projects/([^/]+)": "PROJECT",
-            r"/api/v1/analysis/session/([^/]+)": "ANALYSIS_SESSION",
-            r"/api/v1/driver-tree/tree/([^/]+)": "DRIVER_TREE",
-            r"/api/v1/user_accounts/([^/]+)": "USER",
-        }
-        # パターンマッチング処理...
-
-    def _infer_action_type(self, method: str, status: int) -> str:
-        """HTTPメソッドとステータスからアクション種別を推定"""
-        if status >= 400:
-            return "ERROR"
-
-        mapping = {
-            "GET": "READ",
-            "POST": "CREATE",
-            "PUT": "UPDATE",
-            "PATCH": "UPDATE",
-            "DELETE": "DELETE"
-        }
-        return mapping.get(method, "OTHER")
-
-    def _get_masked_request_body(self, body: dict) -> dict:
-        """機密情報をマスク"""
-        sensitive_keys = ["password", "token", "secret", "api_key", "credential"]
-        # マスク処理...
+class ProjectStatusEnum(str, Enum):
+    """プロジェクトステータス"""
+    ACTIVE = "active"
+    ARCHIVED = "archived"
+    DELETED = "deleted"
 ```
 
-### 4.2 除外パスの設定
+### 4.2 Info/Dataスキーマ
 
 ```python
-# 除外するパス（操作履歴に記録しない）
-EXCLUDE_PATHS = [
-    "/health",           # ヘルスチェック
-    "/metrics",          # Prometheusメトリクス
-    "/docs",             # Swagger UI
-    "/openapi.json",     # OpenAPI仕様
-    "/redoc",            # ReDoc
-    "/favicon.ico",      # ファビコン
-]
+class ActivityLogInfo(CamelCaseModel):
+    """操作履歴情報"""
+    id: UUID
+    user_id: UUID | None = None
+    user_name: str | None = None
+    action_type: str
+    resource_type: str
+    resource_id: UUID | None = None
+    endpoint: str
+    method: str
+    response_status: int
+    error_message: str | None = None
+    error_code: str | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    duration_ms: int
+    created_at: datetime
 
-# パターンで除外
-EXCLUDE_PATTERNS = [
-    r"^/static/",        # 静的ファイル
-    r"^/assets/",        # アセット
-]
+class ActivityLogDetailInfo(ActivityLogInfo):
+    """操作履歴詳細情報"""
+    user_email: str | None = None
+    request_body: dict | None = None
+
+class AuditLogInfo(CamelCaseModel):
+    """監査ログ情報"""
+    id: UUID
+    user_id: UUID | None = None
+    user_name: str
+    user_email: str
+    event_type: str
+    action: str
+    resource_type: str
+    resource_id: UUID | None = None
+    old_value: dict | None = None
+    new_value: dict | None = None
+    changed_fields: list[str] | None = None
+    ip_address: str | None = None
+    user_agent: str | None = None
+    severity: str
+    metadata: dict | None = None
+    created_at: datetime
+
+class SystemSettingInfo(CamelCaseModel):
+    """システム設定情報"""
+    id: UUID
+    category: str
+    key: str
+    value: str
+    description: str | None = None
+    is_public: bool = False
+    updated_by: UUID | None = None
+    updated_at: datetime
+
+class ProjectAdminInfo(CamelCaseModel):
+    """管理者用プロジェクト情報"""
+    id: UUID
+    name: str
+    owner: dict  # {"id": UUID, "name": str}
+    status: str
+    member_count: int
+    storage_used_bytes: int
+    storage_used_display: str
+    last_activity_at: datetime | None = None
+    created_at: datetime
+
+class ProjectStatisticsInfo(CamelCaseModel):
+    """プロジェクト統計情報"""
+    total_projects: int
+    active_projects: int
+    archived_projects: int
+    deleted_projects: int
+    total_storage_bytes: int
+    total_storage_display: str
+
+class SystemStatisticsInfo(CamelCaseModel):
+    """システム統計情報"""
+    users: dict  # {"total": int, "active_today": int}
+    projects: dict  # {"total": int}
+    storage: dict  # {"total_display": str}
+    api: dict  # {"requests_today": int, "error_rate_percentage": float}
+
+class UserSessionInfo(CamelCaseModel):
+    """ユーザーセッション情報"""
+    id: UUID
+    user_id: UUID
+    user_name: str
+    user_email: str
+    ip_address: str | None = None
+    user_agent: str | None = None
+    last_activity_at: datetime
+    created_at: datetime
+
+class SystemAnnouncementInfo(CamelCaseModel):
+    """システムお知らせ情報"""
+    id: UUID
+    title: str
+    content: str
+    severity: str
+    start_date: datetime
+    end_date: datetime | None = None
+    is_active: bool
+    created_by: UUID
+    created_at: datetime
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+# 操作履歴
+class ActivityLogListResponse(CamelCaseModel):
+    items: list[ActivityLogInfo]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+class ActivityLogDetailResponse(CamelCaseModel):
+    """操作履歴詳細レスポンス"""
+    __root__: ActivityLogDetailInfo
+
+# 監査ログ
+class AuditLogListResponse(CamelCaseModel):
+    items: list[AuditLogInfo]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+
+# 全プロジェクト管理
+class ProjectAdminListResponse(CamelCaseModel):
+    items: list[ProjectAdminInfo]
+    total: int
+    page: int
+    limit: int
+    statistics: ProjectStatisticsInfo
+
+class BulkArchiveRequest(CamelCaseModel):
+    project_ids: list[UUID] = Field(..., min_length=1)
+
+# システム設定
+class SystemSettingUpdate(CamelCaseModel):
+    value: str = Field(..., min_length=1)
+
+class SystemSettingListResponse(CamelCaseModel):
+    settings: list[SystemSettingInfo]
+    total: int
+
+# システム統計
+class SystemStatisticsResponse(CamelCaseModel):
+    statistics: SystemStatisticsInfo
+
+# ユーザーセッション
+class UserSessionListResponse(CamelCaseModel):
+    sessions: list[UserSessionInfo]
+    total: int
+
+class ForceLogoutRequest(CamelCaseModel):
+    user_id: UUID
+    reason: str | None = None
+
+# システムお知らせ
+class SystemAnnouncementCreate(CamelCaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    content: str = Field(..., min_length=1)
+    severity: str
+    start_date: datetime
+    end_date: datetime | None = None
+
+class SystemAnnouncementUpdate(CamelCaseModel):
+    title: str | None = Field(None, max_length=255)
+    content: str | None = None
+    severity: str | None = None
+    start_date: datetime | None = None
+    end_date: datetime | None = None
+    is_active: bool | None = None
+
+class SystemAnnouncementListResponse(CamelCaseModel):
+    announcements: list[SystemAnnouncementInfo]
+    total: int
 ```
 
 ---
 
-## 5. フロントエンド画面設計
+## 5. サービス層設計
 
-### 5.1 画面一覧
+### 5.1 サービスクラス構成
+
+| サービス | 責務 |
+|---------|------|
+| ActivityTrackingService | 操作履歴の記録・検索・エクスポート |
+| AuditLogService | 監査ログ管理、データ変更・アクセス・セキュリティログ |
+| SystemSettingService | システム設定の取得・更新・カテゴリ管理 |
+| StatisticsService | システム統計情報の集計・分析 |
+| NotificationService | 通知・お知らせ・アラート・テンプレート管理 |
+| SessionManagementService | ユーザーセッション管理・強制ログアウト |
+| BulkOperationService | ユーザー・プロジェクトの一括操作実行 |
+| SupportToolsService | 代行操作・デバッグ・ヘルスチェック |
+
+### 5.2 主要メソッド
+
+#### ActivityTrackingService
+
+```python
+class ActivityTrackingService:
+    # 操作履歴検索
+    async def list_activity_logs(
+        user_id: UUID | None,
+        action_type: str | None,
+        resource_type: str | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+        has_error: bool | None,
+        page: int,
+        limit: int
+    ) -> tuple[list[UserActivity], int]
+
+    async def get_activity_log_detail(activity_id: UUID) -> UserActivity | None
+
+    async def get_error_logs(
+        page: int,
+        limit: int
+    ) -> tuple[list[UserActivity], int]
+
+    # 操作履歴記録
+    async def record_activity(
+        user_id: UUID | None,
+        action_type: str,
+        resource_type: str,
+        resource_id: UUID | None,
+        endpoint: str,
+        method: str,
+        request_body: dict | None,
+        response_status: int,
+        error_message: str | None,
+        error_code: str | None,
+        ip_address: str | None,
+        user_agent: str | None,
+        duration_ms: int
+    ) -> UserActivity
+
+    # エクスポート
+    async def export_activity_logs_csv(
+        filters: dict
+    ) -> bytes
+```
+
+#### AuditLogService
+
+```python
+class AuditLogService:
+    # 監査ログ検索
+    async def list_audit_logs(
+        event_type: str | None,
+        user_id: UUID | None,
+        resource_type: str | None,
+        resource_id: UUID | None,
+        severity: str | None,
+        start_date: datetime | None,
+        end_date: datetime | None,
+        page: int,
+        limit: int
+    ) -> tuple[list[AuditLog], int]
+
+    async def get_data_change_logs(
+        page: int,
+        limit: int
+    ) -> tuple[list[AuditLog], int]
+
+    async def get_access_logs(
+        page: int,
+        limit: int
+    ) -> tuple[list[AuditLog], int]
+
+    async def get_security_logs(
+        page: int,
+        limit: int
+    ) -> tuple[list[AuditLog], int]
+
+    # 監査ログ記録
+    async def log_data_change(
+        user_id: UUID,
+        resource_type: str,
+        resource_id: UUID,
+        old_value: dict,
+        new_value: dict,
+        changed_fields: list[str],
+        ip_address: str | None,
+        user_agent: str | None
+    ) -> AuditLog
+
+    async def log_access(
+        user_id: UUID,
+        action: str,
+        resource_type: str,
+        resource_id: UUID | None,
+        metadata: dict | None,
+        ip_address: str | None,
+        user_agent: str | None
+    ) -> AuditLog
+
+    async def log_security_event(
+        user_id: UUID | None,
+        action: str,
+        severity: str,
+        metadata: dict | None,
+        ip_address: str | None,
+        user_agent: str | None
+    ) -> AuditLog
+
+    # エクスポート
+    async def export_audit_logs_csv(filters: dict) -> bytes
+```
+
+#### SystemSettingService
+
+```python
+class SystemSettingService:
+    # 設定取得
+    async def get_settings_by_category(category: str) -> list[SystemSetting]
+
+    async def get_setting(category: str, key: str) -> SystemSetting | None
+
+    async def get_setting_value(category: str, key: str) -> str | None
+
+    async def get_all_settings() -> list[SystemSetting]
+
+    async def get_public_settings() -> list[SystemSetting]
+
+    # 設定更新
+    async def update_setting(
+        category: str,
+        key: str,
+        value: str,
+        updated_by: UUID
+    ) -> SystemSetting
+
+    async def bulk_update_settings(
+        settings: list[dict],
+        updated_by: UUID
+    ) -> list[SystemSetting]
+
+    # メンテナンスモード
+    async def enable_maintenance_mode(
+        message: str,
+        allow_admin_access: bool,
+        updated_by: UUID
+    ) -> SystemSetting
+
+    async def disable_maintenance_mode(updated_by: UUID) -> SystemSetting
+
+    async def is_maintenance_mode() -> bool
+```
+
+#### StatisticsService
+
+```python
+class StatisticsService:
+    # システム統計
+    async def get_system_statistics() -> dict
+
+    async def get_user_statistics() -> dict
+
+    async def get_project_statistics() -> dict
+
+    async def get_storage_statistics() -> dict
+
+    async def get_api_statistics() -> dict
+
+    # 期間別統計
+    async def get_daily_statistics(date: datetime) -> dict
+
+    async def get_weekly_statistics(start_date: datetime) -> dict
+
+    async def get_monthly_statistics(year: int, month: int) -> dict
+
+    # グラフデータ
+    async def get_user_activity_trend(
+        start_date: datetime,
+        end_date: datetime
+    ) -> list[dict]
+
+    async def get_api_request_trend(
+        start_date: datetime,
+        end_date: datetime
+    ) -> list[dict]
+
+    async def get_storage_usage_trend(
+        start_date: datetime,
+        end_date: datetime
+    ) -> list[dict]
+```
+
+#### NotificationService
+
+```python
+class NotificationService:
+    # お知らせ管理
+    async def list_announcements(
+        is_active: bool | None,
+        page: int,
+        limit: int
+    ) -> tuple[list[SystemAnnouncement], int]
+
+    async def get_active_announcements() -> list[SystemAnnouncement]
+
+    async def create_announcement(
+        title: str,
+        content: str,
+        severity: str,
+        start_date: datetime,
+        end_date: datetime | None,
+        created_by: UUID
+    ) -> SystemAnnouncement
+
+    async def update_announcement(
+        announcement_id: UUID,
+        update_data: dict
+    ) -> SystemAnnouncement
+
+    async def delete_announcement(announcement_id: UUID) -> None
+
+    # 通知テンプレート管理
+    async def list_notification_templates() -> list[NotificationTemplate]
+
+    async def get_notification_template(template_id: UUID) -> NotificationTemplate | None
+
+    async def update_notification_template(
+        template_id: UUID,
+        update_data: dict
+    ) -> NotificationTemplate
+
+    # アラート管理
+    async def list_system_alerts() -> list[SystemAlert]
+
+    async def create_system_alert(alert_data: dict) -> SystemAlert
+
+    async def update_system_alert(
+        alert_id: UUID,
+        update_data: dict
+    ) -> SystemAlert
+
+    async def delete_system_alert(alert_id: UUID) -> None
+```
+
+#### SessionManagementService
+
+```python
+class SessionManagementService:
+    # セッション一覧
+    async def list_active_sessions(
+        user_id: UUID | None,
+        page: int,
+        limit: int
+    ) -> tuple[list[UserSession], int]
+
+    async def get_user_sessions(user_id: UUID) -> list[UserSession]
+
+    async def get_session_detail(session_id: UUID) -> UserSession | None
+
+    # セッション管理
+    async def force_logout_user(
+        user_id: UUID,
+        reason: str | None,
+        admin_user_id: UUID
+    ) -> int  # 終了したセッション数
+
+    async def force_logout_session(
+        session_id: UUID,
+        reason: str | None,
+        admin_user_id: UUID
+    ) -> None
+
+    async def terminate_all_sessions_except(
+        user_id: UUID,
+        current_session_id: UUID
+    ) -> int
+
+    # セッション統計
+    async def get_active_session_count() -> int
+
+    async def get_login_statistics_today() -> dict
+```
+
+#### BulkOperationService
+
+```python
+class BulkOperationService:
+    # プロジェクト一括操作
+    async def bulk_archive_projects(
+        project_ids: list[UUID],
+        admin_user_id: UUID
+    ) -> dict  # {"success_count": int, "failed_ids": list[UUID]}
+
+    async def bulk_delete_projects(
+        project_ids: list[UUID],
+        admin_user_id: UUID
+    ) -> dict
+
+    # ユーザー一括操作
+    async def bulk_activate_users(
+        user_ids: list[UUID],
+        admin_user_id: UUID
+    ) -> dict
+
+    async def bulk_deactivate_users(
+        user_ids: list[UUID],
+        admin_user_id: UUID
+    ) -> dict
+
+    async def bulk_update_user_roles(
+        user_ids: list[UUID],
+        roles: list[str],
+        admin_user_id: UUID
+    ) -> dict
+
+    # データクリーンアップ
+    async def cleanup_old_data(
+        data_type: str,
+        retention_days: int,
+        dry_run: bool = True
+    ) -> dict  # {"count": int, "items": list[dict]}
+
+    async def cleanup_orphaned_files(
+        dry_run: bool = True
+    ) -> dict
+```
+
+#### SupportToolsService
+
+```python
+class SupportToolsService:
+    # ユーザー代行
+    async def start_impersonation(
+        admin_user_id: UUID,
+        target_user_id: UUID,
+        reason: str
+    ) -> dict  # {"token": str, "expires_at": datetime}
+
+    async def end_impersonation(
+        admin_user_id: UUID
+    ) -> None
+
+    async def get_current_impersonation(
+        admin_user_id: UUID
+    ) -> dict | None
+
+    # デバッグモード
+    async def enable_debug_mode(
+        admin_user_id: UUID,
+        log_level: str,
+        duration_minutes: int | None
+    ) -> dict
+
+    async def disable_debug_mode(admin_user_id: UUID) -> None
+
+    async def get_debug_mode_status() -> dict
+
+    # ヘルスチェック
+    async def run_health_check() -> dict
+
+    async def check_database_health() -> dict
+
+    async def check_cache_health() -> dict
+
+    async def check_storage_health() -> dict
+
+    async def check_external_api_health() -> dict
+```
+
+---
+
+## 6. フロントエンド設計
+
+### 6.1 画面一覧
 
 | 画面ID | 画面名 | 対応ユースケース |
 |--------|-------|----------------|
@@ -1314,609 +1782,31 @@ EXCLUDE_PATTERNS = [
 | admin-data-management | データ管理 | SA-037〜SA-040 |
 | admin-support-tools | サポートツール | SA-041〜SA-043 |
 
-### 5.2 サイドバー構成
+### 6.2 コンポーネント構成
 
 ```text
-システム管理
-├─ ユーザー管理 (users) [既存]
-├─ ロール管理 (roles) [既存]
-├─ 検証カテゴリ (verifications) [既存]
-└─ 課題マスタ (issues) [既存]
-
-監視・運用 [新規セクション]
-├─ システム統計 (admin-statistics)
-├─ 操作履歴 (admin-activity-logs)
-├─ 監査ログ (admin-audit-logs)
-└─ 全プロジェクト (admin-projects)
-
-システム運用 [新規セクション]
-├─ システム設定 (admin-settings)
-├─ 通知管理 (admin-notifications)
-├─ セキュリティ (admin-security)
-├─ 一括操作 (admin-bulk-operations)
-├─ データ管理 (admin-data-management)
-└─ サポートツール (admin-support-tools)
-```
-
----
-
-### 5.3 admin-activity-logs（操作履歴）
-
-**レイアウト**: タブ付きテーブルビュー
-
-#### フィルターセクション
-
-| 項目 | 型 | API対応 |
-|-----|---|--------|
-| ユーザー選択 | select | user_id |
-| 操作種別 | select | action_type |
-| リソース種別 | select | resource_type |
-| 日時範囲（開始） | datetime | start_date |
-| 日時範囲（終了） | datetime | end_date |
-| エラーのみ | checkbox | has_error |
-| 検索ボタン | button | - |
-| エクスポートボタン | button | /export |
-
-#### タブ
-
-| タブ名 | フィルタ条件 |
-|-------|------------|
-| 全ての操作 | なし |
-| エラー履歴 | has_error=true |
-
-#### テーブルカラム
-
-| カラム | 表示内容 | ソート |
-|-------|---------|-------|
-| 日時 | created_at | 可 |
-| ユーザー | user_name + アバター | 可 |
-| 操作種別 | action_type（バッジ） | 可 |
-| リソース | resource_type + resource_id | - |
-| エンドポイント | endpoint | - |
-| ステータス | response_status（色分けバッジ） | 可 |
-| 処理時間 | duration_ms | 可 |
-| 詳細 | 詳細モーダル表示ボタン | - |
-
-#### 詳細モーダル
-
-| セクション | 項目 |
-|-----------|-----|
-| 基本情報 | 日時、ユーザー、操作種別、リソース |
-| リクエスト情報 | メソッド、エンドポイント、リクエストボディ（JSON表示） |
-| レスポンス情報 | ステータス、エラーメッセージ、エラーコード |
-| 環境情報 | IPアドレス、ユーザーエージェント、処理時間 |
-
----
-
-### 5.4 admin-projects（全プロジェクト管理）
-
-**レイアウト**: 統計カード + フィルター + テーブル
-
-#### 統計カード
-
-| カード | 表示値 | API |
-|-------|-------|-----|
-| 総プロジェクト数 | statistics.total_projects | /projects |
-| アクティブ数 | statistics.active_projects | /projects |
-| 総ストレージ使用量 | statistics.total_storage_display | /projects |
-| 非アクティブ数（30日以上） | 別途取得 | /projects/inactive |
-
-#### フィルター
-
-| 項目 | 型 | API対応 |
-|-----|---|--------|
-| ステータス | select | status |
-| オーナー | select | owner_id |
-| 非アクティブ日数 | number | inactive_days |
-| ソート | select | sort_by |
-| プロジェクト名検索 | text | search |
-
-#### テーブルカラム
-
-| カラム | 表示内容 |
-|-------|---------|
-| チェックボックス | 一括選択用 |
-| プロジェクト名 | name（詳細リンク） |
-| オーナー | owner.name + アバター |
-| ステータス | status（バッジ） |
-| メンバー数 | member_count |
-| ストレージ使用量 | storage_used_display + プログレスバー |
-| 最終アクティビティ | last_activity_at |
-| 作成日 | created_at |
-| 操作 | ドロップダウン（詳細/アーカイブ/削除） |
-
-#### 一括操作
-
-| ボタン | 機能 |
-|-------|-----|
-| 一括アーカイブ | 選択項目をアーカイブ |
-
----
-
-### 5.5 admin-audit-logs（監査ログ）
-
-**レイアウト**: タブ + フィルター + テーブル + 詳細パネル
-
-#### タブ
-
-| タブ名 | event_type |
-|-------|-----------|
-| データ変更 | DATA_CHANGE |
-| アクセスログ | ACCESS |
-| セキュリティ | SECURITY |
-
-#### フィルター
-
-| 項目 | 型 | API対応 |
-|-----|---|--------|
-| ユーザー | select | user_id |
-| 重要度 | select | severity |
-| リソース種別 | select | resource_type |
-| 日時範囲 | datetime-range | start_date, end_date |
-| エクスポート | button | /export |
-
-#### テーブルカラム
-
-| カラム | 表示内容 |
-|-------|---------|
-| 日時 | created_at |
-| ユーザー | user_name + アバター |
-| イベント種別 | event_type（バッジ） |
-| アクション | action（バッジ） |
-| リソース | resource_type + resource_id |
-| 重要度 | severity（色分けバッジ） |
-| 詳細 | 詳細パネル展開ボタン |
-
-#### 詳細パネル（展開時）
-
-| セクション | 項目 |
-|-----------|-----|
-| 変更内容 | old_value / new_value（JSON diff表示） |
-| 変更フィールド | changed_fields |
-| 環境情報 | ip_address, user_agent |
-
----
-
-### 5.6 admin-settings（システム設定）
-
-**レイアウト**: カテゴリタブ + 設定フォーム
-
-#### カテゴリタブ
-
-| タブ名 | category |
-|-------|---------|
-| 一般設定 | GENERAL |
-| セキュリティ | SECURITY |
-| メンテナンス | MAINTENANCE |
-
-#### 一般設定フォーム
-
-| 項目 | キー | 型 |
-|-----|-----|---|
-| 最大ファイルサイズ（MB） | max_file_size_mb | number |
-| セッションタイムアウト（分） | session_timeout_minutes | number |
-
-#### セキュリティ設定フォーム
-
-| 項目 | キー | 型 |
-|-----|-----|---|
-| パスワード有効期限（日） | password_expiry_days | number |
-| ログイン試行回数上限 | max_login_attempts | number |
-| 2要素認証必須 | require_2fa | toggle |
-| IPホワイトリスト | ip_whitelist | textarea |
-
-#### メンテナンス設定
-
-| 項目 | キー | 型 |
-|-----|-----|---|
-| メンテナンスモード | maintenance_mode | toggle |
-| メンテナンスメッセージ | maintenance_message | textarea |
-| 管理者アクセス許可 | allow_admin_access | toggle |
-
----
-
-### 5.7 admin-statistics（システム統計ダッシュボード）
-
-**レイアウト**: 期間セレクタ + 統計カード + グラフ群
-
-#### 期間セレクタ
-
-| 項目 | 型 |
-|-----|---|
-| 期間 | select（日/週/月/年） |
-| カスタム期間 | date-range |
-
-#### 統計カード（6枚）
-
-| カード | 値 |
-|-------|---|
-| 総ユーザー数 | users.total |
-| アクティブユーザー(今日) | users.active_today |
-| 総プロジェクト数 | projects.total |
-| 総ストレージ使用量 | storage.total_display |
-| APIリクエスト(今日) | api.requests_today |
-| エラー率(今日) | api.error_rate_percentage |
-
-#### グラフ
-
-| グラフ | 種類 | データソース |
-|-------|-----|-------------|
-| アクティブユーザー推移 | 折れ線グラフ | /statistics/users |
-| ストレージ使用量推移 | 面グラフ | /statistics/storage |
-| APIリクエスト推移 | 棒グラフ | /statistics/api-requests |
-| エラー発生率推移 | 折れ線グラフ | /statistics/errors |
-| リソース別使用状況 | 円グラフ | /statistics/overview |
-
-#### アラートセクション
-
-| 項目 | 表示内容 |
-|-----|---------|
-| 現在のアラート | アクティブなアラート一覧 |
-
----
-
-### 5.8 admin-bulk-operations（一括操作）
-
-**レイアウト**: 操作カード選択 + フォーム + プレビュー
-
-#### 操作カード
-
-| カード | 説明 | API |
-|-------|-----|-----|
-| ユーザー一括インポート | CSVからユーザー登録 | /bulk/users/import |
-| ユーザー一括エクスポート | ユーザー情報CSV出力 | /bulk/users/export |
-| ユーザー一括無効化 | 非アクティブユーザー無効化 | /bulk/users/deactivate |
-| プロジェクト一括アーカイブ | 古いプロジェクトアーカイブ | /bulk/projects/archive |
-
-#### インポートフォーム
-
-| 項目 | 型 |
-|-----|---|
-| ファイル選択 | file（CSV） |
-| テンプレートダウンロード | button |
-| プレビュー | table |
-| インポート実行 | button |
-
-#### エクスポートフォーム
-
-| 項目 | 型 |
-|-----|---|
-| フィルター条件 | multi-select |
-| 出力形式 | select（CSV/Excel） |
-| エクスポート実行 | button |
-
-#### 無効化フォーム
-
-| 項目 | 型 |
-|-----|---|
-| 非アクティブ日数 | number |
-| 対象プレビュー | table |
-| 実行 | button（確認ダイアログ付き） |
-
-#### アーカイブフォーム
-
-| 項目 | 型 |
-|-----|---|
-| 非アクティブ日数 | number |
-| 対象プレビュー | table |
-| 実行 | button（確認ダイアログ付き） |
-
----
-
-### 5.9 admin-notifications（通知管理）
-
-**レイアウト**: タブ + リスト/フォーム
-
-#### タブ
-
-| タブ名 | 機能 |
-|-------|-----|
-| システムお知らせ | お知らせ管理 |
-| 通知テンプレート | テンプレート管理 |
-| アラート設定 | アラート管理 |
-
-#### お知らせ一覧テーブル
-
-| カラム | 表示内容 |
-|-------|---------|
-| タイトル | title |
-| 種別 | announcement_type（バッジ） |
-| 対象 | target_roles（空=全員） |
-| 表示期間 | start_at 〜 end_at |
-| ステータス | is_active（バッジ） |
-| 操作 | 編集/削除ボタン |
-
-#### お知らせ作成フォーム
-
-| 項目 | 型 |
-|-----|---|
-| タイトル | text |
-| 種別 | select（INFO/WARNING/MAINTENANCE） |
-| 本文 | rich-text |
-| 表示開始 | datetime |
-| 表示終了 | datetime |
-| 対象ロール | multi-select（空=全員） |
-| 有効 | toggle |
-
-#### テンプレート一覧テーブル
-
-| カラム | 表示内容 |
-|-------|---------|
-| テンプレート名 | name |
-| イベント種別 | event_type（バッジ） |
-| ステータス | is_active（バッジ） |
-| 操作 | 編集ボタン |
-
-#### テンプレート編集フォーム
-
-| 項目 | 型 |
-|-----|---|
-| 名前 | text |
-| イベント種別 | select |
-| 件名テンプレート | text |
-| 本文テンプレート | textarea |
-| 利用可能変数 | chips（読み取り専用） |
-
-#### アラート一覧テーブル
-
-| カラム | 表示内容 |
-|-------|---------|
-| アラート名 | name |
-| 条件種別 | condition_type（バッジ） |
-| 閾値 | threshold |
-| ステータス | is_enabled（トグル） |
-| 最終発火 | last_triggered_at |
-| 操作 | 編集/削除ボタン |
-
-#### アラート作成フォーム
-
-| 項目 | 型 |
-|-----|---|
-| 名前 | text |
-| 条件種別 | select |
-| 閾値 | number/text |
-| 比較演算子 | select |
-| 通知先 | multi-select（EMAIL/SLACK等） |
-
----
-
-### 5.10 admin-security（セキュリティ管理）
-
-**レイアウト**: 統計カード + フィルター + セッションテーブル
-
-#### 統計カード
-
-| カード | 値 |
-|-------|---|
-| アクティブセッション数 | statistics.active_sessions |
-| 本日のログイン数 | statistics.logins_today |
-| 疑わしいアクティビティ | 別途取得 |
-
-#### フィルター
-
-| 項目 | 型 |
-|-----|---|
-| ユーザー検索 | text |
-| IPアドレス | text |
-| ログイン日時 | date-range |
-
-#### セッション一覧テーブル
-
-| カラム | 表示内容 |
-|-------|---------|
-| ユーザー | user.name + アバター |
-| IPアドレス | ip_address |
-| デバイス | device_info（OS、ブラウザ） |
-| ログイン日時 | login_at |
-| 最終アクティビティ | last_activity_at |
-| ステータス | is_active（バッジ） |
-| 操作 | 強制ログアウトボタン |
-
-#### ユーザー詳細（モーダル）
-
-| セクション | 項目 |
-|-----------|-----|
-| 現在のセッション | セッション一覧 |
-| 全セッション終了 | button |
-| ログイン履歴 | 過去のログイン一覧 |
-
----
-
-### 5.11 admin-data-management（データ管理）
-
-**レイアウト**: タブ + フォーム/テーブル
-
-#### タブ
-
-| タブ名 | 機能 |
-|-------|-----|
-| データクリーンアップ | 古いデータ削除 |
-| 孤立ファイル | 参照なしファイル削除 |
-| 保持ポリシー | ポリシー設定 |
-| マスタインポート | マスタ一括登録 |
-
-#### クリーンアップフォーム
-
-| 項目 | 型 |
-|-----|---|
-| 対象データ種別 | multi-select |
-| 保持期間（日） | number |
-| プレビュー | table |
-| 削除実行 | button（確認付き） |
-
-#### 孤立ファイルテーブル
-
-| カラム | 表示内容 |
-|-------|---------|
-| 選択 | checkbox |
-| ファイル名 | name |
-| サイズ | size_display |
-| 作成日 | created_at |
-| 一括削除 | button |
-
-#### 保持ポリシーフォーム
-
-| 項目 | キー | 型 |
-|-----|-----|---|
-| 操作履歴保持期間（日） | activity_logs_days | number |
-| 監査ログ保持期間（日） | audit_logs_days | number |
-| 削除プロジェクト保持期間（日） | deleted_projects_days | number |
-| セッションログ保持期間（日） | session_logs_days | number |
-| 保存 | - | button |
-
-#### マスタインポートフォーム
-
-| 項目 | 型 |
-|-----|---|
-| インポート対象 | select（検証/課題/カテゴリ等） |
-| ファイル選択 | file（CSV/JSON） |
-| プレビュー | table |
-| 実行 | button |
-
----
-
-### 5.12 admin-support-tools（サポートツール）
-
-**レイアウト**: ツールカード群
-
-#### ユーザー代行セクション
-
-| 項目 | 型 |
-|-----|---|
-| ユーザー検索 | autocomplete |
-| 代行理由 | text（必須） |
-| 代行開始 | button |
-| 現在の代行状態 | alert（代行中表示） |
-| 代行終了 | button |
-
-#### デバッグモードセクション
-
-| 項目 | 型 |
-|-----|---|
-| 現在のステータス | badge（ON/OFF） |
-| デバッグ有効化 | button |
-| デバッグ無効化 | button |
-| ログレベル | select（DEBUG/INFO/WARNING） |
-| 自動無効化タイマー（分） | number |
-
-#### ヘルスチェックセクション
-
-| 項目 | 型 |
-|-----|---|
-| 実行 | button |
-| 結果サマリー | cards |
-| 詳細結果 | accordion |
-
-#### ヘルスチェック結果詳細
-
-| 項目 | 表示内容 |
-|-----|---------|
-| DB接続 | status + response_time_ms |
-| キャッシュ接続 | status + response_time_ms |
-| ストレージ接続 | status + response_time_ms |
-| 外部API接続 | status + response_time_ms |
-| レスポンスタイム | 各項目の応答時間グラフ |
-
----
-
-## 6. バックエンド実装ファイル一覧
-
-### 6.1 モデル（8ファイル追加）
-
-```text
-src/app/models/
-├── audit/
-│   ├── __init__.py
-│   ├── user_activity.py          # UserActivity
-│   └── audit_log.py              # AuditLog
-├── system/
-│   ├── __init__.py
-│   ├── system_setting.py         # SystemSetting
-│   ├── system_announcement.py    # SystemAnnouncement
-│   ├── notification_template.py  # NotificationTemplate
-│   └── system_alert.py           # SystemAlert
-└── user_account/
-    └── user_session.py           # UserSession（追加）
-```
-
-### 6.2 スキーマ（16ファイル追加）
-
-```text
-src/app/schemas/admin/
-├── activity_log.py           # 操作履歴スキーマ
-├── audit_log.py              # 監査ログスキーマ
-├── system_setting.py         # システム設定スキーマ
-├── statistics.py             # 統計情報スキーマ
-├── bulk_operation.py         # 一括操作スキーマ
-├── announcement.py           # お知らせスキーマ
-├── notification_template.py  # 通知テンプレートスキーマ
-├── system_alert.py           # アラートスキーマ
-├── security.py               # セキュリティスキーマ
-├── data_management.py        # データ管理スキーマ
-├── support_tools.py          # サポートツールスキーマ
-├── project_admin.py          # 管理者用プロジェクトスキーマ
-├── user_session.py           # ユーザーセッションスキーマ
-├── impersonation.py          # なりすましスキーマ
-└── health_check.py           # ヘルスチェックスキーマ
-```
-
-### 6.3 サービス（8ファイル追加）
-
-```text
-src/app/services/admin/
-├── __init__.py
-├── activity_tracking_service.py   # 操作履歴記録・検索
-├── audit_log_service.py           # 監査ログ管理
-├── system_setting_service.py      # システム設定管理
-├── statistics_service.py          # 統計情報集計
-├── notification_service.py        # 通知・お知らせ管理
-├── session_management_service.py  # セッション管理
-├── bulk_operation_service.py      # 一括操作実行
-└── support_tools_service.py       # サポートツール
-```
-
-### 6.4 リポジトリ（8ファイル追加）
-
-```text
-src/app/repositories/admin/
-├── __init__.py
-├── user_activity_repository.py
-├── audit_log_repository.py
-├── system_setting_repository.py
-├── announcement_repository.py
-├── notification_template_repository.py
-├── system_alert_repository.py
-└── user_session_repository.py
-```
-
-### 6.5 ルーター（10ファイル追加）
-
-```text
-src/app/api/routes/v1/admin/
-├── activity_logs.py      # 操作履歴API
-├── audit_logs.py         # 監査ログAPI
-├── projects_admin.py     # 管理者用プロジェクトAPI
-├── settings.py           # システム設定API
-├── statistics.py         # 統計API
-├── bulk_operations.py    # 一括操作API
-├── notifications.py      # 通知管理API
-├── security.py           # セキュリティAPI
-├── data_management.py    # データ管理API
-└── support_tools.py      # サポートツールAPI
-```
-
-### 6.6 ミドルウェア（1ファイル追加）
-
-```text
-src/app/api/middlewares/
-└── activity_tracking.py   # 操作履歴記録ミドルウェア
-```
-
-### 6.7 マイグレーション（1ファイル追加）
-
-```text
-alembic/versions/
-└── xxxx_add_system_admin_tables.py  # 8テーブル追加
+pages/admin/
+├── activity-logs/
+│   └── index.tsx                    # 操作履歴画面
+├── projects/
+│   ├── index.tsx                    # 全プロジェクト管理画面
+│   └── [id].tsx                     # プロジェクト詳細（管理者ビュー）
+├── audit-logs/
+│   └── index.tsx                    # 監査ログ画面
+├── settings/
+│   └── index.tsx                    # システム設定画面
+├── statistics/
+│   └── index.tsx                    # システム統計ダッシュボード
+├── bulk-operations/
+│   └── index.tsx                    # 一括操作画面
+├── notifications/
+│   └── index.tsx                    # 通知管理画面
+├── security/
+│   └── index.tsx                    # セキュリティ管理画面
+├── data-management/
+│   └── index.tsx                    # データ管理画面
+└── support-tools/
+    └── index.tsx                    # サポートツール画面
 ```
 
 ---
@@ -1924,28 +1814,6 @@ alembic/versions/
 ## 7. 画面項目・APIマッピング
 
 ### 7.1 admin-activity-logs（操作履歴）
-
-#### フィルターセクション
-
-| 画面項目 | 入力形式 | APIエンドポイント | クエリパラメータ | 備考 |
-|---------|---------|-----------------|----------------|------|
-| ユーザー選択 | select | GET /api/v1/admin/activity-logs | user_id | UUID |
-| 操作種別 | select | GET /api/v1/admin/activity-logs | action_type | CREATE/READ/UPDATE/DELETE |
-| リソース種別 | select | GET /api/v1/admin/activity-logs | resource_type | PROJECT/SESSION等 |
-| 日時範囲（開始） | datetime | GET /api/v1/admin/activity-logs | start_date | ISO 8601 |
-| 日時範囲（終了） | datetime | GET /api/v1/admin/activity-logs | end_date | ISO 8601 |
-| エラーのみ | checkbox | GET /api/v1/admin/activity-logs | has_error | boolean |
-
-#### 一覧表示
-
-| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
-|---------|---------|-----------------|-------------------|---------|
-| 日時 | テキスト | GET /api/v1/admin/activity-logs | items[].created_at | 日時フォーマット |
-| ユーザー | テキスト+アバター | GET /api/v1/admin/activity-logs | items[].user_name | - |
-| 操作種別 | バッジ | GET /api/v1/admin/activity-logs | items[].action_type | バッジ色分け |
-| リソース | テキスト | GET /api/v1/admin/activity-logs | items[].resource_type, resource_id | 結合表示 |
-| ステータス | バッジ | GET /api/v1/admin/activity-logs | items[].response_status | 色分け（2xx緑/4xx黄/5xx赤） |
-| 処理時間 | テキスト | GET /api/v1/admin/activity-logs | items[].duration_ms | ms単位表示 |
 
 #### 詳細モーダル
 
@@ -2253,6 +2121,7 @@ alembic/versions/
 | [ユースケース定義書](../../../02-usecase/01-usecase-definition.md) | SA-001〜SA-043 ユースケース定義 |
 | [API設計書](../../../05-api-design/01-api-endpoints.md) | 管理者API エンドポイント一覧 |
 | [認証・認可設計書](../../../08-security/01-authentication.md) | SystemAdmin権限の定義 |
+| [ミドルウェア設計書](../../../09-middleware/01-middleware-design.md) | ActivityTrackingMiddleware、AuditLogMiddleware 等 |
 
 ---
 
