@@ -1,10 +1,10 @@
-# ユーザー管理 バックエンド設計書（U-001〜U-011）
+# ユーザー管理 バックエンド設計書（U-001〜U-013）
 
 ## 1. 概要
 
 ### 1.1 目的
 
-本設計書は、CAMPシステムのユーザー管理機能（ユースケースU-001〜U-011）の実装に必要なフロントエンド・バックエンドの設計を定義する。
+本設計書は、CAMPシステムのユーザー管理機能（ユースケースU-001〜U-013）の実装に必要なフロントエンド・バックエンドの設計を定義する。
 
 ### 1.2 対象ユースケース
 
@@ -21,16 +21,18 @@
 | **ロール管理** | U-009 | システムロールを付与する |
 | | U-010 | システムロールを剥奪する |
 | | U-011 | ユーザーのロールを確認する |
+| **ユーザー設定** | U-012 | ユーザー設定を取得する |
+| | U-013 | ユーザー設定を更新する |
 
 ### 1.3 コンポーネント数
 
 | レイヤー | 項目数 |
 |---------|--------|
-| データベーステーブル | 2テーブル（user_account, role_history） |
-| APIエンドポイント | 9エンドポイント |
-| Pydanticスキーマ | 8スキーマ |
-| サービス | 2サービス |
-| フロントエンド画面 | 3画面 |
+| データベーステーブル | 3テーブル（user_account, role_history, user_settings） |
+| APIエンドポイント | 11エンドポイント |
+| Pydanticスキーマ | 14スキーマ |
+| サービス | 3サービス |
+| フロントエンド画面 | 4画面 |
 
 ---
 
@@ -46,6 +48,7 @@
 |-----------|------|
 | user_account | ユーザーアカウント情報 |
 | role_history | ロール変更履歴 |
+| user_settings | ユーザー設定（テーマ、通知、表示設定） |
 
 ---
 
@@ -64,6 +67,8 @@
 | PUT | `/api/v1/user_account/{user_id}/role` | ユーザーロール更新 | system_admin | U-009, U-010 |
 | DELETE | `/api/v1/user_account/{user_id}` | ユーザー削除 | system_admin | - |
 | GET | `/api/v1/user_account/{user_id}/role_history` | ロール変更履歴取得 | system_admin/本人 | U-011 |
+| GET | `/api/v1/user_account/me/settings` | ユーザー設定取得 | 認証済 | U-012 |
+| PATCH | `/api/v1/user_account/me/settings` | ユーザー設定更新 | 認証済 | U-013 |
 
 ### 3.2 リクエスト/レスポンス定義
 
@@ -114,6 +119,56 @@
 
 **レスポンス**: `UserAccountResponse`
 
+#### GET /api/v1/user_account/me/settings（ユーザー設定取得）
+
+**レスポンス**: `UserSettingsResponse`
+
+```json
+{
+  "theme": "light",
+  "language": "ja",
+  "timezone": "Asia/Tokyo",
+  "notifications": {
+    "emailEnabled": true,
+    "projectInvite": true,
+    "sessionComplete": true,
+    "treeUpdate": true,
+    "systemAnnouncement": true
+  },
+  "display": {
+    "itemsPerPage": 20,
+    "defaultProjectView": "grid",
+    "showWelcomeMessage": true
+  }
+}
+```
+
+#### PATCH /api/v1/user_account/me/settings（ユーザー設定更新）
+
+**リクエストボディ**: `UserSettingsUpdate`
+
+```json
+{
+  "theme": "dark",
+  "language": "ja",
+  "timezone": "Asia/Tokyo",
+  "notifications": {
+    "emailEnabled": false,
+    "projectInvite": true,
+    "sessionComplete": true,
+    "treeUpdate": false,
+    "systemAnnouncement": true
+  },
+  "display": {
+    "itemsPerPage": 50,
+    "defaultProjectView": "list",
+    "showWelcomeMessage": false
+  }
+}
+```
+
+**レスポンス**: `UserSettingsResponse`
+
 ---
 
 ## 4. Pydanticスキーマ設計
@@ -125,6 +180,22 @@ class SystemRoleEnum(str, Enum):
     """システムロール"""
     system_admin = "system_admin"  # システム管理者
     user = "user"                  # 一般ユーザー
+
+class ThemeEnum(str, Enum):
+    """テーマ設定"""
+    light = "light"
+    dark = "dark"
+    system = "system"  # システム設定に従う
+
+class LanguageEnum(str, Enum):
+    """言語設定"""
+    ja = "ja"  # 日本語
+    en = "en"  # 英語
+
+class ProjectViewEnum(str, Enum):
+    """プロジェクト表示形式"""
+    grid = "grid"   # グリッド表示
+    list = "list"   # リスト表示
 ```
 
 ### 4.2 Info/Dataスキーマ
@@ -173,6 +244,28 @@ class RoleHistoryInfo(CamelCaseModel):
     changed_by: UUID | None = None
     reason: str | None = None
     created_at: datetime
+
+class NotificationSettingsInfo(CamelCaseModel):
+    """通知設定情報"""
+    email_enabled: bool = True
+    project_invite: bool = True
+    session_complete: bool = True
+    tree_update: bool = True
+    system_announcement: bool = True
+
+class DisplaySettingsInfo(CamelCaseModel):
+    """表示設定情報"""
+    items_per_page: int = Field(default=20, ge=10, le=100)
+    default_project_view: ProjectViewEnum = ProjectViewEnum.grid
+    show_welcome_message: bool = True
+
+class UserSettingsInfo(CamelCaseModel):
+    """ユーザー設定情報"""
+    theme: ThemeEnum = ThemeEnum.light
+    language: LanguageEnum = LanguageEnum.ja
+    timezone: str = "Asia/Tokyo"
+    notifications: NotificationSettingsInfo
+    display: DisplaySettingsInfo
 ```
 
 ### 4.3 Request/Responseスキーマ
@@ -217,6 +310,34 @@ class RoleHistoryListResponse(CamelCaseModel):
     total: int
     skip: int
     limit: int
+
+# ユーザー設定更新
+class NotificationSettingsUpdate(CamelCaseModel):
+    email_enabled: bool | None = None
+    project_invite: bool | None = None
+    session_complete: bool | None = None
+    tree_update: bool | None = None
+    system_announcement: bool | None = None
+
+class DisplaySettingsUpdate(CamelCaseModel):
+    items_per_page: int | None = Field(None, ge=10, le=100)
+    default_project_view: ProjectViewEnum | None = None
+    show_welcome_message: bool | None = None
+
+class UserSettingsUpdate(CamelCaseModel):
+    theme: ThemeEnum | None = None
+    language: LanguageEnum | None = None
+    timezone: str | None = None
+    notifications: NotificationSettingsUpdate | None = None
+    display: DisplaySettingsUpdate | None = None
+
+# ユーザー設定レスポンス
+class UserSettingsResponse(CamelCaseModel):
+    theme: ThemeEnum
+    language: LanguageEnum
+    timezone: str
+    notifications: NotificationSettingsInfo
+    display: DisplaySettingsInfo
 ```
 
 ---
@@ -229,6 +350,7 @@ class RoleHistoryListResponse(CamelCaseModel):
 |---------|------|
 | UserAccountService | ユーザーCRUD、認証、ロール管理 |
 | RoleHistoryService | ロール変更履歴管理 |
+| UserSettingsService | ユーザー設定の取得・更新 |
 
 ### 5.2 主要メソッド
 
@@ -281,6 +403,22 @@ class RoleHistoryService:
     ) -> RoleHistory
 ```
 
+#### UserSettingsService
+
+```python
+class UserSettingsService:
+    # 設定取得
+    async def get_user_settings(user_id: UUID) -> UserSettings
+    async def get_or_create_default_settings(user_id: UUID) -> UserSettings
+
+    # 設定更新
+    async def update_user_settings(user_id: UUID, update_data: UserSettingsUpdate) -> UserSettings
+
+    # 個別設定更新
+    async def update_notification_settings(user_id: UUID, settings: NotificationSettingsUpdate) -> UserSettings
+    async def update_display_settings(user_id: UUID, settings: DisplaySettingsUpdate) -> UserSettings
+```
+
 ---
 
 ## 6. フロントエンド設計
@@ -306,6 +444,8 @@ class RoleHistoryService:
 | U-009 | システムロールを付与する | `PUT /user_account/{id}/role` | user-detail | 実装済 |
 | U-010 | システムロールを剥奪する | `PUT /user_account/{id}/role` | user-detail | 実装済 |
 | U-011 | ユーザーのロールを確認する | `GET /user_account/{id}/role_history` | user-detail | 実装済 |
+| U-012 | ユーザー設定を取得する | `GET /user_account/me/settings` | settings | 設計済 |
+| U-013 | ユーザー設定を更新する | `PATCH /user_account/me/settings` | settings | 設計済 |
 
 ---
 
