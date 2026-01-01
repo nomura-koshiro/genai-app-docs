@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # フィルタ・クエリスキーマ
 # ================================================================================
@@ -32,9 +31,7 @@ class ActivityLogFilter(BaseCamelCaseModel):
 
     user_id: uuid.UUID | None = Field(default=None, description="ユーザーIDで絞り込み")
     action_type: str | None = Field(default=None, description="操作種別で絞り込み")
-    resource_type: str | None = Field(
-        default=None, description="リソース種別で絞り込み"
-    )
+    resource_type: str | None = Field(default=None, description="リソース種別で絞り込み")
     start_date: datetime | None = Field(default=None, description="開始日時")
     end_date: datetime | None = Field(default=None, description="終了日時")
     has_error: bool | None = Field(default=None, description="エラーのみ取得")

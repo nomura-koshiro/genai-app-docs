@@ -101,6 +101,7 @@ class DriverTreeNodeCrudService(DriverTreeNodeServiceBase):
 
         # ノードを作成
         node = await self.node_repository.create(
+            driver_tree_id=tree.id,
             label=label,
             node_type=node_type,
             position_x=position_x,

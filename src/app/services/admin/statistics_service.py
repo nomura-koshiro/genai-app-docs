@@ -93,20 +93,13 @@ class StatisticsService:
 
         # 今日アクティブなユーザー数
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        active_query = (
-            select(func.count(func.distinct(UserActivity.user_id)))
-            .where(UserActivity.created_at >= today_start)
-        )
+        active_query = select(func.count(func.distinct(UserActivity.user_id))).where(UserActivity.created_at >= today_start)
         result = await self.db.execute(active_query)
         active_today = result.scalar_one() or 0
 
         # 今月の新規ユーザー数
         month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        new_query = (
-            select(func.count())
-            .select_from(UserAccount)
-            .where(UserAccount.created_at >= month_start)
-        )
+        new_query = select(func.count()).select_from(UserAccount).where(UserAccount.created_at >= month_start)
         result = await self.db.execute(new_query)
         new_this_month = result.scalar_one() or 0
 
@@ -125,20 +118,14 @@ class StatisticsService:
 
         # アクティブプロジェクト数
         active_query = (
-            select(func.count())
-            .select_from(Project)
-            .where(Project.is_active == True)  # noqa: E712
+            select(func.count()).select_from(Project).where(Project.is_active == True)  # noqa: E712
         )
         result = await self.db.execute(active_query)
         active = result.scalar_one() or 0
 
         # 今月作成されたプロジェクト数
         month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        created_query = (
-            select(func.count())
-            .select_from(Project)
-            .where(Project.created_at >= month_start)
-        )
+        created_query = select(func.count()).select_from(Project).where(Project.created_at >= month_start)
         result = await self.db.execute(created_query)
         created_this_month = result.scalar_one() or 0
 
@@ -166,19 +153,12 @@ class StatisticsService:
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
         # 今日のリクエスト数
-        request_query = (
-            select(func.count())
-            .select_from(UserActivity)
-            .where(UserActivity.created_at >= today_start)
-        )
+        request_query = select(func.count()).select_from(UserActivity).where(UserActivity.created_at >= today_start)
         result = await self.db.execute(request_query)
         requests_today = result.scalar_one() or 0
 
         # 平均レスポンス時間
-        avg_query = (
-            select(func.avg(UserActivity.duration_ms))
-            .where(UserActivity.created_at >= today_start)
-        )
+        avg_query = select(func.avg(UserActivity.duration_ms)).where(UserActivity.created_at >= today_start)
         result = await self.db.execute(avg_query)
         average_response_ms = result.scalar_one() or 0
 
@@ -238,12 +218,9 @@ class StatisticsService:
             start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=UTC)
             end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=UTC)
 
-            query = (
-                select(func.count(func.distinct(UserActivity.user_id)))
-                .where(
-                    UserActivity.created_at >= start,
-                    UserActivity.created_at <= end,
-                )
+            query = select(func.count(func.distinct(UserActivity.user_id))).where(
+                UserActivity.created_at >= start,
+                UserActivity.created_at <= end,
             )
             res = await self.db.execute(query)
             count = res.scalar_one() or 0
@@ -279,8 +256,9 @@ class StatisticsService:
 
     def _format_bytes(self, bytes_value: int) -> str:
         """バイト数を人間が読める形式に変換します。"""
+        value: float = float(bytes_value)
         for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if bytes_value < 1024:
-                return f"{bytes_value:.1f} {unit}"
-            bytes_value /= 1024
-        return f"{bytes_value:.1f} PB"
+            if value < 1024:
+                return f"{value:.1f} {unit}"
+            value /= 1024
+        return f"{value:.1f} PB"

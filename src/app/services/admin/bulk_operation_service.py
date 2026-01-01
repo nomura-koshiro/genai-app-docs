@@ -138,35 +138,39 @@ class BulkOperationService:
                         raise ValueError("表示名は必須です")
 
                     # 重複チェック
-                    existing = await self.db.execute(
-                        select(UserAccount).where(UserAccount.email == email)
-                    )
+                    existing = await self.db.execute(select(UserAccount).where(UserAccount.email == email))
                     if existing.scalar_one_or_none():
                         raise ValueError(f"メールアドレス '{email}' は既に登録されています")
 
                     # ユーザー作成
+                    # CSVインポートの場合、azure_oidはプレースホルダを生成
                     user = UserAccount(
                         email=email,
                         display_name=display_name,
+                        azure_oid=f"csv-import-{uuid.uuid4()}",
                         is_active=True,
                     )
                     self.db.add(user)
 
-                    results.append(BulkImportResult(
-                        row=row_num,
-                        email=email,
-                        success=True,
-                        message="インポート成功",
-                    ))
+                    results.append(
+                        BulkImportResult(
+                            row=row_num,
+                            email=email,
+                            success=True,
+                            message="インポート成功",
+                        )
+                    )
                     ctx.success_count += 1
 
                 except Exception as e:
-                    results.append(BulkImportResult(
-                        row=row_num,
-                        email=row.get("email", ""),
-                        success=False,
-                        message=str(e),
-                    ))
+                    results.append(
+                        BulkImportResult(
+                            row=row_num,
+                            email=row.get("email", ""),
+                            success=False,
+                            message=str(e),
+                        )
+                    )
                     errors.append(f"行 {row_num}: {str(e)}")
                     ctx.failure_count += 1
 
@@ -229,25 +233,29 @@ class BulkOperationService:
         writer = csv.writer(output)
 
         # ヘッダー
-        writer.writerow([
-            "id",
-            "email",
-            "display_name",
-            "is_active",
-            "created_at",
-            "updated_at",
-        ])
+        writer.writerow(
+            [
+                "id",
+                "email",
+                "display_name",
+                "is_active",
+                "created_at",
+                "updated_at",
+            ]
+        )
 
         # データ行
         for user in users:
-            writer.writerow([
-                str(user.id),
-                user.email,
-                user.display_name,
-                user.is_active,
-                user.created_at.isoformat(),
-                user.updated_at.isoformat() if user.updated_at else "",
-            ])
+            writer.writerow(
+                [
+                    str(user.id),
+                    user.email,
+                    user.display_name,
+                    user.is_active,
+                    user.created_at.isoformat(),
+                    user.updated_at.isoformat() if user.updated_at else "",
+                ]
+            )
 
         logger.info(
             "ユーザー一括エクスポートを完了",
@@ -293,11 +301,7 @@ class BulkOperationService:
 
         # 最終アクティビティ日時を取得
         subquery = (
-            select(
-                UserActivity.user_id,
-                func.max(UserActivity.created_at).label("last_activity")
-            )
-            .group_by(UserActivity.user_id)
+            select(UserActivity.user_id, func.max(UserActivity.created_at).label("last_activity")).group_by(UserActivity.user_id)
         ).subquery()
 
         query = (
@@ -305,7 +309,7 @@ class BulkOperationService:
             .outerjoin(subquery, UserAccount.id == subquery.c.user_id)
             .where(
                 UserAccount.is_active == True,  # noqa: E712
-                (subquery.c.last_activity < cutoff_date) | (subquery.c.last_activity.is_(None))
+                (subquery.c.last_activity < cutoff_date) | (subquery.c.last_activity.is_(None)),
             )
         )
 
@@ -391,12 +395,9 @@ class BulkOperationService:
         # 対象プロジェクトを特定
         cutoff_date = datetime.now(UTC) - timedelta(days=inactive_days)
 
-        query = (
-            select(Project)
-            .where(
-                Project.is_active == True,  # noqa: E712
-                Project.updated_at < cutoff_date,
-            )
+        query = select(Project).where(
+            Project.is_active == True,  # noqa: E712
+            Project.updated_at < cutoff_date,
         )
 
         result = await self.db.execute(query)

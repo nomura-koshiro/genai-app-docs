@@ -8,10 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.models import UserAccount
-from app.models.admin.announcement import Announcement
-from app.models.admin.notification_template import NotificationTemplate
-from app.models.admin.system_alert import SystemAlert
-from app.schemas.admin.announcement import AnnouncementCreate, AnnouncementUpdate
+from app.models.system.notification_template import NotificationTemplate
+from app.models.system.system_alert import SystemAlert
+from app.models.system.system_announcement import SystemAnnouncement
+from app.schemas.admin.announcement import AnnouncementCreate
 from app.schemas.admin.notification_template import NotificationTemplateUpdate
 from app.schemas.admin.system_alert import SystemAlertCreate, SystemAlertUpdate
 from app.services.admin.notification_service import NotificationService
@@ -37,9 +37,9 @@ async def test_create_alert_success(db_session: AsyncSession):
     # Act
     data = SystemAlertCreate(
         name="Test Alert",
-        description="Test alert description",
         condition_type="THRESHOLD",
-        condition_config={"threshold": 100},
+        threshold={"value": 100},
+        comparison_operator="GT",
         notification_channels=["email"],
         is_enabled=True,
     )
@@ -70,9 +70,9 @@ async def test_update_alert_success(db_session: AsyncSession):
     # アラートを作成
     alert = SystemAlert(
         name="Original Alert",
-        description="Original description",
         condition_type="THRESHOLD",
-        condition_config={},
+        threshold={"value": 100},
+        comparison_operator="GT",
         notification_channels=["email"],
         is_enabled=True,
         created_by=creator_id,
@@ -111,9 +111,9 @@ async def test_delete_alert_success(db_session: AsyncSession):
     # アラートを作成
     alert = SystemAlert(
         name="Alert to Delete",
-        description="Description",
         condition_type="THRESHOLD",
-        condition_config={},
+        threshold={"value": 100},
+        comparison_operator="GT",
         notification_channels=["email"],
         is_enabled=True,
         created_by=creator_id,
@@ -151,8 +151,8 @@ async def test_list_templates_success(db_session: AsyncSession):
     template = NotificationTemplate(
         event_type="PROJECT_CREATED",
         name="Project Created Template",
-        subject_template="New Project: {{project_name}}",
-        body_template="A new project has been created.",
+        subject="New Project: {{project_name}}",
+        body="A new project has been created.",
         is_active=True,
     )
     db_session.add(template)
@@ -176,8 +176,8 @@ async def test_update_template_success(db_session: AsyncSession):
     template = NotificationTemplate(
         event_type="PROJECT_CREATED",
         name="Original Template",
-        subject_template="Original Subject",
-        body_template="Original Body",
+        subject="Original Subject",
+        body="Original Body",
         is_active=True,
     )
     db_session.add(template)
@@ -186,13 +186,13 @@ async def test_update_template_success(db_session: AsyncSession):
     # Act
     update_data = NotificationTemplateUpdate(
         name="Updated Template",
-        subject_template="Updated Subject",
+        subject="Updated Subject",
     )
     result = await service.update_template(template.id, update_data)
 
     # Assert
     assert result.name == "Updated Template"
-    assert result.subject_template == "Updated Subject"
+    assert result.subject == "Updated Subject"
 
 
 @pytest.mark.asyncio
@@ -221,14 +221,12 @@ async def test_create_announcement_success(db_session: AsyncSession):
         start_at=datetime.now(UTC),
         end_at=datetime.now(UTC) + timedelta(days=7),
         priority=1,
-        is_active=True,
     )
     result = await service.create_announcement(data, creator_id)
 
     # Assert
     assert result is not None
     assert result.title == "Test Announcement"
-    assert result.is_active is True
 
 
 @pytest.mark.asyncio
@@ -249,7 +247,7 @@ async def test_list_active_announcements_success(db_session: AsyncSession):
 
     # アクティブなお知らせを作成
     now = datetime.now(UTC)
-    announcement = Announcement(
+    announcement = SystemAnnouncement(
         title="Active Announcement",
         content="This is active",
         announcement_type="INFO",

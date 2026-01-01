@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserAccount
@@ -43,9 +44,7 @@ async def test_record_data_change_success(db_session: AsyncSession):
     )
 
     # Assert
-    result = await db_session.execute(
-        db_session.query(AuditLog).where(AuditLog.user_id == user_id)
-    )
+    result = await db_session.execute(select(AuditLog).where(AuditLog.user_id == user_id))
     log = result.scalar_one_or_none()
     assert log is not None
     assert log.event_type == AuditEventType.DATA_CHANGE.value
@@ -81,7 +80,7 @@ async def test_record_access_success(db_session: AsyncSession):
 
     # Assert
     result = await db_session.execute(
-        db_session.query(AuditLog).where(
+        select(AuditLog).where(
             AuditLog.user_id == user_id,
             AuditLog.event_type == AuditEventType.ACCESS.value,
         )
@@ -119,7 +118,7 @@ async def test_record_security_event_success(db_session: AsyncSession):
 
     # Assert
     result = await db_session.execute(
-        db_session.query(AuditLog).where(
+        select(AuditLog).where(
             AuditLog.user_id == user_id,
             AuditLog.event_type == AuditEventType.SECURITY.value,
         )
@@ -147,7 +146,7 @@ async def test_list_audit_logs_success(db_session: AsyncSession):
     await db_session.commit()
 
     # 監査ログを作成
-    for i in range(3):
+    for _ in range(3):
         await service.record_data_change(
             user_id=user_id,
             action="UPDATE",

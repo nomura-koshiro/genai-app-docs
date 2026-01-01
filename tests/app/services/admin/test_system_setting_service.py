@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.models import UserAccount
-from app.models.admin.system_setting import SystemSetting
+from app.models.system.system_setting import SystemSetting
 from app.schemas.admin.system_setting import MaintenanceModeEnable
 from app.services.admin.system_setting_service import SystemSettingService
 

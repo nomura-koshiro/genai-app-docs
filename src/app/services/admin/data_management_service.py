@@ -215,18 +215,10 @@ class DataManagementService:
         """
         logger.info("保持ポリシーを取得中", action="get_retention_policy")
 
-        activity_logs_days = await self.setting_repository.get_value(
-            "RETENTION", "activity_logs_days", default=90
-        )
-        audit_logs_days = await self.setting_repository.get_value(
-            "RETENTION", "audit_logs_days", default=365
-        )
-        deleted_projects_days = await self.setting_repository.get_value(
-            "RETENTION", "deleted_projects_days", default=30
-        )
-        session_logs_days = await self.setting_repository.get_value(
-            "RETENTION", "session_logs_days", default=30
-        )
+        activity_logs_days = await self.setting_repository.get_value("RETENTION", "activity_logs_days", default=90)
+        audit_logs_days = await self.setting_repository.get_value("RETENTION", "audit_logs_days", default=365)
+        deleted_projects_days = await self.setting_repository.get_value("RETENTION", "deleted_projects_days", default=30)
+        session_logs_days = await self.setting_repository.get_value("RETENTION", "session_logs_days", default=30)
 
         return RetentionPolicyResponse(
             activity_logs_days=activity_logs_days,
@@ -258,24 +250,16 @@ class DataManagementService:
         )
 
         if policy.activity_logs_days is not None:
-            await self.setting_repository.set_value(
-                "RETENTION", "activity_logs_days", policy.activity_logs_days, updated_by
-            )
+            await self.setting_repository.set_value("RETENTION", "activity_logs_days", policy.activity_logs_days, updated_by)
 
         if policy.audit_logs_days is not None:
-            await self.setting_repository.set_value(
-                "RETENTION", "audit_logs_days", policy.audit_logs_days, updated_by
-            )
+            await self.setting_repository.set_value("RETENTION", "audit_logs_days", policy.audit_logs_days, updated_by)
 
         if policy.deleted_projects_days is not None:
-            await self.setting_repository.set_value(
-                "RETENTION", "deleted_projects_days", policy.deleted_projects_days, updated_by
-            )
+            await self.setting_repository.set_value("RETENTION", "deleted_projects_days", policy.deleted_projects_days, updated_by)
 
         if policy.session_logs_days is not None:
-            await self.setting_repository.set_value(
-                "RETENTION", "session_logs_days", policy.session_logs_days, updated_by
-            )
+            await self.setting_repository.set_value("RETENTION", "session_logs_days", policy.session_logs_days, updated_by)
 
         logger.info("保持ポリシーを更新しました", updated_by=str(updated_by))
 
@@ -283,8 +267,9 @@ class DataManagementService:
 
     def _format_bytes(self, bytes_value: int) -> str:
         """バイト数を人間が読める形式に変換します。"""
+        value: float = float(bytes_value)
         for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if bytes_value < 1024:
-                return f"{bytes_value:.1f} {unit}"
-            bytes_value /= 1024
-        return f"{bytes_value:.1f} PB"
+            if value < 1024:
+                return f"{value:.1f} {unit}"
+            value /= 1024
+        return f"{value:.1f} PB"

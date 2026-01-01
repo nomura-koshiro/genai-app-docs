@@ -3,12 +3,11 @@
 このモジュールは、システム統計情報のレスポンススキーマを定義します。
 """
 
-from datetime import date
+import datetime
 
 from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel
-
 
 # ================================================================================
 # サブスキーマ
@@ -71,7 +70,7 @@ class StatisticsOverviewResponse(BaseCamelCaseModel):
 class TimeSeriesDataPoint(BaseCamelCaseModel):
     """時系列データポイント。"""
 
-    timestamp: date = Field(..., alias="date", description="日付")
+    date: datetime.date = Field(..., description="日付")
     value: float = Field(..., description="値")
 
 
@@ -79,9 +78,7 @@ class UserStatisticsDetailResponse(BaseCamelCaseModel):
     """ユーザー統計詳細レスポンススキーマ。"""
 
     total: int = Field(..., description="総ユーザー数")
-    active_users: list[TimeSeriesDataPoint] = Field(
-        ..., description="アクティブユーザー推移"
-    )
+    active_users: list[TimeSeriesDataPoint] = Field(..., description="アクティブユーザー推移")
     new_users: list[TimeSeriesDataPoint] = Field(..., description="新規ユーザー推移")
 
 
@@ -97,9 +94,7 @@ class ApiStatisticsDetailResponse(BaseCamelCaseModel):
     """API統計詳細レスポンススキーマ。"""
 
     total_requests: int = Field(..., description="総リクエスト数")
-    request_trend: list[TimeSeriesDataPoint] = Field(
-        ..., description="リクエスト数推移"
-    )
+    request_trend: list[TimeSeriesDataPoint] = Field(..., description="リクエスト数推移")
     average_response_ms: float = Field(..., description="平均レスポンス時間")
 
 

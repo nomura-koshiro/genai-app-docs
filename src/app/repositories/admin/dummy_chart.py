@@ -1,5 +1,6 @@
 """分析ダミーチャートマスタリポジトリ。"""
 
+import json
 import uuid
 
 from sqlalchemy import func, select
@@ -48,7 +49,11 @@ class AnalysisDummyChartRepository:
 
     async def create(self, chart_create: AnalysisDummyChartCreate) -> AnalysisDummyChartMaster:
         """ダミーチャートマスタを作成。"""
-        chart = AnalysisDummyChartMaster(**chart_create.model_dump())
+        data = chart_create.model_dump()
+        # chartはdictで渡されるがDBはbytesで保存するため変換
+        if isinstance(data.get("chart"), dict):
+            data["chart"] = json.dumps(data["chart"], ensure_ascii=False).encode("utf-8")
+        chart = AnalysisDummyChartMaster(**data)
         self.db.add(chart)
         await self.db.flush()
         await self.db.refresh(chart)
@@ -61,6 +66,9 @@ class AnalysisDummyChartRepository:
     ) -> AnalysisDummyChartMaster:
         """ダミーチャートマスタを更新。"""
         update_data = chart_update.model_dump(exclude_unset=True)
+        # chartはdictで渡されるがDBはbytesで保存するため変換
+        if "chart" in update_data and isinstance(update_data["chart"], dict):
+            update_data["chart"] = json.dumps(update_data["chart"], ensure_ascii=False).encode("utf-8")
         for key, value in update_data.items():
             setattr(chart, key, value)
         await self.db.flush()

@@ -116,6 +116,15 @@ class DriverTreeService:
         """ドライバーツリーを複製します。"""
         return await self._crud_service.duplicate_tree(project_id, tree_id, user_id, new_name)
 
+    async def get_tree_policies(
+        self,
+        project_id: uuid.UUID,
+        tree_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> dict[str, Any]:
+        """ツリーに紐づく施策一覧を取得します。"""
+        return await self._crud_service.get_tree_policies(project_id, tree_id, user_id)
+
     # ================================================================================
     # マスタデータ取得
     # ================================================================================

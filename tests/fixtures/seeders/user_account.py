@@ -24,7 +24,7 @@ class UserAccountSeederMixin(BaseSeeder):
             azure_oid=f"test-oid-{unique_id}",
             email=email or f"test-{unique_id}@example.com",
             display_name=display_name,
-            roles=roles or ["User"],
+            roles=roles or ["user"],
             is_active=is_active,
         )
         self.db.add(user)
@@ -43,5 +43,5 @@ class UserAccountSeederMixin(BaseSeeder):
         return await self.create_user(
             email=email,
             display_name=display_name,
-            roles=["SystemAdmin"],
+            roles=["system_admin"],
         )

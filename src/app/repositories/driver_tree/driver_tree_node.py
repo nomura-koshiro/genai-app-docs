@@ -93,8 +93,6 @@ class DriverTreeNodeRepository(BaseRepository[DriverTreeNode, uuid.UUID]):
             return {}
 
         result = await self.db.execute(
-            select(DriverTreeNode)
-            .where(DriverTreeNode.id.in_(node_ids))
-            .options(selectinload(DriverTreeNode.policies))
+            select(DriverTreeNode).where(DriverTreeNode.id.in_(node_ids)).options(selectinload(DriverTreeNode.policies))
         )
         return {node.id: node for node in result.scalars().all()}

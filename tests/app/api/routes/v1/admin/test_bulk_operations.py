@@ -15,7 +15,6 @@ import io
 import pytest
 from httpx import AsyncClient
 
-
 # ================================================================================
 # POST /api/v1/admin/bulk/users/import - ユーザー一括インポート
 # ================================================================================
@@ -35,8 +34,8 @@ async def test_import_users_success(client: AsyncClient, override_auth, admin_us
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "success_count" in data
-    assert "error_count" in data
+    assert "importedCount" in data
+    assert "errorCount" in data
 
 
 @pytest.mark.asyncio
@@ -145,8 +144,8 @@ async def test_deactivate_inactive_users_success(client: AsyncClient, override_a
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "affected_count" in data
-    assert "is_dry_run" in data
+    assert "deactivatedCount" in data
+    assert "previewItems" in data  # dry_run時はプレビューアイテムが返される
 
 
 @pytest.mark.asyncio
@@ -198,8 +197,9 @@ async def test_archive_old_projects_success(client: AsyncClient, override_auth, 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "affected_count" in data
-    assert "is_dry_run" in data
+    assert "archivedCount" in data
+    assert "success" in data
+    assert "previewItems" in data  # dry_run時はプレビューアイテムが返される
 
 
 @pytest.mark.asyncio

@@ -11,7 +11,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -26,9 +25,7 @@ class SystemSettingUpdate(BaseCamelCaseModel):
 class MaintenanceModeEnable(BaseCamelCaseModel):
     """メンテナンスモード有効化リクエストスキーマ。"""
 
-    message: str = Field(
-        ..., min_length=1, max_length=500, description="メンテナンスメッセージ"
-    )
+    message: str = Field(..., min_length=1, max_length=500, description="メンテナンスメッセージ")
     allow_admin_access: bool = Field(default=True, description="管理者アクセス許可")
 
 
@@ -68,9 +65,7 @@ class SystemSettingDetailResponse(SystemSettingResponse):
 class SystemSettingsByCategoryResponse(BaseCamelCaseModel):
     """カテゴリ別システム設定レスポンススキーマ。"""
 
-    categories: dict[str, list[SystemSettingResponse]] = Field(
-        ..., description="カテゴリ別設定"
-    )
+    categories: dict[str, list[SystemSettingResponse]] = Field(..., description="カテゴリ別設定")
 
 
 class MaintenanceModeResponse(BaseCamelCaseModel):
@@ -79,3 +74,39 @@ class MaintenanceModeResponse(BaseCamelCaseModel):
     enabled: bool = Field(..., description="メンテナンスモード状態")
     message: str | None = Field(default=None, description="メンテナンスメッセージ")
     allow_admin_access: bool = Field(default=True, description="管理者アクセス許可")
+
+
+class MaintenanceModeRequest(BaseCamelCaseModel):
+    """メンテナンスモードリクエストスキーマ。"""
+
+    enabled: bool = Field(..., description="メンテナンスモード有効/無効")
+    message: str | None = Field(default=None, description="メンテナンスメッセージ")
+    allow_admin_access: bool = Field(default=True, description="管理者アクセス許可")
+
+
+class SettingCategoryResponse(BaseCamelCaseModel):
+    """設定カテゴリレスポンススキーマ。"""
+
+    category: str = Field(..., description="カテゴリ名")
+    settings: list[SystemSettingResponse] = Field(..., description="設定リスト")
+
+
+class SettingUpdateRequest(BaseCamelCaseModel):
+    """設定更新リクエストスキーマ。"""
+
+    value: Any = Field(..., description="設定値")
+
+
+class SettingUpdateResponse(BaseCamelCaseModel):
+    """設定更新レスポンススキーマ。"""
+
+    key: str = Field(..., description="設定キー")
+    value: Any = Field(..., description="設定値")
+    message: str = Field(..., description="メッセージ")
+
+
+class SystemSettingsResponse(BaseCamelCaseModel):
+    """システム設定レスポンススキーマ。"""
+
+    categories: list[SettingCategoryResponse] = Field(..., description="カテゴリ別設定")
+    maintenance_mode: MaintenanceModeResponse = Field(..., description="メンテナンスモード状態")

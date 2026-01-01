@@ -315,7 +315,7 @@ class SheetOperationsMixin:
             )
 
         # 「科目」列のデータをDriverTreeDataFrameに保存
-        data_dict: dict[str, Any] = {}
+        subject_data_dict: dict[str, Any] = {}
         for column_name in df_data.columns:
             if pd.isna(column_name):
                 continue
@@ -324,14 +324,14 @@ class SheetOperationsMixin:
             column_series = df_data[column_name]
             for idx, value in enumerate(column_series):
                 if not pd.isna(value):
-                    if column_name_str not in data_dict:
-                        data_dict[column_name_str] = {}
-                    data_dict[column_name_str][str(idx)] = str(value) if isinstance(value, str) else float(value)
+                    if column_name_str not in subject_data_dict:
+                        subject_data_dict[column_name_str] = {}
+                    subject_data_dict[column_name_str][str(idx)] = str(value) if isinstance(value, str) else float(value)
 
         await self.data_frame_repository.create(
             driver_tree_file_id=sheet_id,
             column_name="科目",
-            data=data_dict,
+            data=subject_data_dict,
         )
 
     @transactional
@@ -692,7 +692,7 @@ class SheetOperationsMixin:
         if isinstance(first_value, bool):
             return "boolean"
 
-        if isinstance(first_value, (int, float)):
+        if isinstance(first_value, int | float):
             return "number"
 
         if isinstance(first_value, pd.Timestamp):
@@ -773,7 +773,7 @@ class SheetOperationsMixin:
                     value = df_data.iloc[idx][first_data_col]
                     if not pd.isna(value):
                         row_data["科目"] = str(first_data_col)
-                        row_data["値"] = float(value) if isinstance(value, (int, float)) else str(value)
+                        row_data["値"] = float(value) if isinstance(value, int | float) else str(value)
 
             sample_data.append(row_data)
 

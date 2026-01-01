@@ -23,7 +23,8 @@ from app.api.core.dependencies.system_admin import (
 )
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
-from app.schemas.admin.session import (
+from app.schemas.admin.session_management import (
+    SessionFilter,
     SessionListResponse,
     SessionTerminateRequest,
     SessionTerminateResponse,
@@ -67,12 +68,13 @@ async def list_sessions(
         action="list_sessions",
     )
 
-    result = await service.get_active_sessions(
+    filter_params = SessionFilter(
         user_id=user_id,
         ip_address=ip_address,
-        skip=skip,
+        page=(skip // limit) + 1 if limit > 0 else 1,
         limit=limit,
     )
+    result = await service.list_sessions(filter_params)
 
     return result
 
@@ -104,11 +106,12 @@ async def get_user_sessions(
         action="get_user_sessions",
     )
 
-    result = await service.get_active_sessions(
+    filter_params = SessionFilter(
         user_id=user_id,
-        skip=skip,
+        page=(skip // limit) + 1 if limit > 0 else 1,
         limit=limit,
     )
+    result = await service.list_sessions(filter_params)
 
     return result
 
@@ -141,13 +144,16 @@ async def terminate_session(
         action="terminate_session",
     )
 
-    result = await service.terminate_session(
+    await service.terminate_session(
         session_id=session_id,
         reason=request.reason,
         terminated_by=current_user.id,
     )
 
-    return result
+    return SessionTerminateResponse(
+        terminated_count=1,
+        message="セッションを終了しました",
+    )
 
 
 @security_router.post(
@@ -178,10 +184,13 @@ async def terminate_all_user_sessions(
         action="terminate_all_user_sessions",
     )
 
-    result = await service.terminate_all_user_sessions(
+    terminated_count = await service.terminate_all_user_sessions(
         user_id=user_id,
         reason=request.reason,
         terminated_by=current_user.id,
     )
 
-    return result
+    return SessionTerminateResponse(
+        terminated_count=terminated_count,
+        message=f"{terminated_count}件のセッションを終了しました",
+    )

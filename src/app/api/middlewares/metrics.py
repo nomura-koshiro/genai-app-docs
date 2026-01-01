@@ -237,7 +237,7 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
         import re
 
         parts = path.split("/")
-        normalized_parts = []
+        normalized_parts: list[str] = []
 
         for part in parts:
             if not part:

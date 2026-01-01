@@ -175,9 +175,10 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
 
         # リレーションを取得してレスポンスを構築
         await self.db.commit()
-        session = await self.session_repository.get_with_relations(session.id)
-        if not session:
+        session_with_relations = await self.session_repository.get_with_relations(session.id)
+        if not session_with_relations:
             raise NotFoundError("セッション作成後の取得に失敗しました")
+        session = session_with_relations
 
         # スナップショットをリレーション付きで一括取得（N+1回避）
         snapshots = await self.snapshot_repository.list_by_session_with_relations(session.id)
@@ -375,9 +376,10 @@ class AnalysisSessionCrudService(AnalysisSessionServiceBase):
 
         # リレーションを取得してレスポンスを構築
         await self.db.commit()
-        new_session = await self.session_repository.get_with_relations(new_session.id)
-        if not new_session:
+        new_session_with_relations = await self.session_repository.get_with_relations(new_session.id)
+        if not new_session_with_relations:
             raise NotFoundError("セッション複製後の取得に失敗しました")
+        new_session = new_session_with_relations
 
         # スナップショットをリレーション付きで一括取得（N+1回避）
         snapshots = await self.snapshot_repository.list_by_session_with_relations(new_session.id)

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Query, status
 
 from app.api.core import AdminValidationServiceDep, CurrentUserAccountDep
 from app.api.decorators import handle_service_errors
-from app.core.exceptions import ValidationError
+from app.core.exceptions import AuthorizationError
 from app.core.logging import get_logger
 from app.schemas.admin.validation import (
     AnalysisValidationCreate,
@@ -22,15 +22,15 @@ admin_validation_router = APIRouter()
 
 def _check_admin_role(current_user: CurrentUserAccountDep) -> None:
     """管理者権限チェック。"""
-    if "SystemAdmin" not in current_user.roles:
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーが管理機能にアクセス",
             user_id=str(current_user.id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
 

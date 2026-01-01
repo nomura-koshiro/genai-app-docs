@@ -36,9 +36,7 @@ class NotificationTemplateRepository(BaseRepository[NotificationTemplate, uuid.U
         Returns:
             NotificationTemplate | None: 通知テンプレート
         """
-        query = select(NotificationTemplate).where(
-            NotificationTemplate.event_type == event_type
-        )
+        query = select(NotificationTemplate).where(NotificationTemplate.event_type == event_type)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -82,11 +80,6 @@ class NotificationTemplateRepository(BaseRepository[NotificationTemplate, uuid.U
         Returns:
             list[NotificationTemplate]: テンプレートリスト
         """
-        query = (
-            select(NotificationTemplate)
-            .order_by(NotificationTemplate.event_type)
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(NotificationTemplate).order_by(NotificationTemplate.event_type).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())

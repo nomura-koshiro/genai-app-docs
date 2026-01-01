@@ -9,7 +9,8 @@
 import csv
 import json
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,7 @@ from app.models import (
     Project,
     ProjectFile,
     ProjectMember,
+    RoleHistory,
     SystemAlert,
     SystemAnnouncement,
     SystemSetting,
@@ -92,17 +94,15 @@ def parse_float(value: str) -> float | None:
     return float(value)
 
 
-def parse_date(value: str) -> "date | None":
+def parse_date(value: str) -> date | None:
     """日付文字列をパースします。空文字列の場合はNoneを返します。"""
-    from datetime import date as date_type
-
     if not value or value.strip() == "":
         return None
     # YYYY-MM-DD形式
-    return date_type.fromisoformat(value)
+    return date.fromisoformat(value)
 
 
-def parse_datetime(value: str) -> "datetime | None":
+def parse_datetime(value: str) -> datetime | None:
     """日時文字列をパースします。空文字列の場合はNoneを返します。"""
     if not value or value.strip() == "":
         return None
@@ -112,10 +112,8 @@ def parse_datetime(value: str) -> "datetime | None":
     return datetime.fromisoformat(value)
 
 
-def parse_decimal(value: str) -> "Decimal | None":
+def parse_decimal(value: str) -> Decimal | None:
     """Decimal値をパースします。空文字列の場合はNoneを返します。"""
-    from decimal import Decimal
-
     if not value or value.strip() == "":
         return None
     return Decimal(value)
@@ -963,6 +961,35 @@ async def load_user_sessions(session: AsyncSession) -> int:
     return count
 
 
+async def load_role_histories(session: AsyncSession) -> int:
+    """ロール変更履歴を読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "role_history.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(RoleHistory).where(RoleHistory.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = RoleHistory(
+            id=record_id,
+            user_id=parse_uuid(row["user_id"]),
+            changed_by_id=parse_uuid(row.get("changed_by_id", "")),
+            action=row["action"],
+            role_type=row["role_type"],
+            project_id=parse_uuid(row.get("project_id", "")),
+            old_roles=parse_json(row["old_roles"]),
+            new_roles=parse_json(row["new_roles"]),
+            reason=row.get("reason") or None,
+            changed_at=parse_datetime(row["changed_at"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
 async def load_seed_data(session: AsyncSession) -> dict[str, int]:
     """すべてのシードデータを読み込みます。
 
@@ -1015,6 +1042,7 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("system_alert", load_system_alerts),
         ("system_announcement", load_system_announcements),
         ("user_session", load_user_sessions),
+        ("role_history", load_role_histories),
     ]
 
     for table_name, loader in loaders:

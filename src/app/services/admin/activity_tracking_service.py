@@ -262,39 +262,43 @@ class ActivityTrackingService:
         writer = csv.writer(output)
 
         # ヘッダー
-        writer.writerow([
-            "ID",
-            "日時",
-            "ユーザーID",
-            "ユーザー名",
-            "操作種別",
-            "リソース種別",
-            "リソースID",
-            "エンドポイント",
-            "メソッド",
-            "ステータス",
-            "エラーメッセージ",
-            "処理時間(ms)",
-            "IPアドレス",
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "日時",
+                "ユーザーID",
+                "ユーザー名",
+                "操作種別",
+                "リソース種別",
+                "リソースID",
+                "エンドポイント",
+                "メソッド",
+                "ステータス",
+                "エラーメッセージ",
+                "処理時間(ms)",
+                "IPアドレス",
+            ]
+        )
 
         # データ行
         for a in activities:
-            writer.writerow([
-                str(a.id),
-                a.created_at.isoformat(),
-                str(a.user_id) if a.user_id else "",
-                a.user.display_name if a.user else "",
-                a.action_type,
-                a.resource_type or "",
-                str(a.resource_id) if a.resource_id else "",
-                a.endpoint,
-                a.method,
-                a.response_status,
-                a.error_message or "",
-                a.duration_ms,
-                a.ip_address or "",
-            ])
+            writer.writerow(
+                [
+                    str(a.id),
+                    a.created_at.isoformat(),
+                    str(a.user_id) if a.user_id else "",
+                    a.user.display_name if a.user else "",
+                    a.action_type,
+                    a.resource_type or "",
+                    str(a.resource_id) if a.resource_id else "",
+                    a.endpoint,
+                    a.method,
+                    a.response_status,
+                    a.error_message or "",
+                    a.duration_ms,
+                    a.ip_address or "",
+                ]
+            )
 
         logger.info(
             "操作履歴をエクスポートしました",

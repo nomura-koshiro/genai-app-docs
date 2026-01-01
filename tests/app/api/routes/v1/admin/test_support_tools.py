@@ -18,6 +18,13 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture
+async def seeded_settings(test_data_seeder):
+    """システム設定のシードデータを作成。"""
+    await test_data_seeder.seed_default_settings()
+    return test_data_seeder
+
+
 # ================================================================================
 # Impersonation - ユーザー代行操作
 # ================================================================================
@@ -96,7 +103,7 @@ async def test_end_impersonation_forbidden_regular_user(client: AsyncClient, ove
 
 
 @pytest.mark.asyncio
-async def test_enable_debug_mode_success(client: AsyncClient, override_auth, admin_user):
+async def test_enable_debug_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_support_tools-006] デバッグモード有効化の成功ケース。"""
     # Arrange
     override_auth(admin_user)
@@ -107,7 +114,7 @@ async def test_enable_debug_mode_success(client: AsyncClient, override_auth, adm
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "is_enabled" in data
+    assert "enabled" in data
 
 
 @pytest.mark.asyncio
@@ -134,7 +141,7 @@ async def test_enable_debug_mode_forbidden_regular_user(client: AsyncClient, ove
 
 
 @pytest.mark.asyncio
-async def test_disable_debug_mode_success(client: AsyncClient, override_auth, admin_user):
+async def test_disable_debug_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_support_tools-009] デバッグモード無効化の成功ケース。"""
     # Arrange
     override_auth(admin_user)
@@ -145,7 +152,7 @@ async def test_disable_debug_mode_success(client: AsyncClient, override_auth, ad
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "is_enabled" in data
+    assert "enabled" in data
 
 
 @pytest.mark.asyncio

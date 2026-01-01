@@ -16,7 +16,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -102,6 +102,7 @@ class SystemSetting(Base, TimestampMixin):
 
     updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         comment="更新者ID",
     )
@@ -114,11 +115,7 @@ class SystemSetting(Base, TimestampMixin):
     )
 
     # ユニーク制約
-    __table_args__ = (
-        UniqueConstraint("category", "key", name="uq_system_setting_category_key"),
-    )
+    __table_args__ = (UniqueConstraint("category", "key", name="uq_system_setting_category_key"),)
 
     def __repr__(self) -> str:
-        return (
-            f"<SystemSetting(id={self.id}, category={self.category}, key={self.key})>"
-        )
+        return f"<SystemSetting(id={self.id}, category={self.category}, key={self.key})>"

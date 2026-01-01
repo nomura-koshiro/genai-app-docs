@@ -22,7 +22,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ProjectFile
-from app.schemas.project.project_file import ProjectFileUsageResponse
+from app.schemas.project.project_file import ProjectFileUsageResponse, ProjectFileVersionHistoryResponse
 from app.services.project.project_file.crud import ProjectFileCrudService
 from app.services.project.project_file.download import ProjectFileDownloadService
 from app.services.project.project_file.upload import ALLOWED_MIME_TYPES, ProjectFileUploadService
@@ -74,6 +74,10 @@ class ProjectFileService:
         """ファイルの使用状況を取得します。"""
         return await self._crud_service.get_file_usage(file_id, requester_id)
 
+    async def get_version_history(self, file_id: uuid.UUID, requester_id: uuid.UUID) -> ProjectFileVersionHistoryResponse:
+        """ファイルのバージョン履歴を取得します。"""
+        return await self._crud_service.get_version_history(file_id, requester_id)
+
     # ================================================================================
     # アップロード
     # ================================================================================
@@ -81,6 +85,10 @@ class ProjectFileService:
     async def upload_file(self, project_id: uuid.UUID, file: UploadFile, uploaded_by: uuid.UUID) -> ProjectFile:
         """プロジェクトにファイルをアップロードします。"""
         return await self._upload_service.upload_file(project_id, file, uploaded_by)
+
+    async def upload_new_version(self, parent_file_id: uuid.UUID, file: UploadFile, uploaded_by: uuid.UUID) -> ProjectFile:
+        """既存ファイルの新バージョンをアップロードします。"""
+        return await self._upload_service.upload_new_version(parent_file_id, file, uploaded_by)
 
     # ================================================================================
     # ダウンロード

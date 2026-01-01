@@ -86,6 +86,4 @@ class NotificationTemplate(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<NotificationTemplate(id={self.id}, event_type={self.event_type})>"
-        )
+        return f"<NotificationTemplate(id={self.id}, event_type={self.event_type})>"

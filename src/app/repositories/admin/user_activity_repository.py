@@ -5,8 +5,10 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import and_, delete, func, select
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -45,11 +47,7 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
         Returns:
             UserActivity | None: 操作履歴（ユーザー情報付き）
         """
-        query = (
-            select(UserActivity)
-            .options(selectinload(UserActivity.user))
-            .where(UserActivity.id == id)
-        )
+        query = select(UserActivity).options(selectinload(UserActivity.user)).where(UserActivity.id == id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -204,28 +202,23 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
         if end_date:
             conditions.append(UserActivity.created_at <= end_date)
 
-        where_clause = and_(*conditions) if conditions else True
-
         # 総件数
-        total_query = select(func.count()).select_from(UserActivity).where(where_clause)
+        total_query = select(func.count()).select_from(UserActivity)
+        if conditions:
+            total_query = total_query.where(and_(*conditions))
         total_result = await self.db.execute(total_query)
         total_count = total_result.scalar_one()
 
         # エラー件数
-        error_query = (
-            select(func.count())
-            .select_from(UserActivity)
-            .where(and_(where_clause, UserActivity.error_message.isnot(None)))
-        )
+        error_conditions = [*conditions, UserActivity.error_message.isnot(None)]
+        error_query = select(func.count()).select_from(UserActivity).where(and_(*error_conditions))
         error_result = await self.db.execute(error_query)
         error_count = error_result.scalar_one()
 
         # 平均処理時間
-        avg_query = (
-            select(func.avg(UserActivity.duration_ms))
-            .select_from(UserActivity)
-            .where(where_clause)
-        )
+        avg_query = select(func.avg(UserActivity.duration_ms)).select_from(UserActivity)
+        if conditions:
+            avg_query = avg_query.where(and_(*conditions))
         avg_result = await self.db.execute(avg_query)
         average_duration_ms = avg_result.scalar_one() or 0
 
@@ -245,6 +238,6 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
             int: 削除件数
         """
         query = delete(UserActivity).where(UserActivity.created_at < before_date)
-        result = await self.db.execute(query)
+        result: CursorResult[Any] = await self.db.execute(query)  # type: ignore[assignment]
         await self.db.flush()
-        return result.rowcount
+        return result.rowcount or 0

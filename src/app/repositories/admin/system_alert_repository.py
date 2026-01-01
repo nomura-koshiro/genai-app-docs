@@ -40,11 +40,7 @@ class SystemAlertRepository(BaseRepository[SystemAlert, uuid.UUID]):
         Returns:
             SystemAlert | None: アラート（作成者情報付き）
         """
-        query = (
-            select(SystemAlert)
-            .options(selectinload(SystemAlert.creator))
-            .where(SystemAlert.id == id)
-        )
+        query = select(SystemAlert).options(selectinload(SystemAlert.creator)).where(SystemAlert.id == id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -112,13 +108,7 @@ class SystemAlertRepository(BaseRepository[SystemAlert, uuid.UUID]):
         Returns:
             list[SystemAlert]: アラートリスト
         """
-        query = (
-            select(SystemAlert)
-            .options(selectinload(SystemAlert.creator))
-            .order_by(SystemAlert.name)
-            .offset(skip)
-            .limit(limit)
-        )
+        query = select(SystemAlert).options(selectinload(SystemAlert.creator)).order_by(SystemAlert.name).offset(skip).limit(limit)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 

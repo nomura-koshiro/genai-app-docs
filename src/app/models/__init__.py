@@ -61,7 +61,7 @@ from app.models.system import (
 )
 
 # User models
-from app.models.user_account import UserSession
+from app.models.user_account import RoleHistory, UserSession
 from app.models.user_account.user_account import SystemUserRole, UserAccount
 
 __all__ = [
@@ -86,6 +86,7 @@ __all__ = [
     "SystemUserRole",
     "UserAccount",
     "UserSession",
+    "RoleHistory",
     # Project models
     "Project",
     "ProjectFile",

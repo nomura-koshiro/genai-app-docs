@@ -274,6 +274,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
                 result_node = root_node
             else:
                 result_node = await self.node_repository.create(
+                    driver_tree_id=tree.id,
                     label=result_name,
                     node_type="計算",
                     position_x=base_x,
@@ -288,6 +289,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
             node_type = self.formula_parser.determine_node_type(operand)
 
             child_node = await self.node_repository.create(
+                driver_tree_id=tree.id,
                 label=operand,
                 node_type=node_type,
                 position_x=base_x + (i + 1) * 200,
@@ -405,7 +407,11 @@ class DriverTreeCrudService(DriverTreeServiceBase):
             user_id=str(user_id),
         )
 
-        await self._get_tree_with_validation(project_id, tree_id)
+        tree = await self._get_tree_with_validation(project_id, tree_id)
+
+        # 循環参照を解除するためroot_node_idをNULLに設定
+        if tree.root_node_id:
+            await self.tree_repository.update(tree, root_node_id=None)
 
         # ツリーを削除（CASCADEで関連データも削除される）
         await self.tree_repository.delete(tree_id)
@@ -490,6 +496,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
         # ノードを複製（施策も含む）
         for node_id, original_node in original_nodes.items():
             new_node = await self.node_repository.create(
+                driver_tree_id=new_tree.id,
                 label=original_node.label,
                 node_type=original_node.node_type,
                 position_x=original_node.position_x,
@@ -602,8 +609,7 @@ class DriverTreeCrudService(DriverTreeServiceBase):
                     "node_label": policy.node.label if policy.node else "",
                     "label": policy.label,
                     "description": policy.description,
-                    "impact_type": policy.impact_type,
-                    "impact_value": policy.impact_value,
+                    "value": policy.value,
                     "status": policy.status,
                 }
             )

@@ -55,7 +55,9 @@ class BaseCamelCaseModel(BaseModel):
 
     Features:
         - alias_generator: snake_case → camelCase 自動変換
-        - populate_by_name: snake_caseでのフィールドアクセスも許可
+        - validate_by_name: snake_caseでのバリデーション許可
+        - validate_by_alias: camelCaseでのバリデーション許可
+        - populate_by_name: snake_caseでのフィールドアクセスも許可（後方互換性）
 
     使用方法:
         >>> class CreateUserRequest(BaseCamelCaseModel):
@@ -75,6 +77,8 @@ class BaseCamelCaseModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
     )
 
 
@@ -86,7 +90,9 @@ class BaseCamelCaseORMModel(BaseCamelCaseModel):
 
     Features:
         - alias_generator: snake_case → camelCase 自動変換
-        - populate_by_name: snake_caseでのフィールドアクセスも許可
+        - validate_by_name: snake_caseでのバリデーション許可
+        - validate_by_alias: camelCaseでのバリデーション許可
+        - populate_by_name: snake_caseでのフィールドアクセスも許可（後方互換性）
         - from_attributes: ORMモデルからの直接変換対応
 
     使用方法:
@@ -107,5 +113,7 @@ class BaseCamelCaseORMModel(BaseCamelCaseModel):
     model_config = ConfigDict(
         alias_generator=to_camel,
         populate_by_name=True,
+        validate_by_name=True,
+        validate_by_alias=True,
         from_attributes=True,
     )

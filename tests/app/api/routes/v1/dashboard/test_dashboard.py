@@ -30,12 +30,12 @@ class TestDashboardStatsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_stats_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは401エラー。"""
+        """未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/stats")
 
         # Assert
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_get_stats_response_structure(self, client: AsyncClient, test_user, override_auth):
@@ -94,12 +94,12 @@ class TestDashboardActivitiesEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_activities_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは401エラー。"""
+        """未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/activities")
 
         # Assert
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_get_activities_with_pagination(self, client: AsyncClient, test_user, override_auth):
@@ -179,12 +179,12 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは401エラー。"""
+        """未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/charts")
 
         # Assert
-        assert response.status_code == 401
+        assert response.status_code == 403
 
     @pytest.mark.asyncio
     async def test_get_charts_with_days_parameter(self, client: AsyncClient, test_user, override_auth):

@@ -15,6 +15,13 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture
+async def seeded_settings(test_data_seeder):
+    """システム設定のシードデータを作成。"""
+    await test_data_seeder.seed_default_settings()
+    return test_data_seeder
+
+
 # ================================================================================
 # GET /api/v1/admin/settings - 全設定取得
 # ================================================================================
@@ -108,31 +115,31 @@ async def test_get_settings_by_category_forbidden_regular_user(client: AsyncClie
 
 
 @pytest.mark.asyncio
-async def test_update_setting_success(client: AsyncClient, override_auth, admin_user):
+async def test_update_setting_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_settings-007] 設定更新の成功ケース。"""
     # Arrange
     override_auth(admin_user)
-    update_data = {"value": "new_value"}
+    update_data = {"value": "NewAppName"}
 
     # Act
-    response = await client.patch("/api/v1/admin/settings/GENERAL/site_name", json=update_data)
+    response = await client.patch("/api/v1/admin/settings/GENERAL/app_name", json=update_data)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "category" in data
     assert "key" in data
     assert "value" in data
+    assert "valueType" in data
 
 
 @pytest.mark.asyncio
 async def test_update_setting_unauthorized(client: AsyncClient):
     """[test_settings-008] 認証なしでの設定更新拒否。"""
     # Arrange
-    update_data = {"value": "new_value"}
+    update_data = {"value": "NewAppName"}
 
     # Act
-    response = await client.patch("/api/v1/admin/settings/GENERAL/site_name", json=update_data)
+    response = await client.patch("/api/v1/admin/settings/GENERAL/app_name", json=update_data)
 
     # Assert
     assert response.status_code in [401, 403]
@@ -143,10 +150,10 @@ async def test_update_setting_forbidden_regular_user(client: AsyncClient, overri
     """[test_settings-009] 一般ユーザーでの設定更新拒否。"""
     # Arrange
     override_auth(regular_user)
-    update_data = {"value": "new_value"}
+    update_data = {"value": "NewAppName"}
 
     # Act
-    response = await client.patch("/api/v1/admin/settings/GENERAL/site_name", json=update_data)
+    response = await client.patch("/api/v1/admin/settings/GENERAL/app_name", json=update_data)
 
     # Assert
     assert response.status_code == 403
@@ -158,13 +165,14 @@ async def test_update_setting_forbidden_regular_user(client: AsyncClient, overri
 
 
 @pytest.mark.asyncio
-async def test_enable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user):
+async def test_enable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_settings-010] メンテナンスモード有効化の成功ケース。"""
     # Arrange
     override_auth(admin_user)
     request_data = {
+        "enabled": True,
         "message": "システムメンテナンス中です",
-        "allow_admin_access": True,
+        "allowAdminAccess": True,
     }
 
     # Act
@@ -173,7 +181,7 @@ async def test_enable_maintenance_mode_success(client: AsyncClient, override_aut
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "is_enabled" in data
+    assert "enabled" in data
     assert "message" in data
 
 
@@ -183,7 +191,7 @@ async def test_enable_maintenance_mode_unauthorized(client: AsyncClient):
     # Arrange
     request_data = {
         "message": "システムメンテナンス中です",
-        "allow_admin_access": True,
+        "allowAdminAccess": True,
     }
 
     # Act
@@ -200,7 +208,7 @@ async def test_enable_maintenance_mode_forbidden_regular_user(client: AsyncClien
     override_auth(regular_user)
     request_data = {
         "message": "システムメンテナンス中です",
-        "allow_admin_access": True,
+        "allowAdminAccess": True,
     }
 
     # Act
@@ -216,7 +224,7 @@ async def test_enable_maintenance_mode_forbidden_regular_user(client: AsyncClien
 
 
 @pytest.mark.asyncio
-async def test_disable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user):
+async def test_disable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_settings-013] メンテナンスモード無効化の成功ケース。"""
     # Arrange
     override_auth(admin_user)
@@ -227,7 +235,7 @@ async def test_disable_maintenance_mode_success(client: AsyncClient, override_au
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "is_enabled" in data
+    assert "enabled" in data
 
 
 @pytest.mark.asyncio

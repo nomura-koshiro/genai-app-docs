@@ -5,10 +5,10 @@
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import Date, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.models.analysis.analysis_session import AnalysisSession
 from app.models.driver_tree.driver_tree import DriverTree
@@ -205,7 +205,7 @@ class DashboardService:
             generated_at=datetime.now(UTC),
         )
 
-    async def _get_creation_trend(self, model: type, start_date: datetime, days: int) -> list[ChartDataPoint]:
+    async def _get_creation_trend(self, model: Any, start_date: datetime, days: int) -> list[ChartDataPoint]:
         """作成トレンドを効率的に取得。
 
         GROUP BYを使用して単一クエリで日別集計を行います。
@@ -302,13 +302,16 @@ class DashboardService:
     async def _get_recent_projects(self, limit: int) -> list[ActivityLogResponse]:
         """最近のプロジェクト作成アクティビティを取得。"""
         result = await self.db.execute(
-            select(Project).options(selectinload(Project.created_by_user)).order_by(Project.created_at.desc()).limit(limit)
+            select(Project, UserAccount.display_name)
+            .outerjoin(UserAccount, Project.created_by == UserAccount.id)
+            .order_by(Project.created_at.desc())
+            .limit(limit)
         )
         return [
             ActivityLogResponse(
                 id=p.id,
                 user_id=p.created_by if p.created_by else uuid.uuid4(),
-                user_name=p.created_by_user.display_name if p.created_by_user else "Unknown",
+                user_name=display_name or "Unknown",
                 action="created",
                 resource_type="project",
                 resource_id=p.id,
@@ -316,22 +319,22 @@ class DashboardService:
                 details={"description": p.description},
                 created_at=p.created_at,
             )
-            for p in result.scalars().all()
+            for p, display_name in result.all()
         ]
 
     async def _get_recent_sessions(self, limit: int) -> list[ActivityLogResponse]:
         """最近のセッション作成アクティビティを取得。"""
         result = await self.db.execute(
-            select(AnalysisSession)
-            .options(selectinload(AnalysisSession.created_by_user))
+            select(AnalysisSession, UserAccount.display_name)
+            .outerjoin(UserAccount, AnalysisSession.creator_id == UserAccount.id)
             .order_by(AnalysisSession.created_at.desc())
             .limit(limit)
         )
         return [
             ActivityLogResponse(
                 id=s.id,
-                user_id=s.created_by if s.created_by else uuid.uuid4(),
-                user_name=s.created_by_user.display_name if s.created_by_user else "Unknown",
+                user_id=s.creator_id if s.creator_id else uuid.uuid4(),
+                user_name=display_name or "Unknown",
                 action="created",
                 resource_type="session",
                 resource_id=s.id,
@@ -339,19 +342,22 @@ class DashboardService:
                 details={"status": s.status},
                 created_at=s.created_at,
             )
-            for s in result.scalars().all()
+            for s, display_name in result.all()
         ]
 
     async def _get_recent_trees(self, limit: int) -> list[ActivityLogResponse]:
         """最近のツリー作成アクティビティを取得。"""
         result = await self.db.execute(
-            select(DriverTree).options(selectinload(DriverTree.created_by_user)).order_by(DriverTree.created_at.desc()).limit(limit)
+            select(DriverTree, UserAccount.display_name)
+            .outerjoin(UserAccount, DriverTree.created_by == UserAccount.id)
+            .order_by(DriverTree.created_at.desc())
+            .limit(limit)
         )
         return [
             ActivityLogResponse(
                 id=t.id,
                 user_id=t.created_by if t.created_by else uuid.uuid4(),
-                user_name=t.created_by_user.display_name if t.created_by_user else "Unknown",
+                user_name=display_name or "Unknown",
                 action="created",
                 resource_type="tree",
                 resource_id=t.id,
@@ -359,25 +365,28 @@ class DashboardService:
                 details={"status": t.status},
                 created_at=t.created_at,
             )
-            for t in result.scalars().all()
+            for t, display_name in result.all()
         ]
 
     async def _get_recent_files(self, limit: int) -> list[ActivityLogResponse]:
         """最近のファイルアップロードアクティビティを取得。"""
         result = await self.db.execute(
-            select(ProjectFile).options(selectinload(ProjectFile.uploaded_by_user)).order_by(ProjectFile.created_at.desc()).limit(limit)
+            select(ProjectFile, UserAccount.display_name)
+            .outerjoin(UserAccount, ProjectFile.uploaded_by == UserAccount.id)
+            .order_by(ProjectFile.uploaded_at.desc())
+            .limit(limit)
         )
         return [
             ActivityLogResponse(
                 id=f.id,
                 user_id=f.uploaded_by if f.uploaded_by else uuid.uuid4(),
-                user_name=f.uploaded_by_user.display_name if f.uploaded_by_user else "Unknown",
+                user_name=display_name or "Unknown",
                 action="uploaded",
                 resource_type="file",
                 resource_id=f.id,
                 resource_name=f.original_filename,
                 details={"size": f.file_size, "mime_type": f.mime_type},
-                created_at=f.created_at,
+                created_at=f.uploaded_at,
             )
-            for f in result.scalars().all()
+            for f, display_name in result.all()
         ]

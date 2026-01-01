@@ -86,9 +86,7 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         Returns:
             int: ツリー数
         """
-        result = await self.db.execute(
-            select(func.count()).select_from(DriverTree).where(DriverTree.project_id == project_id)
-        )
+        result = await self.db.execute(select(func.count()).select_from(DriverTree).where(DriverTree.project_id == project_id))
         return result.scalar_one()
 
     async def count_nodes_by_tree(self, tree_id: uuid.UUID) -> int:
@@ -100,9 +98,7 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         Returns:
             int: ノード数
         """
-        result = await self.db.execute(
-            select(func.count()).select_from(DriverTreeNode).where(DriverTreeNode.driver_tree_id == tree_id)
-        )
+        result = await self.db.execute(select(func.count()).select_from(DriverTreeNode).where(DriverTreeNode.driver_tree_id == tree_id))
         return result.scalar_one()
 
     async def count_policies_by_tree(self, tree_id: uuid.UUID) -> int:
@@ -124,9 +120,7 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         )
         return result.scalar_one()
 
-    async def get_aggregate_counts(
-        self, tree_ids: list[uuid.UUID]
-    ) -> dict[uuid.UUID, dict[str, int]]:
+    async def get_aggregate_counts(self, tree_ids: list[uuid.UUID]) -> dict[uuid.UUID, dict[str, int]]:
         """複数ツリーのノード数・施策数を一括取得します。
 
         N+1クエリを回避するため、一括でカウントを取得します。

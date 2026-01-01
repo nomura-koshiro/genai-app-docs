@@ -18,13 +18,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.core import register_exception_handlers
-from app.api.middleware import (
+from app.api.middlewares import (
     ActivityTrackingMiddleware,
     AuditLogMiddleware,
-    MaintenanceModeMiddleware,
-)
-from app.api.middlewares import (
     LoggingMiddleware,
+    MaintenanceModeMiddleware,
     PrometheusMetricsMiddleware,
     RateLimitMiddleware,
     SecurityHeadersMiddleware,
@@ -233,33 +231,15 @@ def create_app() -> FastAPI:
     app.include_router(admin_validation_router, prefix="/api/v1", tags=["admin-validation"])
 
     # システム管理API（SA-001〜SA-043）
-    app.include_router(
-        activity_logs_router, prefix="/api/v1/admin", tags=["system-admin-activity"]
-    )
-    app.include_router(
-        audit_logs_router, prefix="/api/v1/admin", tags=["system-admin-audit"]
-    )
-    app.include_router(
-        settings_router, prefix="/api/v1/admin", tags=["system-admin-settings"]
-    )
-    app.include_router(
-        statistics_router, prefix="/api/v1/admin", tags=["system-admin-statistics"]
-    )
-    app.include_router(
-        notifications_router, prefix="/api/v1/admin", tags=["system-admin-notifications"]
-    )
-    app.include_router(
-        security_router, prefix="/api/v1/admin", tags=["system-admin-security"]
-    )
-    app.include_router(
-        bulk_operations_router, prefix="/api/v1/admin", tags=["system-admin-bulk"]
-    )
-    app.include_router(
-        data_management_router, prefix="/api/v1/admin", tags=["system-admin-data"]
-    )
-    app.include_router(
-        support_tools_router, prefix="/api/v1/admin", tags=["system-admin-support"]
-    )
+    app.include_router(activity_logs_router, prefix="/api/v1/admin", tags=["system-admin-activity"])
+    app.include_router(audit_logs_router, prefix="/api/v1/admin", tags=["system-admin-audit"])
+    app.include_router(settings_router, prefix="/api/v1/admin", tags=["system-admin-settings"])
+    app.include_router(statistics_router, prefix="/api/v1/admin", tags=["system-admin-statistics"])
+    app.include_router(notifications_router, prefix="/api/v1/admin", tags=["system-admin-notifications"])
+    app.include_router(security_router, prefix="/api/v1/admin", tags=["system-admin-security"])
+    app.include_router(bulk_operations_router, prefix="/api/v1/admin", tags=["system-admin-bulk"])
+    app.include_router(data_management_router, prefix="/api/v1/admin", tags=["system-admin-data"])
+    app.include_router(support_tools_router, prefix="/api/v1/admin", tags=["system-admin-support"])
 
     # ダッシュボードAPI
     app.include_router(dashboard_router, prefix="/api/v1/dashboard", tags=["dashboard"])

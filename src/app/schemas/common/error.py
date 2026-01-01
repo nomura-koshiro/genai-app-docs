@@ -39,13 +39,9 @@ class ErrorResponse(BaseCamelCaseModel):
 
     error: str = Field(..., description="エラー種別")
     message: str = Field(..., description="ユーザー向けエラーメッセージ")
-    details: list[ErrorDetail] | None = Field(
-        default=None, description="詳細エラー情報"
-    )
+    details: list[ErrorDetail] | None = Field(default=None, description="詳細エラー情報")
     request_id: str | None = Field(default=None, description="リクエストID")
-    timestamp: datetime = Field(
-        default_factory=datetime.now, description="エラー発生日時"
-    )
+    timestamp: datetime = Field(default_factory=datetime.now, description="エラー発生日時")
 
 
 class NotFoundErrorResponse(ErrorResponse):

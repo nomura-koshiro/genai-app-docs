@@ -1,9 +1,9 @@
 """操作履歴サービスのテスト。"""
 
 import uuid
-from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserAccount
@@ -47,9 +47,7 @@ async def test_record_activity_success(db_session: AsyncSession):
     )
 
     # Assert
-    result = await db_session.execute(
-        db_session.query(UserActivity).where(UserActivity.user_id == user_id)
-    )
+    result = await db_session.execute(select(UserActivity).where(UserActivity.user_id == user_id))
     activity = result.scalar_one_or_none()
     assert activity is not None
     assert activity.action_type == "CREATE"

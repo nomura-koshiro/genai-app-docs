@@ -2,32 +2,31 @@
 
 Azure OpenAIのLLMとEmbeddingsクライアントを提供します。
 環境変数から設定を読み込みます。
+遅延初期化により、テスト時の認証情報エラーを回避します。
 """
 
 import os
+from functools import lru_cache
 
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 
-# 環境変数から設定を取得
-AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
-AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
-AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview")
-AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4.1")
-AZURE_OPENAI_EMBEDDING_ENDPOINT = os.getenv("AZURE_OPENAI_EMBEDDING_ENDPOINT")
-AZURE_OPENAI_EMBEDDING_MODEL = os.getenv("AZURE_OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
 
-# LLMクライアントの初期化
-llm = AzureChatOpenAI(
-    azure_deployment=AZURE_OPENAI_DEPLOYMENT_NAME,
-    api_version=AZURE_OPENAI_API_VERSION,
-    temperature=0,
-    timeout=None,
-    max_retries=2,
-)
+@lru_cache(maxsize=1)
+def get_llm() -> AzureChatOpenAI:
+    """LLMクライアントを取得（遅延初期化）。"""
+    return AzureChatOpenAI(
+        azure_deployment=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4.1"),
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-12-01-preview"),
+        temperature=0,
+        timeout=None,
+        max_retries=2,
+    )
 
-# Embeddingsクライアントの初期化
-emb = AzureOpenAIEmbeddings(
-    model=AZURE_OPENAI_EMBEDDING_MODEL,
-    azure_endpoint=AZURE_OPENAI_EMBEDDING_ENDPOINT,
-    openai_api_type="azure",
-)
+
+@lru_cache(maxsize=1)
+def get_embeddings() -> AzureOpenAIEmbeddings:
+    """Embeddingsクライアントを取得（遅延初期化）。"""
+    return AzureOpenAIEmbeddings(
+        azure_deployment=os.getenv("AZURE_OPENAI_EMBEDDING_DEPLOYMENT", "text-embedding-ada-002"),
+        azure_endpoint=os.getenv("AZURE_OPENAI_EMBEDDING_ENDPOINT"),
+    )

@@ -7,9 +7,9 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import UserAccount
-from app.models.admin.system_setting import SystemSetting
 from app.models.audit.audit_log import AuditLog
 from app.models.audit.user_activity import UserActivity
+from app.models.system.system_setting import SystemSetting
 from app.schemas.admin.data_management import RetentionPolicyUpdate
 from app.services.admin.data_management_service import DataManagementService
 

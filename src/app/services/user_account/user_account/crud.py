@@ -217,7 +217,7 @@ class UserAccountCrudService(UserAccountServiceBase):
 
         # 権限チェック: roles または is_active の更新は管理者のみ
         if "roles" in update_data or "is_active" in update_data:
-            if "SystemAdmin" not in current_user_roles:
+            if "system_admin" not in current_user_roles:
                 logger.warning(
                     "権限不足: rolesまたはis_activeの更新には管理者権限が必要です",
                     user_id=str(user_id),

@@ -16,7 +16,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Index, String, Text
+from sqlalchemy import ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -67,6 +67,7 @@ class AuditLog(Base, TimestampMixin):
 
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         comment="操作ユーザーID",
     )
@@ -159,6 +160,4 @@ class AuditLog(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<AuditLog(id={self.id}, event={self.event_type}, action={self.action})>"
-        )
+        return f"<AuditLog(id={self.id}, event={self.event_type}, action={self.action})>"

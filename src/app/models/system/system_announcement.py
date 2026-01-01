@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -110,6 +110,7 @@ class SystemAnnouncement(Base, TimestampMixin):
 
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="CASCADE"),
         nullable=False,
         comment="作成者ID",
     )
@@ -122,9 +123,7 @@ class SystemAnnouncement(Base, TimestampMixin):
     )
 
     # インデックス定義
-    __table_args__ = (
-        Index("idx_announcement_active", "is_active", "start_at", "end_at"),
-    )
+    __table_args__ = (Index("idx_announcement_active", "is_active", "start_at", "end_at"),)
 
     def __repr__(self) -> str:
         return f"<SystemAnnouncement(id={self.id}, title={self.title})>"

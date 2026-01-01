@@ -28,6 +28,7 @@ from app.api.core.dependencies.system_admin import (
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.admin.audit_log import (
+    AuditLogExportFilter,
     AuditLogFilter,
     AuditLogListResponse,
 )
@@ -88,13 +89,11 @@ async def list_audit_logs(
         severity=severity,
         start_date=start_date,
         end_date=end_date,
-    )
-
-    result = await service.get_audit_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_audit_logs(filter_params=filter_params)
 
     return result
 
@@ -134,13 +133,11 @@ async def list_data_changes(
         resource_type=resource_type,
         start_date=start_date,
         end_date=end_date,
-    )
-
-    result = await service.get_audit_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_audit_logs(filter_params=filter_params)
 
     return result
 
@@ -178,13 +175,11 @@ async def list_access_logs(
         user_id=user_id,
         start_date=start_date,
         end_date=end_date,
-    )
-
-    result = await service.get_audit_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_audit_logs(filter_params=filter_params)
 
     return result
 
@@ -224,13 +219,11 @@ async def list_security_events(
         severity=severity,
         start_date=start_date,
         end_date=end_date,
-    )
-
-    result = await service.get_audit_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_audit_logs(filter_params=filter_params)
 
     return result
 
@@ -267,13 +260,11 @@ async def get_resource_history(
     filter_params = AuditLogFilter(
         resource_type=resource_type,
         resource_id=resource_id,
-    )
-
-    result = await service.get_audit_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_audit_logs(filter_params=filter_params)
 
     return result
 
@@ -305,18 +296,19 @@ async def export_audit_logs(
         action="export_audit_logs",
     )
 
-    filter_params = AuditLogFilter(
+    filter_params = AuditLogExportFilter(
+        format=format.lower(),
         event_type=event_type,
         start_date=start_date,
         end_date=end_date,
     )
 
+    content = await service.export(filter_params=filter_params)
+
     if format.lower() == "json":
-        content = await service.export_to_json(filter_params=filter_params)
         media_type = "application/json"
         extension = "json"
     else:
-        content = await service.export_to_csv(filter_params=filter_params)
         media_type = "text/csv"
         extension = "csv"
 

@@ -38,7 +38,7 @@ from fastapi import APIRouter, Query, Request, status
 
 from app.api.core import CurrentUserAccountDep, RoleHistoryServiceDep, UserServiceDep
 from app.api.decorators import handle_service_errors
-from app.core.exceptions import NotFoundError, ValidationError
+from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
 from app.schemas.user_account import RoleHistoryListResponse
@@ -90,17 +90,17 @@ async def list_users(
     email: str | None = Query(None, description="メールアドレスで検索（完全一致）"),
 ) -> UserAccountListResponse:
     """ユーザー一覧を取得します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーがユーザー一覧取得を試行",
             user_id=str(current_user.id),
             email=current_user.email,
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     logger.info(
@@ -241,17 +241,17 @@ async def get_user(
     current_user: CurrentUserAccountDep,
 ) -> UserAccountResponse:
     """特定のユーザー情報を取得します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーが特定ユーザー取得を試行",
             admin_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     logger.info(
@@ -380,17 +380,17 @@ async def activate_user(
     current_user: CurrentUserAccountDep,
 ) -> UserAccountResponse:
     """ユーザーを有効化します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーがユーザー有効化を試行",
             admin_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     logger.info(
@@ -441,17 +441,17 @@ async def deactivate_user(
     current_user: CurrentUserAccountDep,
 ) -> UserAccountResponse:
     """ユーザーを無効化します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーがユーザー無効化を試行",
             admin_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     # 自己無効化チェック
@@ -524,17 +524,17 @@ async def update_user_role(
     current_user: CurrentUserAccountDep,
 ) -> UserAccountResponse:
     """ユーザーのシステムロールを更新します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーがユーザーロール更新を試行",
             admin_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     logger.info(
@@ -591,17 +591,17 @@ async def delete_user(
     current_user: CurrentUserAccountDep,
 ) -> None:
     """ユーザーを削除します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要
-    if "SystemAdmin" not in current_user.roles:
+    # ロールチェック: system_adminが必要
+    if "system_admin" not in current_user.roles:
         logger.warning(
             "管理者権限がないユーザーがユーザー削除を試行",
             admin_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     # 自己削除チェック
@@ -676,17 +676,17 @@ async def get_user_role_history(
     limit: int = Query(100, ge=1, le=1000, description="取得する最大レコード数"),
 ) -> RoleHistoryListResponse:
     """ユーザーのロール変更履歴を取得します（管理者専用）。"""
-    # ロールチェック: SystemAdminが必要（自分自身の履歴は閲覧可能）
-    if "SystemAdmin" not in current_user.roles and current_user.id != user_id:
+    # ロールチェック: system_adminが必要（自分自身の履歴は閲覧可能）
+    if "system_admin" not in current_user.roles and current_user.id != user_id:
         logger.warning(
             "権限がないユーザーが他ユーザーのロール履歴取得を試行",
             requesting_user_id=str(current_user.id),
             target_user_id=str(user_id),
             roles=current_user.roles,
         )
-        raise ValidationError(
+        raise AuthorizationError(
             "他ユーザーのロール履歴取得には管理者権限が必要です",
-            details={"required_role": "SystemAdmin", "user_roles": current_user.roles},
+            details={"required_role": "system_admin", "user_roles": current_user.roles},
         )
 
     logger.info(

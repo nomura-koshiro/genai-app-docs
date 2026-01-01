@@ -1,5 +1,9 @@
 """ドライバーツリーカテゴリマスタリポジトリ。"""
 
+from __future__ import annotations
+
+import builtins
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +26,7 @@ class DriverTreeCategoryRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-    ) -> list[DriverTreeCategory]:
+    ) -> builtins.list[DriverTreeCategory]:
         """カテゴリ一覧を取得。"""
         result = await self.db.execute(
             select(DriverTreeCategory).order_by(DriverTreeCategory.category_id, DriverTreeCategory.industry_id).offset(skip).limit(limit)
@@ -56,11 +60,11 @@ class DriverTreeCategoryRepository:
         await self.db.delete(category)
         await self.db.flush()
 
-    async def has_trees(self, category_id: int) -> bool:
-        """カテゴリにドライバーツリーが紐づいているか確認。"""
-        from app.models.driver_tree.driver_tree import DriverTree
+    async def has_formulas(self, category_id: int) -> bool:
+        """カテゴリに数式が紐づいているか確認。"""
+        from app.models.driver_tree.driver_tree_formula import DriverTreeFormula
 
-        result = await self.db.execute(select(func.count(DriverTree.id)).where(DriverTree.category_id == category_id))
+        result = await self.db.execute(select(func.count(DriverTreeFormula.id)).where(DriverTreeFormula.category_id == category_id))
         return result.scalar_one() > 0
 
     async def get_with_formula_count(self, category_id: int) -> dict | None:
@@ -93,7 +97,7 @@ class DriverTreeCategoryRepository:
         self,
         skip: int = 0,
         limit: int = 100,
-    ) -> tuple[list[dict], int]:
+    ) -> tuple[builtins.list[dict[str, DriverTreeCategory | int]], int]:
         """関連数式数を含めてカテゴリ一覧を取得します。"""
         from app.models.driver_tree.driver_tree_formula import DriverTreeFormula
 
@@ -117,4 +121,5 @@ class DriverTreeCategoryRepository:
         result = await self.db.execute(stmt)
         rows = result.all()
 
-        return [{"category": row[0], "formula_count": row[1]} for row in rows], total
+        categories: list[dict[str, DriverTreeCategory | int]] = [{"category": row[0], "formula_count": row[1]} for row in rows]
+        return categories, total

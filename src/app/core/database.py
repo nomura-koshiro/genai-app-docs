@@ -54,6 +54,7 @@ Note:
     - トランザクション管理はサービス層またはリポジトリ層で行います
 """
 
+import contextlib
 from collections.abc import AsyncGenerator
 from urllib.parse import urlparse, urlunparse
 
@@ -249,6 +250,30 @@ async def init_db() -> None:
     logger.info("データベーステーブルを確認中（存在しない場合は作成）")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+
+@contextlib.asynccontextmanager
+async def get_async_session_context() -> AsyncGenerator[AsyncSession]:
+    """ミドルウェアや非DIコンテキストで使用するセッションコンテキストマネージャー。
+
+    FastAPIの依存性注入（Depends）が使用できない場面
+    （例: ミドルウェア、バックグラウンドタスク）で使用します。
+
+    Yields:
+        AsyncSession: データベースセッションインスタンス
+
+    Example:
+        >>> async with get_async_session_context() as session:
+        ...     result = await session.execute(select(User))
+        ...     users = result.scalars().all()
+        ...     await session.commit()
+    """
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
 
 
 async def close_db() -> None:

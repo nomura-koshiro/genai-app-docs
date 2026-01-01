@@ -2146,6 +2146,3183 @@
         }
       }
     },
+    "/api/v1/admin/activity-logs": {
+      "get": {
+        "tags": [
+          "system-admin-activity",
+          "Activity Logs"
+        ],
+        "summary": "操作履歴一覧取得",
+        "description": "操作履歴一覧を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - user_id: ユーザーIDで絞り込み\n        - action_type: 操作種別で絞り込み（CREATE/READ/UPDATE/DELETE/ERROR）\n        - resource_type: リソース種別で絞り込み（PROJECT/SESSION/TREE等）\n        - start_date: 開始日時\n        - end_date: 終了日時\n        - has_error: エラーのみ取得\n        - page: ページ番号（デフォルト: 1）\n        - limit: 取得件数（デフォルト: 50、最大: 100）\n\n    レスポンス:\n        - items: 操作履歴リスト\n        - total: 総件数\n        - page: 現在のページ\n        - limit: 取得件数\n        - total_pages: 総ページ数",
+        "operationId": "list_activity_logs_api_v1_admin_activity_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーIDで絞り込み",
+              "title": "User Id"
+            },
+            "description": "ユーザーIDで絞り込み"
+          },
+          {
+            "name": "action_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "操作種別で絞り込み",
+              "title": "Action Type"
+            },
+            "description": "操作種別で絞り込み"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "リソース種別で絞り込み",
+              "title": "Resource Type"
+            },
+            "description": "リソース種別で絞り込み"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "has_error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "エラーのみ取得",
+              "title": "Has Error"
+            },
+            "description": "エラーのみ取得"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/activity-logs/errors": {
+      "get": {
+        "tags": [
+          "system-admin-activity",
+          "Activity Logs"
+        ],
+        "summary": "エラー履歴取得",
+        "description": "エラー履歴のみを取得します。\n\n    **権限**: システム管理者",
+        "operationId": "list_error_logs_api_v1_admin_activity_logs_errors_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーIDで絞り込み",
+              "title": "User Id"
+            },
+            "description": "ユーザーIDで絞り込み"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/activity-logs/export": {
+      "get": {
+        "tags": [
+          "system-admin-activity",
+          "Activity Logs"
+        ],
+        "summary": "操作履歴エクスポート",
+        "description": "操作履歴をCSV形式でエクスポートします。\n\n    **権限**: システム管理者",
+        "operationId": "export_activity_logs_api_v1_admin_activity_logs_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーIDで絞り込み",
+              "title": "User Id"
+            },
+            "description": "ユーザーIDで絞り込み"
+          },
+          {
+            "name": "action_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "操作種別で絞り込み",
+              "title": "Action Type"
+            },
+            "description": "操作種別で絞り込み"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "has_error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "エラーのみ取得",
+              "title": "Has Error"
+            },
+            "description": "エラーのみ取得"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/activity-logs/{activity_id}": {
+      "get": {
+        "tags": [
+          "system-admin-activity",
+          "Activity Logs"
+        ],
+        "summary": "操作履歴詳細取得",
+        "description": "操作履歴の詳細を取得します。\n\n    **権限**: システム管理者",
+        "operationId": "get_activity_log_api_v1_admin_activity_logs__activity_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "activity_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Activity Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActivityLogDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "監査ログ一覧取得",
+        "description": "監査ログ一覧を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - event_type: イベント種別（DATA_CHANGE/ACCESS/SECURITY）\n        - user_id: ユーザーID\n        - resource_type: リソース種別\n        - resource_id: リソースID\n        - severity: 重要度（INFO/WARNING/CRITICAL）\n        - start_date: 開始日時\n        - end_date: 終了日時\n        - page: ページ番号\n        - limit: 取得件数",
+        "operationId": "list_audit_logs_api_v1_admin_audit_logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "イベント種別",
+              "title": "Event Type"
+            },
+            "description": "イベント種別"
+          },
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーID",
+              "title": "User Id"
+            },
+            "description": "ユーザーID"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "リソース種別",
+              "title": "Resource Type"
+            },
+            "description": "リソース種別"
+          },
+          {
+            "name": "resource_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "リソースID",
+              "title": "Resource Id"
+            },
+            "description": "リソースID"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "重要度",
+              "title": "Severity"
+            },
+            "description": "重要度"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/changes": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "データ変更履歴取得",
+        "description": "データ変更履歴を取得します（event_type=DATA_CHANGE）。\n\n    **権限**: システム管理者",
+        "operationId": "list_data_changes_api_v1_admin_audit_logs_changes_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーID",
+              "title": "User Id"
+            },
+            "description": "ユーザーID"
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "リソース種別",
+              "title": "Resource Type"
+            },
+            "description": "リソース種別"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/access": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "アクセスログ取得",
+        "description": "アクセスログを取得します（event_type=ACCESS）。\n\n    **権限**: システム管理者",
+        "operationId": "list_access_logs_api_v1_admin_audit_logs_access_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーID",
+              "title": "User Id"
+            },
+            "description": "ユーザーID"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/security": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "セキュリティイベント取得",
+        "description": "セキュリティイベントを取得します（event_type=SECURITY）。\n\n    **権限**: システム管理者",
+        "operationId": "list_security_events_api_v1_admin_audit_logs_security_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーID",
+              "title": "User Id"
+            },
+            "description": "ユーザーID"
+          },
+          {
+            "name": "severity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "重要度",
+              "title": "Severity"
+            },
+            "description": "重要度"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/resource/{resource_type}/{resource_id}": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "リソース変更履歴追跡",
+        "description": "特定リソースの変更履歴を追跡します。\n\n    **権限**: システム管理者",
+        "operationId": "get_resource_history_api_v1_admin_audit_logs_resource__resource_type___resource_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "resource_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Resource Type"
+            }
+          },
+          {
+            "name": "resource_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Resource Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditLogListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/audit-logs/export": {
+      "get": {
+        "tags": [
+          "system-admin-audit",
+          "Audit Logs"
+        ],
+        "summary": "監査ログエクスポート",
+        "description": "監査ログをエクスポートします（CSV/JSON）。\n\n    **権限**: システム管理者",
+        "operationId": "export_audit_logs_api_v1_admin_audit_logs_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "出力形式（csv/json）",
+              "default": "csv",
+              "title": "Format"
+            },
+            "description": "出力形式（csv/json）"
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "イベント種別",
+              "title": "Event Type"
+            },
+            "description": "イベント種別"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日時",
+              "title": "Start Date"
+            },
+            "description": "開始日時"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日時",
+              "title": "End Date"
+            },
+            "description": "終了日時"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings": {
+      "get": {
+        "tags": [
+          "system-admin-settings",
+          "System Settings"
+        ],
+        "summary": "全設定取得",
+        "description": "全システム設定を取得します。\n\n    **権限**: システム管理者\n\n    レスポンス:\n        - categories: カテゴリ別設定マップ\n            - GENERAL: 一般設定\n            - SECURITY: セキュリティ設定\n            - MAINTENANCE: メンテナンス設定",
+        "operationId": "get_all_settings_api_v1_admin_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingsByCategoryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/{category}": {
+      "get": {
+        "tags": [
+          "system-admin-settings",
+          "System Settings"
+        ],
+        "summary": "カテゴリ別設定取得",
+        "description": "カテゴリ別の設定を取得します。\n\n    **権限**: システム管理者\n\n    パスパラメータ:\n        - category: カテゴリ名（GENERAL/SECURITY/MAINTENANCE）",
+        "operationId": "get_settings_by_category_api_v1_admin_settings__category__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingCategoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings/{category}/{key}": {
+      "patch": {
+        "tags": [
+          "system-admin-settings",
+          "System Settings"
+        ],
+        "summary": "設定更新",
+        "description": "設定を更新します。\n\n    **権限**: システム管理者\n\n    パスパラメータ:\n        - category: カテゴリ名\n        - key: 設定キー",
+        "operationId": "update_setting_api_v1_admin_settings__category___key__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Category"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemSettingResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/settings/maintenance/enable": {
+      "post": {
+        "tags": [
+          "system-admin-settings",
+          "System Settings"
+        ],
+        "summary": "メンテナンスモード有効化",
+        "description": "メンテナンスモードを有効化します。\n\n    **権限**: システム管理者",
+        "operationId": "enable_maintenance_mode_api_v1_admin_settings_maintenance_enable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MaintenanceModeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceModeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/settings/maintenance/disable": {
+      "post": {
+        "tags": [
+          "system-admin-settings",
+          "System Settings"
+        ],
+        "summary": "メンテナンスモード無効化",
+        "description": "メンテナンスモードを無効化します。\n\n    **権限**: システム管理者",
+        "operationId": "disable_maintenance_mode_api_v1_admin_settings_maintenance_disable_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MaintenanceModeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/statistics/overview": {
+      "get": {
+        "tags": [
+          "system-admin-statistics",
+          "Statistics"
+        ],
+        "summary": "統計概要取得",
+        "description": "システム統計概要を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - period: 期間（day/week/month/year）\n        - start_date: 開始日\n        - end_date: 終了日",
+        "operationId": "get_statistics_overview_api_v1_admin_statistics_overview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "期間",
+              "default": "month",
+              "title": "Period"
+            },
+            "description": "期間"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "開始日",
+              "title": "Start Date"
+            },
+            "description": "開始日"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "終了日",
+              "title": "End Date"
+            },
+            "description": "終了日"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatisticsOverviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/statistics/users": {
+      "get": {
+        "tags": [
+          "system-admin-statistics",
+          "Statistics"
+        ],
+        "summary": "ユーザー統計取得",
+        "description": "ユーザー統計（アクティブユーザー推移）を取得します。\n\n    **権限**: システム管理者",
+        "operationId": "get_user_statistics_api_v1_admin_statistics_users_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "取得日数",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "取得日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserStatisticsDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/alerts": {
+      "get": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムアラート一覧取得",
+        "description": "システムアラート一覧を取得します。",
+        "operationId": "list_alerts_api_v1_admin_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムアラート作成",
+        "description": "システムアラートを作成します。",
+        "operationId": "create_alert_api_v1_admin_alerts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemAlertCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/alerts/{alert_id}": {
+      "patch": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムアラート更新",
+        "description": "システムアラートを更新します。",
+        "operationId": "update_alert_api_v1_admin_alerts__alert_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemAlertUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemAlertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムアラート削除",
+        "description": "システムアラートを削除します。",
+        "operationId": "delete_alert_api_v1_admin_alerts__alert_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notification-templates": {
+      "get": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "通知テンプレート一覧取得",
+        "description": "通知テンプレート一覧を取得します。",
+        "operationId": "list_templates_api_v1_admin_notification_templates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationTemplateListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/notification-templates/{template_id}": {
+      "patch": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "通知テンプレート更新",
+        "description": "通知テンプレートを更新します。",
+        "operationId": "update_template_api_v1_admin_notification_templates__template_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationTemplateUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/announcements": {
+      "get": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムお知らせ一覧取得",
+        "description": "システムお知らせ一覧を取得します。",
+        "operationId": "list_announcements_api_v1_admin_announcements_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "有効フラグ",
+              "title": "Is Active"
+            },
+            "description": "有効フラグ"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムお知らせ作成",
+        "description": "システムお知らせを作成します。",
+        "operationId": "create_announcement_api_v1_admin_announcements_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/announcements/{announcement_id}": {
+      "patch": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムお知らせ更新",
+        "description": "システムお知らせを更新します。",
+        "operationId": "update_announcement_api_v1_admin_announcements__announcement_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "system-admin-notifications",
+          "Notifications"
+        ],
+        "summary": "システムお知らせ削除",
+        "description": "システムお知らせを削除します。",
+        "operationId": "delete_announcement_api_v1_admin_announcements__announcement_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Announcement Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sessions": {
+      "get": {
+        "tags": [
+          "system-admin-security",
+          "Security"
+        ],
+        "summary": "アクティブセッション一覧取得",
+        "description": "アクティブセッション一覧を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - user_id: ユーザーID\n        - ip_address: IPアドレス\n        - skip: スキップ数\n        - limit: 取得件数",
+        "operationId": "list_sessions_api_v1_admin_sessions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ユーザーID",
+              "title": "User Id"
+            },
+            "description": "ユーザーID"
+          },
+          {
+            "name": "ip_address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "IPアドレス",
+              "title": "Ip Address"
+            },
+            "description": "IPアドレス"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sessions/user/{user_id}": {
+      "get": {
+        "tags": [
+          "system-admin-security",
+          "Security"
+        ],
+        "summary": "ユーザー別セッション取得",
+        "description": "特定ユーザーのセッション一覧を取得します。\n\n    **権限**: システム管理者",
+        "operationId": "get_user_sessions_api_v1_admin_sessions_user__user_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sessions/{session_id}/terminate": {
+      "post": {
+        "tags": [
+          "system-admin-security",
+          "Security"
+        ],
+        "summary": "セッション終了",
+        "description": "特定セッションを終了（強制ログアウト）します。\n\n    **権限**: システム管理者",
+        "operationId": "terminate_session_api_v1_admin_sessions__session_id__terminate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionTerminateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionTerminateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/sessions/user/{user_id}/terminate-all": {
+      "post": {
+        "tags": [
+          "system-admin-security",
+          "Security"
+        ],
+        "summary": "ユーザー全セッション終了",
+        "description": "特定ユーザーの全セッションを終了します。\n\n    **権限**: システム管理者",
+        "operationId": "terminate_all_user_sessions_api_v1_admin_sessions_user__user_id__terminate_all_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionTerminateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionTerminateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bulk/users/import": {
+      "post": {
+        "tags": [
+          "system-admin-bulk",
+          "Bulk Operations"
+        ],
+        "summary": "ユーザー一括インポート",
+        "description": "ユーザーをCSVファイルから一括インポートします。\n\n    **権限**: システム管理者\n\n    リクエスト:\n        - file: CSVファイル",
+        "operationId": "import_users_api_v1_admin_bulk_users_import_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_users_api_v1_admin_bulk_users_import_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkImportResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/bulk/users/export": {
+      "get": {
+        "tags": [
+          "system-admin-bulk",
+          "Bulk Operations"
+        ],
+        "summary": "ユーザー一括エクスポート",
+        "description": "ユーザー情報を一括エクスポートします。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - is_active: アクティブフィルタ",
+        "operationId": "export_users_api_v1_admin_bulk_users_export_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "is_active",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "アクティブフィルタ",
+              "title": "Is Active"
+            },
+            "description": "アクティブフィルタ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bulk/users/deactivate": {
+      "post": {
+        "tags": [
+          "system-admin-bulk",
+          "Bulk Operations"
+        ],
+        "summary": "非アクティブユーザー一括無効化",
+        "description": "非アクティブユーザーを一括無効化します。\n\n    **権限**: システム管理者",
+        "operationId": "deactivate_inactive_users_api_v1_admin_bulk_users_deactivate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inactive_days",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "非アクティブ日数",
+              "title": "Inactive Days"
+            },
+            "description": "非アクティブ日数"
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "プレビューのみ",
+              "default": false,
+              "title": "Dry Run"
+            },
+            "description": "プレビューのみ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkDeactivateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bulk/projects/archive": {
+      "post": {
+        "tags": [
+          "system-admin-bulk",
+          "Bulk Operations"
+        ],
+        "summary": "プロジェクト一括アーカイブ",
+        "description": "古いプロジェクトを一括アーカイブします。\n\n    **権限**: システム管理者",
+        "operationId": "archive_old_projects_api_v1_admin_bulk_projects_archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inactive_days",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "非アクティブ日数",
+              "title": "Inactive Days"
+            },
+            "description": "非アクティブ日数"
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "プレビューのみ",
+              "default": false,
+              "title": "Dry Run"
+            },
+            "description": "プレビューのみ"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkArchiveResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/data/cleanup/preview": {
+      "get": {
+        "tags": [
+          "system-admin-data",
+          "Data Management"
+        ],
+        "summary": "削除対象データプレビュー",
+        "description": "削除対象データのプレビューを取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - target_types: 対象種別（ACTIVITY_LOGS/AUDIT_LOGS/SESSION_LOGS）\n        - retention_days: 保持日数",
+        "operationId": "preview_cleanup_api_v1_admin_data_cleanup_preview_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "target_types",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "対象種別",
+              "title": "Target Types"
+            },
+            "description": "対象種別"
+          },
+          {
+            "name": "retention_days",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "保持日数",
+              "title": "Retention Days"
+            },
+            "description": "保持日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CleanupPreviewResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/data/cleanup/execute": {
+      "post": {
+        "tags": [
+          "system-admin-data",
+          "Data Management"
+        ],
+        "summary": "データ一括削除",
+        "description": "古いデータを一括削除します。\n\n    **権限**: システム管理者",
+        "operationId": "execute_cleanup_api_v1_admin_data_cleanup_execute_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "target_types",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "対象種別",
+              "title": "Target Types"
+            },
+            "description": "対象種別"
+          },
+          {
+            "name": "retention_days",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "保持日数",
+              "title": "Retention Days"
+            },
+            "description": "保持日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CleanupExecuteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/data/retention-policy": {
+      "get": {
+        "tags": [
+          "system-admin-data",
+          "Data Management"
+        ],
+        "summary": "保持ポリシー取得",
+        "description": "データ保持ポリシーを取得します。\n\n    **権限**: システム管理者",
+        "operationId": "get_retention_policy_api_v1_admin_data_retention_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicyResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "system-admin-data",
+          "Data Management"
+        ],
+        "summary": "保持ポリシー更新",
+        "description": "データ保持ポリシーを更新します。\n\n    **権限**: システム管理者",
+        "operationId": "update_retention_policy_api_v1_admin_data_retention_policy_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionPolicyUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionPolicyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/impersonate/{user_id}": {
+      "post": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "ユーザー代行操作開始",
+        "description": "ユーザー代行操作を開始します。\n\n    **権限**: システム管理者\n\n    注意: 代行操作中の全アクションは監査ログに記録されます。",
+        "operationId": "start_impersonation_api_v1_admin_impersonate__user_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpersonateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpersonateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/impersonate/end": {
+      "post": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "ユーザー代行操作終了",
+        "description": "ユーザー代行操作を終了します。\n\n    **権限**: システム管理者",
+        "operationId": "end_impersonation_api_v1_admin_impersonate_end_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpersonateEndRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpersonateEndResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/debug/enable": {
+      "post": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "デバッグモード有効化",
+        "description": "デバッグモードを有効化します。\n\n    **権限**: システム管理者\n\n    注意: デバッグモードは詳細なログ出力を有効にします。",
+        "operationId": "enable_debug_mode_api_v1_admin_debug_enable_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugModeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/debug/disable": {
+      "post": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "デバッグモード無効化",
+        "description": "デバッグモードを無効化します。\n\n    **権限**: システム管理者",
+        "operationId": "disable_debug_mode_api_v1_admin_debug_disable_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugModeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/health-check": {
+      "get": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "簡易ヘルスチェック",
+        "description": "簡易ヘルスチェックを実行します。\n\n    **権限**: システム管理者",
+        "operationId": "health_check_api_v1_admin_health_check_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/admin/health-check/detailed": {
+      "get": {
+        "tags": [
+          "system-admin-support",
+          "Support Tools"
+        ],
+        "summary": "詳細ヘルスチェック",
+        "description": "詳細ヘルスチェックを実行します。\n\n    **権限**: システム管理者\n\n    チェック項目:\n        - データベース接続\n        - キャッシュ接続\n        - ストレージ接続\n        - 外部API（Azure AD等）",
+        "operationId": "detailed_health_check_api_v1_admin_health_check_detailed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthCheckDetailResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/dashboard/stats": {
       "get": {
         "tags": [
@@ -3126,7 +6303,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_file_api_v1_project__project_id__file_post"
+                "$ref": "#/components/schemas/ProjectFileUploadRequest"
               }
             }
           }
@@ -3481,7 +6658,7 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_file_version_api_v1_project__project_id__file__file_id__version_post"
+                "$ref": "#/components/schemas/ProjectFileUploadRequest"
               }
             }
           }
@@ -5064,14 +8241,14 @@
         }
       }
     },
-    "/api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}/refresh": {
-      "post": {
+    "/api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}": {
+      "get": {
         "tags": [
           "driver-tree-file"
         ],
-        "summary": "シートデータ更新",
-        "description": "選択済みシートのデータを元ファイルから再読み込みして更新します。\n\n    ファイルの内容が更新された場合に、最新のデータを反映させるために使用します。\n    axis_config（カラム情報）も最新のデータから再構築されます。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - file_id: uuid - ファイルID（必須）\n        - sheet_id: uuid - シートID（必須）\n\n    レスポンス:\n        - DriverTreeSheetRefreshResponse: シートデータ更新レスポンス\n            - success (bool): 成功フラグ\n            - updated_at (datetime): 更新日時\n            - files (list): 更新後の選択済みシート一覧\n                - file_id (uuid): ファイルID\n                - filename (str): ファイル名\n                - uploaded_at (datetime): アップロード日時\n                - sheets (list): 選択済みシート一覧\n                    - sheet_id (uuid): シートID\n                    - sheet_name (str): シート名\n                    - columns (list): カラムリスト\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: ファイルまたはシートが見つからない",
-        "operationId": "refresh_sheet_api_v1_project__project_id__driver_tree_file__file_id__sheet__sheet_id__refresh_post",
+        "summary": "シート詳細取得",
+        "description": "シートのカラム情報とサンプルデータを取得します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - file_id: uuid - ファイルID（必須）\n        - sheet_id: uuid - シートID（必須）\n\n    レスポンス:\n        - SheetDetailResponse: シート詳細レスポンス\n            - sheet_id (uuid): シートID\n            - sheet_name (str): シート名\n            - columns (list[ColumnInfo]): カラム情報リスト\n                - name (str): カラム名（内部名）\n                - display_name (str): 表示名\n                - data_type (str): データ型（string/number/datetime/boolean）\n                - role (str | None): 役割（推移/値/カテゴリ等）\n            - row_count (int): 行数\n            - sample_data (list[dict]): サンプルデータ（最初の10行）\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: ファイルまたはシートが見つからない",
+        "operationId": "get_sheet_detail_api_v1_project__project_id__driver_tree_file__file_id__sheet__sheet_id__get",
         "security": [
           {
             "HTTPBearer": []
@@ -5115,7 +8292,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DriverTreeSheetRefreshResponse"
+                  "$ref": "#/components/schemas/SheetDetailResponse"
                 }
               }
             }
@@ -5131,9 +8308,7 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}": {
+      },
       "post": {
         "tags": [
           "driver-tree-file"
@@ -5252,6 +8427,75 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DriverTreeSheetDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}/refresh": {
+      "post": {
+        "tags": [
+          "driver-tree-file"
+        ],
+        "summary": "シートデータ更新",
+        "description": "選択済みシートのデータを元ファイルから再読み込みして更新します。\n\n    ファイルの内容が更新された場合に、最新のデータを反映させるために使用します。\n    axis_config（カラム情報）も最新のデータから再構築されます。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - file_id: uuid - ファイルID（必須）\n        - sheet_id: uuid - シートID（必須）\n\n    レスポンス:\n        - DriverTreeSheetRefreshResponse: シートデータ更新レスポンス\n            - success (bool): 成功フラグ\n            - updated_at (datetime): 更新日時\n            - files (list): 更新後の選択済みシート一覧\n                - file_id (uuid): ファイルID\n                - filename (str): ファイル名\n                - uploaded_at (datetime): アップロード日時\n                - sheets (list): 選択済みシート一覧\n                    - sheet_id (uuid): シートID\n                    - sheet_name (str): シート名\n                    - columns (list): カラムリスト\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: ファイルまたはシートが見つからない",
+        "operationId": "refresh_sheet_api_v1_project__project_id__driver_tree_file__file_id__sheet__sheet_id__refresh_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "File Id"
+            }
+          },
+          {
+            "name": "sheet_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Sheet Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverTreeSheetRefreshResponse"
                 }
               }
             }
@@ -5620,6 +8864,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DriverTreeDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{project_id}/driver-tree/tree/{tree_id}/policy": {
+      "get": {
+        "tags": [
+          "driver-tree"
+        ],
+        "summary": "ツリー施策一覧取得",
+        "description": "ツリーに紐づくすべてのノードの施策を一括で取得します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - tree_id: uuid - ツリーID（必須）\n\n    レスポンス:\n        - TreePoliciesResponse: ツリー施策一覧レスポンス\n            - tree_id (uuid): ツリーID\n            - policies (list[TreePolicyItem]): 施策一覧\n                - policy_id (uuid): 施策ID\n                - node_id (uuid): ノードID\n                - node_label (str): ノード名\n                - label (str): 施策名\n                - description (str | None): 説明\n                - impact_type (str): 影響タイプ（加算/減算/乗算/除算）\n                - impact_value (float): 影響値\n                - status (str): 施策状態（active/inactive）\n            - total_count (int): 施策総数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: ツリーが見つからない",
+        "operationId": "get_tree_policies_api_v1_project__project_id__driver_tree_tree__tree_id__policy_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "プロジェクトID",
+              "title": "Project Id"
+            },
+            "description": "プロジェクトID"
+          },
+          {
+            "name": "tree_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Tree Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TreePoliciesResponse"
                 }
               }
             }
@@ -6748,47 +10053,156 @@
   },
   "components": {
     "schemas": {
-      "ActivityLogResponse": {
+      "ActivityLogDetailResponse": {
         "properties": {
           "id": {
             "type": "string",
             "format": "uuid",
             "title": "Id",
-            "description": "アクティビティID"
+            "description": "操作履歴ID"
           },
           "userId": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Userid",
             "description": "ユーザーID"
           },
           "userName": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Username",
             "description": "ユーザー名"
           },
-          "action": {
+          "actionType": {
             "type": "string",
-            "title": "Action",
-            "description": "アクション（created/updated/deleted/accessed）"
+            "title": "Actiontype",
+            "description": "操作種別"
           },
           "resourceType": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Resourcetype",
-            "description": "リソースタイプ（project/session/tree/file）"
+            "description": "リソース種別"
           },
           "resourceId": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Resourceid",
             "description": "リソースID"
           },
-          "resourceName": {
+          "endpoint": {
             "type": "string",
-            "title": "Resourcename",
-            "description": "リソース名"
+            "title": "Endpoint",
+            "description": "APIエンドポイント"
           },
-          "details": {
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "description": "HTTPメソッド"
+          },
+          "responseStatus": {
+            "type": "integer",
+            "title": "Responsestatus",
+            "description": "HTTPステータス"
+          },
+          "errorMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errormessage",
+            "description": "エラーメッセージ"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode",
+            "description": "エラーコード"
+          },
+          "ipAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipaddress",
+            "description": "IPアドレス"
+          },
+          "userAgent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useragent",
+            "description": "ユーザーエージェント"
+          },
+          "durationMs": {
+            "type": "integer",
+            "title": "Durationms",
+            "description": "処理時間（ミリ秒）"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          },
+          "userEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useremail",
+            "description": "ユーザーメールアドレス"
+          },
+          "requestBody": {
             "anyOf": [
               {
                 "additionalProperties": true,
@@ -6798,29 +10212,64 @@
                 "type": "null"
               }
             ],
-            "title": "Details",
-            "description": "詳細情報"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Createdat",
-            "description": "作成日時"
+            "title": "Requestbody",
+            "description": "リクエストボディ"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "userId",
-          "userName",
-          "action",
-          "resourceType",
-          "resourceId",
-          "resourceName",
+          "actionType",
+          "endpoint",
+          "method",
+          "responseStatus",
+          "durationMs",
           "createdAt"
         ],
-        "title": "ActivityLogResponse",
-        "description": "アクティビティログレスポンス。\n\nAttributes:\n    id: アクティビティID\n    user_id: ユーザーID\n    user_name: ユーザー名\n    action: アクション（created/updated/deleted/accessed）\n    resource_type: リソースタイプ（project/session/tree/file）\n    resource_id: リソースID\n    resource_name: リソース名\n    details: 詳細情報\n    created_at: 作成日時"
+        "title": "ActivityLogDetailResponse",
+        "description": "操作履歴詳細レスポンススキーマ。\n\nActivityLogResponseに加え、リクエストボディとユーザー詳細情報を含む。"
+      },
+      "ActivityLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/app__schemas__admin__activity_log__ActivityLogResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "操作履歴リスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "ページ番号"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "取得件数"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages",
+            "description": "総ページ数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ],
+        "title": "ActivityLogListResponse",
+        "description": "操作履歴一覧レスポンススキーマ。\n\nAttributes:\n    items (list[ActivityLogResponse]): 操作履歴リスト\n    total (int): 総件数\n    page (int): ページ番号\n    limit (int): 取得件数\n    total_pages (int): 総ページ数"
       },
       "AllRolesResponse": {
         "properties": {
@@ -8309,6 +11758,17 @@
             ],
             "description": "入力ファイル情報（リレーション展開）"
           },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "検証カテゴリ情報（リレーション展開）"
+          },
           "customSystemPrompt": {
             "anyOf": [
               {
@@ -8501,6 +11961,17 @@
               }
             ],
             "description": "入力ファイル情報（リレーション展開）"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "検証カテゴリ情報（リレーション展開）"
           },
           "customSystemPrompt": {
             "anyOf": [
@@ -9202,6 +12673,585 @@
         "title": "AnalysisValidationUpdate",
         "description": "検証マスタ更新スキーマ。"
       },
+      "AnnouncementCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "タイトル"
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Content",
+            "description": "本文"
+          },
+          "announcementType": {
+            "type": "string",
+            "title": "Announcementtype",
+            "description": "種別（INFO/WARNING/MAINTENANCE）"
+          },
+          "priority": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Priority",
+            "description": "優先度（1が最高）",
+            "default": 5
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Startat",
+            "description": "表示開始日時"
+          },
+          "endAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endat",
+            "description": "表示終了日時"
+          },
+          "targetRoles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetroles",
+            "description": "対象ロール"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "content",
+          "announcementType",
+          "startAt"
+        ],
+        "title": "AnnouncementCreate",
+        "description": "お知らせ作成リクエストスキーマ。\n\nAttributes:\n    title (str): タイトル\n    content (str): 本文\n    announcement_type (str): 種別\n    priority (int): 優先度\n    start_at (datetime): 表示開始日時\n    end_at (datetime | None): 表示終了日時\n    target_roles (list | None): 対象ロール"
+      },
+      "AnnouncementListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnnouncementResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "お知らせリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "AnnouncementListResponse",
+        "description": "お知らせ一覧レスポンススキーマ。"
+      },
+      "AnnouncementResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "お知らせID"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title",
+            "description": "タイトル"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content",
+            "description": "本文"
+          },
+          "announcementType": {
+            "type": "string",
+            "title": "Announcementtype",
+            "description": "種別"
+          },
+          "priority": {
+            "type": "integer",
+            "title": "Priority",
+            "description": "優先度"
+          },
+          "startAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Startat",
+            "description": "表示開始日時"
+          },
+          "endAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endat",
+            "description": "表示終了日時"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive",
+            "description": "有効フラグ"
+          },
+          "targetRoles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetroles",
+            "description": "対象ロール"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Createdby",
+            "description": "作成者ID"
+          },
+          "createdByName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Createdbyname",
+            "description": "作成者名"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat",
+            "description": "更新日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "content",
+          "announcementType",
+          "priority",
+          "startAt",
+          "isActive",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "AnnouncementResponse",
+        "description": "お知らせレスポンススキーマ。\n\nAttributes:\n    id (UUID): お知らせID\n    title (str): タイトル\n    content (str): 本文\n    announcement_type (str): 種別\n    priority (int): 優先度\n    start_at (datetime): 表示開始日時\n    end_at (datetime | None): 表示終了日時\n    is_active (bool): 有効フラグ\n    target_roles (list | None): 対象ロール\n    created_by (UUID): 作成者ID\n    created_by_name (str | None): 作成者名\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時"
+      },
+      "AnnouncementUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title",
+            "description": "タイトル"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content",
+            "description": "本文"
+          },
+          "announcementType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Announcementtype",
+            "description": "種別"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority",
+            "description": "優先度"
+          },
+          "startAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startat",
+            "description": "表示開始日時"
+          },
+          "endAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endat",
+            "description": "表示終了日時"
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isactive",
+            "description": "有効フラグ"
+          },
+          "targetRoles": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetroles",
+            "description": "対象ロール"
+          }
+        },
+        "type": "object",
+        "title": "AnnouncementUpdate",
+        "description": "お知らせ更新リクエストスキーマ。"
+      },
+      "ApiStatistics": {
+        "properties": {
+          "requestsToday": {
+            "type": "integer",
+            "title": "Requeststoday",
+            "description": "本日のリクエスト数"
+          },
+          "averageResponseMs": {
+            "type": "number",
+            "title": "Averageresponsems",
+            "description": "平均レスポンス時間（ミリ秒）"
+          },
+          "errorRatePercentage": {
+            "type": "number",
+            "title": "Errorratepercentage",
+            "description": "エラー率（%）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requestsToday",
+          "averageResponseMs",
+          "errorRatePercentage"
+        ],
+        "title": "ApiStatistics",
+        "description": "API統計情報。"
+      },
+      "AuditLogListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditLogResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "監査ログリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "ページ番号"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "取得件数"
+          },
+          "totalPages": {
+            "type": "integer",
+            "title": "Totalpages",
+            "description": "総ページ数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "totalPages"
+        ],
+        "title": "AuditLogListResponse",
+        "description": "監査ログ一覧レスポンススキーマ。"
+      },
+      "AuditLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "監査ログID"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid",
+            "description": "ユーザーID"
+          },
+          "userName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "ユーザー名"
+          },
+          "userEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useremail",
+            "description": "ユーザーメール"
+          },
+          "eventType": {
+            "type": "string",
+            "title": "Eventtype",
+            "description": "イベント種別"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "アクション"
+          },
+          "resourceType": {
+            "type": "string",
+            "title": "Resourcetype",
+            "description": "リソース種別"
+          },
+          "resourceId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resourceid",
+            "description": "リソースID"
+          },
+          "oldValue": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldvalue",
+            "description": "変更前の値"
+          },
+          "newValue": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newvalue",
+            "description": "変更後の値"
+          },
+          "changedFields": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changedfields",
+            "description": "変更フィールド"
+          },
+          "ipAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipaddress",
+            "description": "IPアドレス"
+          },
+          "userAgent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useragent",
+            "description": "ユーザーエージェント"
+          },
+          "severity": {
+            "type": "string",
+            "title": "Severity",
+            "description": "重要度"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata",
+            "description": "メタデータ"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "eventType",
+          "action",
+          "resourceType",
+          "severity",
+          "createdAt"
+        ],
+        "title": "AuditLogResponse",
+        "description": "監査ログレスポンススキーマ。\n\nAttributes:\n    id (UUID): 監査ログID\n    user_id (UUID | None): ユーザーID\n    user_name (str | None): ユーザー名\n    user_email (str | None): ユーザーメール\n    event_type (str): イベント種別\n    action (str): アクション\n    resource_type (str): リソース種別\n    resource_id (UUID | None): リソースID\n    old_value (dict | None): 変更前の値\n    new_value (dict | None): 変更後の値\n    changed_fields (list | None): 変更フィールド\n    ip_address (str | None): IPアドレス\n    user_agent (str | None): ユーザーエージェント\n    severity (str): 重要度\n    metadata (dict | None): メタデータ\n    created_at (datetime): 作成日時"
+      },
+      "Body_import_users_api_v1_admin_bulk_users_import_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File",
+            "description": "CSVファイル"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_import_users_api_v1_admin_bulk_users_import_post"
+      },
       "Body_upload_file_api_v1_project__project_id__driver_tree_file_post": {
         "properties": {
           "file": {
@@ -9245,6 +13295,264 @@
           "file"
         ],
         "title": "Body_upload_file_version_api_v1_project__project_id__file__file_id__version_post"
+      },
+      "BulkArchivePreviewItem": {
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Projectid",
+            "description": "プロジェクトID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "プロジェクト名"
+          },
+          "lastUpdatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastupdatedat",
+            "description": "最終更新日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projectId",
+          "name"
+        ],
+        "title": "BulkArchivePreviewItem",
+        "description": "アーカイブプレビューアイテム。"
+      },
+      "BulkArchiveResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "archivedCount": {
+            "type": "integer",
+            "title": "Archivedcount",
+            "description": "アーカイブ件数"
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operationid",
+            "description": "操作ID"
+          },
+          "previewItems": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BulkArchivePreviewItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previewitems",
+            "description": "プレビューアイテム（dry_run時のみ）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "archivedCount",
+          "operationId"
+        ],
+        "title": "BulkArchiveResponse",
+        "description": "一括アーカイブレスポンス。"
+      },
+      "BulkDeactivatePreviewItem": {
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid",
+            "description": "ユーザーID"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "メールアドレス"
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname",
+            "description": "表示名"
+          },
+          "lastActivityAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastactivityat",
+            "description": "最終アクティビティ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "userId",
+          "email",
+          "displayName"
+        ],
+        "title": "BulkDeactivatePreviewItem",
+        "description": "無効化プレビューアイテム。"
+      },
+      "BulkDeactivateResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "deactivatedCount": {
+            "type": "integer",
+            "title": "Deactivatedcount",
+            "description": "無効化件数"
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operationid",
+            "description": "操作ID"
+          },
+          "previewItems": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/BulkDeactivatePreviewItem"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previewitems",
+            "description": "プレビューアイテム（dry_run時のみ）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "deactivatedCount",
+          "operationId"
+        ],
+        "title": "BulkDeactivateResponse",
+        "description": "一括無効化レスポンス。"
+      },
+      "BulkImportResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "importedCount": {
+            "type": "integer",
+            "title": "Importedcount",
+            "description": "インポート件数"
+          },
+          "errorCount": {
+            "type": "integer",
+            "title": "Errorcount",
+            "description": "エラー件数",
+            "default": 0
+          },
+          "operationId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operationid",
+            "description": "操作ID"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BulkImportResult"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "結果一覧"
+          },
+          "errors": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errors",
+            "description": "エラーメッセージ一覧"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "importedCount",
+          "operationId"
+        ],
+        "title": "BulkImportResponse",
+        "description": "一括インポートレスポンス。"
+      },
+      "BulkImportResult": {
+        "properties": {
+          "row": {
+            "type": "integer",
+            "title": "Row",
+            "description": "行番号"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "メールアドレス"
+          },
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "メッセージ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "row",
+          "email",
+          "success"
+        ],
+        "title": "BulkImportResult",
+        "description": "一括インポート結果（内部処理用）。"
       },
       "CategoryInfo-Input": {
         "properties": {
@@ -9379,6 +13687,280 @@
         "title": "ChartDataResponse",
         "description": "チャートデータレスポンス。\n\nAttributes:\n    chart_type: チャートタイプ（line/bar/pie/area）\n    title: チャートタイトル\n    data: データポイントリスト\n    x_axis_label: X軸ラベル\n    y_axis_label: Y軸ラベル"
       },
+      "CleanupExecuteResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/CleanupResultItem"
+            },
+            "type": "array",
+            "title": "Results",
+            "description": "結果"
+          },
+          "totalDeletedCount": {
+            "type": "integer",
+            "title": "Totaldeletedcount",
+            "description": "合計削除件数"
+          },
+          "totalFreedBytes": {
+            "type": "integer",
+            "title": "Totalfreedbytes",
+            "description": "合計解放サイズ"
+          },
+          "totalFreedDisplay": {
+            "type": "string",
+            "title": "Totalfreeddisplay",
+            "description": "合計解放サイズ（表示用）"
+          },
+          "executedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Executedat",
+            "description": "実行日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "results",
+          "totalDeletedCount",
+          "totalFreedBytes",
+          "totalFreedDisplay",
+          "executedAt"
+        ],
+        "title": "CleanupExecuteResponse",
+        "description": "クリーンアップ実行レスポンス。"
+      },
+      "CleanupPreviewItem": {
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "title": "Targettype",
+            "description": "対象種別"
+          },
+          "targetTypeDisplay": {
+            "type": "string",
+            "title": "Targettypedisplay",
+            "description": "対象種別（表示用）"
+          },
+          "recordCount": {
+            "type": "integer",
+            "title": "Recordcount",
+            "description": "レコード数"
+          },
+          "oldestRecordAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oldestrecordat",
+            "description": "最古レコード日時"
+          },
+          "newestRecordAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Newestrecordat",
+            "description": "最新レコード日時"
+          },
+          "estimatedSizeBytes": {
+            "type": "integer",
+            "title": "Estimatedsizebytes",
+            "description": "推定サイズ（バイト）"
+          },
+          "estimatedSizeDisplay": {
+            "type": "string",
+            "title": "Estimatedsizedisplay",
+            "description": "推定サイズ（表示用）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targetType",
+          "targetTypeDisplay",
+          "recordCount",
+          "estimatedSizeBytes",
+          "estimatedSizeDisplay"
+        ],
+        "title": "CleanupPreviewItem",
+        "description": "クリーンアッププレビューアイテム。"
+      },
+      "CleanupPreviewResponse": {
+        "properties": {
+          "preview": {
+            "items": {
+              "$ref": "#/components/schemas/CleanupPreviewItem"
+            },
+            "type": "array",
+            "title": "Preview",
+            "description": "プレビュー"
+          },
+          "totalRecordCount": {
+            "type": "integer",
+            "title": "Totalrecordcount",
+            "description": "合計レコード数"
+          },
+          "totalEstimatedSizeBytes": {
+            "type": "integer",
+            "title": "Totalestimatedsizebytes",
+            "description": "合計推定サイズ"
+          },
+          "totalEstimatedSizeDisplay": {
+            "type": "string",
+            "title": "Totalestimatedsizedisplay",
+            "description": "合計推定サイズ（表示用）"
+          },
+          "retentionDays": {
+            "type": "integer",
+            "title": "Retentiondays",
+            "description": "保持日数"
+          },
+          "cutoffDate": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Cutoffdate",
+            "description": "カットオフ日"
+          }
+        },
+        "type": "object",
+        "required": [
+          "preview",
+          "totalRecordCount",
+          "totalEstimatedSizeBytes",
+          "totalEstimatedSizeDisplay",
+          "retentionDays",
+          "cutoffDate"
+        ],
+        "title": "CleanupPreviewResponse",
+        "description": "クリーンアッププレビューレスポンス。"
+      },
+      "CleanupResultItem": {
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "title": "Targettype",
+            "description": "対象種別"
+          },
+          "deletedCount": {
+            "type": "integer",
+            "title": "Deletedcount",
+            "description": "削除件数"
+          },
+          "freedBytes": {
+            "type": "integer",
+            "title": "Freedbytes",
+            "description": "解放サイズ（バイト）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "targetType",
+          "deletedCount",
+          "freedBytes"
+        ],
+        "title": "CleanupResultItem",
+        "description": "クリーンアップ結果アイテム。"
+      },
+      "ColumnInfo": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "カラム名"
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname",
+            "description": "表示名"
+          },
+          "dataType": {
+            "type": "string",
+            "title": "Datatype",
+            "description": "データ型"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role",
+            "description": "役割"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "displayName",
+          "dataType"
+        ],
+        "title": "ColumnInfo",
+        "description": "カラム情報。\n\nAttributes:\n    name (str): カラム名（内部名）\n    display_name (str): 表示名\n    data_type (str): データ型（string/number/datetime/boolean）\n    role (str | None): 役割（推移/値/カテゴリ等）"
+      },
+      "ComponentHealth": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "コンポーネント名"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ステータス（healthy/unhealthy）"
+          },
+          "latencyMs": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latencyms",
+            "description": "レイテンシ（ミリ秒）"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error",
+            "description": "エラーメッセージ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status"
+        ],
+        "title": "ComponentHealth",
+        "description": "コンポーネントヘルス（サービス層用）。\n\nサービス層のヘルスチェック機能で使用される簡易コンポーネント状態。"
+      },
       "CreatorInfo": {
         "properties": {
           "id": {
@@ -9411,7 +13993,7 @@
         "properties": {
           "activities": {
             "items": {
-              "$ref": "#/components/schemas/ActivityLogResponse"
+              "$ref": "#/components/schemas/app__schemas__dashboard__dashboard__ActivityLogResponse"
             },
             "type": "array",
             "title": "Activities",
@@ -9520,6 +14102,58 @@
         "title": "DashboardStatsResponse",
         "description": "ダッシュボード統計レスポンス。\n\nAttributes:\n    projects: プロジェクト統計\n    sessions: セッション統計\n    trees: ツリー統計\n    users: ユーザー統計\n    files: ファイル統計\n    generated_at: 統計生成日時"
       },
+      "DebugModeResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "デバッグモード状態"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "メッセージ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "message"
+        ],
+        "title": "DebugModeResponse",
+        "description": "デバッグモードレスポンス。"
+      },
+      "DeviceInfo": {
+        "properties": {
+          "os": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Os",
+            "description": "OS"
+          },
+          "browser": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Browser",
+            "description": "ブラウザ"
+          }
+        },
+        "type": "object",
+        "title": "DeviceInfo",
+        "description": "デバイス情報。"
+      },
       "DriverTreeCalculatedDataResponse": {
         "properties": {
           "calculatedDataList": {
@@ -9622,6 +14256,12 @@
             "type": "string",
             "title": "Drivertype",
             "description": "ドライバー型"
+          },
+          "formulaCount": {
+            "type": "integer",
+            "title": "Formulacount",
+            "description": "関連数式数",
+            "default": 0
           },
           "createdAt": {
             "type": "string",
@@ -11380,6 +16020,154 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HealthCheckDetailResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "全体ステータス"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/ComponentHealth"
+            },
+            "type": "array",
+            "title": "Components",
+            "description": "コンポーネントリスト"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp",
+            "description": "チェック日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "components",
+          "timestamp"
+        ],
+        "title": "HealthCheckDetailResponse",
+        "description": "詳細ヘルスチェックレスポンス（サービス層用）。"
+      },
+      "HealthCheckResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "全体ステータス"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HealthCheckResponse",
+        "description": "簡易ヘルスチェックレスポンス（サービス層用）。"
+      },
+      "ImpersonateEndRequest": {
+        "properties": {
+          "token": {
+            "type": "string",
+            "title": "Token",
+            "description": "代行トークン"
+          }
+        },
+        "type": "object",
+        "required": [
+          "token"
+        ],
+        "title": "ImpersonateEndRequest",
+        "description": "ユーザー代行終了リクエストスキーマ。"
+      },
+      "ImpersonateEndResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "成功フラグ"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "メッセージ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "ImpersonateEndResponse",
+        "description": "ユーザー代行終了レスポンス。"
+      },
+      "ImpersonateRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "description": "代行理由"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ImpersonateRequest",
+        "description": "ユーザー代行開始リクエストスキーマ。"
+      },
+      "ImpersonateResponse": {
+        "properties": {
+          "impersonationToken": {
+            "type": "string",
+            "title": "Impersonationtoken",
+            "description": "代行トークン"
+          },
+          "targetUser": {
+            "$ref": "#/components/schemas/ImpersonateUserInfo",
+            "description": "対象ユーザー"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiresat",
+            "description": "有効期限"
+          }
+        },
+        "type": "object",
+        "required": [
+          "impersonationToken",
+          "targetUser",
+          "expiresAt"
+        ],
+        "title": "ImpersonateResponse",
+        "description": "ユーザー代行レスポンス。"
+      },
+      "ImpersonateUserInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ユーザーID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "ユーザー名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ImpersonateUserInfo",
+        "description": "代行対象ユーザー情報。"
+      },
       "IndustryInfo": {
         "properties": {
           "industryId": {
@@ -11452,6 +16240,237 @@
         ],
         "title": "IssueInfo",
         "description": "課題情報（リレーション展開用）。\n\nセッション一覧で課題名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): 課題ID\n    name (str): 課題名"
+      },
+      "MaintenanceModeRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "メンテナンスモード有効/無効"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "メンテナンスメッセージ"
+          },
+          "allowAdminAccess": {
+            "type": "boolean",
+            "title": "Allowadminaccess",
+            "description": "管理者アクセス許可",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "MaintenanceModeRequest",
+        "description": "メンテナンスモードリクエストスキーマ。"
+      },
+      "MaintenanceModeResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "メンテナンスモード状態"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message",
+            "description": "メンテナンスメッセージ"
+          },
+          "allowAdminAccess": {
+            "type": "boolean",
+            "title": "Allowadminaccess",
+            "description": "管理者アクセス許可",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "MaintenanceModeResponse",
+        "description": "メンテナンスモードレスポンススキーマ。"
+      },
+      "NotificationTemplateListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationTemplateResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "テンプレートリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "NotificationTemplateListResponse",
+        "description": "通知テンプレート一覧レスポンススキーマ。"
+      },
+      "NotificationTemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "テンプレートID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "テンプレート名"
+          },
+          "eventType": {
+            "type": "string",
+            "title": "Eventtype",
+            "description": "イベント種別"
+          },
+          "subject": {
+            "type": "string",
+            "title": "Subject",
+            "description": "件名テンプレート"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body",
+            "description": "本文テンプレート"
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Variables",
+            "description": "利用可能変数リスト"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive",
+            "description": "有効フラグ"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat",
+            "description": "更新日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "eventType",
+          "subject",
+          "body",
+          "variables",
+          "isActive",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "NotificationTemplateResponse",
+        "description": "通知テンプレートレスポンススキーマ。"
+      },
+      "NotificationTemplateUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "テンプレート名"
+          },
+          "subject": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject",
+            "description": "件名テンプレート"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body",
+            "description": "本文テンプレート"
+          },
+          "variables": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variables",
+            "description": "利用可能変数リスト"
+          },
+          "isActive": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isactive",
+            "description": "有効フラグ"
+          }
+        },
+        "type": "object",
+        "title": "NotificationTemplateUpdate",
+        "description": "通知テンプレート更新リクエストスキーマ。"
       },
       "ProjectCreate": {
         "properties": {
@@ -12488,6 +17507,33 @@
         "title": "ProjectRole",
         "description": "プロジェクトレベルのロール定義。\n\nAttributes:\n    PROJECT_MANAGER: プロジェクトマネージャー（最高権限）\n        - プロジェクト削除\n        - プロジェクト設定変更\n        - メンバー追加・削除・ロール変更（全ロール）\n        - ファイルのアップロード・ダウンロード・削除\n    PROJECT_MODERATOR: 権限管理者（メンバー管理担当）\n        - メンバー追加・削除\n        - ロール変更（VIEWER/MEMBER/PROJECT_MODERATORのみ）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    MEMBER: 一般メンバー（編集可能）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    VIEWER: 閲覧者（閲覧のみ）\n        - ファイルの閲覧・ダウンロードのみ"
       },
+      "ProjectStatistics": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総プロジェクト数"
+          },
+          "active": {
+            "type": "integer",
+            "title": "Active",
+            "description": "アクティブプロジェクト数"
+          },
+          "createdThisMonth": {
+            "type": "integer",
+            "title": "Createdthismonth",
+            "description": "今月の作成数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "active",
+          "createdThisMonth"
+        ],
+        "title": "ProjectStatistics",
+        "description": "プロジェクト統計情報。"
+      },
       "ProjectStats": {
         "properties": {
           "total": {
@@ -12631,6 +17677,98 @@
         "type": "object",
         "title": "ProjectUpdate",
         "description": "プロジェクト更新リクエストスキーマ。\n\nプロジェクト情報の更新時に使用します。\n\nAttributes:\n    name (str | None): プロジェクト名（オプション）\n    description (str | None): プロジェクト説明（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n    budget (Decimal | None): プロジェクト予算（オプション）\n\nExample:\n    >>> update = ProjectUpdate(\n    ...     name=\"Updated Project Name\",\n    ...     description=\"Updated description\",\n    ...     start_date=date(2024, 2, 1),\n    ...     end_date=date(2025, 1, 31),\n    ...     budget=Decimal(\"2000000.00\")\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - code は変更できません（一意識別子のため）"
+      },
+      "RetentionPolicyResponse": {
+        "properties": {
+          "activityLogsDays": {
+            "type": "integer",
+            "title": "Activitylogsdays",
+            "description": "操作履歴保持期間"
+          },
+          "auditLogsDays": {
+            "type": "integer",
+            "title": "Auditlogsdays",
+            "description": "監査ログ保持期間"
+          },
+          "deletedProjectsDays": {
+            "type": "integer",
+            "title": "Deletedprojectsdays",
+            "description": "削除プロジェクト保持期間"
+          },
+          "sessionLogsDays": {
+            "type": "integer",
+            "title": "Sessionlogsdays",
+            "description": "セッションログ保持期間"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activityLogsDays",
+          "auditLogsDays",
+          "deletedProjectsDays",
+          "sessionLogsDays"
+        ],
+        "title": "RetentionPolicyResponse",
+        "description": "保持ポリシーレスポンス。"
+      },
+      "RetentionPolicyUpdate": {
+        "properties": {
+          "activityLogsDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activitylogsdays",
+            "description": "操作履歴保持期間"
+          },
+          "auditLogsDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Auditlogsdays",
+            "description": "監査ログ保持期間"
+          },
+          "deletedProjectsDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deletedprojectsdays",
+            "description": "削除プロジェクト保持期間"
+          },
+          "sessionLogsDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessionlogsdays",
+            "description": "セッションログ保持期間"
+          }
+        },
+        "type": "object",
+        "title": "RetentionPolicyUpdate",
+        "description": "保持ポリシー更新リクエストスキーマ。"
       },
       "RoleChangeActionEnum": {
         "type": "string",
@@ -12831,6 +17969,139 @@
         "title": "RoleTypeEnum",
         "description": "ロール種別。\n\nAttributes:\n    SYSTEM: システムロール\n    PROJECT: プロジェクトロール"
       },
+      "SessionListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SessionResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "セッションリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/SessionStatistics",
+            "description": "統計情報"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "statistics"
+        ],
+        "title": "SessionListResponse",
+        "description": "セッション一覧レスポンススキーマ。"
+      },
+      "SessionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "セッションID"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUserInfo",
+            "description": "ユーザー情報"
+          },
+          "ipAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipaddress",
+            "description": "IPアドレス"
+          },
+          "userAgent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useragent",
+            "description": "ユーザーエージェント"
+          },
+          "deviceInfo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DeviceInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "デバイス情報"
+          },
+          "loginAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Loginat",
+            "description": "ログイン日時"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Lastactivityat",
+            "description": "最終アクティビティ日時"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expiresat",
+            "description": "有効期限"
+          },
+          "isActive": {
+            "type": "boolean",
+            "title": "Isactive",
+            "description": "アクティブフラグ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user",
+          "loginAt",
+          "lastActivityAt",
+          "expiresAt",
+          "isActive"
+        ],
+        "title": "SessionResponse",
+        "description": "セッションレスポンススキーマ。"
+      },
+      "SessionStatistics": {
+        "properties": {
+          "activeSessions": {
+            "type": "integer",
+            "title": "Activesessions",
+            "description": "アクティブセッション数"
+          },
+          "loginsToday": {
+            "type": "integer",
+            "title": "Loginstoday",
+            "description": "本日のログイン数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "activeSessions",
+          "loginsToday"
+        ],
+        "title": "SessionStatistics",
+        "description": "セッション統計情報。"
+      },
       "SessionStats": {
         "properties": {
           "total": {
@@ -12863,6 +18134,632 @@
         ],
         "title": "SessionStats",
         "description": "セッション統計。\n\nAttributes:\n    total: 総セッション数\n    draft: 下書きセッション数\n    active: アクティブセッション数\n    completed: 完了セッション数"
+      },
+      "SessionTerminateRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "終了理由",
+            "default": "FORCED"
+          }
+        },
+        "type": "object",
+        "title": "SessionTerminateRequest",
+        "description": "セッション終了リクエストスキーマ。"
+      },
+      "SessionTerminateResponse": {
+        "properties": {
+          "terminatedCount": {
+            "type": "integer",
+            "title": "Terminatedcount",
+            "description": "終了したセッション数"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "メッセージ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "terminatedCount",
+          "message"
+        ],
+        "title": "SessionTerminateResponse",
+        "description": "セッション終了レスポンススキーマ。"
+      },
+      "SessionUserInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ユーザーID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "ユーザー名"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "メールアドレス"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email"
+        ],
+        "title": "SessionUserInfo",
+        "description": "セッションのユーザー情報。"
+      },
+      "SettingCategoryResponse": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "description": "カテゴリ名"
+          },
+          "settings": {
+            "items": {
+              "$ref": "#/components/schemas/SystemSettingResponse"
+            },
+            "type": "array",
+            "title": "Settings",
+            "description": "設定リスト"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "settings"
+        ],
+        "title": "SettingCategoryResponse",
+        "description": "設定カテゴリレスポンススキーマ。"
+      },
+      "SettingUpdateRequest": {
+        "properties": {
+          "value": {
+            "title": "Value",
+            "description": "設定値"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "SettingUpdateRequest",
+        "description": "設定更新リクエストスキーマ。"
+      },
+      "SheetDetailResponse": {
+        "properties": {
+          "sheetId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sheetid",
+            "description": "シートID"
+          },
+          "sheetName": {
+            "type": "string",
+            "title": "Sheetname",
+            "description": "シート名"
+          },
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ColumnInfo"
+            },
+            "type": "array",
+            "title": "Columns",
+            "description": "カラム情報リスト"
+          },
+          "rowCount": {
+            "type": "integer",
+            "title": "Rowcount",
+            "description": "行数"
+          },
+          "sampleData": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sampledata",
+            "description": "サンプルデータ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sheetId",
+          "sheetName",
+          "rowCount"
+        ],
+        "title": "SheetDetailResponse",
+        "description": "シート詳細レスポンス。\n\nAttributes:\n    sheet_id (uuid.UUID): シートID\n    sheet_name (str): シート名\n    columns (list[ColumnInfo]): カラム情報リスト\n    row_count (int): 行数\n    sample_data (list[dict]): サンプルデータ（最初の10行）"
+      },
+      "StatisticsOverviewResponse": {
+        "properties": {
+          "users": {
+            "$ref": "#/components/schemas/UserStatistics",
+            "description": "ユーザー統計"
+          },
+          "projects": {
+            "$ref": "#/components/schemas/ProjectStatistics",
+            "description": "プロジェクト統計"
+          },
+          "storage": {
+            "$ref": "#/components/schemas/StorageStatistics",
+            "description": "ストレージ統計"
+          },
+          "api": {
+            "$ref": "#/components/schemas/ApiStatistics",
+            "description": "API統計"
+          }
+        },
+        "type": "object",
+        "required": [
+          "users",
+          "projects",
+          "storage",
+          "api"
+        ],
+        "title": "StatisticsOverviewResponse",
+        "description": "統計概要レスポンススキーマ。\n\nAttributes:\n    users (UserStatistics): ユーザー統計\n    projects (ProjectStatistics): プロジェクト統計\n    storage (StorageStatistics): ストレージ統計\n    api (ApiStatistics): API統計"
+      },
+      "StorageStatistics": {
+        "properties": {
+          "totalBytes": {
+            "type": "integer",
+            "title": "Totalbytes",
+            "description": "総使用量（バイト）"
+          },
+          "totalDisplay": {
+            "type": "string",
+            "title": "Totaldisplay",
+            "description": "総使用量（表示用）"
+          },
+          "usedPercentage": {
+            "type": "number",
+            "title": "Usedpercentage",
+            "description": "使用率（%）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalBytes",
+          "totalDisplay",
+          "usedPercentage"
+        ],
+        "title": "StorageStatistics",
+        "description": "ストレージ統計情報。"
+      },
+      "SystemAlertCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "アラート名"
+          },
+          "conditionType": {
+            "type": "string",
+            "title": "Conditiontype",
+            "description": "条件種別"
+          },
+          "threshold": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Threshold",
+            "description": "閾値設定"
+          },
+          "comparisonOperator": {
+            "type": "string",
+            "title": "Comparisonoperator",
+            "description": "比較演算子"
+          },
+          "notificationChannels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notificationchannels",
+            "description": "通知先"
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "title": "Isenabled",
+            "description": "有効フラグ",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "conditionType",
+          "threshold",
+          "comparisonOperator",
+          "notificationChannels"
+        ],
+        "title": "SystemAlertCreate",
+        "description": "システムアラート作成リクエストスキーマ。"
+      },
+      "SystemAlertListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SystemAlertResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "アラートリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "SystemAlertListResponse",
+        "description": "システムアラート一覧レスポンススキーマ。"
+      },
+      "SystemAlertResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "アラートID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "アラート名"
+          },
+          "conditionType": {
+            "type": "string",
+            "title": "Conditiontype",
+            "description": "条件種別"
+          },
+          "threshold": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Threshold",
+            "description": "閾値設定"
+          },
+          "comparisonOperator": {
+            "type": "string",
+            "title": "Comparisonoperator",
+            "description": "比較演算子"
+          },
+          "notificationChannels": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notificationchannels",
+            "description": "通知先"
+          },
+          "isEnabled": {
+            "type": "boolean",
+            "title": "Isenabled",
+            "description": "有効フラグ"
+          },
+          "lastTriggeredAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lasttriggeredat",
+            "description": "最終発火日時"
+          },
+          "triggerCount": {
+            "type": "integer",
+            "title": "Triggercount",
+            "description": "発火回数"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Createdby",
+            "description": "作成者ID"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat",
+            "description": "更新日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "conditionType",
+          "threshold",
+          "comparisonOperator",
+          "notificationChannels",
+          "isEnabled",
+          "triggerCount",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "SystemAlertResponse",
+        "description": "システムアラートレスポンススキーマ。"
+      },
+      "SystemAlertUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "アラート名"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Threshold",
+            "description": "閾値設定"
+          },
+          "comparisonOperator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comparisonoperator",
+            "description": "比較演算子"
+          },
+          "notificationChannels": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notificationchannels",
+            "description": "通知先"
+          },
+          "isEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isenabled",
+            "description": "有効フラグ"
+          }
+        },
+        "type": "object",
+        "title": "SystemAlertUpdate",
+        "description": "システムアラート更新リクエストスキーマ。"
+      },
+      "SystemSettingResponse": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key",
+            "description": "設定キー"
+          },
+          "value": {
+            "title": "Value",
+            "description": "設定値"
+          },
+          "valueType": {
+            "type": "string",
+            "title": "Valuetype",
+            "description": "値の型"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "説明"
+          },
+          "isEditable": {
+            "type": "boolean",
+            "title": "Iseditable",
+            "description": "編集可能フラグ"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "valueType",
+          "isEditable"
+        ],
+        "title": "SystemSettingResponse",
+        "description": "システム設定レスポンススキーマ。\n\nAttributes:\n    key (str): 設定キー\n    value (Any): 設定値\n    value_type (str): 値の型\n    description (str | None): 説明\n    is_editable (bool): 編集可能フラグ"
+      },
+      "SystemSettingsByCategoryResponse": {
+        "properties": {
+          "categories": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/SystemSettingResponse"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Categories",
+            "description": "カテゴリ別設定"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories"
+        ],
+        "title": "SystemSettingsByCategoryResponse",
+        "description": "カテゴリ別システム設定レスポンススキーマ。"
+      },
+      "TimeSeriesDataPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date",
+            "description": "日付"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "値"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value"
+        ],
+        "title": "TimeSeriesDataPoint",
+        "description": "時系列データポイント。"
+      },
+      "TreePoliciesResponse": {
+        "properties": {
+          "treeId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Treeid",
+            "description": "ツリーID"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/TreePolicyItem"
+            },
+            "type": "array",
+            "title": "Policies",
+            "description": "施策一覧"
+          },
+          "totalCount": {
+            "type": "integer",
+            "title": "Totalcount",
+            "description": "施策総数",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "treeId"
+        ],
+        "title": "TreePoliciesResponse",
+        "description": "ツリー施策一覧レスポンス。\n\nResponse:\n    - tree_id (uuid.UUID): ツリーID\n    - policies (list[TreePolicyItem]): 施策一覧\n    - total_count (int): 施策総数"
+      },
+      "TreePolicyItem": {
+        "properties": {
+          "policyId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Policyid",
+            "description": "施策ID"
+          },
+          "nodeId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Nodeid",
+            "description": "ノードID"
+          },
+          "nodeLabel": {
+            "type": "string",
+            "title": "Nodelabel",
+            "description": "ノード名"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "施策名"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "説明"
+          },
+          "impactType": {
+            "type": "string",
+            "title": "Impacttype",
+            "description": "影響タイプ"
+          },
+          "impactValue": {
+            "type": "number",
+            "title": "Impactvalue",
+            "description": "影響値"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "施策状態",
+            "default": "active"
+          }
+        },
+        "type": "object",
+        "required": [
+          "policyId",
+          "nodeId",
+          "nodeLabel",
+          "label",
+          "impactType",
+          "impactValue"
+        ],
+        "title": "TreePolicyItem",
+        "description": "ツリー施策アイテム。\n\nAttributes:\n    policy_id (uuid.UUID): 施策ID\n    node_id (uuid.UUID): ノードID\n    node_label (str): ノード名\n    label (str): 施策名\n    description (str | None): 説明\n    impact_type (str): 影響タイプ（加算/減算/乗算/除算）\n    impact_value (float): 影響値\n    status (str): 施策状態（active/inactive）"
       },
       "TreeStats": {
         "properties": {
@@ -13122,6 +19019,66 @@
         "title": "UserRoleResponse",
         "description": "ユーザーのプロジェクトロールレスポンススキーマ。\n\n現在のユーザーのロール情報を返す際に使用します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    user_id (uuid.UUID): ユーザーID\n    role (ProjectRole): プロジェクトロール\n    is_owner (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n    is_admin (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n\nExample:\n    >>> role_info = UserRoleResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.PROJECT_MANAGER,\n    ...     is_owner=True,\n    ...     is_admin=True\n    ... )\n\nNote:\n    - 権限チェックに使用されます\n    - is_owner: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）\n    - is_admin: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）"
       },
+      "UserStatistics": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総ユーザー数"
+          },
+          "activeToday": {
+            "type": "integer",
+            "title": "Activetoday",
+            "description": "本日のアクティブユーザー数"
+          },
+          "newThisMonth": {
+            "type": "integer",
+            "title": "Newthismonth",
+            "description": "今月の新規ユーザー数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "activeToday",
+          "newThisMonth"
+        ],
+        "title": "UserStatistics",
+        "description": "ユーザー統計情報。"
+      },
+      "UserStatisticsDetailResponse": {
+        "properties": {
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総ユーザー数"
+          },
+          "activeUsers": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            },
+            "type": "array",
+            "title": "Activeusers",
+            "description": "アクティブユーザー推移"
+          },
+          "newUsers": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            },
+            "type": "array",
+            "title": "Newusers",
+            "description": "新規ユーザー推移"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "activeUsers",
+          "newUsers"
+        ],
+        "title": "UserStatisticsDetailResponse",
+        "description": "ユーザー統計詳細レスポンススキーマ。"
+      },
       "UserStats": {
         "properties": {
           "total": {
@@ -13176,6 +19133,179 @@
         ],
         "title": "ValidationError"
       },
+      "ValidationInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "検証カテゴリID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "検証カテゴリ名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ValidationInfo",
+        "description": "検証カテゴリ情報（リレーション展開用）。\n\nセッション詳細で検証カテゴリ名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): 検証カテゴリID\n    name (str): 検証カテゴリ名"
+      },
+      "app__schemas__admin__activity_log__ActivityLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "操作履歴ID"
+          },
+          "userId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userid",
+            "description": "ユーザーID"
+          },
+          "userName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "ユーザー名"
+          },
+          "actionType": {
+            "type": "string",
+            "title": "Actiontype",
+            "description": "操作種別"
+          },
+          "resourceType": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resourcetype",
+            "description": "リソース種別"
+          },
+          "resourceId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resourceid",
+            "description": "リソースID"
+          },
+          "endpoint": {
+            "type": "string",
+            "title": "Endpoint",
+            "description": "APIエンドポイント"
+          },
+          "method": {
+            "type": "string",
+            "title": "Method",
+            "description": "HTTPメソッド"
+          },
+          "responseStatus": {
+            "type": "integer",
+            "title": "Responsestatus",
+            "description": "HTTPステータス"
+          },
+          "errorMessage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errormessage",
+            "description": "エラーメッセージ"
+          },
+          "errorCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Errorcode",
+            "description": "エラーコード"
+          },
+          "ipAddress": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ipaddress",
+            "description": "IPアドレス"
+          },
+          "userAgent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Useragent",
+            "description": "ユーザーエージェント"
+          },
+          "durationMs": {
+            "type": "integer",
+            "title": "Durationms",
+            "description": "処理時間（ミリ秒）"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actionType",
+          "endpoint",
+          "method",
+          "responseStatus",
+          "durationMs",
+          "createdAt"
+        ],
+        "title": "ActivityLogResponse",
+        "description": "操作履歴レスポンススキーマ。\n\nAttributes:\n    id (UUID): 操作履歴ID\n    user_id (UUID | None): ユーザーID\n    user_name (str | None): ユーザー名\n    action_type (str): 操作種別\n    resource_type (str | None): リソース種別\n    resource_id (UUID | None): リソースID\n    endpoint (str): APIエンドポイント\n    method (str): HTTPメソッド\n    response_status (int): HTTPステータス\n    error_message (str | None): エラーメッセージ\n    error_code (str | None): エラーコード\n    ip_address (str | None): IPアドレス\n    user_agent (str | None): ユーザーエージェント\n    duration_ms (int): 処理時間\n    created_at (datetime): 作成日時"
+      },
       "app__schemas__admin__category__DriverTreeCategoryListResponse": {
         "properties": {
           "categories": {
@@ -13211,6 +19341,80 @@
         ],
         "title": "DriverTreeCategoryListResponse",
         "description": "カテゴリ一覧レスポンススキーマ。"
+      },
+      "app__schemas__dashboard__dashboard__ActivityLogResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "アクティビティID"
+          },
+          "userId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Userid",
+            "description": "ユーザーID"
+          },
+          "userName": {
+            "type": "string",
+            "title": "Username",
+            "description": "ユーザー名"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "アクション（created/updated/deleted/accessed）"
+          },
+          "resourceType": {
+            "type": "string",
+            "title": "Resourcetype",
+            "description": "リソースタイプ（project/session/tree/file）"
+          },
+          "resourceId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Resourceid",
+            "description": "リソースID"
+          },
+          "resourceName": {
+            "type": "string",
+            "title": "Resourcename",
+            "description": "リソース名"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details",
+            "description": "詳細情報"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "userId",
+          "userName",
+          "action",
+          "resourceType",
+          "resourceId",
+          "resourceName",
+          "createdAt"
+        ],
+        "title": "ActivityLogResponse",
+        "description": "アクティビティログレスポンス。\n\nAttributes:\n    id: アクティビティID\n    user_id: ユーザーID\n    user_name: ユーザー名\n    action: アクション（created/updated/deleted/accessed）\n    resource_type: リソースタイプ（project/session/tree/file）\n    resource_id: リソースID\n    resource_name: リソース名\n    details: 詳細情報\n    created_at: 作成日時"
       },
       "app__schemas__driver_tree__driver_tree__DriverTreeCategoryListResponse": {
         "properties": {

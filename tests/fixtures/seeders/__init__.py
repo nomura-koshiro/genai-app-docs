@@ -6,9 +6,15 @@ from .analysis_session import AnalysisSessionSeederMixin
 from .base import TestDataSet
 from .driver_tree import DriverTreeSeederMixin
 from .project_file import ProjectFileSeederMixin
+from .system_setting import SystemSettingSeederMixin
 
 
-class TestDataSeeder(AnalysisSessionSeederMixin, DriverTreeSeederMixin, ProjectFileSeederMixin):
+class TestDataSeeder(
+    AnalysisSessionSeederMixin,
+    DriverTreeSeederMixin,
+    ProjectFileSeederMixin,
+    SystemSettingSeederMixin,
+):
     """テストデータの統合シーダークラス。"""
 
     def __init__(self, db: AsyncSession):

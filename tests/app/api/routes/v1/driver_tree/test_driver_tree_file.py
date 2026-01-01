@@ -822,9 +822,7 @@ async def test_get_sheet_detail_success(
     # Act
     # 注: このエンドポイントは実装されていない可能性があります
     # 実装されている場合は以下のようなパスになる想定
-    response = await client.get(
-        f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail"
-    )
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
 
     # Assert
     if response.status_code == 200:
@@ -851,7 +849,7 @@ async def test_get_sheet_detail_success(
             assert "dataType" in column
             # role はオプションなので、存在チェックのみ
             if "role" in column:
-                assert isinstance(column["role"], (str, type(None)))
+                assert isinstance(column["role"], str | None)
 
         # サンプルデータの検証（最初の10行程度）
         if result["rowCount"] > 0:
@@ -876,9 +874,7 @@ async def test_get_sheet_detail_not_found(
     sheet_id = uuid.uuid4()
 
     # Act
-    response = await client.get(
-        f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail"
-    )
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
 
     # Assert
     if response.status_code == 404:
@@ -915,9 +911,7 @@ async def test_sheet_detail_column_info_types(
         sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
 
     # Act
-    response = await client.get(
-        f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail"
-    )
+    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
 
     # Assert
     if response.status_code == 200:

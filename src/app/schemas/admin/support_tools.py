@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -20,6 +19,12 @@ class ImpersonateRequest(BaseCamelCaseModel):
     """ユーザー代行開始リクエストスキーマ。"""
 
     reason: str = Field(..., min_length=1, max_length=500, description="代行理由")
+
+
+class ImpersonateEndRequest(BaseCamelCaseModel):
+    """ユーザー代行終了リクエストスキーマ。"""
+
+    token: str = Field(..., description="代行トークン")
 
 
 # ================================================================================
@@ -54,3 +59,27 @@ class DebugModeResponse(BaseCamelCaseModel):
 
     enabled: bool = Field(..., description="デバッグモード状態")
     message: str = Field(..., description="メッセージ")
+
+
+class ComponentStatus(BaseCamelCaseModel):
+    """コンポーネント状態。"""
+
+    name: str = Field(..., description="コンポーネント名")
+    status: str = Field(..., description="状態")
+    latency_ms: float | None = Field(default=None, description="レイテンシ（ミリ秒）")
+    message: str | None = Field(default=None, description="メッセージ")
+
+
+class HealthCheckResponse(BaseCamelCaseModel):
+    """ヘルスチェックレスポンス。"""
+
+    status: str = Field(..., description="全体の状態")
+    timestamp: datetime = Field(..., description="チェック日時")
+
+
+class DetailedHealthCheckResponse(HealthCheckResponse):
+    """詳細ヘルスチェックレスポンス。"""
+
+    components: list[ComponentStatus] = Field(..., description="コンポーネント状態リスト")
+    uptime_seconds: float = Field(..., description="アップタイム（秒）")
+    version: str = Field(..., description="アプリケーションバージョン")

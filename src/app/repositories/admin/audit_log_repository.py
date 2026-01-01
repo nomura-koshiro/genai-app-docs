@@ -5,8 +5,10 @@
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import and_, delete, func, select
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -41,11 +43,7 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         Returns:
             AuditLog | None: 監査ログ（ユーザー情報付き）
         """
-        query = (
-            select(AuditLog)
-            .options(selectinload(AuditLog.user))
-            .where(AuditLog.id == id)
-        )
+        query = select(AuditLog).options(selectinload(AuditLog.user)).where(AuditLog.id == id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -220,6 +218,6 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
             int: 削除件数
         """
         query = delete(AuditLog).where(AuditLog.created_at < before_date)
-        result = await self.db.execute(query)
+        result: CursorResult[Any] = await self.db.execute(query)  # type: ignore[assignment]
         await self.db.flush()
-        return result.rowcount
+        return result.rowcount or 0

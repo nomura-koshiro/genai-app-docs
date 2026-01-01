@@ -17,8 +17,10 @@ from app.core.logging import get_logger
 from app.models.user_account.role_history import RoleHistory
 from app.repositories.user_account.role_history import RoleHistoryRepository
 from app.schemas.user_account.role_history import (
+    RoleChangeActionEnum,
     RoleHistoryListResponse,
     RoleHistoryResponse,
+    RoleTypeEnum,
 )
 
 logger = get_logger(__name__)
@@ -246,8 +248,8 @@ class RoleHistoryService:
             user_id=history.user_id,
             changed_by_id=history.changed_by_id,
             changed_by_name=history.changed_by.display_name if history.changed_by else None,
-            action=history.action,
-            role_type=history.role_type,
+            action=RoleChangeActionEnum(history.action),
+            role_type=RoleTypeEnum(history.role_type),
             project_id=history.project_id,
             project_name=history.project.name if history.project else None,
             old_roles=history.old_roles,

@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, Index, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -62,6 +62,7 @@ class UserSession(Base):
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="CASCADE"),
         nullable=False,
         comment="ユーザーID（FK: user_account）",
     )
@@ -142,7 +143,4 @@ class UserSession(Base):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<UserSession(id={self.id}, user_id={self.user_id}, "
-            f"is_active={self.is_active})>"
-        )
+        return f"<UserSession(id={self.id}, user_id={self.user_id}, is_active={self.is_active})>"

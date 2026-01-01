@@ -268,15 +268,9 @@ class SystemSettingService:
         Returns:
             MaintenanceModeResponse: メンテナンスモード状態
         """
-        enabled = await self.repository.get_value(
-            "MAINTENANCE", "maintenance_mode", default=False
-        )
-        message = await self.repository.get_value(
-            "MAINTENANCE", "maintenance_message", default=None
-        )
-        allow_admin = await self.repository.get_value(
-            "MAINTENANCE", "allow_admin_access", default=True
-        )
+        enabled = await self.repository.get_value("MAINTENANCE", "maintenance_mode", default=False)
+        message = await self.repository.get_value("MAINTENANCE", "maintenance_message", default=None)
+        allow_admin = await self.repository.get_value("MAINTENANCE", "allow_admin_access", default=True)
 
         return MaintenanceModeResponse(
             enabled=enabled,
@@ -289,11 +283,11 @@ class SystemSettingService:
         if value_type == "NUMBER":
             try:
                 return float(value) if "." in str(value) else int(value)
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as err:
                 raise ValidationError(
                     "数値形式が不正です",
                     details={"value": value},
-                )
+                ) from err
         elif value_type == "BOOLEAN":
             if isinstance(value, bool):
                 return value
@@ -306,7 +300,7 @@ class SystemSettingService:
                 details={"value": value},
             )
         elif value_type == "JSON":
-            if isinstance(value, (dict, list)):
+            if isinstance(value, dict | list):
                 return value
             raise ValidationError(
                 "JSON形式が不正です",

@@ -94,9 +94,7 @@ class AnalysisSnapshotRepository(BaseRepository[AnalysisSnapshot, uuid.UUID]):
         Returns:
             int: 最大順序（存在しない場合は-1）
         """
-        result = await self.db.execute(
-            select(func.max(AnalysisSnapshot.snapshot_order)).where(AnalysisSnapshot.session_id == session_id)
-        )
+        result = await self.db.execute(select(func.max(AnalysisSnapshot.snapshot_order)).where(AnalysisSnapshot.session_id == session_id))
         max_order = result.scalar_one()
         return max_order if max_order is not None else -1
 

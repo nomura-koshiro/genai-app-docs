@@ -12,7 +12,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel
 
-
 # ================================================================================
 # Enum定義
 # ================================================================================
@@ -54,12 +53,8 @@ class DatabaseHealth(BaseCamelCaseModel):
     connection_usage_percent: float = Field(..., description="接続使用率（%）")
     database_size_bytes: int = Field(..., description="データベースサイズ（バイト）")
     database_size_display: str = Field(..., description="データベースサイズ（表示用）")
-    oldest_transaction_age_seconds: int | None = Field(
-        default=None, description="最古トランザクション経過時間（秒）"
-    )
-    replication_lag_seconds: float | None = Field(
-        default=None, description="レプリケーション遅延（秒）"
-    )
+    oldest_transaction_age_seconds: int | None = Field(default=None, description="最古トランザクション経過時間（秒）")
+    replication_lag_seconds: float | None = Field(default=None, description="レプリケーション遅延（秒）")
 
 
 class CacheHealth(BaseCamelCaseModel):
@@ -103,15 +98,9 @@ class SystemResourceHealth(BaseCamelCaseModel):
     memory_used_bytes: int = Field(..., description="使用メモリ（バイト）")
     memory_total_bytes: int = Field(..., description="総メモリ（バイト）")
     disk_usage_percent: float = Field(..., description="ディスク使用率（%）")
-    load_average_1m: float | None = Field(
-        default=None, description="ロードアベレージ（1分）"
-    )
-    load_average_5m: float | None = Field(
-        default=None, description="ロードアベレージ（5分）"
-    )
-    load_average_15m: float | None = Field(
-        default=None, description="ロードアベレージ（15分）"
-    )
+    load_average_1m: float | None = Field(default=None, description="ロードアベレージ（1分）")
+    load_average_5m: float | None = Field(default=None, description="ロードアベレージ（5分）")
+    load_average_15m: float | None = Field(default=None, description="ロードアベレージ（15分）")
     uptime_seconds: int = Field(..., description="稼働時間（秒）")
     uptime_display: str = Field(..., description="稼働時間（表示用）")
 
@@ -120,9 +109,7 @@ class ApplicationHealth(BaseCamelCaseModel):
     """アプリケーションヘルス情報。"""
 
     version: str = Field(..., description="アプリケーションバージョン")
-    environment: str = Field(
-        ..., description="実行環境（development/staging/production）"
-    )
+    environment: str = Field(..., description="実行環境（development/staging/production）")
     active_workers: int = Field(..., description="アクティブワーカー数")
     pending_tasks: int = Field(..., description="待機中タスク数")
     error_rate_percent: float = Field(..., description="直近1時間のエラー率（%）")
@@ -151,14 +138,10 @@ class HealthCheckDetailedResponse(BaseCamelCaseModel):
     cache: CacheHealth | None = Field(default=None, description="キャッシュヘルス")
     storage: StorageHealth = Field(..., description="ストレージヘルス")
     external_apis: ExternalApiHealth = Field(..., description="外部APIヘルス")
-    system_resources: SystemResourceHealth = Field(
-        ..., description="システムリソースヘルス"
-    )
+    system_resources: SystemResourceHealth = Field(..., description="システムリソースヘルス")
     application: ApplicationHealth = Field(..., description="アプリケーションヘルス")
 
-    checks: dict[str, HealthCheckItem] = Field(
-        default_factory=dict, description="個別チェック結果"
-    )
+    checks: dict[str, HealthCheckItem] = Field(default_factory=dict, description="個別チェック結果")
 
 
 class HealthCheckHistoryItem(BaseCamelCaseModel):
@@ -167,9 +150,7 @@ class HealthCheckHistoryItem(BaseCamelCaseModel):
     timestamp: datetime = Field(..., description="チェック日時")
     status: HealthStatus = Field(..., description="ステータス")
     response_time_ms: int = Field(..., description="レスポンス時間")
-    failed_components: list[str] = Field(
-        default_factory=list, description="障害コンポーネント"
-    )
+    failed_components: list[str] = Field(default_factory=list, description="障害コンポーネント")
 
 
 class HealthCheckHistoryResponse(BaseCamelCaseModel):
@@ -183,11 +164,31 @@ class HealthCheckHistoryResponse(BaseCamelCaseModel):
 
 
 # ================================================================================
-# 互換性エイリアス
+# サービス層用スキーマ
 # ================================================================================
 
 
-# サービス層で使用される名前のエイリアス
-ComponentHealth = HealthCheckItem
-HealthCheckResponse = HealthCheckSimpleResponse
-HealthCheckDetailResponse = HealthCheckDetailedResponse
+class ComponentHealth(BaseCamelCaseModel):
+    """コンポーネントヘルス（サービス層用）。
+
+    サービス層のヘルスチェック機能で使用される簡易コンポーネント状態。
+    """
+
+    name: str = Field(..., description="コンポーネント名")
+    status: str = Field(..., description="ステータス（healthy/unhealthy）")
+    latency_ms: float | None = Field(default=None, description="レイテンシ（ミリ秒）")
+    error: str | None = Field(default=None, description="エラーメッセージ")
+
+
+class HealthCheckResponse(BaseCamelCaseModel):
+    """簡易ヘルスチェックレスポンス（サービス層用）。"""
+
+    status: str = Field(..., description="全体ステータス")
+
+
+class HealthCheckDetailResponse(BaseCamelCaseModel):
+    """詳細ヘルスチェックレスポンス（サービス層用）。"""
+
+    status: str = Field(..., description="全体ステータス")
+    components: list[ComponentHealth] = Field(..., description="コンポーネントリスト")
+    timestamp: datetime = Field(..., description="チェック日時")

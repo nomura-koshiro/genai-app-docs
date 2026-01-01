@@ -21,7 +21,6 @@ from fastapi import Depends
 from app.api.core.dependencies.auth import CurrentUserAccountDep
 from app.api.core.dependencies.database import DatabaseDep
 from app.core.exceptions import AuthorizationError
-from app.models.user_account import SystemRole
 from app.services.admin import (
     ActivityTrackingService,
     AuditLogService,
@@ -77,12 +76,12 @@ async def require_system_admin(
     Raises:
         AuthorizationError: システム管理者権限がない場合
     """
-    if current_user.system_role != SystemRole.ADMIN:
+    if not current_user.is_system_admin():
         raise AuthorizationError(
             "システム管理者権限が必要です",
             details={
-                "required_role": "ADMIN",
-                "current_role": current_user.system_role.value if current_user.system_role else "NONE",
+                "required_role": "system_admin",
+                "current_roles": current_user.roles or [],
             },
         )
 

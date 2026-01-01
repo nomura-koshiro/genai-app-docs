@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -31,9 +30,7 @@ class AnnouncementCreate(BaseCamelCaseModel):
 
     title: str = Field(..., min_length=1, max_length=200, description="タイトル")
     content: str = Field(..., min_length=1, description="本文")
-    announcement_type: str = Field(
-        ..., description="種別（INFO/WARNING/MAINTENANCE）"
-    )
+    announcement_type: str = Field(..., description="種別（INFO/WARNING/MAINTENANCE）")
     priority: int = Field(default=5, ge=1, le=10, description="優先度（1が最高）")
     start_at: datetime = Field(..., description="表示開始日時")
     end_at: datetime | None = Field(default=None, description="表示終了日時")

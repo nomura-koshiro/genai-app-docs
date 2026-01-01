@@ -21,7 +21,6 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-
 # ================================================================================
 # System Alerts - システムアラート
 # ================================================================================
@@ -73,9 +72,11 @@ async def test_create_alert_success(client: AsyncClient, override_auth, admin_us
     override_auth(admin_user)
     alert_data = {
         "name": "High CPU Alert",
-        "description": "CPU使用率が高い場合のアラート",
-        "severity": "WARNING",
-        "is_enabled": True,
+        "conditionType": "ERROR_RATE",
+        "threshold": {"value": 90},
+        "comparisonOperator": ">",
+        "notificationChannels": ["email"],
+        "isEnabled": True,
     }
 
     # Act
@@ -96,7 +97,7 @@ async def test_create_alert_unauthorized(client: AsyncClient):
         "name": "Test Alert",
         "description": "Test",
         "severity": "INFO",
-        "is_enabled": True,
+        "isEnabled": True,
     }
 
     # Act
@@ -115,7 +116,7 @@ async def test_create_alert_forbidden_regular_user(client: AsyncClient, override
         "name": "Test Alert",
         "description": "Test",
         "severity": "INFO",
-        "is_enabled": True,
+        "isEnabled": True,
     }
 
     # Act
@@ -272,11 +273,14 @@ async def test_create_announcement_success(client: AsyncClient, override_auth, a
     """[test_notifications-017] システムお知らせ作成の成功ケース。"""
     # Arrange
     override_auth(admin_user)
+    from datetime import UTC, datetime
+
     announcement_data = {
         "title": "システムアップデートのお知らせ",
         "content": "明日メンテナンスを実施します",
-        "priority": "HIGH",
-        "is_active": True,
+        "announcementType": "INFO",
+        "priority": 1,
+        "startAt": datetime.now(UTC).isoformat(),
     }
 
     # Act
@@ -297,7 +301,7 @@ async def test_create_announcement_unauthorized(client: AsyncClient):
         "title": "Test",
         "content": "Test",
         "priority": "LOW",
-        "is_active": True,
+        "isActive": True,
     }
 
     # Act
@@ -316,7 +320,7 @@ async def test_create_announcement_forbidden_regular_user(client: AsyncClient, o
         "title": "Test",
         "content": "Test",
         "priority": "LOW",
-        "is_active": True,
+        "isActive": True,
     }
 
     # Act

@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.models import UserAccount
-from app.models.admin.system_setting import SystemSetting
+from app.models.system.system_setting import SystemSetting
 from app.services.admin.support_tools_service import SupportToolsService
 
 

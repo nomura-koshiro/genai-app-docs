@@ -115,9 +115,9 @@ class NotificationService:
 
         alert = await self.alert_repository.create(
             name=data.name,
-            description=data.description,
             condition_type=data.condition_type,
-            condition_config=data.condition_config,
+            threshold=data.threshold,
+            comparison_operator=data.comparison_operator,
             notification_channels=data.notification_channels,
             is_enabled=data.is_enabled,
             created_by=created_by,
@@ -362,7 +362,7 @@ class NotificationService:
             start_at=data.start_at,
             end_at=data.end_at,
             priority=data.priority,
-            is_active=data.is_active,
+            is_active=True,  # デフォルトで有効
             created_by=created_by,
         )
 
@@ -448,9 +448,9 @@ class NotificationService:
         return SystemAlertResponse(
             id=alert.id,
             name=alert.name,
-            description=alert.description,
             condition_type=alert.condition_type,
-            condition_config=alert.condition_config,
+            threshold=alert.threshold,
+            comparison_operator=alert.comparison_operator,
             notification_channels=alert.notification_channels,
             is_enabled=alert.is_enabled,
             last_triggered_at=alert.last_triggered_at,
@@ -466,8 +466,9 @@ class NotificationService:
             id=template.id,
             event_type=template.event_type,
             name=template.name,
-            subject_template=template.subject_template,
-            body_template=template.body_template,
+            subject=template.subject,
+            body=template.body,
+            variables=template.variables or [],
             is_active=template.is_active,
             created_at=template.created_at,
             updated_at=template.updated_at,
@@ -486,7 +487,7 @@ class NotificationService:
             priority=announcement.priority,
             is_active=announcement.is_active,
             created_by=announcement.created_by,
-            creator_name=announcement.creator.display_name if announcement.creator else None,
+            created_by_name=announcement.creator.display_name if announcement.creator else None,
             created_at=announcement.created_at,
             updated_at=announcement.updated_at,
         )

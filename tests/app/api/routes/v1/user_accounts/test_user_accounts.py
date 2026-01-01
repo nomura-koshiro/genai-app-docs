@@ -135,7 +135,8 @@ async def test_list_users_non_admin_fails(client: AsyncClient, override_auth, re
     response = await client.get("/api/v1/user_account")
 
     # Assert
-    assert response.status_code == 422
+    # 非管理者は403 Forbiddenで拒否される
+    assert response.status_code == 403
 
 
 # ================================================================================
@@ -234,7 +235,8 @@ async def test_get_user_by_id_non_admin_fails(client: AsyncClient, override_auth
     response = await client.get(f"/api/v1/user_account/{admin_user.id}")
 
     # Assert
-    assert response.status_code == 422
+    # 非管理者は403 Forbiddenで拒否される
+    assert response.status_code == 403
 
 
 # ================================================================================
@@ -248,7 +250,7 @@ async def test_update_current_user_success(client: AsyncClient, override_auth, r
     # Arrange
     override_auth(regular_user)
     update_data = {
-        "display_name": "Updated Display Name",
+        "displayName": "Updated Display Name",
     }
 
     # Act
@@ -268,7 +270,7 @@ async def test_update_current_user_roles_by_admin(client: AsyncClient, override_
 
     # 管理者が自身のロールを更新
     update_data = {
-        "roles": ["SystemAdmin", "User"],
+        "roles": ["system_admin", "user"],
     }
 
     # Act
@@ -277,8 +279,8 @@ async def test_update_current_user_roles_by_admin(client: AsyncClient, override_
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "SystemAdmin" in data["roles"]
-    assert "User" in data["roles"]
+    assert "system_admin" in data["roles"]
+    assert "user" in data["roles"]
 
 
 @pytest.mark.asyncio
@@ -291,13 +293,14 @@ async def test_update_current_user_roles_by_non_admin_fails(
     # Arrange
     override_auth(regular_user)
     update_data = {
-        "roles": ["SystemAdmin"],
+        "roles": ["system_admin"],
     }
 
     # Act
     response = await client.patch("/api/v1/user_account/me", json=update_data)
 
     # Assert
+    # 非管理者による権限必要フィールドの更新は422（ValidationError）で拒否
     assert response.status_code == 422
 
 
@@ -307,7 +310,7 @@ async def test_update_current_user_is_active_by_admin(client: AsyncClient, overr
     # Arrange
     override_auth(admin_user)
     update_data = {
-        "is_active": False,
+        "isActive": False,
     }
 
     # Act
@@ -329,13 +332,14 @@ async def test_update_current_user_is_active_by_non_admin_fails(
     # Arrange
     override_auth(regular_user)
     update_data = {
-        "is_active": False,
+        "isActive": False,
     }
 
     # Act
     response = await client.patch("/api/v1/user_account/me", json=update_data)
 
     # Assert
+    # 非管理者による権限必要フィールドの更新は422（ValidationError）で拒否
     assert response.status_code == 422
 
 
@@ -343,7 +347,7 @@ async def test_update_current_user_is_active_by_non_admin_fails(
 async def test_update_current_user_unauthorized(client: AsyncClient):
     """[test_user_accounts-018] 認証なしでのユーザー情報更新失敗。"""
     # Act
-    update_data = {"display_name": "Unauthorized Update"}
+    update_data = {"displayName": "Unauthorized Update"}
     response = await client.patch("/api/v1/user_account/me", json=update_data)
 
     # Assert
@@ -403,7 +407,8 @@ async def test_delete_user_by_non_admin_fails(
     response = await client.delete(f"/api/v1/user_account/{target_user.id}")
 
     # Assert
-    assert response.status_code == 422
+    # 非管理者は403 Forbiddenで拒否される
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio

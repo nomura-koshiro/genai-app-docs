@@ -60,11 +60,7 @@ class SystemSettingRepository(BaseRepository[SystemSetting, uuid.UUID]):
         Returns:
             list[SystemSetting]: システム設定リスト
         """
-        query = (
-            select(SystemSetting)
-            .where(SystemSetting.category == category)
-            .order_by(SystemSetting.key)
-        )
+        query = select(SystemSetting).where(SystemSetting.category == category).order_by(SystemSetting.key)
         result = await self.db.execute(query)
         return list(result.scalars().all())
 

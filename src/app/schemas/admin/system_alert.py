@@ -11,7 +11,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -53,9 +52,7 @@ class SystemAlertResponse(BaseCamelCaseORMModel):
     comparison_operator: str = Field(..., description="比較演算子")
     notification_channels: list[str] = Field(..., description="通知先")
     is_enabled: bool = Field(..., description="有効フラグ")
-    last_triggered_at: datetime | None = Field(
-        default=None, description="最終発火日時"
-    )
+    last_triggered_at: datetime | None = Field(default=None, description="最終発火日時")
     trigger_count: int = Field(..., description="発火回数")
     created_by: uuid.UUID = Field(..., description="作成者ID")
     created_at: datetime = Field(..., description="作成日時")

@@ -7,7 +7,6 @@ import csv
 import io
 import json
 import uuid
-from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -339,7 +338,7 @@ class AuditLogService:
             ip_address=log.ip_address,
             user_agent=log.user_agent,
             severity=log.severity,
-            metadata=log.metadata,
+            metadata=log.extra_metadata,
             created_at=log.created_at,
         )
 
@@ -348,26 +347,38 @@ class AuditLogService:
         output = io.StringIO()
         writer = csv.writer(output)
 
-        writer.writerow([
-            "ID", "日時", "イベント種別", "アクション", "ユーザーID",
-            "ユーザー名", "リソース種別", "リソースID", "重要度",
-            "変更フィールド", "IPアドレス",
-        ])
+        writer.writerow(
+            [
+                "ID",
+                "日時",
+                "イベント種別",
+                "アクション",
+                "ユーザーID",
+                "ユーザー名",
+                "リソース種別",
+                "リソースID",
+                "重要度",
+                "変更フィールド",
+                "IPアドレス",
+            ]
+        )
 
         for log in logs:
-            writer.writerow([
-                str(log.id),
-                log.created_at.isoformat(),
-                log.event_type,
-                log.action,
-                str(log.user_id) if log.user_id else "",
-                log.user.display_name if log.user else "",
-                log.resource_type,
-                str(log.resource_id) if log.resource_id else "",
-                log.severity,
-                ",".join(log.changed_fields) if log.changed_fields else "",
-                log.ip_address or "",
-            ])
+            writer.writerow(
+                [
+                    str(log.id),
+                    log.created_at.isoformat(),
+                    log.event_type,
+                    log.action,
+                    str(log.user_id) if log.user_id else "",
+                    log.user.display_name if log.user else "",
+                    log.resource_type,
+                    str(log.resource_id) if log.resource_id else "",
+                    log.severity,
+                    ",".join(log.changed_fields) if log.changed_fields else "",
+                    log.ip_address or "",
+                ]
+            )
 
         return output.getvalue()
 
@@ -387,7 +398,7 @@ class AuditLogService:
                 "changed_fields": log.changed_fields,
                 "severity": log.severity,
                 "ip_address": log.ip_address,
-                "metadata": log.metadata,
+                "metadata": log.extra_metadata,
             }
             for log in logs
         ]

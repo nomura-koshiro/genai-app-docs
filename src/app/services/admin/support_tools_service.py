@@ -8,6 +8,7 @@ import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.decorators import measure_performance, transactional
@@ -123,7 +124,7 @@ class SupportToolsService:
             impersonation_token=token,
             target_user=ImpersonateUserInfo(
                 id=target_user.id,
-                name=target_user.display_name,
+                name=target_user.display_name or "",
             ),
             expires_at=expires_at,
         )
@@ -245,7 +246,7 @@ class SupportToolsService:
         """
         try:
             # データベース接続確認
-            await self.db.execute("SELECT 1")
+            await self.db.execute(text("SELECT 1"))
             return HealthCheckResponse(status="healthy")
         except Exception as e:
             logger.error("ヘルスチェック失敗", error=str(e))
@@ -291,7 +292,7 @@ class SupportToolsService:
         """データベース接続をチェックします。"""
         start = datetime.now(UTC)
         try:
-            await self.db.execute("SELECT 1")
+            await self.db.execute(text("SELECT 1"))
             latency_ms = (datetime.now(UTC) - start).total_seconds() * 1000
             return ComponentHealth(
                 name="database",
@@ -310,8 +311,16 @@ class SupportToolsService:
         try:
             from app.core.cache import cache_manager
 
+            if not cache_manager.is_redis_available():
+                return ComponentHealth(
+                    name="redis",
+                    status="unhealthy",
+                    error="Redis is not configured",
+                )
+
             start = datetime.now(UTC)
-            await cache_manager.ping()
+            # exists() を使用してRedis接続を確認
+            await cache_manager.exists("health_check")
             latency_ms = (datetime.now(UTC) - start).total_seconds() * 1000
             return ComponentHealth(
                 name="redis",

@@ -101,10 +101,6 @@ from app.schemas.analysis.analysis_session import (
     AnalysisSessionResultListResponse,
     AnalysisSessionResultResponse,
     AnalysisSessionUpdate,
-    # リレーション展開用Info
-    CreatorInfo,
-    InputFileInfo,
-    IssueInfo,
     # スナップショット
     AnalysisSnapshotBase,
     AnalysisSnapshotCreate,
@@ -116,6 +112,12 @@ from app.schemas.analysis.analysis_session import (
     AnalysisStepDelete,
     AnalysisStepResponse,
     AnalysisStepUpdate,
+    # リレーション展開用Info
+    CreatorInfo,
+    InputFileInfo,
+    IssueInfo,
+    # バリデーション情報
+    ValidationInfo,
 )
 from app.schemas.analysis.analysis_template import (
     # ダミーチャート
@@ -186,6 +188,8 @@ __all__ = [
     "AnalysisStepResponse",
     "AnalysisStepUpdate",
     "AnalysisStepDelete",
+    # バリデーション情報
+    "ValidationInfo",
     # 分析施策
     "AnalysisValidationBase",
     "AnalysisValidationCreate",

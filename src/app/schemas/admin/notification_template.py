@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -20,16 +19,10 @@ class NotificationTemplateCreate(BaseCamelCaseModel):
     """通知テンプレート作成リクエストスキーマ。"""
 
     name: str = Field(..., min_length=1, max_length=100, description="テンプレート名")
-    event_type: str = Field(
-        ..., min_length=1, max_length=50, description="イベント種別"
-    )
-    subject: str = Field(
-        ..., min_length=1, max_length=200, description="件名テンプレート"
-    )
+    event_type: str = Field(..., min_length=1, max_length=50, description="イベント種別")
+    subject: str = Field(..., min_length=1, max_length=200, description="件名テンプレート")
     body: str = Field(..., min_length=1, description="本文テンプレート")
-    variables: list[str] = Field(
-        default_factory=list, description="利用可能変数リスト"
-    )
+    variables: list[str] = Field(default_factory=list, description="利用可能変数リスト")
     is_active: bool = Field(default=True, description="有効フラグ")
 
 
@@ -37,9 +30,7 @@ class NotificationTemplateUpdate(BaseCamelCaseModel):
     """通知テンプレート更新リクエストスキーマ。"""
 
     name: str | None = Field(default=None, max_length=100, description="テンプレート名")
-    subject: str | None = Field(
-        default=None, max_length=200, description="件名テンプレート"
-    )
+    subject: str | None = Field(default=None, max_length=200, description="件名テンプレート")
     body: str | None = Field(default=None, description="本文テンプレート")
     variables: list[str] | None = Field(default=None, description="利用可能変数リスト")
     is_active: bool | None = Field(default=None, description="有効フラグ")
@@ -67,7 +58,5 @@ class NotificationTemplateResponse(BaseCamelCaseORMModel):
 class NotificationTemplateListResponse(BaseCamelCaseModel):
     """通知テンプレート一覧レスポンススキーマ。"""
 
-    items: list[NotificationTemplateResponse] = Field(
-        ..., description="テンプレートリスト"
-    )
+    items: list[NotificationTemplateResponse] = Field(..., description="テンプレートリスト")
     total: int = Field(..., description="総件数")

@@ -6,7 +6,7 @@ from langchain_classic.memory import ConversationBufferMemory
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from app.integrations.llm import llm
+from app.integrations.llm import get_llm
 
 from .state import AnalysisState
 from .utils.tools import (
@@ -78,7 +78,7 @@ class AnalysisAgent:
         )
 
         # 新しいAPIでエージェントを作成
-        agent = create_tool_calling_agent(llm, self.tools, prompt)
+        agent = create_tool_calling_agent(get_llm(), self.tools, prompt)
         self.agent = AgentExecutor(agent=agent, tools=self.tools, memory=self.memory, verbose=True)
 
     def get_current_context(self):
@@ -168,3 +168,4 @@ class AnalysisAgent:
                     error_chat_history.append(("assistant", f"申し訳ありません。エラーが発生しました: {str(e)}"))
                     self.state.chat_history = error_chat_history
                     return f"申し訳ありません。エラーが発生しました: {str(e)}"
+        return None

@@ -24,8 +24,7 @@ from typing import Any
 
 import structlog
 import yaml
-from sqlalchemy import delete
-from sqlalchemy.engine import Result
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -179,9 +178,12 @@ class TemplateSeeder:
             dict[str, int]: 削除された件数
                 - validations: 削除された施策数（課題等もCASCADE削除）
         """
+        # 削除前にカウントを取得
+        count_result = await self.db.scalar(select(func.count()).select_from(AnalysisValidationMaster))
+        validations_deleted = count_result or 0
+
         # 施策を削除（課題、軸、計算式、チャートもCASCADE削除される）
-        result: Result[Any] = await self.db.execute(delete(AnalysisValidationMaster))
-        validations_deleted = result.rowcount or 0  # type: ignore[attr-defined]
+        await self.db.execute(delete(AnalysisValidationMaster))
 
         logger.info("既存のテンプレートを削除しました", count=validations_deleted)
 

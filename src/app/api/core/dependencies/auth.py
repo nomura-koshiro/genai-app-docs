@@ -127,9 +127,14 @@ async def get_current_user_account(
         - ユーザーの is_active フィールドは検証されません
         - アクティブユーザーのみを許可する場合は get_current_active_user を使用してください
     """
+    azure_oid = auth_user.oid
+    email = auth_user.email or auth_user.preferred_username
+    if not azure_oid or not email:
+        raise HTTPException(status_code=400, detail="認証情報が不足しています")
+
     user = await user_service.get_or_create_by_azure_oid(
-        azure_oid=auth_user.oid,
-        email=auth_user.email or auth_user.preferred_username,
+        azure_oid=azure_oid,
+        email=email,
         display_name=getattr(auth_user, "name", None),
         roles=getattr(auth_user, "roles", None),
     )
@@ -214,10 +219,15 @@ async def get_current_user_account_optional(
     if not auth_user:
         return None
 
+    azure_oid = auth_user.oid
+    email = auth_user.email or auth_user.preferred_username
+    if not azure_oid or not email:
+        return None
+
     try:
         return await user_service.get_or_create_by_azure_oid(
-            azure_oid=auth_user.oid,
-            email=auth_user.email or auth_user.preferred_username,
+            azure_oid=azure_oid,
+            email=email,
             display_name=getattr(auth_user, "name", None),
             roles=getattr(auth_user, "roles", None),
         )

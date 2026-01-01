@@ -5,8 +5,10 @@
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import and_, delete, func, select, update
+from sqlalchemy.engine import CursorResult
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -44,11 +46,7 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
         Returns:
             UserSession | None: セッション（ユーザー情報付き）
         """
-        query = (
-            select(UserSession)
-            .options(selectinload(UserSession.user))
-            .where(UserSession.id == id)
-        )
+        query = select(UserSession).options(selectinload(UserSession.user)).where(UserSession.id == id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -180,11 +178,7 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
         """
         today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
-        query = (
-            select(func.count())
-            .select_from(UserSession)
-            .where(UserSession.login_at >= today_start)
-        )
+        query = select(func.count()).select_from(UserSession).where(UserSession.login_at >= today_start)
         result = await self.db.execute(query)
         return result.scalar_one()
 
@@ -245,9 +239,9 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
                 logout_reason=reason,
             )
         )
-        result = await self.db.execute(query)
+        result: CursorResult[Any] = await self.db.execute(query)  # type: ignore[assignment]
         await self.db.flush()
-        return result.rowcount
+        return result.rowcount or 0
 
     async def cleanup_expired(self, before_date: datetime) -> int:
         """期限切れセッションをクリーンアップします。
@@ -266,6 +260,6 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
                 UserSession.logout_at < before_date,
             )
         )
-        result = await self.db.execute(query)
+        result: CursorResult[Any] = await self.db.execute(query)  # type: ignore[assignment]
         await self.db.flush()
-        return result.rowcount
+        return result.rowcount or 0

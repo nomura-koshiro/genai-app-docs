@@ -1,9 +1,12 @@
 """カテゴリマスタ管理サービス。"""
 
+from typing import cast
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ConflictError, NotFoundError
 from app.core.logging import get_logger
+from app.models.driver_tree.driver_tree_category import DriverTreeCategory
 from app.repositories.admin import DriverTreeCategoryRepository
 from app.schemas.admin.category import (
     DriverTreeCategoryCreate,
@@ -32,8 +35,8 @@ class AdminCategoryService:
 
         category_responses = []
         for item in categories_with_counts:
-            category = item["category"]
-            formula_count = item["formula_count"]
+            category = cast(DriverTreeCategory, item["category"])
+            formula_count = cast(int, item["formula_count"])
 
             category_responses.append(
                 DriverTreeCategoryResponse(
@@ -110,8 +113,8 @@ class AdminCategoryService:
             raise NotFoundError(f"カテゴリマスタが見つかりません: {category_id}")
 
         # 参照チェック
-        if await self.repository.has_trees(category_id):
-            raise ConflictError("このカテゴリにはドライバーツリーが紐づいているため削除できません")
+        if await self.repository.has_formulas(category_id):
+            raise ConflictError("このカテゴリには数式が紐づいているため削除できません")
 
         await self.repository.delete(category)
         await self.db.commit()

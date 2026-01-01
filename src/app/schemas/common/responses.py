@@ -98,7 +98,10 @@ class ProblemDetails(BaseCamelCaseModel):
     detail: str | None = Field(None, description="この問題の具体的な説明")
     instance: str | None = Field(None, description="この問題発生の特定のURIインスタンス")
 
-    model_config = {"extra": "allow"}  # RFC 9457は追加フィールドを許可
+    model_config = {
+        **BaseCamelCaseModel.model_config,
+        "extra": "allow",  # RFC 9457は追加フィールドを許可
+    }
 
 
 class HealthResponse(BaseCamelCaseModel):

@@ -28,7 +28,7 @@
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Index, Integer, String, Text
+from sqlalchemy import ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -80,6 +80,7 @@ class UserActivity(Base, TimestampMixin):
 
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         comment="操作ユーザーID（FK: user_account、未認証時はNULL）",
     )
@@ -184,7 +185,4 @@ class UserActivity(Base, TimestampMixin):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<UserActivity(id={self.id}, action={self.action_type}, "
-            f"endpoint={self.endpoint})>"
-        )
+        return f"<UserActivity(id={self.id}, action={self.action_type}, endpoint={self.endpoint})>"

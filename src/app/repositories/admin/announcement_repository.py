@@ -39,11 +39,7 @@ class AnnouncementRepository(BaseRepository[SystemAnnouncement, uuid.UUID]):
         Returns:
             SystemAnnouncement | None: お知らせ（作成者情報付き）
         """
-        query = (
-            select(SystemAnnouncement)
-            .options(selectinload(SystemAnnouncement.creator))
-            .where(SystemAnnouncement.id == id)
-        )
+        query = select(SystemAnnouncement).options(selectinload(SystemAnnouncement.creator)).where(SystemAnnouncement.id == id)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
@@ -155,9 +151,7 @@ class AnnouncementRepository(BaseRepository[SystemAnnouncement, uuid.UUID]):
         Returns:
             list[SystemAnnouncement]: お知らせリスト
         """
-        query = select(SystemAnnouncement).options(
-            selectinload(SystemAnnouncement.creator)
-        )
+        query = select(SystemAnnouncement).options(selectinload(SystemAnnouncement.creator))
 
         if is_active is not None:
             query = query.where(SystemAnnouncement.is_active == is_active)

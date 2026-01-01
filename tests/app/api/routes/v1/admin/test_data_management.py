@@ -14,6 +14,13 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture
+async def seeded_settings(test_data_seeder):
+    """システム設定のシードデータを作成。"""
+    await test_data_seeder.seed_default_settings()
+    return test_data_seeder
+
+
 # ================================================================================
 # GET /api/v1/admin/data/cleanup/preview - 削除対象データプレビュー
 # ================================================================================
@@ -37,9 +44,9 @@ async def test_preview_cleanup_success(client: AsyncClient, override_auth, admin
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "target_types" in data
-    assert "retention_days" in data
     assert "preview" in data
+    assert "retentionDays" in data
+    assert "cutoffDate" in data
 
 
 @pytest.mark.asyncio
@@ -100,8 +107,9 @@ async def test_execute_cleanup_success(client: AsyncClient, override_auth, admin
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "deleted_count" in data
-    assert "target_types" in data
+    assert "success" in data
+    assert "results" in data
+    assert "totalDeletedCount" in data
 
 
 @pytest.mark.asyncio
@@ -156,7 +164,8 @@ async def test_get_retention_policy_success(client: AsyncClient, override_auth, 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "policies" in data
+    assert "activityLogsDays" in data
+    assert "auditLogsDays" in data
 
 
 @pytest.mark.asyncio
@@ -188,14 +197,14 @@ async def test_get_retention_policy_forbidden_regular_user(client: AsyncClient, 
 
 
 @pytest.mark.asyncio
-async def test_update_retention_policy_success(client: AsyncClient, override_auth, admin_user):
+async def test_update_retention_policy_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
     """[test_data_management-010] 保持ポリシー更新の成功ケース。"""
     # Arrange
     override_auth(admin_user)
     policy_data = {
-        "activity_logs_retention_days": 90,
-        "audit_logs_retention_days": 365,
-        "session_logs_retention_days": 30,
+        "activityLogsDays": 90,
+        "auditLogsDays": 365,
+        "sessionLogsDays": 30,
     }
 
     # Act
@@ -204,7 +213,8 @@ async def test_update_retention_policy_success(client: AsyncClient, override_aut
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "policies" in data
+    assert "activityLogsDays" in data
+    assert "auditLogsDays" in data
 
 
 @pytest.mark.asyncio
@@ -212,7 +222,7 @@ async def test_update_retention_policy_unauthorized(client: AsyncClient):
     """[test_data_management-011] 認証なしでの保持ポリシー更新拒否。"""
     # Arrange
     policy_data = {
-        "activity_logs_retention_days": 90,
+        "activityLogsDays": 90,
     }
 
     # Act
@@ -228,7 +238,7 @@ async def test_update_retention_policy_forbidden_regular_user(client: AsyncClien
     # Arrange
     override_auth(regular_user)
     policy_data = {
-        "activity_logs_retention_days": 90,
+        "activityLogsDays": 90,
     }
 
     # Act

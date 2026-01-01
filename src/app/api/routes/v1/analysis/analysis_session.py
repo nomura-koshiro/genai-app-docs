@@ -452,6 +452,7 @@ async def update_session(
         snapshot_order=str(snapshot_order),
     )
 
+    assert result is not None, "result should be set if validation passed"
     return result
 
 

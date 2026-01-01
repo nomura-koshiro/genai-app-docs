@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # フィルタスキーマ
 # ================================================================================
@@ -83,3 +82,10 @@ class SessionListResponse(BaseCamelCaseModel):
     items: list[SessionResponse] = Field(..., description="セッションリスト")
     total: int = Field(..., description="総件数")
     statistics: SessionStatistics = Field(..., description="統計情報")
+
+
+class SessionTerminateResponse(BaseCamelCaseModel):
+    """セッション終了レスポンススキーマ。"""
+
+    terminated_count: int = Field(..., description="終了したセッション数")
+    message: str = Field(..., description="メッセージ")

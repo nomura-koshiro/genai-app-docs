@@ -93,7 +93,7 @@ class DriverTreePolicyRepository(BaseRepository[DriverTreePolicy, uuid.UUID]):
         result = await self.db.execute(
             select(DriverTreePolicy)
             .join(DriverTreeNode, DriverTreePolicy.node_id == DriverTreeNode.id)
-            .where(DriverTreeNode.tree_id == tree_id)
+            .where(DriverTreeNode.driver_tree_id == tree_id)
             .options(selectinload(DriverTreePolicy.node))
             .order_by(DriverTreeNode.label, DriverTreePolicy.created_at.asc())
         )

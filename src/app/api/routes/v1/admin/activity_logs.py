@@ -91,13 +91,11 @@ async def list_activity_logs(
         start_date=start_date,
         end_date=end_date,
         has_error=has_error,
-    )
-
-    result = await service.get_activity_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_activities(filter_params=filter_params)
 
     return result
 
@@ -135,13 +133,11 @@ async def list_error_logs(
         start_date=start_date,
         end_date=end_date,
         has_error=True,
-    )
-
-    result = await service.get_activity_logs(
-        filter_params=filter_params,
         page=page,
         limit=limit,
     )
+
+    result = await service.list_activities(filter_params=filter_params)
 
     return result
 
@@ -215,6 +211,13 @@ async def get_activity_log(
         action="get_activity_log",
     )
 
-    result = await service.get_activity_log_detail(activity_id=activity_id)
+    result = await service.get_activity_detail(activity_id=activity_id)
+    if result is None:
+        from app.core.exceptions import NotFoundError
+
+        raise NotFoundError(
+            message="Activity log not found",
+            details={"activity_id": str(activity_id)},
+        )
 
     return result

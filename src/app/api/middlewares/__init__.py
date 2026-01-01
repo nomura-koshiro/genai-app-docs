@@ -19,12 +19,29 @@
        - デフォルト: 100リクエスト/60秒
        - クライアント識別: ユーザーID、APIキー、IPアドレス
 
+    4. **SecurityHeadersMiddleware**: セキュリティヘッダー付与
+       - X-Content-Type-Options, X-Frame-Options, X-XSS-Protection, HSTS
+
+    5. **ActivityTrackingMiddleware**: ユーザー操作履歴の自動記録
+       - 全リクエストの基本情報を記録
+       - エラー発生時もエラー情報を含めて記録
+
+    6. **AuditLogMiddleware**: 監査ログの自動記録
+       - 重要なデータ変更操作を監査ログに記録
+       - セキュリティイベントの記録
+
+    7. **MaintenanceModeMiddleware**: メンテナンスモード時のアクセス制御
+       - メンテナンス中は管理者以外のアクセスを制限
+
 ミドルウェア実行順序（app_factory.pyでの登録順の逆）:
     リクエスト →
         CORS →
         SecurityHeadersMiddleware →
         RateLimitMiddleware →
+        MaintenanceModeMiddleware →
         LoggingMiddleware →
+        AuditLogMiddleware →
+        ActivityTrackingMiddleware →
         PrometheusMetricsMiddleware →
         エンドポイント処理 →
         Exception Handlers (RFC 9457) →
@@ -48,13 +65,19 @@ Note:
     - Starlette BaseHTTPMiddlewareを継承
 """
 
+from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
+from app.api.middlewares.audit_log import AuditLogMiddleware
 from app.api.middlewares.logging import LoggingMiddleware
+from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
 from app.api.middlewares.metrics import PrometheusMetricsMiddleware
 from app.api.middlewares.rate_limit import RateLimitMiddleware
 from app.api.middlewares.security_headers import SecurityHeadersMiddleware
 
 __all__ = [
+    "ActivityTrackingMiddleware",
+    "AuditLogMiddleware",
     "LoggingMiddleware",
+    "MaintenanceModeMiddleware",
     "PrometheusMetricsMiddleware",
     "RateLimitMiddleware",
     "SecurityHeadersMiddleware",

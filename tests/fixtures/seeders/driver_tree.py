@@ -20,6 +20,7 @@ class DriverTreeSeederMixin(ProjectSeederMixin):
     async def create_driver_tree_node(
         self,
         *,
+        driver_tree: DriverTree,
         label: str = "テストノード",
         node_type: str = "計算",
         position_x: int = 0,
@@ -28,6 +29,7 @@ class DriverTreeSeederMixin(ProjectSeederMixin):
         """テスト用ドライバーツリーノードを作成。
 
         Args:
+            driver_tree: 所属するドライバーツリー
             label: ノードラベル
             node_type: ノードタイプ（計算/入力/定数）
             position_x: X座標
@@ -37,6 +39,7 @@ class DriverTreeSeederMixin(ProjectSeederMixin):
             DriverTreeNode: 作成されたノード
         """
         node = DriverTreeNode(
+            driver_tree_id=driver_tree.id,
             label=label,
             node_type=node_type,
             position_x=position_x,
@@ -175,6 +178,7 @@ class DriverTreeSeederMixin(ProjectSeederMixin):
 
         # 2. ルートノード（計算ノード）
         root_node = await self.create_driver_tree_node(
+            driver_tree=tree,
             label=name,
             node_type="計算",
             position_x=0,
@@ -183,12 +187,14 @@ class DriverTreeSeederMixin(ProjectSeederMixin):
 
         # 3. 子ノード（入力ノード）
         child_node1 = await self.create_driver_tree_node(
+            driver_tree=tree,
             label="子ノード1",
             node_type="入力",
             position_x=200,
             position_y=100,
         )
         child_node2 = await self.create_driver_tree_node(
+            driver_tree=tree,
             label="子ノード2",
             node_type="入力",
             position_x=400,

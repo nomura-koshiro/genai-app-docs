@@ -25,10 +25,13 @@ from app.api.core.dependencies.system_admin import (
 )
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
+from app.schemas.admin.health_check import (
+    HealthCheckDetailResponse,
+    HealthCheckResponse,
+)
 from app.schemas.admin.support_tools import (
     DebugModeResponse,
-    DetailedHealthCheckResponse,
-    HealthCheckResponse,
+    ImpersonateEndRequest,
     ImpersonateEndResponse,
     ImpersonateRequest,
     ImpersonateResponse,
@@ -75,7 +78,7 @@ async def start_impersonation(
     )
 
     result = await service.start_impersonation(
-        admin_id=current_user.id,
+        admin_user_id=current_user.id,
         target_user_id=user_id,
         reason=request.reason,
     )
@@ -96,6 +99,7 @@ async def start_impersonation(
 )
 @handle_service_errors
 async def end_impersonation(
+    request: ImpersonateEndRequest,
     _: RequireSystemAdminDep,
     service: SupportToolsServiceDep,
     current_user: CurrentUserAccountDep,
@@ -107,7 +111,10 @@ async def end_impersonation(
         action="end_impersonation",
     )
 
-    result = await service.end_impersonation(admin_id=current_user.id)
+    result = await service.end_impersonation(
+        token=request.token,
+        admin_user_id=current_user.id,
+    )
 
     return result
 
@@ -143,7 +150,7 @@ async def enable_debug_mode(
         action="enable_debug_mode",
     )
 
-    result = await service.enable_debug_mode(enabled_by=current_user.id)
+    result = await service.enable_debug_mode(admin_user_id=current_user.id)
 
     return result
 
@@ -172,7 +179,7 @@ async def disable_debug_mode(
         action="disable_debug_mode",
     )
 
-    result = await service.disable_debug_mode(disabled_by=current_user.id)
+    result = await service.disable_debug_mode(admin_user_id=current_user.id)
 
     return result
 
@@ -205,14 +212,14 @@ async def health_check(
         action="health_check",
     )
 
-    result = await service.check_health()
+    result = await service.simple_health_check()
 
     return result
 
 
 @support_tools_router.get(
     "/health-check/detailed",
-    response_model=DetailedHealthCheckResponse,
+    response_model=HealthCheckDetailResponse,
     summary="詳細ヘルスチェック",
     description="""
     詳細ヘルスチェックを実行します。
@@ -231,7 +238,7 @@ async def detailed_health_check(
     _: RequireSystemAdminDep,
     service: SupportToolsServiceDep,
     current_user: CurrentUserAccountDep,
-) -> DetailedHealthCheckResponse:
+) -> HealthCheckDetailResponse:
     """詳細ヘルスチェックを実行します。"""
     logger.info(
         "詳細ヘルスチェック",
@@ -239,6 +246,6 @@ async def detailed_health_check(
         action="detailed_health_check",
     )
 
-    result = await service.check_health_detailed()
+    result = await service.detailed_health_check()
 
     return result

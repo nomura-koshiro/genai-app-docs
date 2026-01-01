@@ -1,7 +1,9 @@
+import json
 import uuid
 from datetime import datetime
+from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
@@ -400,6 +402,16 @@ class AnalysisDummyChartResponse(BaseCamelCaseORMModel):
     issue_id: uuid.UUID = Field(..., description="課題ID")
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
+
+    @field_validator("chart", mode="before")
+    @classmethod
+    def parse_chart_bytes(cls, v: Any) -> dict:
+        """bytesをdictに変換します。"""
+        if isinstance(v, bytes):
+            return json.loads(v.decode("utf-8"))
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
 
 
 # ================================================================================

@@ -23,12 +23,13 @@ from app.api.core.dependencies.system_admin import (
 from app.api.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.admin.system_setting import (
+    MaintenanceModeEnable,
     MaintenanceModeRequest,
     MaintenanceModeResponse,
     SettingCategoryResponse,
     SettingUpdateRequest,
-    SettingUpdateResponse,
-    SystemSettingsResponse,
+    SystemSettingResponse,
+    SystemSettingsByCategoryResponse,
 )
 
 logger = get_logger(__name__)
@@ -38,7 +39,7 @@ settings_router = APIRouter(prefix="/settings", tags=["System Settings"])
 
 @settings_router.get(
     "",
-    response_model=SystemSettingsResponse,
+    response_model=SystemSettingsByCategoryResponse,
     summary="全設定取得",
     description="""
     全システム設定を取得します。
@@ -57,7 +58,7 @@ async def get_all_settings(
     _: RequireSystemAdminDep,
     service: SystemSettingServiceDep,
     current_user: CurrentUserAccountDep,
-) -> SystemSettingsResponse:
+) -> SystemSettingsByCategoryResponse:
     """全システム設定を取得します。"""
     logger.info(
         "全設定取得",
@@ -98,14 +99,17 @@ async def get_settings_by_category(
         action="get_settings_by_category",
     )
 
-    result = await service.get_settings_by_category(category=category.upper())
+    settings = await service.get_settings_by_category(category=category.upper())
 
-    return result
+    return SettingCategoryResponse(
+        category=category.upper(),
+        settings=settings,
+    )
 
 
 @settings_router.patch(
     "/{category}/{key}",
-    response_model=SettingUpdateResponse,
+    response_model=SystemSettingResponse,
     summary="設定更新",
     description="""
     設定を更新します。
@@ -125,7 +129,7 @@ async def update_setting(
     _: RequireSystemAdminDep,
     service: SystemSettingServiceDep,
     current_user: CurrentUserAccountDep,
-) -> SettingUpdateResponse:
+) -> SystemSettingResponse:
     """設定を更新します。"""
     logger.info(
         "設定更新",
@@ -171,9 +175,13 @@ async def enable_maintenance_mode(
         action="enable_maintenance_mode",
     )
 
-    result = await service.enable_maintenance_mode(
-        message=request.message,
+    params = MaintenanceModeEnable(
+        message=request.message or "",
         allow_admin_access=request.allow_admin_access,
+    )
+
+    result = await service.enable_maintenance_mode(
+        params=params,
         updated_by=current_user.id,
     )
 

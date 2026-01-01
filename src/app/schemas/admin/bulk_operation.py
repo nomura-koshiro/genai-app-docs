@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -54,9 +53,9 @@ class BulkImportResult(BaseCamelCaseModel):
     """一括インポート結果（内部処理用）。"""
 
     row: int = Field(..., description="行番号")
+    email: str = Field(..., description="メールアドレス")
     success: bool = Field(..., description="成功フラグ")
-    user_id: uuid.UUID | None = Field(default=None, description="作成されたユーザーID")
-    error: str | None = Field(default=None, description="エラーメッセージ")
+    message: str | None = Field(default=None, description="メッセージ")
 
 
 class BulkImportResponse(BaseCamelCaseModel):
@@ -64,21 +63,19 @@ class BulkImportResponse(BaseCamelCaseModel):
 
     success: bool = Field(..., description="成功フラグ")
     imported_count: int = Field(..., description="インポート件数")
-    skipped_count: int = Field(..., description="スキップ件数")
-    errors: list[ImportErrorDetail] = Field(
-        default_factory=list, description="エラー一覧"
-    )
+    error_count: int = Field(default=0, description="エラー件数")
+    operation_id: uuid.UUID = Field(..., description="操作ID")
+    results: list[BulkImportResult] = Field(default_factory=list, description="結果一覧")
+    errors: list[str] | None = Field(default=None, description="エラーメッセージ一覧")
 
 
 class BulkDeactivatePreviewItem(BaseCamelCaseModel):
     """無効化プレビューアイテム。"""
 
-    id: uuid.UUID = Field(..., description="ユーザーID")
-    name: str = Field(..., description="ユーザー名")
+    user_id: uuid.UUID = Field(..., description="ユーザーID")
     email: str = Field(..., description="メールアドレス")
-    last_activity_at: datetime | None = Field(
-        default=None, description="最終アクティビティ"
-    )
+    display_name: str = Field(..., description="表示名")
+    last_activity_at: datetime | None = Field(default=None, description="最終アクティビティ")
 
 
 class BulkDeactivateResponse(BaseCamelCaseModel):
@@ -86,20 +83,16 @@ class BulkDeactivateResponse(BaseCamelCaseModel):
 
     success: bool = Field(..., description="成功フラグ")
     deactivated_count: int = Field(..., description="無効化件数")
-    preview_items: list[BulkDeactivatePreviewItem] | None = Field(
-        default=None, description="プレビューアイテム（dry_run時のみ）"
-    )
+    operation_id: uuid.UUID = Field(..., description="操作ID")
+    preview_items: list[BulkDeactivatePreviewItem] | None = Field(default=None, description="プレビューアイテム（dry_run時のみ）")
 
 
 class BulkArchivePreviewItem(BaseCamelCaseModel):
     """アーカイブプレビューアイテム。"""
 
-    id: uuid.UUID = Field(..., description="プロジェクトID")
+    project_id: uuid.UUID = Field(..., description="プロジェクトID")
     name: str = Field(..., description="プロジェクト名")
-    code: str = Field(..., description="プロジェクトコード")
-    last_activity_at: datetime | None = Field(
-        default=None, description="最終アクティビティ"
-    )
+    last_updated_at: datetime | None = Field(default=None, description="最終更新日時")
 
 
 class BulkArchiveResponse(BaseCamelCaseModel):
@@ -107,6 +100,5 @@ class BulkArchiveResponse(BaseCamelCaseModel):
 
     success: bool = Field(..., description="成功フラグ")
     archived_count: int = Field(..., description="アーカイブ件数")
-    preview_items: list[BulkArchivePreviewItem] | None = Field(
-        default=None, description="プレビューアイテム（dry_run時のみ）"
-    )
+    operation_id: uuid.UUID = Field(..., description="操作ID")
+    preview_items: list[BulkArchivePreviewItem] | None = Field(default=None, description="プレビューアイテム（dry_run時のみ）")

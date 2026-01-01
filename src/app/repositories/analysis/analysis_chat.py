@@ -5,7 +5,7 @@
 
 import uuid
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -115,8 +115,13 @@ class AnalysisChatRepository(BaseRepository[AnalysisChat, uuid.UUID]):
         Returns:
             int: 削除件数
         """
-        result = await self.db.execute(delete(AnalysisChat).where(AnalysisChat.snapshot_id == snapshot_id))
-        return result.rowcount
+        # 削除前にカウントを取得
+        count_result = await self.db.scalar(select(func.count()).select_from(AnalysisChat).where(AnalysisChat.snapshot_id == snapshot_id))
+        count = count_result or 0
+
+        # 削除を実行
+        await self.db.execute(delete(AnalysisChat).where(AnalysisChat.snapshot_id == snapshot_id))
+        return count
 
     async def bulk_create(
         self,

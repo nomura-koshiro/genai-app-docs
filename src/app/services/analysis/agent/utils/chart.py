@@ -1,5 +1,7 @@
 import json
 import os
+from collections.abc import Callable
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -25,8 +27,7 @@ def check_data_and_config(input_record: pd.DataFrame, graph_config):
     """
     # 基本的な入力チェック
     if input_record is None or input_record.empty:
-        available_columns = "なし"
-        return False, f"データが空です。利用可能な列: {available_columns}. データを確認し、有効なデータを提供してください。"
+        return False, "データが空です。利用可能な列: なし. データを確認し、有効なデータを提供してください。"
     if not isinstance(graph_config, dict):
         return False, f"グラフ設定が辞書形式ではありません。正しいJSON形式で設定を提供してください。現在の型: {type(graph_config)}"
 
@@ -114,11 +115,16 @@ def check_data_and_config(input_record: pd.DataFrame, graph_config):
             ),
         )
     else:
-        success, msg = routing[graph_type]["input_func"](*routing[graph_type]["input_args"])
+        route = routing[graph_type]
+        input_func = cast(Callable[..., tuple[bool, str]], route["input_func"])
+        check_func = cast(Callable[..., tuple[bool, str]], route["check_func"])
+        input_args = cast(tuple[Any, ...], route["input_args"])
+        check_args = cast(tuple[Any, ...], route["check_args"])
+        success, msg = input_func(*input_args)
         if not success:
             return False, msg
         else:
-            success, msg = routing[graph_type]["check_func"](*routing[graph_type]["check_args"])
+            success, msg = check_func(*check_args)
             return success, msg
 
 
@@ -185,8 +191,9 @@ def draw_graph(input_record: pd.DataFrame, graph_config: dict):
         )
 
     # 対応する描画関数を実行
-    draw_func = draw_routing[graph_type]["draw_func"]
-    draw_args = draw_routing[graph_type]["draw_args"]
+    route = draw_routing[graph_type]
+    draw_func = cast(Callable[..., Any], route["draw_func"])
+    draw_args = cast(tuple[Any, ...], route["draw_args"])
 
     return draw_func(*draw_args)
 

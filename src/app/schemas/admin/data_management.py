@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel
 
-
 # ================================================================================
 # リクエストスキーマ
 # ================================================================================
@@ -34,27 +33,17 @@ class CleanupExecuteRequest(BaseCamelCaseModel):
 class OrphanFileCleanupRequest(BaseCamelCaseModel):
     """孤立ファイルクリーンアップリクエストスキーマ。"""
 
-    file_ids: list[uuid.UUID] | None = Field(
-        default=None, description="削除するファイルID"
-    )
+    file_ids: list[uuid.UUID] | None = Field(default=None, description="削除するファイルID")
     delete_all: bool = Field(default=False, description="全件削除")
 
 
 class RetentionPolicyUpdate(BaseCamelCaseModel):
     """保持ポリシー更新リクエストスキーマ。"""
 
-    activity_logs_days: int | None = Field(
-        default=None, ge=1, description="操作履歴保持期間"
-    )
-    audit_logs_days: int | None = Field(
-        default=None, ge=1, description="監査ログ保持期間"
-    )
-    deleted_projects_days: int | None = Field(
-        default=None, ge=1, description="削除プロジェクト保持期間"
-    )
-    session_logs_days: int | None = Field(
-        default=None, ge=1, description="セッションログ保持期間"
-    )
+    activity_logs_days: int | None = Field(default=None, ge=1, description="操作履歴保持期間")
+    audit_logs_days: int | None = Field(default=None, ge=1, description="監査ログ保持期間")
+    deleted_projects_days: int | None = Field(default=None, ge=1, description="削除プロジェクト保持期間")
+    session_logs_days: int | None = Field(default=None, ge=1, description="セッションログ保持期間")
 
 
 # ================================================================================
@@ -68,12 +57,8 @@ class CleanupPreviewItem(BaseCamelCaseModel):
     target_type: str = Field(..., description="対象種別")
     target_type_display: str = Field(..., description="対象種別（表示用）")
     record_count: int = Field(..., description="レコード数")
-    oldest_record_at: datetime | None = Field(
-        default=None, description="最古レコード日時"
-    )
-    newest_record_at: datetime | None = Field(
-        default=None, description="最新レコード日時"
-    )
+    oldest_record_at: datetime | None = Field(default=None, description="最古レコード日時")
+    newest_record_at: datetime | None = Field(default=None, description="最新レコード日時")
     estimated_size_bytes: int = Field(..., description="推定サイズ（バイト）")
     estimated_size_display: str = Field(..., description="推定サイズ（表示用）")
 
@@ -84,9 +69,7 @@ class CleanupPreviewResponse(BaseCamelCaseModel):
     preview: list[CleanupPreviewItem] = Field(..., description="プレビュー")
     total_record_count: int = Field(..., description="合計レコード数")
     total_estimated_size_bytes: int = Field(..., description="合計推定サイズ")
-    total_estimated_size_display: str = Field(
-        ..., description="合計推定サイズ（表示用）"
-    )
+    total_estimated_size_display: str = Field(..., description="合計推定サイズ（表示用）")
     retention_days: int = Field(..., description="保持日数")
     cutoff_date: datetime = Field(..., description="カットオフ日")
 
@@ -120,15 +103,9 @@ class OrphanFileResponse(BaseCamelCaseModel):
     size_display: str = Field(..., description="サイズ（表示用）")
     mime_type: str | None = Field(default=None, description="MIMEタイプ")
     created_at: datetime = Field(..., description="作成日時")
-    last_accessed_at: datetime | None = Field(
-        default=None, description="最終アクセス日時"
-    )
-    original_project_id: uuid.UUID | None = Field(
-        default=None, description="元プロジェクトID"
-    )
-    original_project_name: str | None = Field(
-        default=None, description="元プロジェクト名"
-    )
+    last_accessed_at: datetime | None = Field(default=None, description="最終アクセス日時")
+    original_project_id: uuid.UUID | None = Field(default=None, description="元プロジェクトID")
+    original_project_name: str | None = Field(default=None, description="元プロジェクト名")
 
 
 class OrphanFileListResponse(BaseCamelCaseModel):

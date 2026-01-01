@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.models import UserAccount
-from app.models.admin.user_session import UserSession
+from app.models.user_account.user_session import UserSession
 from app.schemas.admin.session_management import SessionFilter
 from app.services.admin.session_management_service import SessionManagementService
 
