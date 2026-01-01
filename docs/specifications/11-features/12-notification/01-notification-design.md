@@ -285,8 +285,8 @@ class NotificationService:
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **モックアップ**: [../../03-mockup/index.html](../../03-mockup/index.html)
-- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
-- **システム管理（管理者通知）**: [../12-system-admin/01-system-admin-design.md](../12-system-admin/01-system-admin-design.md)
+- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
+- **システム管理（管理者通知）**: [../13-system-admin/01-system-admin-design.md](../13-system-admin/01-system-admin-design.md)
 
 ---
 

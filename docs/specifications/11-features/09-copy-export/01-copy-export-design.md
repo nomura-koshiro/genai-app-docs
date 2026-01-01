@@ -455,9 +455,9 @@ class ExportService:
 ## 8. 関連ドキュメント
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
-- **分析機能設計書**: [../04-analysis/01-analysis-design.md](../04-analysis/01-analysis-design.md)
-- **ドライバーツリー設計書**: [../05-driver-tree/01-driver-tree-design.md](../05-driver-tree/01-driver-tree-design.md)
-- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **分析機能設計書**: [../05-analysis/01-analysis-design.md](../05-analysis/01-analysis-design.md)
+- **ドライバーツリー設計書**: [../06-driver-tree/01-driver-tree-design.md](../06-driver-tree/01-driver-tree-design.md)
+- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
 
 ---
 

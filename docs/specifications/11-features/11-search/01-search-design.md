@@ -207,7 +207,7 @@ class GlobalSearchService:
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **モックアップ**: [../../03-mockup/index.html](../../03-mockup/index.html)
-- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
 
 ---
 

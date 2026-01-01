@@ -8,18 +8,19 @@
 
 | No | ディレクトリ | 機能名 | 対象ユースケース | ステータス |
 |----|-------------|--------|-----------------|-----------|
-| 01 | [01-api-overview.md](./01-api-overview.md) | API共通仕様 | - | 作成済 |
-| 02 | [02-user-management/](./02-user-management/) | ユーザー管理 | U-001〜U-011 | 作成済 |
-| 03 | [03-project-management/](./03-project-management/) | プロジェクト管理 | P-001〜PF-006 | 作成済 |
-| 04 | [04-analysis/](./04-analysis/) | 個別施策分析 | AVM-001〜AST-006 | 作成済 |
-| 05 | [05-driver-tree/](./05-driver-tree/) | ドライバーツリー | DTC-001〜DTP-006 | 作成済 |
-| 06 | [06-dashboard/](./06-dashboard/) | ダッシュボード | D-001〜D-006 | 作成済 |
-| 07 | [07-template/](./07-template/) | テンプレート | TM-001〜TM-005 | 作成済 |
-| 08 | [08-copy-export/](./08-copy-export/) | 複製・エクスポート | CP-001〜EX-003 | 作成済 |
-| 09 | [09-file-version/](./09-file-version/) | ファイルバージョン | FV-001〜FV-004 | 作成済 |
-| 10 | [10-search/](./10-search/) | グローバル検索 | S-001〜S-002 | 作成済 |
-| 11 | [11-notification/](./11-notification/) | ユーザー通知 | N-001〜N-005 | 作成済 |
-| 12 | [12-system-admin/](./12-system-admin/) | システム管理 | SA-001〜SA-043 | 作成済 |
+| 01 | [01-common-ui/](./01-common-ui/) | 共通UI（ヘッダー・サイドバー） | UI-001〜UI-004 | 作成済 |
+| 02 | [02-api-overview/](./02-api-overview/) | API共通仕様 | - | 作成済 |
+| 03 | [03-user-management/](./03-user-management/) | ユーザー管理 | U-001〜U-013 | 作成済 |
+| 04 | [04-project-management/](./04-project-management/) | プロジェクト管理 | P-001〜PF-006 | 作成済 |
+| 05 | [05-analysis/](./05-analysis/) | 個別施策分析 | AVM-001〜AST-006 | 作成済 |
+| 06 | [06-driver-tree/](./06-driver-tree/) | ドライバーツリー | DTC-001〜DTP-006 | 作成済 |
+| 07 | [07-dashboard/](./07-dashboard/) | ダッシュボード | D-001〜D-006 | 作成済 |
+| 08 | [08-template/](./08-template/) | テンプレート | TM-001〜TM-005 | 作成済 |
+| 09 | [09-copy-export/](./09-copy-export/) | 複製・エクスポート | CP-001〜EX-003 | 作成済 |
+| 10 | [10-file-version/](./10-file-version/) | ファイルバージョン | FV-001〜FV-004 | 作成済 |
+| 11 | [11-search/](./11-search/) | グローバル検索 | S-001〜S-002 | 作成済 |
+| 12 | [12-notification/](./12-notification/) | ユーザー通知 | N-001〜N-005 | 作成済 |
+| 13 | [13-system-admin/](./13-system-admin/) | システム管理 | SA-001〜SA-043 | 作成済 |
 
 ---
 
@@ -27,20 +28,21 @@
 
 | カテゴリ | UC数 | カバー済 | カバー率 | 仕様書 |
 |---------|------|---------|---------|--------|
-| ユーザー管理 | 13 | 13 | 100% | 02-user-management |
-| プロジェクト管理 | 20 | 20 | 100% | 03-project-management |
-| 個別施策分析（マスタ） | 25 | 25 | 100% | 04-analysis |
-| 個別施策分析（セッション） | 24 | 24 | 100% | 04-analysis |
-| ドライバーツリー | 41 | 41 | 100% | 05-driver-tree |
-| ダッシュボード・統計 | 6 | 6 | 100% | 06-dashboard |
-| テンプレート機能 | 5 | 5 | 100% | 07-template |
-| 複製・エクスポート機能 | 5 | 5 | 100% | 08-copy-export |
-| ファイルバージョン管理 | 4 | 4 | 100% | 09-file-version |
-| グローバル検索 | 2 | 2 | 100% | 10-search |
-| ユーザー通知 | 5 | 5 | 100% | 11-notification |
-| システム管理（管理者専用） | 43 | 43 | 100% | 12-system-admin |
+| 共通UI | 4 | 4 | 100% | 01-common-ui |
+| ユーザー管理 | 13 | 13 | 100% | 03-user-management |
+| プロジェクト管理 | 20 | 20 | 100% | 04-project-management |
+| 個別施策分析（マスタ） | 25 | 25 | 100% | 05-analysis |
+| 個別施策分析（セッション） | 24 | 24 | 100% | 05-analysis |
+| ドライバーツリー | 41 | 41 | 100% | 06-driver-tree |
+| ダッシュボード・統計 | 6 | 6 | 100% | 07-dashboard |
+| テンプレート機能 | 5 | 5 | 100% | 08-template |
+| 複製・エクスポート機能 | 5 | 5 | 100% | 09-copy-export |
+| ファイルバージョン管理 | 4 | 4 | 100% | 10-file-version |
+| グローバル検索 | 2 | 2 | 100% | 11-search |
+| ユーザー通知 | 5 | 5 | 100% | 12-notification |
+| システム管理（管理者専用） | 43 | 43 | 100% | 13-system-admin |
 | 横断的ユースケース | 18 | 18 | 100% | （各機能に分散） |
-| **合計** | **211** | **211** | **100%** | - |
+| **合計** | **215** | **215** | **100%** | - |
 
 ---
 
