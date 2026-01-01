@@ -1,6 +1,12 @@
 """ダッシュボードサービスのテスト。
 
-このモジュールは、DashboardServiceクラスのテストを含みます。
+このテストファイルは docs/specifications/13-testing/01-test-strategy.md に従い、
+DashboardServiceクラスのビジネスロジックをテストします。
+
+対応メソッド:
+    - get_stats() - 統計情報取得
+    - get_activities() - アクティビティ取得
+    - get_charts() - チャートデータ取得
 """
 
 from datetime import datetime
@@ -16,7 +22,7 @@ class TestDashboardServiceGetStats:
 
     @pytest.mark.asyncio
     async def test_get_stats_empty_database(self, db_session):
-        """空のデータベースで統計情報を取得。"""
+        """[test_dashboard-001] 空のデータベースで統計情報を取得。"""
         # Arrange
         service = DashboardService(db_session)
 
@@ -34,7 +40,7 @@ class TestDashboardServiceGetStats:
 
     @pytest.mark.asyncio
     async def test_get_stats_with_data(self, db_session, test_data_seeder):
-        """データがある状態で統計情報を取得。"""
+        """[test_dashboard-002] データがある状態で統計情報を取得。"""
         # Arrange
         # ユーザーを作成
         await test_data_seeder.create_user(display_name="User1", is_active=True)
@@ -66,7 +72,7 @@ class TestDashboardServiceGetCharts:
 
     @pytest.mark.asyncio
     async def test_get_charts_empty_database(self, db_session):
-        """空のデータベースでチャートデータを取得。"""
+        """[test_dashboard-003] 空のデータベースでチャートデータを取得。"""
         # Arrange
         service = DashboardService(db_session)
 
@@ -92,7 +98,7 @@ class TestDashboardServiceGetCharts:
 
     @pytest.mark.asyncio
     async def test_get_charts_with_data(self, db_session, test_data_seeder):
-        """データがある状態でチャートデータを取得。"""
+        """[test_dashboard-004] データがある状態でチャートデータを取得。"""
         # Arrange
         await test_data_seeder.create_user(display_name="TestUser")
         await test_data_seeder.create_project(name="ActiveProject", is_active=True)
@@ -123,7 +129,7 @@ class TestDashboardServiceGetActivities:
 
     @pytest.mark.asyncio
     async def test_get_activities_empty_database(self, db_session):
-        """空のデータベースでアクティビティを取得。"""
+        """[test_dashboard-005] 空のデータベースでアクティビティを取得。"""
         # Arrange
         service = DashboardService(db_session)
 
@@ -138,7 +144,7 @@ class TestDashboardServiceGetActivities:
 
     @pytest.mark.asyncio
     async def test_get_activities_with_project(self, db_session, test_data_seeder):
-        """プロジェクト作成のアクティビティを取得。"""
+        """[test_dashboard-006] プロジェクト作成のアクティビティを取得。"""
         # Arrange
         user = await test_data_seeder.create_user(display_name="TestUser")
         await test_data_seeder.create_project(
@@ -162,7 +168,7 @@ class TestDashboardServiceGetActivities:
 
     @pytest.mark.asyncio
     async def test_get_activities_with_role_history(self, db_session, test_data_seeder):
-        """ロール変更履歴のアクティビティを取得。"""
+        """[test_dashboard-007] ロール変更履歴のアクティビティを取得。"""
         # Arrange
         user = await test_data_seeder.create_user(display_name="TestUser")
         admin = await test_data_seeder.create_admin_user()
@@ -193,7 +199,7 @@ class TestDashboardServiceGetActivities:
 
     @pytest.mark.asyncio
     async def test_get_activities_pagination(self, db_session, test_data_seeder):
-        """ページネーションのテスト。"""
+        """[test_dashboard-008] ページネーションのテスト。"""
         # Arrange
         user = await test_data_seeder.create_user(display_name="TestUser")
         for i in range(5):
@@ -220,7 +226,7 @@ class TestDashboardServiceGetActivities:
 
     @pytest.mark.asyncio
     async def test_get_activities_sorted_by_date(self, db_session, test_data_seeder):
-        """日時順でソートされていることを確認。"""
+        """[test_dashboard-009] 日時順でソートされていることを確認。"""
         # Arrange
         user = await test_data_seeder.create_user(display_name="TestUser")
         for i in range(3):

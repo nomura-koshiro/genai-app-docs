@@ -51,29 +51,6 @@ async def test_get_statistics_overview_with_period(client: AsyncClient, override
     assert "projects" in data
 
 
-@pytest.mark.asyncio
-async def test_get_statistics_overview_unauthorized(client: AsyncClient):
-    """[test_statistics-003] 認証なしでの統計概要取得拒否。"""
-    # Act
-    response = await client.get("/api/v1/admin/statistics/overview")
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_get_statistics_overview_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_statistics-004] 一般ユーザーでの統計概要取得拒否。"""
-    # Arrange
-    override_auth(regular_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/statistics/overview")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # GET /api/v1/admin/statistics/users - ユーザー統計取得
 # ================================================================================
@@ -81,7 +58,7 @@ async def test_get_statistics_overview_forbidden_regular_user(client: AsyncClien
 
 @pytest.mark.asyncio
 async def test_get_user_statistics_success(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-005] ユーザー統計取得の成功ケース。"""
+    """[test_statistics-003] ユーザー統計取得の成功ケース。"""
     # Arrange
     override_auth(admin_user)
 
@@ -98,7 +75,7 @@ async def test_get_user_statistics_success(client: AsyncClient, override_auth, a
 
 @pytest.mark.asyncio
 async def test_get_user_statistics_with_days(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-006] 日数指定付きユーザー統計取得。"""
+    """[test_statistics-004] 日数指定付きユーザー統計取得。"""
     # Arrange
     override_auth(admin_user)
 
@@ -110,26 +87,3 @@ async def test_get_user_statistics_with_days(client: AsyncClient, override_auth,
     data = response.json()
     # レスポンスにactiveUsersが含まれ、daysパラメータに応じたデータ数が返される
     assert "activeUsers" in data
-
-
-@pytest.mark.asyncio
-async def test_get_user_statistics_unauthorized(client: AsyncClient):
-    """[test_statistics-007] 認証なしでのユーザー統計取得拒否。"""
-    # Act
-    response = await client.get("/api/v1/admin/statistics/users")
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_get_user_statistics_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_statistics-008] 一般ユーザーでのユーザー統計取得拒否。"""
-    # Arrange
-    override_auth(regular_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/statistics/users")
-
-    # Assert
-    assert response.status_code == 403

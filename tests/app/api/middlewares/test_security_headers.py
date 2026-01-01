@@ -9,10 +9,12 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_security_headers_on_root(client: AsyncClient):
+async def test_security_headers_root_endpoint_include_headers(client: AsyncClient):
     """[test_security_headers-001] ルートエンドポイントにセキュリティヘッダーが追加されることを確認。"""
+    # Act
     response = await client.get("/")
 
+    # Assert
     # 基本的なセキュリティヘッダーの存在を確認
     assert "X-Content-Type-Options" in response.headers
     assert response.headers["X-Content-Type-Options"] == "nosniff"
@@ -25,10 +27,12 @@ async def test_security_headers_on_root(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_security_headers_on_health(client: AsyncClient):
+async def test_security_headers_health_endpoint_include_headers(client: AsyncClient):
     """[test_security_headers-002] ヘルスチェックエンドポイントにセキュリティヘッダーが追加されることを確認。"""
+    # Act
     response = await client.get("/health")
 
+    # Assert
     # すべてのエンドポイントにセキュリティヘッダーが追加される
     assert response.headers["X-Content-Type-Options"] == "nosniff"
     assert response.headers["X-Frame-Options"] == "DENY"
@@ -36,15 +40,18 @@ async def test_security_headers_on_health(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_hsts_header_present(client: AsyncClient):
+async def test_hsts_header_production_mode_includes_header(client: AsyncClient):
     """[test_security_headers-003] HSTSヘッダーが追加されることを確認（本番環境のみ）。"""
-    response = await client.get("/")
-
+    # Arrange
     # 開発環境ではHSTSヘッダーは追加されない（DEBUG=Trueのため）
     # 本番環境（DEBUG=False）でのみHSTSヘッダーが追加される
     # テスト環境ではDEBUG=Trueなので、HSTSヘッダーがないことを確認
     from app.core.config import settings
 
+    # Act
+    response = await client.get("/")
+
+    # Assert
     if settings.DEBUG:
         # 開発/テスト環境: HSTSヘッダーなし
         assert "Strict-Transport-Security" not in response.headers
@@ -56,8 +63,9 @@ async def test_hsts_header_present(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_security_headers_on_api_endpoints(client: AsyncClient):
+async def test_security_headers_api_endpoint_include_headers(client: AsyncClient):
     """[test_security_headers-004] APIエンドポイントにもセキュリティヘッダーが追加されることを確認。"""
+    # Act
     # ユーザー作成エンドポイントにPOST
     response = await client.post(
         "/api/v1/users",
@@ -68,6 +76,7 @@ async def test_security_headers_on_api_endpoints(client: AsyncClient):
         },
     )
 
+    # Assert
     # セキュリティヘッダーの存在を確認
     assert "X-Content-Type-Options" in response.headers
     assert "X-Frame-Options" in response.headers

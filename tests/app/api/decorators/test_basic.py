@@ -27,17 +27,19 @@ class TestMeasurePerformance:
     """measure_performanceデコレータのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_performance_measurement(self):
+    async def test_measure_performance_logs_execution_time(self):
         """[test_basic-001] 実行時間が測定されログに記録されることをテスト。"""
-
+        # Arrange
         @measure_performance
         async def test_func():
             await asyncio.sleep(0.1)
             return "result"
 
+        # Act
         with patch("app.api.decorators.basic.logger") as mock_logger:
             result = await test_func()
 
+            # Assert
             assert result == "result"
             assert mock_logger.info.called
             call_args = mock_logger.info.call_args
@@ -51,16 +53,18 @@ class TestLogExecution:
     """log_executionデコレータのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_basic_logging(self):
+    async def test_log_execution_records_start_and_completion(self):
         """[test_basic-002] 基本的なログ記録がされることをテスト。"""
-
+        # Arrange
         @log_execution(level="info")
         async def test_func():
             return "result"
 
+        # Act
         with patch("app.api.decorators.basic.logger") as mock_logger:
             result = await test_func()
 
+            # Assert
             assert result == "result"
             assert mock_logger.info.call_count == 2  # Executing と Completed
             calls = [call[0][0] for call in mock_logger.info.call_args_list]
@@ -74,27 +78,32 @@ class TestAsyncTimeout:
     @pytest.mark.asyncio
     async def test_successful_execution_within_timeout(self):
         """[test_basic-003] タイムアウト時間内に正常終了する場合、結果が返却されることをテスト。"""
-
+        # Arrange
         @async_timeout(1.0)
         async def test_func():
             await asyncio.sleep(0.1)
             return "success"
 
+        # Act
         result = await test_func()
+
+        # Assert
         assert result == "success"
 
     @pytest.mark.asyncio
     async def test_timeout_raises_validation_error(self):
         """[test_basic-004] タイムアウト時にValidationErrorが送出されることをテスト。"""
-
+        # Arrange
         @async_timeout(0.1)
         async def test_func():
             await asyncio.sleep(1.0)
             return "should not reach"
 
+        # Act
         with pytest.raises(ValidationError) as exc_info:
             await test_func()
 
+        # Assert
         assert "タイムアウト" in exc_info.value.message
         assert exc_info.value.details["timeout_seconds"] == 0.1
         assert exc_info.value.details["function"] == "test_func"

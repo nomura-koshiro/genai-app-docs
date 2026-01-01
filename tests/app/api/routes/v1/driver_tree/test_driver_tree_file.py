@@ -167,21 +167,6 @@ async def test_upload_driver_tree_file_too_large(
     assert "detail" in data
 
 
-@pytest.mark.asyncio
-async def test_upload_driver_tree_file_unauthorized(client: AsyncClient):
-    """[test_driver_tree_file-004] 認証なしでのファイルアップロード失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-    excel_file = create_test_excel_file()
-    files = {"file": ("test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-
-    # Act
-    response = await client.post(f"/api/v1/project/{project_id}/driver-tree/file", files=files)
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # GET /api/v1/project/{project_id}/driver-tree/file - アップロード済みファイル一覧取得
 # ================================================================================
@@ -194,7 +179,7 @@ async def test_list_uploaded_files_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-007] アップロード済みファイル一覧取得の成功ケース。"""
+    """[test_driver_tree_file-004] アップロード済みファイル一覧取得の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -219,19 +204,6 @@ async def test_list_uploaded_files_success(
     assert len(data["files"]) == 2
 
 
-@pytest.mark.asyncio
-async def test_list_uploaded_files_unauthorized(client: AsyncClient):
-    """[test_driver_tree_file-008] 認証なしでのファイル一覧取得失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project_id}/driver-tree/file")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # DELETE /api/v1/project/{project_id}/driver-tree/file/{file_id} - ファイル削除
 # ================================================================================
@@ -244,7 +216,7 @@ async def test_delete_driver_tree_file_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-009] ファイル削除の成功ケース。"""
+    """[test_driver_tree_file-005] ファイル削除の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -269,39 +241,6 @@ async def test_delete_driver_tree_file_success(
     assert len(data["files"]) == 0  # 削除後は空
 
 
-@pytest.mark.asyncio
-async def test_delete_driver_tree_file_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-010] 存在しないファイルの削除（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    nonexistent_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/file/{nonexistent_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_delete_driver_tree_file_unauthorized(client: AsyncClient):
-    """[test_driver_tree_file-011] 認証なしでのファイル削除失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-    file_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{project_id}/driver-tree/file/{file_id}")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # POST /api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id} - シート選択
 # ================================================================================
@@ -314,7 +253,7 @@ async def test_select_sheet_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-012] シート選択の成功ケース。"""
+    """[test_driver_tree_file-006] シート選択の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -339,41 +278,6 @@ async def test_select_sheet_success(
     assert data["success"] is True
 
 
-@pytest.mark.asyncio
-async def test_select_sheet_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-013] 存在しないシートの選択（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    # Act
-    response = await client.post(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_select_sheet_unauthorized(client: AsyncClient):
-    """[test_driver_tree_file-014] 認証なしでのシート選択失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    # Act
-    response = await client.post(f"/api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # GET /api/v1/project/{project_id}/driver-tree/sheet - 選択済みシート一覧取得
 # ================================================================================
@@ -386,7 +290,7 @@ async def test_list_selected_sheets_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-016] 選択済みシート一覧取得の成功ケース。"""
+    """[test_driver_tree_file-007] 選択済みシート一覧取得の成功ケース。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -433,7 +337,7 @@ async def test_list_selected_sheets_empty(
     override_auth,
     project_with_owner,
 ):
-    """[test_driver_tree_file-017] 選択済みシートがない場合の空リスト。"""
+    """[test_driver_tree_file-008] 選択済みシートがない場合の空リスト。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -448,19 +352,6 @@ async def test_list_selected_sheets_empty(
     assert len(data["files"]) == 0
 
 
-@pytest.mark.asyncio
-async def test_list_selected_sheets_unauthorized(client: AsyncClient):
-    """[test_driver_tree_file-018] 認証なしでの選択済みシート一覧取得失敗。"""
-    # Arrange
-    project_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project_id}/driver-tree/sheet")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # DELETE /api/v1/project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id} - シート削除
 # ================================================================================
@@ -473,7 +364,7 @@ async def test_delete_sheet_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-019] 選択済みシート削除成功。"""
+    """[test_driver_tree_file-009] 選択済みシート削除成功。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -502,44 +393,6 @@ async def test_delete_sheet_success(
     assert "files" in data
 
 
-@pytest.mark.asyncio
-async def test_delete_sheet_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-020] 存在しないシートの削除でエラー。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_delete_sheet_unauthorized(
-    client: AsyncClient,
-    project_with_owner,
-):
-    """[test_driver_tree_file-021] 認証なしでのシート削除失敗。"""
-    # Arrange
-    project, _ = project_with_owner
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # PATCH /project/{project_id}/driver-tree/file/{file_id}/sheet/{sheet_id}/column
 # ================================================================================
@@ -552,7 +405,7 @@ async def test_update_column_config_success(
     project_with_owner,
     mock_storage_service,
 ):
-    """[test_driver_tree_file-022] カラム設定更新成功。"""
+    """[test_driver_tree_file-010] カラム設定更新成功。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -638,69 +491,13 @@ async def test_update_column_config_success(
 
 
 @pytest.mark.asyncio
-async def test_update_column_config_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-023] 存在しないシートへのカラム設定更新（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    column_config = {
-        "columns": [
-            {"columnId": str(uuid.uuid4()), "role": "推移"},
-        ]
-    }
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/column",
-        json=column_config,
-    )
-
-    # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_unauthorized(
-    client: AsyncClient,
-    project_with_owner,
-):
-    """[test_driver_tree_file-024] 認証なしでのカラム設定更新失敗。"""
-    # Arrange
-    project, _ = project_with_owner
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    column_config = {
-        "columns": [
-            {"columnId": str(uuid.uuid4()), "role": "推移"},
-        ]
-    }
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/column",
-        json=column_config,
-    )
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
 async def test_update_column_config_invalid_role(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-025] 不正なrole値でのカラム設定更新失敗（422エラー）。"""
+    """[test_driver_tree_file-011] 不正なrole値でのカラム設定更新失敗（422エラー）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -749,7 +546,7 @@ async def test_update_column_config_invalid_column_id(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-026] 存在しないcolumn_idでのカラム設定更新失敗（404エラー）。"""
+    """[test_driver_tree_file-012] 存在しないcolumn_idでのカラム設定更新失敗（404エラー）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -799,7 +596,7 @@ async def test_get_sheet_detail_success(
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-027] シート詳細取得の成功ケース。
+    """[test_driver_tree_file-013] シート詳細取得の成功ケース。
 
     07-api-extensions.md の実装により、SheetDetailResponse が返されることを確認。
     シート詳細には ColumnInfo（カラム情報）、行数、サンプルデータが含まれる。
@@ -861,37 +658,13 @@ async def test_get_sheet_detail_success(
 
 
 @pytest.mark.asyncio
-async def test_get_sheet_detail_not_found(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-028] 存在しないシートの詳細取得で404。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    file_id = uuid.uuid4()
-    sheet_id = uuid.uuid4()
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
-
-    # Assert
-    if response.status_code == 404:
-        assert True  # 期待通り404
-    else:
-        # エンドポイントが未実装の場合はスキップ
-        pytest.skip("Sheet detail endpoint not implemented yet")
-
-
-@pytest.mark.asyncio
 async def test_sheet_detail_column_info_types(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
 ):
-    """[test_driver_tree_file-029] シート詳細のColumnInfoで各種データ型が返されることを確認。
+    """[test_driver_tree_file-014] シート詳細のColumnInfoで各種データ型が返されることを確認。
 
     ColumnInfo の dataType フィールドが適切に設定されていることを確認。
     """

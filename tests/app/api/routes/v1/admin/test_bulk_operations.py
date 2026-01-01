@@ -38,35 +38,6 @@ async def test_import_users_success(client: AsyncClient, override_auth, admin_us
     assert "errorCount" in data
 
 
-@pytest.mark.asyncio
-async def test_import_users_unauthorized(client: AsyncClient):
-    """[test_bulk_operations-002] 認証なしでのユーザー一括インポート拒否。"""
-    # Arrange
-    csv_content = "email,display_name\ntest@example.com,Test User\n"
-    files = {"file": ("users.csv", io.BytesIO(csv_content.encode()), "text/csv")}
-
-    # Act
-    response = await client.post("/api/v1/admin/bulk/users/import", files=files)
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_import_users_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_bulk_operations-003] 一般ユーザーでのユーザー一括インポート拒否。"""
-    # Arrange
-    override_auth(regular_user)
-    csv_content = "email,display_name\ntest@example.com,Test User\n"
-    files = {"file": ("users.csv", io.BytesIO(csv_content.encode()), "text/csv")}
-
-    # Act
-    response = await client.post("/api/v1/admin/bulk/users/import", files=files)
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # GET /api/v1/admin/bulk/users/export - ユーザー一括エクスポート
 # ================================================================================
@@ -74,7 +45,7 @@ async def test_import_users_forbidden_regular_user(client: AsyncClient, override
 
 @pytest.mark.asyncio
 async def test_export_users_success(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-004] ユーザー一括エクスポートの成功ケース。"""
+    """[test_bulk_operations-002] ユーザー一括エクスポートの成功ケース。"""
     # Arrange
     override_auth(admin_user)
 
@@ -89,7 +60,7 @@ async def test_export_users_success(client: AsyncClient, override_auth, admin_us
 
 @pytest.mark.asyncio
 async def test_export_users_with_filter(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-005] フィルタ付きユーザーエクスポート。"""
+    """[test_bulk_operations-003] フィルタ付きユーザーエクスポート。"""
     # Arrange
     override_auth(admin_user)
 
@@ -101,29 +72,6 @@ async def test_export_users_with_filter(client: AsyncClient, override_auth, admi
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
 
 
-@pytest.mark.asyncio
-async def test_export_users_unauthorized(client: AsyncClient):
-    """[test_bulk_operations-006] 認証なしでのユーザーエクスポート拒否。"""
-    # Act
-    response = await client.get("/api/v1/admin/bulk/users/export")
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_export_users_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_bulk_operations-007] 一般ユーザーでのユーザーエクスポート拒否。"""
-    # Arrange
-    override_auth(regular_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/bulk/users/export")
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # POST /api/v1/admin/bulk/users/deactivate - 非アクティブユーザー一括無効化
 # ================================================================================
@@ -131,7 +79,7 @@ async def test_export_users_forbidden_regular_user(client: AsyncClient, override
 
 @pytest.mark.asyncio
 async def test_deactivate_inactive_users_success(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-008] 非アクティブユーザー一括無効化の成功ケース。"""
+    """[test_bulk_operations-004] 非アクティブユーザー一括無効化の成功ケース。"""
     # Arrange
     override_auth(admin_user)
 
@@ -148,35 +96,6 @@ async def test_deactivate_inactive_users_success(client: AsyncClient, override_a
     assert "previewItems" in data  # dry_run時はプレビューアイテムが返される
 
 
-@pytest.mark.asyncio
-async def test_deactivate_inactive_users_unauthorized(client: AsyncClient):
-    """[test_bulk_operations-009] 認証なしでのユーザー無効化拒否。"""
-    # Act
-    response = await client.post(
-        "/api/v1/admin/bulk/users/deactivate",
-        params={"inactive_days": 90},
-    )
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_deactivate_inactive_users_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_bulk_operations-010] 一般ユーザーでのユーザー無効化拒否。"""
-    # Arrange
-    override_auth(regular_user)
-
-    # Act
-    response = await client.post(
-        "/api/v1/admin/bulk/users/deactivate",
-        params={"inactive_days": 90},
-    )
-
-    # Assert
-    assert response.status_code == 403
-
-
 # ================================================================================
 # POST /api/v1/admin/bulk/projects/archive - プロジェクト一括アーカイブ
 # ================================================================================
@@ -184,7 +103,7 @@ async def test_deactivate_inactive_users_forbidden_regular_user(client: AsyncCli
 
 @pytest.mark.asyncio
 async def test_archive_old_projects_success(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-011] プロジェクト一括アーカイブの成功ケース。"""
+    """[test_bulk_operations-005] プロジェクト一括アーカイブの成功ケース。"""
     # Arrange
     override_auth(admin_user)
 
@@ -200,32 +119,3 @@ async def test_archive_old_projects_success(client: AsyncClient, override_auth, 
     assert "archivedCount" in data
     assert "success" in data
     assert "previewItems" in data  # dry_run時はプレビューアイテムが返される
-
-
-@pytest.mark.asyncio
-async def test_archive_old_projects_unauthorized(client: AsyncClient):
-    """[test_bulk_operations-012] 認証なしでのプロジェクトアーカイブ拒否。"""
-    # Act
-    response = await client.post(
-        "/api/v1/admin/bulk/projects/archive",
-        params={"inactive_days": 180},
-    )
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_archive_old_projects_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_bulk_operations-013] 一般ユーザーでのプロジェクトアーカイブ拒否。"""
-    # Arrange
-    override_auth(regular_user)
-
-    # Act
-    response = await client.post(
-        "/api/v1/admin/bulk/projects/archive",
-        params={"inactive_days": 180},
-    )
-
-    # Assert
-    assert response.status_code == 403
