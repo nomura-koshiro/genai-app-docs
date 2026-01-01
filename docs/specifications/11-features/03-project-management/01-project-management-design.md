@@ -78,8 +78,7 @@
 | role | VARCHAR(50) | NO | プロジェクトロール |
 | joined_at | TIMESTAMP | NO | 参加日時 |
 | added_by | UUID | YES | 追加者ユーザーID |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+| last_activity_at | TIMESTAMP | YES | 最終アクティビティ日時 |
 
 **プロジェクトロール**:
 
@@ -104,18 +103,20 @@
 | project_id | UUID | NO | プロジェクトID（FK: project） |
 | filename | VARCHAR(255) | NO | 保存ファイル名 |
 | original_filename | VARCHAR(255) | NO | 元のファイル名 |
-| file_path | VARCHAR(500) | NO | ファイルパス |
-| file_size | BIGINT | NO | ファイルサイズ（バイト） |
+| file_path | VARCHAR(512) | NO | ファイルパス |
+| file_size | INTEGER | NO | ファイルサイズ（バイト） |
 | mime_type | VARCHAR(100) | YES | MIMEタイプ |
 | uploaded_by | UUID | NO | アップロード者ID |
+| uploaded_at | TIMESTAMP | NO | アップロード日時 |
 | version | INTEGER | NO | バージョン番号（デフォルト: 1） |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+| parent_file_id | UUID | YES | 親ファイルID（バージョン管理用、FK: project_file） |
+| is_latest | BOOLEAN | NO | 最新バージョンフラグ（デフォルト: true） |
 
 **インデックス**:
 
 - `idx_project_file_project` ON (project_id)
 - `idx_project_file_uploaded_by` ON (uploaded_by)
+- `idx_project_file_parent` ON (parent_file_id)
 
 ---
 

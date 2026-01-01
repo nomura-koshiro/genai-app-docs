@@ -56,7 +56,7 @@
 
 | コンポーネント | 数量 |
 |--------------|------|
-| データベーステーブル | 9 |
+| データベーステーブル | 10 |
 | APIエンドポイント | 30 |
 | Pydanticスキーマ | 50+ |
 | フロントエンド画面 | 5 |
@@ -78,6 +78,7 @@
 | driver_tree_data_frame | ファイルの列データキャッシュ |
 | driver_tree_category | 業界分類マスタ |
 | driver_tree_formula | 数式テンプレートマスタ |
+| driver_tree_template | ツリーテンプレート（07-template設計書参照） |
 
 ### 2.2 ER図（主要テーブル）
 
@@ -257,6 +258,29 @@ driver_tree_category ──1:N── driver_tree_formula
 **制約:**
 
 - uq_driver_kpi: UNIQUE (driver_type_id, kpi)
+
+#### driver_tree_template（ツリーテンプレート）
+
+| カラム名 | 型 | NULL | デフォルト | 説明 |
+|---------|-----|------|-----------|------|
+| id | UUID | NO | uuid4() | 主キー |
+| project_id | UUID | YES | NULL | プロジェクトID（FK、NULLはグローバル） |
+| name | VARCHAR(255) | NO | - | テンプレート名 |
+| description | TEXT | YES | NULL | 説明 |
+| category | VARCHAR(100) | YES | NULL | カテゴリ（業種） |
+| template_config | JSONB | NO | - | テンプレート設定 |
+| source_tree_id | UUID | YES | NULL | 元ツリーID（FK） |
+| is_public | BOOLEAN | NO | false | 公開フラグ |
+| usage_count | INTEGER | NO | 0 | 使用回数 |
+| created_by | UUID | YES | NULL | 作成者ID（FK） |
+| created_at | TIMESTAMP | NO | now() | 作成日時 |
+| updated_at | TIMESTAMP | NO | now() | 更新日時 |
+
+**インデックス:**
+
+- idx_driver_tree_template_project_id (project_id)
+- idx_driver_tree_template_category (category)
+- idx_driver_tree_template_public (is_public)
 
 ---
 

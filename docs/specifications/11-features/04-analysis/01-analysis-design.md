@@ -24,7 +24,7 @@
 
 | レイヤー | 項目数 |
 |---------|--------|
-| データベーステーブル | 10テーブル |
+| データベーステーブル | 11テーブル |
 | APIエンドポイント | 20エンドポイント |
 | Pydanticスキーマ | 35スキーマ |
 | サービス | 5サービス |
@@ -162,10 +162,11 @@
 |---------|---|------|------|
 | id | UUID | NO | 主キー |
 | snapshot_id | UUID | NO | スナップショットID（FK） |
-| role | VARCHAR(20) | NO | ロール（user/assistant/system） |
-| content | TEXT | NO | メッセージ内容 |
 | chat_order | INTEGER | NO | チャット順序 |
+| role | VARCHAR(50) | NO | ロール（user/assistant） |
+| message | TEXT | YES | メッセージ内容 |
 | created_at | TIMESTAMP | NO | 作成日時 |
+| updated_at | TIMESTAMP | NO | 更新日時 |
 
 ### 2.10 analysis_step（分析ステップ）
 
@@ -180,6 +181,31 @@
 | step_order | INTEGER | NO | ステップ順序 |
 | created_at | TIMESTAMP | NO | 作成日時 |
 | updated_at | TIMESTAMP | NO | 更新日時 |
+
+### 2.11 analysis_template（分析テンプレート）
+
+**対応ユースケース**: テンプレート機能（07-template設計書参照）
+
+| カラム名 | 型 | NULL | 説明 |
+|---------|---|------|------|
+| id | UUID | NO | 主キー |
+| project_id | UUID | YES | プロジェクトID（FK、NULLはグローバル） |
+| name | VARCHAR(255) | NO | テンプレート名 |
+| description | TEXT | YES | 説明 |
+| template_type | VARCHAR(50) | NO | テンプレートタイプ（session/step） |
+| template_config | JSONB | NO | テンプレート設定 |
+| source_session_id | UUID | YES | 元セッションID（FK） |
+| is_public | BOOLEAN | NO | 公開フラグ（デフォルト: false） |
+| usage_count | INTEGER | NO | 使用回数（デフォルト: 0） |
+| created_by | UUID | YES | 作成者ID（FK） |
+| created_at | TIMESTAMP | NO | 作成日時 |
+| updated_at | TIMESTAMP | NO | 更新日時 |
+
+**インデックス**:
+
+- `idx_analysis_template_project_id` ON (project_id)
+- `idx_analysis_template_type` ON (template_type)
+- `idx_analysis_template_public` ON (is_public)
 
 ---
 
