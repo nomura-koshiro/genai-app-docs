@@ -20,9 +20,9 @@
 
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
-| データベーステーブル | 2 | 未実装 |
-| APIエンドポイント | 7 | 実装済: 2、未実装: 5 |
-| Pydanticスキーマ | 10 | 部分的に実装済 |
+| データベーステーブル | 2 | 実装済 |
+| APIエンドポイント | 7 | 実装済: 7/7 |
+| Pydanticスキーマ | 10 | 実装済 |
 | フロントエンド画面 | 2 | 未実装 |
 
 ---
@@ -152,20 +152,20 @@ project ──1:N── driver_tree_template
 
 #### 分析セッションテンプレート
 
-| メソッド | パス | 説明 | 備考 |
-|---------|------|------|------|
-| GET | /api/v1/project/{project_id}/analysis/template | テンプレート一覧取得 | 実装済 |
-| GET | /api/v1/project/{project_id}/analysis/template/{issue_id} | テンプレート詳細取得 | 実装済 |
-| POST | /api/v1/project/{project_id}/analysis/template | テンプレート作成 | 未実装 |
-| DELETE | /api/v1/project/{project_id}/analysis/template/{template_id} | テンプレート削除 | 未実装 |
+| メソッド | パス | 説明 | 実装状況 |
+|---------|------|------|----------|
+| GET | /api/v1/project/{project_id}/analysis/template | テンプレート一覧取得 | ✅ 実装済 |
+| GET | /api/v1/project/{project_id}/analysis/template/{issue_id} | テンプレート詳細取得 | ✅ 実装済 |
+| POST | /api/v1/project/{project_id}/analysis/template | テンプレート作成 | ✅ 実装済 |
+| DELETE | /api/v1/project/{project_id}/analysis/template/{template_id} | テンプレート削除 | ✅ 実装済 |
 
 #### ドライバーツリーテンプレート
 
-| メソッド | パス | 説明 | 備考 |
-|---------|------|------|------|
-| GET | /api/v1/project/{project_id}/driver-tree/template | テンプレート一覧取得 | 未実装 |
-| POST | /api/v1/project/{project_id}/driver-tree/template | テンプレート作成 | 未実装 |
-| DELETE | /api/v1/project/{project_id}/driver-tree/template/{template_id} | テンプレート削除 | 未実装 |
+| メソッド | パス | 説明 | 実装状況 |
+|---------|------|------|----------|
+| GET | /api/v1/project/{project_id}/driver-tree/template | テンプレート一覧取得 | ✅ 実装済 |
+| POST | /api/v1/project/{project_id}/driver-tree/template | テンプレート作成 | ✅ 実装済 |
+| DELETE | /api/v1/project/{project_id}/driver-tree/template/{template_id} | テンプレート削除 | ✅ 実装済 |
 
 ### 3.2 リクエスト/レスポンス定義
 

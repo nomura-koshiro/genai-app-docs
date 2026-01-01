@@ -293,7 +293,7 @@ async def create_template(
 @handle_service_errors
 async def delete_template(
     project_id: uuid.UUID,
-    template_id: uuid.UUID = Path(..., description="テンプレートID"),
+    template_id: uuid.UUID,
     current_user: CurrentUserAccountDep,
     member: ProjectMemberDep,  # 権限チェック
     template_service: AnalysisTemplateServiceDep,

@@ -20,8 +20,8 @@
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
 | データベーステーブル | 1 | 実装済（project_file_versionの代わりにproject_file.parent_file_idで管理） |
-| APIエンドポイント | 5 | 実装済: 2、未実装: 3 |
-| Pydanticスキーマ | 8 | 部分的に実装済 |
+| APIエンドポイント | 5 | 実装済: 5/5 |
+| Pydanticスキーマ | 8 | 実装済 |
 | フロントエンド画面 | 1 | 未実装 |
 
 ---
@@ -85,13 +85,13 @@ project_file ──1:N── project_file_version
 
 ### 3.1 エンドポイント一覧
 
-| メソッド | パス | 説明 | 備考 |
-|---------|------|------|------|
-| GET | /api/v1/project/{project_id}/file/{file_id}/versions | バージョン履歴取得 | 実装済 |
-| POST | /api/v1/project/{project_id}/file/{file_id}/version | 新規バージョンアップロード | 実装済 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/version/{version_id} | 特定バージョンダウンロード | 未実装 |
-| POST | /api/v1/project/{project_id}/file/{file_id}/version/{version_id}/restore | バージョン復元 | 未実装 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/version/compare | バージョン比較 | 未実装 |
+| メソッド | パス | 説明 | 実装状況 |
+|---------|------|------|----------|
+| GET | /api/v1/project/{project_id}/file/{file_id}/versions | バージョン履歴取得 | ✅ 実装済 |
+| POST | /api/v1/project/{project_id}/file/{file_id}/version | 新規バージョンアップロード | ✅ 実装済 |
+| GET | /api/v1/project/{project_id}/file/{file_id}/version/{version_id} | 特定バージョンダウンロード | ✅ 実装済 |
+| POST | /api/v1/project/{project_id}/file/{file_id}/version/{version_id}/restore | バージョン復元 | ✅ 実装済 |
+| GET | /api/v1/project/{project_id}/file/{file_id}/version/compare | バージョン比較 | ✅ 実装済 |
 
 ### 3.2 リクエスト/レスポンス定義
 
@@ -615,12 +615,12 @@ features/file-version/
 
 | UC ID | 機能名 | API | 画面 | ステータス |
 |-------|--------|-----|------|-----------|
-| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions | 実装済 |
-| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions | 実装済 |
-| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions | 未実装 |
-| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions | 未実装 |
+| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions | ✅ 実装済 |
+| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions | ✅ 実装済 |
+| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions | ✅ 実装済 |
+| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions | ✅ 実装済 |
 
-カバレッジ: 2/4 = 50%（実装済のみ）
+カバレッジ: 4/4 = 100%（バックエンドAPI実装済、フロントエンド未実装）
 
 ---
 

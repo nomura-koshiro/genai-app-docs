@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.repositories.analysis import (
     AnalysisIssueRepository,
@@ -204,7 +204,7 @@ class AnalysisTemplateService:
 
         # プロジェクトIDの検証
         if source_session.project_id != project_id:
-            raise ForbiddenError("他のプロジェクトのセッションからテンプレートを作成できません")
+            raise AuthorizationError("他のプロジェクトのセッションからテンプレートを作成できません")
 
         # テンプレート設定を抽出（簡易版）
         template_config = {
@@ -259,7 +259,7 @@ class AnalysisTemplateService:
 
         Raises:
             NotFoundError: テンプレートが見つからない
-            ForbiddenError: 削除権限がない
+            AuthorizationError: 削除権限がない
         """
         # テンプレートの取得
         template = await self.template_repository.get_by_id(template_id)
@@ -268,11 +268,11 @@ class AnalysisTemplateService:
 
         # 権限チェック: プロジェクト固有テンプレートの場合、同じプロジェクトであること
         if template.project_id and template.project_id != project_id:
-            raise ForbiddenError("他のプロジェクトのテンプレートは削除できません")
+            raise AuthorizationError("他のプロジェクトのテンプレートは削除できません")
 
         # 作成者のみ削除可能
         if template.created_by != user_id:
-            raise ForbiddenError("テンプレートの作成者のみ削除できます")
+            raise AuthorizationError("テンプレートの作成者のみ削除できます")
 
         # 削除実行
         deleted = await self.template_repository.delete(template_id)

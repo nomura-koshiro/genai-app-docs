@@ -13,9 +13,9 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ForbiddenError, NotFoundError
+from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
-from app.repositories.driver_tree import DriverTreeNodeRepository, DriverTreeRepository, DriverTreeTemplateRepository
+from app.repositories.driver_tree import DriverTreeRepository, DriverTreeTemplateRepository
 from app.schemas.driver_tree import (
     DriverTreeTemplateCreateRequest,
     DriverTreeTemplateCreateResponse,
@@ -42,7 +42,6 @@ class DriverTreeTemplateService:
         self.db = db
         self.template_repository = DriverTreeTemplateRepository(db)
         self.tree_repository = DriverTreeRepository(db)
-        self.node_repository = DriverTreeNodeRepository(db)
 
     async def list_templates(
         self,
@@ -109,39 +108,42 @@ class DriverTreeTemplateService:
 
         Raises:
             NotFoundError: 元ツリーが見つからない
-            ForbiddenError: 権限がない
+            AuthorizationError: 権限がない
         """
-        # 元ツリーの取得
-        source_tree = await self.tree_repository.get_by_id(request.source_tree_id)
+        # 元ツリーの取得（ノード含む）
+        source_tree = await self.tree_repository.get_with_relations(request.source_tree_id)
         if not source_tree:
             raise NotFoundError("元ツリーが見つかりません")
 
         # プロジェクトIDの検証
         if source_tree.project_id != project_id:
-            raise ForbiddenError("他のプロジェクトのツリーからテンプレートを作成できません")
+            raise AuthorizationError("他のプロジェクトのツリーからテンプレートを作成できません")
 
-        # ノードとリレーション情報を取得
-        nodes = await self.node_repository.list_by_tree(request.source_tree_id)
+        # ノード情報を取得
+        nodes = source_tree.nodes
+
+        # ノードリストを作成
+        nodes_config = [
+            {
+                "label": node.label,
+                "nodeType": node.node_type,
+                "relativeX": node.position_x if node.position_x is not None else 0,
+                "relativeY": node.position_y if node.position_y is not None else 0,
+            }
+            for node in nodes
+        ]
+        node_count = len(nodes_config)
 
         # テンプレート設定を作成
         template_config = {
-            "nodes": [
-                {
-                    "label": node.label,
-                    "nodeType": node.node_type,
-                    "relativeX": node.position_x if node.position_x is not None else 0,
-                    "relativeY": node.position_y if node.position_y is not None else 0,
-                }
-                for node in nodes
-            ],
+            "nodes": nodes_config,
             "relationships": [
                 {
                     "parentLabel": rel.parent_node.label if rel.parent_node else "",
                     "childLabels": [child.child_node.label for child in rel.children if child.child_node],
                     "operator": rel.operator or "",
                 }
-                for node in nodes
-                for rel in node.parent_relationships
+                for rel in source_tree.relationships
             ],
         }
 
@@ -162,7 +164,7 @@ class DriverTreeTemplateService:
             template_id=str(template.id),
             project_id=str(project_id),
             user_id=str(user_id),
-            node_count=len(template_config["nodes"]),
+            node_count=node_count,
         )
 
         return DriverTreeTemplateCreateResponse(
@@ -171,7 +173,7 @@ class DriverTreeTemplateService:
             description=template.description,
             category=template.category,
             template_config=template.template_config,
-            node_count=len(template_config["nodes"]),
+            node_count=node_count,
             created_at=template.created_at,
         )
 
@@ -202,11 +204,11 @@ class DriverTreeTemplateService:
 
         # 権限チェック: プロジェクト固有テンプレートの場合、同じプロジェクトであること
         if template.project_id and template.project_id != project_id:
-            raise ForbiddenError("他のプロジェクトのテンプレートは削除できません")
+            raise AuthorizationError("他のプロジェクトのテンプレートは削除できません")
 
         # 作成者のみ削除可能
         if template.created_by != user_id:
-            raise ForbiddenError("テンプレートの作成者のみ削除できます")
+            raise AuthorizationError("テンプレートの作成者のみ削除できます")
 
         # 削除実行
         deleted = await self.template_repository.delete(template_id)
