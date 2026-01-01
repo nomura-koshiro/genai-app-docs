@@ -99,7 +99,7 @@ class UserAccountResponse(BaseCamelCaseORMModel):
 
     Attributes:
         id (uuid.UUID): ユーザーID（UUID）
-        azure_oid (str): Azure AD Object ID
+        azure_oid (str): Azure ID (Azure AD Object ID)
         email (EmailStr): ユーザーメールアドレス
         display_name (str | None): 表示名
         roles (list[str]): システムレベルのロール
@@ -107,6 +107,7 @@ class UserAccountResponse(BaseCamelCaseORMModel):
         created_at (datetime): 作成日時
         updated_at (datetime): 更新日時
         last_login (datetime | None): 最終ログイン日時
+        login_count (int): ログイン回数
 
     Example:
         >>> from datetime import UTC
@@ -128,7 +129,7 @@ class UserAccountResponse(BaseCamelCaseORMModel):
     """
 
     id: uuid.UUID = Field(..., description="ユーザーID（UUID）")
-    azure_oid: str = Field(..., description="Azure AD Object ID")
+    azure_oid: str = Field(..., description="Azure ID (Azure AD Object ID)")
     email: EmailStr = Field(..., description="ユーザーメールアドレス")
     display_name: str | None = Field(default=None, max_length=255, description="表示名")
     roles: list[str] = Field(default_factory=list, description="システムレベルのロール")
@@ -136,6 +137,7 @@ class UserAccountResponse(BaseCamelCaseORMModel):
     created_at: datetime = Field(..., description="作成日時")
     updated_at: datetime = Field(..., description="更新日時")
     last_login: datetime | None = Field(default=None, description="最終ログイン日時")
+    login_count: int = Field(default=0, description="ログイン回数")
 
 
 class UserAccountListResponse(BaseCamelCaseModel):
@@ -189,6 +191,44 @@ class UserAccountRoleUpdate(BaseCamelCaseModel):
     roles: list[str] = Field(..., description="システムレベルのロール", min_length=1)
 
 
+class ProjectParticipationResponse(BaseCamelCaseORMModel):
+    """プロジェクト参加情報レスポンススキーマ。
+
+    ユーザーが参加しているプロジェクト情報を定義します。
+
+    Attributes:
+        project_id (uuid.UUID): プロジェクトID
+        project_name (str): プロジェクト名
+        role (str): プロジェクト内のロール
+        joined_at (datetime): 参加日時
+        is_active (bool): アクティブフラグ
+    """
+
+    project_id: uuid.UUID = Field(..., description="プロジェクトID")
+    project_name: str = Field(..., description="プロジェクト名")
+    role: str = Field(..., description="プロジェクト内のロール")
+    joined_at: datetime = Field(..., description="参加日時")
+    is_active: bool = Field(..., description="アクティブフラグ")
+
+
+class RecentActivityResponse(BaseCamelCaseModel):
+    """最近のアクティビティレスポンススキーマ。
+
+    ユーザーの最近のアクティビティを定義します。
+
+    Attributes:
+        activity_type (str): アクティビティタイプ（例: "session_created", "tree_created"）
+        description (str): アクティビティの説明
+        timestamp (datetime): アクティビティ発生日時
+        project_name (str | None): 関連するプロジェクト名
+    """
+
+    activity_type: str = Field(..., description="アクティビティタイプ")
+    description: str = Field(..., description="アクティビティの説明")
+    timestamp: datetime = Field(..., description="アクティビティ発生日時")
+    project_name: str | None = Field(default=None, description="関連するプロジェクト名")
+
+
 class UserActivityStats(BaseCamelCaseModel):
     """ユーザーアクティビティ統計情報。
 
@@ -196,26 +236,26 @@ class UserActivityStats(BaseCamelCaseModel):
 
     Attributes:
         project_count (int): 参加プロジェクト数
-        owned_project_count (int): オーナープロジェクト数
         session_count (int): 作成した分析セッション数
-        file_upload_count (int): アップロードしたファイル数
-        last_activity_at (datetime | None): 最終活動日時
+        tree_count (int): 作成したDriver Tree数
     """
 
     project_count: int = Field(default=0, description="参加プロジェクト数")
-    owned_project_count: int = Field(default=0, description="オーナープロジェクト数")
     session_count: int = Field(default=0, description="作成した分析セッション数")
-    file_upload_count: int = Field(default=0, description="アップロードしたファイル数")
-    last_activity_at: datetime | None = Field(default=None, description="最終活動日時")
+    tree_count: int = Field(default=0, description="作成したDriver Tree数")
 
 
 class UserAccountDetailResponse(UserAccountResponse):
     """ユーザー詳細情報レスポンススキーマ。
 
-    ユーザー詳細APIで統計情報を含めて返す際に使用します。
+    ユーザー詳細APIで統計情報、参加プロジェクト、最近のアクティビティを含めて返す際に使用します。
 
     Attributes:
         stats (UserActivityStats | None): ユーザーアクティビティ統計情報
+        projects (list[ProjectParticipationResponse]): 参加プロジェクト一覧
+        activities (list[RecentActivityResponse]): 最近のアクティビティ一覧
     """
 
     stats: UserActivityStats | None = Field(default=None, description="ユーザーアクティビティ統計情報")
+    projects: list[ProjectParticipationResponse] = Field(default_factory=list, description="参加プロジェクト一覧")
+    activities: list[RecentActivityResponse] = Field(default_factory=list, description="最近のアクティビティ一覧")

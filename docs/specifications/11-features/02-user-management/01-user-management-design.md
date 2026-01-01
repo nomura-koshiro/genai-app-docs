@@ -43,18 +43,19 @@
 | カラム名 | 型 | NULL | 説明 |
 |---------|---|------|------|
 | id | UUID | NO | 主キー |
-| azure_oid | VARCHAR(255) | NO | Azure AD Object ID（ユニーク） |
+| azure_id | VARCHAR(255) | NO | Azure AD Object ID（ユニーク） |
 | email | VARCHAR(255) | NO | メールアドレス（ユニーク） |
 | display_name | VARCHAR(255) | YES | 表示名 |
 | roles | JSON | NO | システムロール（例: ["system_admin", "user"]） |
 | is_active | BOOLEAN | NO | アクティブフラグ（デフォルト: true） |
 | last_login | TIMESTAMP | YES | 最終ログイン日時 |
+| login_count | INTEGER | NO | ログイン回数（デフォルト: 0） |
 | created_at | TIMESTAMP | NO | 作成日時 |
 | updated_at | TIMESTAMP | NO | 更新日時 |
 
 **インデックス**:
 
-- `idx_users_azure_oid` ON (azure_oid) UNIQUE
+- `idx_users_azure_id` ON (azure_id) UNIQUE
 - `idx_users_email` ON (email) UNIQUE
 
 ### 2.2 role_history（ロール変更履歴）
@@ -104,7 +105,7 @@
 |-----------|---|------|------|
 | skip | int | - | スキップ数（デフォルト: 0） |
 | limit | int | - | 取得件数（デフォルト: 100、最大: 1000） |
-| azure_oid | string | - | Azure AD Object IDで検索 |
+| azure_id | string | - | Azure AD Object IDで検索 |
 | email | string | - | メールアドレスで検索 |
 
 **レスポンス**: `UserAccountListResponse`
@@ -114,14 +115,15 @@
   "users": [
     {
       "id": "uuid",
-      "azureOid": "string",
+      "azureId": "string",
       "email": "string",
       "displayName": "string",
       "roles": ["string"],
       "isActive": true,
       "createdAt": "datetime",
       "updatedAt": "datetime",
-      "lastLogin": "datetime"
+      "lastLogin": "datetime",
+      "loginCount": 0
     }
   ],
   "total": 100,
@@ -150,11 +152,13 @@
 |-----------|------|-----------|
 | UserAccountBase | 基底スキーマ | email, display_name, roles |
 | UserAccountUpdate | 更新リクエスト | display_name?, roles?, is_active? |
-| UserAccountResponse | レスポンス | id, azure_oid, email, display_name, roles, is_active, created_at, updated_at, last_login |
+| UserAccountResponse | レスポンス | id, azure_id, email, display_name, roles, is_active, created_at, updated_at, last_login, login_count |
 | UserAccountListResponse | 一覧レスポンス | users, total, skip, limit |
 | UserAccountRoleUpdate | ロール更新リクエスト | roles |
-| UserActivityStats | 統計情報 | project_count, owned_project_count, session_count, file_upload_count, last_activity_at |
-| UserAccountDetailResponse | 詳細レスポンス | UserAccountResponse + stats |
+| UserActivityStats | 統計情報 | project_count, session_count, tree_count |
+| ProjectParticipationResponse | 参加プロジェクト | project_id, project_name, project_role, joined_at, status |
+| RecentActivityResponse | 最近のアクティビティ | activity_type, activity_detail, activity_at, project_name |
+| UserAccountDetailResponse | 詳細レスポンス | UserAccountResponse + stats + projects + recent_activities |
 | RoleHistoryListResponse | ロール履歴一覧 | histories, total, skip, limit |
 
 ---
@@ -168,8 +172,11 @@
 | `list_users(skip, limit)` | ユーザー一覧取得 | U-007 |
 | `count_users()` | ユーザー総数取得 | U-007 |
 | `get_user(user_id)` | ユーザー取得 | U-008 |
-| `get_user_by_azure_oid(azure_oid)` | Azure OIDでユーザー取得 | U-001 |
+| `get_user_by_azure_id(azure_id)` | Azure IDでユーザー取得 | U-001 |
 | `get_user_by_email(email)` | メールでユーザー取得 | U-007 |
+| `get_user_stats(user_id)` | ユーザー統計情報取得 | U-008 |
+| `get_user_projects(user_id)` | ユーザー参加プロジェクト取得 | U-008 |
+| `get_user_recent_activities(user_id, limit)` | ユーザー最近のアクティビティ取得 | U-008 |
 | `update_user(user_id, update_data, current_user_roles)` | ユーザー情報更新 | U-003 |
 | `update_last_login(user_id, client_ip)` | 最終ログイン更新 | U-006 |
 | `activate_user(user_id)` | ユーザー有効化 | U-005 |
@@ -241,12 +248,12 @@ pages/admin/
 
 ### 7.2 ユーザー詳細画面（user-detail）
 
-#### 表示項目
+#### アカウント情報
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
 | ユーザーID | テキスト | `GET /api/v1/user_account/{id}` | `id` | UUID表示 |
-| Azure OID | テキスト | 同上 | `azureOid` | - |
+| Azure ID | テキスト | 同上 | `azureId` | - |
 | メールアドレス | テキスト | 同上 | `email` | - |
 | 表示名 | テキスト | 同上 | `displayName` | - |
 | システムロール | バッジ群 | 同上 | `roles` | 配列をバッジ群として表示 |
@@ -254,13 +261,39 @@ pages/admin/
 | 作成日時 | 日時 | 同上 | `createdAt` | ISO8601→YYYY/MM/DD HH:mm:ss |
 | 更新日時 | 日時 | 同上 | `updatedAt` | ISO8601→YYYY/MM/DD HH:mm:ss |
 | 最終ログイン | 日時 | 同上 | `lastLogin` | ISO8601→YYYY/MM/DD HH:mm:ss |
+| ログイン回数 | 数値 | 同上 | `loginCount` | 数値表示 |
+
+#### 統計情報
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| 参加プロジェクト数 | 数値 | `GET /api/v1/user_account/{id}` | `stats.projectCount` | 数値表示 |
+| 作成セッション数 | 数値 | 同上 | `stats.sessionCount` | 数値表示 |
+| 作成ツリー数 | 数値 | 同上 | `stats.treeCount` | 数値表示 |
+
+#### 参加プロジェクト一覧
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| プロジェクト名 | リンク | `GET /api/v1/user_account/{id}` | `projects[].projectName` | プロジェクト詳細画面へのリンク |
+| プロジェクトロール | バッジ | 同上 | `projects[].projectRole` | ロールに応じたバッジ表示 |
+| 参加日 | 日時 | 同上 | `projects[].joinedAt` | ISO8601→YYYY/MM/DD |
+| ステータス | バッジ | 同上 | `projects[].status` | `active`→"アクティブ"(success) |
+
+#### 最近のアクティビティ
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| アクティビティ内容 | テキスト | `GET /api/v1/user_account/{id}` | `recentActivities[].activityType` + `activityDetail` | "セッション作成: セッション名" など |
+| 時刻 | 日時 | 同上 | `recentActivities[].activityAt` | ISO8601→YYYY/MM/DD HH:mm |
+| プロジェクト名 | テキスト | 同上 | `recentActivities[].projectName` | プロジェクト名表示 |
 
 #### 編集項目
 
 | 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
 |---------|---------|-----|------------------|---------------------|---------------|
 | 表示名 | テキスト | - | `PATCH /api/v1/user_account/me` | `displayName` | 最大255文字 |
-| システムロール | チェックボックス | ✓ | `PUT /api/v1/user_account/{id}/role` | `roles` | 最低1つ選択 |
+| システムロール | セレクト（単一選択） | ✓ | `PUT /api/v1/user_account/{id}/role` | `roles` | system_admin または user を選択 |
 
 #### アクション
 

@@ -476,3 +476,53 @@ class ProjectCrudService(ProjectServiceBase):
             session_count=session_count,
             tree_count=tree_count,
         )
+
+    @measure_performance
+    async def get_projects_stats_bulk(
+        self,
+        project_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, ProjectStatsResponse]:
+        """複数プロジェクトの統計情報を一括取得します。
+
+        Args:
+            project_ids: プロジェクトIDのリスト
+
+        Returns:
+            dict[uuid.UUID, ProjectStatsResponse]: プロジェクトIDをキーとした統計情報の辞書
+        """
+        if not project_ids:
+            return {}
+
+        logger.debug(
+            "複数プロジェクトの統計情報を一括取得中",
+            project_count=len(project_ids),
+            action="get_projects_stats_bulk",
+        )
+
+        # 各リポジトリのカウントを一括取得
+        member_repo = ProjectMemberRepository(self.db)
+        file_repo = ProjectFileRepository(self.db)
+        session_repo = AnalysisSessionRepository(self.db)
+        tree_repo = DriverTreeRepository(self.db)
+
+        # 統計情報辞書を構築
+        stats_dict = {}
+        for project_id in project_ids:
+            member_count = await member_repo.count_by_project(project_id)
+            file_count = await file_repo.count_by_project(project_id)
+            session_count = await session_repo.count_by_project(project_id)
+            tree_count = await tree_repo.count_by_project(project_id)
+
+            stats_dict[project_id] = ProjectStatsResponse(
+                member_count=member_count,
+                file_count=file_count,
+                session_count=session_count,
+                tree_count=tree_count,
+            )
+
+        logger.debug(
+            "複数プロジェクトの統計情報を取得しました",
+            project_count=len(stats_dict),
+        )
+
+        return stats_dict

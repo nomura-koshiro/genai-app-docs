@@ -1,15 +1,19 @@
-# ファイルバージョン管理 統合設計書（FV-001〜FV-004）
+# ファイル管理・バージョン管理 統合設計書（FM-001〜FM-004, FV-001〜FV-004）
 
 ## 1. 概要
 
 ### 1.1 目的
 
-本ドキュメントは、CAMPシステムにおけるファイルバージョン管理機能の統合設計仕様を定義します。本機能は、プロジェクトファイルのバージョン履歴管理、特定バージョンへの復元、バージョン間の比較を提供します。
+本ドキュメントは、CAMPシステムにおけるファイル管理・バージョン管理機能の統合設計仕様を定義します。本機能は、プロジェクトファイルの一覧表示、アップロード、バージョン履歴管理、特定バージョンへの復元、バージョン間の比較を提供します。
 
 ### 1.2 対象ユースケース
 
 | カテゴリ | UC ID | 機能名 |
 |---------|-------|--------|
+| **ファイル管理** | FM-001 | ファイル一覧表示 |
+| | FM-002 | ファイル検索・フィルタ |
+| | FM-003 | 新規ファイルアップロード |
+| | FM-004 | ファイルダウンロード |
 | **バージョン管理** | FV-001 | ファイルバージョン履歴表示 |
 | | FV-002 | 新規バージョンアップロード |
 | | FV-003 | 特定バージョンへの復元 |
@@ -20,9 +24,9 @@
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
 | データベーステーブル | 1 | 実装済（project_file_versionの代わりにproject_file.parent_file_idで管理） |
-| APIエンドポイント | 5 | 実装済: 5/5 |
-| Pydanticスキーマ | 8 | 実装済 |
-| フロントエンド画面 | 1 | 未実装 |
+| APIエンドポイント | 8 | 実装済: 5/8（ファイル一覧・アップロード・ダウンロードが未実装） |
+| Pydanticスキーマ | 11 | 実装済: 8/11（ファイル管理用スキーマが未実装） |
+| フロントエンド画面 | 3 | 未実装（ファイル一覧、アップロード、バージョン履歴） |
 
 ---
 
@@ -87,6 +91,9 @@ project_file ──1:N── project_file_version
 
 | メソッド | パス | 説明 | 実装状況 |
 |---------|------|------|----------|
+| GET | /api/v1/project/{project_id}/files | ファイル一覧取得 | 🔲 未実装 |
+| POST | /api/v1/project/{project_id}/files | 新規ファイルアップロード | 🔲 未実装 |
+| GET | /api/v1/project/{project_id}/file/{file_id}/download | ファイルダウンロード（現在バージョン） | 🔲 未実装 |
 | GET | /api/v1/project/{project_id}/file/{file_id}/versions | バージョン履歴取得 | ✅ 実装済 |
 | POST | /api/v1/project/{project_id}/file/{file_id}/version | 新規バージョンアップロード | ✅ 実装済 |
 | GET | /api/v1/project/{project_id}/file/{file_id}/version/{version_id} | 特定バージョンダウンロード | ✅ 実装済 |
@@ -94,6 +101,86 @@ project_file ──1:N── project_file_version
 | GET | /api/v1/project/{project_id}/file/{file_id}/version/compare | バージョン比較 | ✅ 実装済 |
 
 ### 3.2 リクエスト/レスポンス定義
+
+#### GET /api/v1/project/{project_id}/files（ファイル一覧取得）
+
+**クエリパラメータ:**
+
+| パラメータ | 型 | 必須 | 説明 |
+|-----------|-----|------|------|
+| search | string | - | ファイル名検索（部分一致） |
+| fileType | string | - | ファイルタイプフィルタ（excel, pdf, image, other） |
+| page | int | - | ページ番号（デフォルト: 1） |
+| limit | int | - | 1ページあたりの件数（デフォルト: 20） |
+
+**レスポンス (200):**
+
+```json
+{
+  "files": [
+    {
+      "fileId": "uuid",
+      "name": "sales_data.xlsx",
+      "fileType": "excel",
+      "fileSize": 1048576,
+      "currentVersion": 3,
+      "versionCount": 3,
+      "updatedBy": "uuid",
+      "updatedByName": "山田 太郎",
+      "updatedAt": "2026-01-01T10:00:00Z",
+      "createdAt": "2025-12-01T00:00:00Z"
+    },
+    {
+      "fileId": "uuid",
+      "name": "proposal.pdf",
+      "fileType": "pdf",
+      "fileSize": 2621440,
+      "currentVersion": 1,
+      "versionCount": 1,
+      "updatedBy": "uuid",
+      "updatedByName": "鈴木 花子",
+      "updatedAt": "2025-12-28T15:30:00Z",
+      "createdAt": "2025-12-28T15:30:00Z"
+    }
+  ],
+  "total": 15,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}
+```
+
+#### POST /api/v1/project/{project_id}/files（新規ファイルアップロード）
+
+**リクエスト:**
+
+- Content-Type: multipart/form-data
+- file: File（必須）
+- comment: string（任意）
+
+**レスポンス (201):**
+
+```json
+{
+  "fileId": "uuid",
+  "name": "sales_report_2026.xlsx",
+  "fileType": "excel",
+  "fileSize": 1258291,
+  "currentVersion": 1,
+  "versionCount": 1,
+  "comment": "2026年売上レポート",
+  "uploadedBy": "uuid",
+  "uploadedByName": "山田 太郎",
+  "createdAt": "2026-01-01T00:00:00Z"
+}
+```
+
+#### GET /api/v1/project/{project_id}/file/{file_id}/download（現在バージョンダウンロード）
+
+**レスポンス:**
+
+- Content-Type: application/octet-stream
+- Content-Disposition: attachment; filename="sales_data.xlsx"
 
 #### GET /project/{project_id}/file/{file_id}/version（バージョン履歴取得）
 
@@ -236,7 +323,45 @@ project_file ──1:N── project_file_version
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 バージョン情報スキーマ
+### 4.1 ファイル情報スキーマ
+
+```python
+class FileInfo(BaseCamelCaseModel):
+    """ファイル情報"""
+    file_id: UUID
+    name: str
+    file_type: str
+    file_size: int
+    current_version: int
+    version_count: int
+    updated_by: UUID | None = None
+    updated_by_name: str | None = None
+    updated_at: datetime
+    created_at: datetime
+
+class FileListResponse(BaseCamelCaseModel):
+    """ファイル一覧レスポンス"""
+    files: list[FileInfo] = []
+    total: int
+    page: int = 1
+    limit: int = 20
+    total_pages: int
+
+class FileUploadResponse(BaseCamelCaseModel):
+    """ファイルアップロードレスポンス"""
+    file_id: UUID
+    name: str
+    file_type: str
+    file_size: int
+    current_version: int
+    version_count: int
+    comment: str | None = None
+    uploaded_by: UUID
+    uploaded_by_name: str
+    created_at: datetime
+```
+
+### 4.2 バージョン情報スキーマ
 
 ```python
 class FileVersionInfo(BaseCamelCaseModel):
@@ -260,7 +385,7 @@ class FileVersionListResponse(BaseCamelCaseModel):
     total_versions: int
 ```
 
-### 4.2 バージョン操作スキーマ
+### 4.3 バージョン操作スキーマ
 
 ```python
 class FileVersionUploadResponse(BaseCamelCaseModel):
@@ -286,7 +411,7 @@ class FileVersionRestoreResponse(BaseCamelCaseModel):
     created_at: datetime
 ```
 
-### 4.3 バージョン比較スキーマ
+### 4.4 バージョン比較スキーマ
 
 ```python
 class SheetChangeInfo(BaseCamelCaseModel):
@@ -319,6 +444,120 @@ class FileVersionCompareResponse(BaseCamelCaseModel):
 ### 5.1 サービスクラス
 
 ```python
+class FileManagementService:
+    """ファイル管理サービス（一覧・アップロード）"""
+
+    def __init__(self, db: AsyncSession, storage: StorageService):
+        self.db = db
+        self.storage = storage
+
+    async def list_files(
+        self,
+        project_id: UUID,
+        user_id: UUID,
+        search: str | None = None,
+        file_type: str | None = None,
+        page: int = 1,
+        limit: int = 20
+    ) -> FileListResponse:
+        """プロジェクト内のファイル一覧を取得"""
+        # 1. プロジェクトの存在確認と権限チェック
+        await self._check_project_access(project_id, user_id)
+
+        # 2. クエリ構築
+        query = select(ProjectFile).where(ProjectFile.project_id == project_id)
+
+        if search:
+            query = query.where(ProjectFile.name.ilike(f"%{search}%"))
+
+        if file_type:
+            query = query.where(ProjectFile.file_type == file_type)
+
+        # 3. ページネーション
+        total = await self.db.scalar(select(func.count()).select_from(query.subquery()))
+
+        query = query.offset((page - 1) * limit).limit(limit)
+        query = query.order_by(ProjectFile.updated_at.desc())
+
+        # 4. ファイル取得
+        result = await self.db.execute(query)
+        files = result.scalars().all()
+
+        return FileListResponse(
+            files=[FileInfo.from_orm(f) for f in files],
+            total=total,
+            page=page,
+            limit=limit,
+            total_pages=math.ceil(total / limit)
+        )
+
+    async def upload_file(
+        self,
+        project_id: UUID,
+        file: UploadFile,
+        comment: str | None,
+        user_id: UUID
+    ) -> FileUploadResponse:
+        """新規ファイルをアップロード"""
+        # 1. プロジェクト権限チェック
+        await self._check_project_access(project_id, user_id)
+
+        # 2. ファイルバリデーション
+        await self._validate_file(file)
+
+        # 3. ストレージに保存
+        storage_path = await self.storage.upload(
+            file,
+            f"projects/{project_id}/files"
+        )
+
+        # 4. チェックサム計算
+        checksum = await self._calculate_checksum(file)
+
+        # 5. ファイルレコード作成
+        new_file = ProjectFile(
+            project_id=project_id,
+            name=file.filename,
+            file_type=self._detect_file_type(file.filename),
+            file_size=file.size,
+            storage_path=storage_path,
+            checksum=checksum,
+            current_version=1,
+            version_count=1,
+            uploaded_by=user_id
+        )
+
+        self.db.add(new_file)
+        await self.db.commit()
+        await self.db.refresh(new_file)
+
+        # 6. 初回バージョン作成
+        await self._create_initial_version(new_file, comment, user_id)
+
+        return FileUploadResponse.from_orm(new_file)
+
+    async def download_file(
+        self,
+        project_id: UUID,
+        file_id: UUID,
+        user_id: UUID
+    ) -> StreamingResponse:
+        """現在バージョンのファイルをダウンロード"""
+        # 1. ファイル取得
+        file = await self._get_file(file_id)
+
+        # 2. 権限チェック
+        await self._check_project_access(project_id, user_id)
+
+        # 3. ストレージからファイル取得
+        file_stream = await self.storage.download(file.storage_path)
+
+        return StreamingResponse(
+            file_stream,
+            media_type="application/octet-stream",
+            headers={"Content-Disposition": f'attachment; filename="{file.name}"'}
+        )
+
 class FileVersionService:
     """ファイルバージョン管理サービス"""
 
@@ -481,37 +720,178 @@ class FileVersionService:
 
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
-| file-versions | バージョン履歴 | /projects/{id}/files/{fileId}/versions | バージョン一覧・操作 |
+| files | ファイル一覧 | /projects/{id}/files | プロジェクト全体のファイル一覧 |
+| upload | ファイルアップロード | /projects/{id}/files/upload | 新規ファイルアップロード |
+| file-versions | バージョン履歴 | /projects/{id}/files/{fileId}/versions | ファイルのバージョン一覧・操作 |
 
-### 6.2 コンポーネント構成
+### 6.2 画面遷移フロー
 
 ```text
-features/file-version/
-├── components/
-│   ├── VersionList/
-│   │   ├── VersionList.tsx
-│   │   ├── VersionItem.tsx
-│   │   └── VersionTimeline.tsx
-│   ├── VersionUpload/
-│   │   ├── VersionUploadModal.tsx
-│   │   └── VersionCommentInput.tsx
-│   ├── VersionCompare/
-│   │   ├── VersionCompareModal.tsx
-│   │   ├── VersionSelector.tsx
-│   │   └── ComparisonResult.tsx
-│   └── VersionActions/
-│       ├── DownloadButton.tsx
-│       └── RestoreButton.tsx
-├── hooks/
-│   ├── useFileVersions.ts
-│   └── useVersionCompare.ts
-├── api/
-│   └── fileVersionApi.ts
-└── types/
-    └── fileVersion.ts
+[ファイル一覧 (files)]
+    │
+    ├─→ [ファイルアップロード (upload)]
+    │       │
+    │       └─→ アップロード完了 → [ファイル一覧]
+    │
+    └─→ ファイル名クリック → [バージョン履歴 (file-versions)]
+            │
+            ├─→ [新規バージョンアップロード]
+            │       │
+            │       └─→ アップロード完了 → [バージョン履歴]
+            │
+            ├─→ [バージョン比較モーダル]
+            │       │
+            │       └─→ 閉じる → [バージョン履歴]
+            │
+            └─→ [バージョン復元]
+                    │
+                    └─→ 復元完了 → [バージョン履歴]（新バージョンとして追加）
 ```
 
-### 6.3 UI設計
+**主要な遷移:**
+
+1. **ファイル一覧 → アップロード画面**: 「新規アップロード」ボタンから遷移
+2. **ファイル一覧 → バージョン履歴**: ファイル名クリックで該当ファイルのバージョン履歴画面へ
+3. **バージョン履歴 → 比較モーダル**: 「比較」ボタンでモーダル表示
+4. **バージョン履歴 → 復元**: 「復元」ボタンで確認ダイアログ表示後、復元実行
+
+### 6.3 コンポーネント構成
+
+```text
+features/file-management/
+├── components/
+│   ├── FileList/
+│   │   ├── FileList.tsx              # ファイル一覧テーブル
+│   │   ├── FileListItem.tsx          # ファイル行
+│   │   ├── FileSearchBar.tsx         # 検索・フィルタバー
+│   │   └── FileTypeFilter.tsx        # ファイルタイプフィルタ
+│   ├── FileUpload/
+│   │   ├── FileUploadPage.tsx        # アップロード画面
+│   │   ├── DropZone.tsx              # ドラッグ&ドロップエリア
+│   │   ├── FileSelector.tsx          # ファイル選択ボタン
+│   │   └── UploadProgress.tsx        # アップロード進捗
+│   ├── VersionList/
+│   │   ├── VersionList.tsx           # バージョン一覧
+│   │   ├── VersionItem.tsx           # バージョン項目
+│   │   └── VersionTimeline.tsx       # タイムライン表示
+│   ├── VersionUpload/
+│   │   ├── VersionUploadModal.tsx    # バージョンアップロードモーダル
+│   │   └── VersionCommentInput.tsx   # コメント入力
+│   ├── VersionCompare/
+│   │   ├── VersionCompareModal.tsx   # 比較モーダル
+│   │   ├── VersionSelector.tsx       # バージョン選択
+│   │   └── ComparisonResult.tsx      # 比較結果表示
+│   └── VersionActions/
+│       ├── DownloadButton.tsx        # ダウンロードボタン
+│       └── RestoreButton.tsx         # 復元ボタン
+├── hooks/
+│   ├── useFileList.ts                # ファイル一覧管理
+│   ├── useFileUpload.ts              # ファイルアップロード
+│   ├── useFileVersions.ts            # バージョン管理
+│   └── useVersionCompare.ts          # バージョン比較
+├── api/
+│   ├── fileApi.ts                    # ファイルAPI
+│   └── fileVersionApi.ts             # バージョンAPI
+└── types/
+    ├── file.ts                       # ファイル型定義
+    └── fileVersion.ts                # バージョン型定義
+```
+
+### 6.4 UI設計
+
+#### ファイル一覧画面
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  プロジェクトファイル                      [新規アップロード]  │
+├────────────────────────────────────────────────────────────────┤
+│  検索: [____________]  種別: [すべて ▼]                        │
+├────────────────────────────────────────────────────────────────┤
+│  ファイル名          │ タイプ │ サイズ │ 更新者   │ 更新日時    │
+├──────────────────────┼────────┼────────┼──────────┼────────────┤
+│  📄 sales_data.xlsx  │ Excel  │ 1.0MB  │ 山田太郎 │ 2026/01/01 │
+│  (v3)                │        │        │          │ 10:00      │
+│  [ダウンロード] [履歴]                                          │
+├──────────────────────┼────────┼────────┼──────────┼────────────┤
+│  📄 proposal.pdf     │ PDF    │ 2.5MB  │ 鈴木花子 │ 2025/12/28 │
+│  (v1)                │        │        │          │ 15:30      │
+│  [ダウンロード] [履歴]                                          │
+├──────────────────────┼────────┼────────┼──────────┼────────────┤
+│  📄 design.psd       │ 画像   │ 15MB   │ 佐藤次郎 │ 2025/12/25 │
+│  (v2)                │        │        │          │ 09:15      │
+│  [ダウンロード] [履歴]                                          │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**機能:**
+
+1. **検索・フィルタ**
+   - ファイル名検索（部分一致）
+   - ファイルタイプフィルタ（Excel, PDF, 画像, その他）
+
+2. **テーブル項目**
+   - ファイル名（アイコン付き）
+   - 現在バージョン番号
+   - ファイルタイプ
+   - ファイルサイズ
+   - 最終更新者
+   - 最終更新日時
+
+3. **操作**
+   - ダウンロード: 現在バージョンをダウンロード
+   - 履歴: バージョン履歴画面へ遷移（ファイル名クリックでも可）
+
+#### アップロード画面
+
+```text
+┌────────────────────────────────────────────────────────────────┐
+│  ファイルアップロード                                          │
+├────────────────────────────────────────────────────────────────┤
+│                                                                │
+│   ┌────────────────────────────────────────────────────────┐  │
+│   │                                                        │  │
+│   │          📁  ここにファイルをドラッグ&ドロップ         │  │
+│   │                                                        │  │
+│   │                  または                                │  │
+│   │                                                        │  │
+│   │              [ファイルを選択]                          │  │
+│   │                                                        │  │
+│   └────────────────────────────────────────────────────────┘  │
+│                                                                │
+│   対応フォーマット: Excel (.xlsx, .xls), PDF, Word, 画像      │
+│   最大ファイルサイズ: 50MB                                    │
+│                                                                │
+├────────────────────────────────────────────────────────────────┤
+│   選択ファイル:                                                │
+│   ┌──────────────────────────────────────────────────────┐    │
+│   │  📄 sales_report_2026.xlsx                           │    │
+│   │  サイズ: 1.2MB                                       │    │
+│   │  [×]                                                 │    │
+│   └──────────────────────────────────────────────────────┘    │
+│                                                                │
+│   コメント: [_____________________________________]            │
+│                                                                │
+│                                   [キャンセル] [アップロード]  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+**機能:**
+
+1. **ドラッグ&ドロップエリア**
+   - ファイルをドラッグ&ドロップで選択
+   - 対応フォーマット・最大サイズの表示
+
+2. **ファイル選択**
+   - ファイル選択ボタン
+   - 選択ファイルのプレビュー（ファイル名、サイズ）
+   - 選択解除ボタン
+
+3. **アップロード進捗**
+   - プログレスバー表示
+   - アップロード中のキャンセル機能
+
+4. **コメント入力**
+   - 初回アップロード時のコメント（任意）
 
 #### バージョン履歴画面
 
@@ -571,9 +951,97 @@ features/file-version/
 
 ---
 
-## 7. 画面項目・APIマッピング
+## 7. 画面詳細設計
 
-### 7.1 バージョン履歴画面
+### 7.1 ファイル一覧画面（files）
+
+#### 画面項目・APIマッピング
+
+| 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
+|---------|---------|------------------|---------------------|---------|
+| ファイル名 | テキスト | GET /project/{id}/files | files[].name | - |
+| 現在バージョン | テキスト | GET /project/{id}/files | files[].currentVersion | "v" + n |
+| ファイルタイプ | テキスト | GET /project/{id}/files | files[].fileType | アイコン表示 |
+| ファイルサイズ | テキスト | GET /project/{id}/files | files[].fileSize | KB/MB変換 |
+| 最終更新者 | テキスト | GET /project/{id}/files | files[].updatedByName | - |
+| 最終更新日時 | 日時 | GET /project/{id}/files | files[].updatedAt | YYYY/MM/DD HH:mm形式 |
+| 検索入力 | テキスト | GET /project/{id}/files?search= | search | クエリパラメータ |
+| タイプフィルタ | セレクト | GET /project/{id}/files?fileType= | fileType | クエリパラメータ |
+| ダウンロードボタン | ボタン | GET /project/{id}/file/{fileId}/download | - | ファイルDL |
+| 履歴ボタン | リンク | - | - | バージョン履歴画面へ遷移 |
+
+#### 必要なAPI
+
+**GET /api/v1/project/{project_id}/files**
+
+プロジェクト内の全ファイル一覧を取得
+
+**クエリパラメータ:**
+- search: ファイル名検索（部分一致）
+- fileType: ファイルタイプフィルタ（excel, pdf, image, other）
+- page, limit: ページネーション
+
+**レスポンス:**
+```json
+{
+  "files": [
+    {
+      "fileId": "uuid",
+      "name": "sales_data.xlsx",
+      "fileType": "excel",
+      "fileSize": 1048576,
+      "currentVersion": 3,
+      "updatedBy": "uuid",
+      "updatedByName": "山田 太郎",
+      "updatedAt": "2026-01-01T10:00:00Z",
+      "createdAt": "2025-12-01T00:00:00Z"
+    }
+  ],
+  "total": 15,
+  "page": 1,
+  "limit": 20
+}
+```
+
+### 7.2 アップロード画面（upload）
+
+#### 画面項目・APIマッピング
+
+| 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
+|---------|---------|------|------------------|---------------------|---------------|
+| ファイル | ファイル選択 | ○ | POST /project/{id}/files | file | 最大50MB、対応フォーマット |
+| コメント | テキスト | - | POST /project/{id}/files | comment | 最大500文字 |
+| アップロードボタン | ボタン | - | POST /project/{id}/files | - | - |
+
+#### 必要なAPI
+
+**POST /api/v1/project/{project_id}/files**
+
+新規ファイルをアップロード
+
+**リクエスト:**
+- Content-Type: multipart/form-data
+- file: File（必須）
+- comment: string（任意）
+
+**レスポンス:**
+```json
+{
+  "fileId": "uuid",
+  "name": "sales_report_2026.xlsx",
+  "fileType": "excel",
+  "fileSize": 1258291,
+  "currentVersion": 1,
+  "comment": "2026年売上レポート",
+  "uploadedBy": "uuid",
+  "uploadedByName": "山田 太郎",
+  "createdAt": "2026-01-01T00:00:00Z"
+}
+```
+
+### 7.3 バージョン履歴画面（file-versions）
+
+#### 画面項目・APIマッピング
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 変換処理 |
 |---------|---------|------------------|---------------------|---------|
@@ -589,7 +1057,7 @@ features/file-version/
 | 復元ボタン | ボタン | POST /version/{id}/restore | - | 確認ダイアログ |
 | 比較ボタン | ボタン | - | - | 比較モーダル表示 |
 
-### 7.2 新規バージョンアップロード
+#### 新規バージョンアップロード
 
 | 画面項目 | 入力形式 | 必須 | APIエンドポイント | リクエストフィールド | バリデーション |
 |---------|---------|------|------------------|---------------------|---------------|
@@ -597,7 +1065,9 @@ features/file-version/
 | コメント | テキスト | - | POST /file/{id}/version | comment | 最大500文字 |
 | アップロードボタン | ボタン | - | POST /file/{id}/version | - | - |
 
-### 7.3 バージョン比較
+### 7.4 バージョン比較モーダル
+
+#### 画面項目・APIマッピング
 
 | 画面項目 | 入力/表示形式 | APIエンドポイント | パラメータ/フィールド | 変換処理 |
 |---------|-------------|------------------|---------------------|---------|
@@ -613,37 +1083,74 @@ features/file-version/
 
 ## 8. ユースケースカバレッジ表
 
-| UC ID | 機能名 | API | 画面 | ステータス |
-|-------|--------|-----|------|-----------|
-| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions | ✅ 実装済 |
-| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions | ✅ 実装済 |
-| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions | ✅ 実装済 |
-| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions | ✅ 実装済 |
+| UC ID | 機能名 | API | 画面 | APIステータス | 画面ステータス |
+|-------|--------|-----|------|-------------|--------------|
+| FM-001 | ファイル一覧表示 | GET /project/{id}/files | files | 🔲 未実装 | 🔲 未実装 |
+| FM-002 | ファイル検索・フィルタ | GET /project/{id}/files?search= | files | 🔲 未実装 | 🔲 未実装 |
+| FM-003 | 新規ファイルアップロード | POST /project/{id}/files | upload | 🔲 未実装 | 🔲 未実装 |
+| FM-004 | ファイルダウンロード | GET /file/{id}/download | files | 🔲 未実装 | 🔲 未実装 |
+| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions | ✅ 実装済 | 🔲 未実装 |
+| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions | ✅ 実装済 | 🔲 未実装 |
+| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions | ✅ 実装済 | 🔲 未実装 |
+| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions | ✅ 実装済 | 🔲 未実装 |
 
-カバレッジ: 4/4 = 100%（バックエンドAPI実装済、フロントエンド未実装）
+**カバレッジ:**
+- APIエンドポイント: 5/8 = 62.5%（バージョン管理API実装済、ファイル管理API未実装）
+- フロントエンド画面: 0/3 = 0%（すべて未実装）
+- 全体: 5/11 = 45.5%
 
 ---
 
 ## 9. 備考
 
-### 9.1 ストレージ管理
+### 9.1 ファイル管理に関する注意事項
 
+#### ファイルタイプ判定
+
+ファイルタイプは拡張子から自動判定します：
+
+- **excel**: .xlsx, .xls, .xlsm
+- **pdf**: .pdf
+- **word**: .docx, .doc
+- **image**: .png, .jpg, .jpeg, .gif, .svg
+- **other**: その他
+
+#### ファイルサイズ制限
+
+- 最大ファイルサイズ: 50MB
+- 大容量ファイル（50MB超）は今後、チャンクアップロード対応を検討
+
+#### セキュリティ
+
+- アップロード時のファイル検証（マルウェアスキャン）
+- 拡張子と実際のファイル形式の一致確認
+- プロジェクトメンバーのみアクセス可能
+
+### 9.2 ストレージ管理
+
+- プロジェクトファイルは `{storage_root}/projects/{project_id}/files/` に保存
 - バージョンファイルは `{storage_root}/versions/{file_id}/{version_number}/` に保存
 - 古いバージョンの自動削除ポリシー（例: 10バージョン以上、または1年以上前）
 - ストレージ容量の監視とアラート
 
-### 9.2 パフォーマンス考慮
+### 9.3 パフォーマンス考慮
 
-- 大容量ファイルはチャンクアップロード対応
+- ファイル一覧のページネーション対応
+- 大容量ファイルはチャンクアップロード対応（将来）
 - バージョン比較は非同期処理（Celery等）で実行
 - 比較結果のキャッシュ
+- ファイルメタデータのインデックス最適化
 
-### 9.3 将来拡張
+### 9.4 将来拡張
 
+- ファイルプレビュー機能（PDF、画像、Excel等）
+- ファイル共有リンク生成
+- ファイルコメント・アノテーション機能
 - 差分バックアップによるストレージ最適化
 - バージョン間の差分ダウンロード
 - バージョンタグ/ラベル機能
 - バージョン承認ワークフロー
+- ファイル変更通知（WebSocket）
 
 ---
 
@@ -651,4 +1158,5 @@ features/file-version/
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 1.0
+- **バージョン**: 2.0
+- **変更内容**: ファイル一覧・アップロード画面を追加し、モックアップと統合

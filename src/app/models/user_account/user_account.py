@@ -27,7 +27,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, DateTime, Index, String
+from sqlalchemy import JSON, Boolean, DateTime, Index, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -58,7 +58,7 @@ class UserAccount(Base, TimestampMixin):
 
     Attributes:
         id (UUID): プライマリキー（UUID）
-        azure_oid (str): Azure AD Object ID（一意識別子）
+        azure_oid (str): Azure ID (Azure AD Object ID)（一意識別子）
         email (str): メールアドレス（一意制約）
         display_name (str | None): 表示名
         roles (list): システムロール（例: ["SystemAdmin", "User"]）
@@ -66,6 +66,7 @@ class UserAccount(Base, TimestampMixin):
         created_at (datetime): 作成日時（UTC）
         updated_at (datetime): 更新日時（UTC）
         last_login (datetime | None): 最終ログイン日時
+        login_count (int): ログイン回数
 
     インデックス:
         - idx_users_azure_oid: azure_oid（UNIQUE）
@@ -85,7 +86,7 @@ class UserAccount(Base, TimestampMixin):
         unique=True,
         nullable=False,
         index=True,
-        comment="Azure AD オブジェクトID",
+        comment="Azure ID (Azure AD オブジェクトID)",
     )
 
     email: Mapped[str] = mapped_column(
@@ -120,6 +121,13 @@ class UserAccount(Base, TimestampMixin):
         DateTime(timezone=True),
         nullable=True,
         comment="最終ログインタイムスタンプ",
+    )
+
+    login_count: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+        comment="ログイン回数",
     )
 
     # リレーションシップ

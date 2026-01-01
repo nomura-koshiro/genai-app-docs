@@ -1793,6 +1793,7 @@ EXCLUDE_PATTERNS = [
 |-------|---------|
 | タイトル | title |
 | 種別 | announcement_type（バッジ） |
+| 対象 | target_roles（空=全員） |
 | 表示期間 | start_at 〜 end_at |
 | ステータス | is_active（バッジ） |
 | 操作 | 編集/削除ボタン |
@@ -1968,6 +1969,7 @@ EXCLUDE_PATTERNS = [
 | デバッグ有効化 | button |
 | デバッグ無効化 | button |
 | ログレベル | select（DEBUG/INFO/WARNING） |
+| 自動無効化タイマー（分） | number |
 
 #### ヘルスチェックセクション
 

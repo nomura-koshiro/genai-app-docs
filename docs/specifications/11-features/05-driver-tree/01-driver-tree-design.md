@@ -890,18 +890,38 @@ features/driver-tree/
 | 業種フィルター | チップ選択 | - | GET /driver-tree/category | （クエリ用） | - |
 | 分析タイプフィルター | チップ選択 | - | GET /driver-tree/category | （クエリ用） | - |
 | テンプレートカード | 選択カード | - | GET /driver-tree/category | - | - |
+| テンプレート人気バッジ | バッジ | - | - | - | 人気テンプレートに表示 |
+| テンプレート利用実績 | テキスト | - | - | - | "利用実績: n+" 形式 |
 | ツリー名 | テキスト入力 | ○ | POST /driver-tree/tree | name | 1-255文字 |
 | 説明 | テキストエリア | - | POST /driver-tree/tree | description | 任意 |
+| 選択中のテンプレート | 表示 | - | - | - | テンプレート名とアイコン |
+| 構造プレビュー | ツリービュー | - | - | - | テンプレートのノード構造 |
+| キャンセルボタン | ボタン | - | - | - | ツリー一覧に戻る |
 | 作成して編集ボタン | ボタン | - | POST /driver-tree/tree + POST /import | - | - |
 
 ### 7.3 ツリー編集画面（tree-edit）
 
+#### 共通タブナビゲーション
+
+| タブ名 | 遷移先 | 説明 |
+|--------|--------|------|
+| ツリー編集 | tree-edit | ツリー構造の編集（アクティブ） |
+| 施策設定 | tree-policies | 施策の追加・編集 |
+| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
+| 計算結果 | tree-results | 計算結果とシミュレーション |
+
+#### 画面項目
+
 | 画面項目 | 入力/表示形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
 |---------|-------------|------------------|-----------|----------------------|
 | ツリー名 | 表示 | GET /driver-tree/tree/{id} | tree.name | - |
+| ツールバー（ノード追加） | ボタン | POST /driver-tree/tree/{id}/node | label, nodeType, positionX, positionY | - |
+| ツールバー（リレーション追加） | ボタン | - | - | リレーション作成モード |
+| ツールバー（整列） | ボタン | - | - | ノード自動配置 |
+| ツールバー（ズームイン） | ボタン | - | - | キャンバス拡大 |
+| ツールバー（ズームアウト） | ボタン | - | - | キャンバス縮小 |
 | ノード（ビジュアル） | キャンバス | GET /driver-tree/tree/{id} | tree.nodes[] | position_x/y→座標 |
 | 接続線 | SVG | GET /driver-tree/tree/{id} | tree.relationships[] | 親子座標から算出 |
-| ノード追加ボタン | ボタン | POST /driver-tree/tree/{id}/node | label, nodeType, positionX, positionY | - |
 | ノードラベル | テキスト入力 | PATCH /driver-tree/node/{id} | label | 1-255文字 |
 | ノードタイプ | セレクト | PATCH /driver-tree/node/{id} | nodeType | driver/kpi/metric |
 | データフレーム紐付け | セレクト | PATCH /driver-tree/node/{id} | dataFrameId | - |
@@ -910,9 +930,21 @@ features/driver-tree/
 
 ### 7.4 施策設定画面（tree-policies）
 
+#### 共通タブナビゲーション
+
+| タブ名 | 遷移先 | 説明 |
+|--------|--------|------|
+| ツリー編集 | tree-edit | ツリー構造の編集 |
+| 施策設定 | tree-policies | 施策の追加・編集（アクティブ） |
+| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
+| 計算結果 | tree-results | 計算結果とシミュレーション |
+
+#### 画面項目
+
 | 画面項目 | 表示/入力形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
 |---------|-------------|------------------|-----------|----------------------|
 | 施策カード一覧 | カードリスト | GET /driver-tree/tree/{id}/policy | policies[] | - |
+| 施策アイコン | アイコン | - | - | 施策タイプに応じた絵文字 |
 | 施策名 | テキスト | GET/PATCH | policies[].label | - |
 | 対象ノード | テキスト | GET | policies[].nodeLabel | nodeId→ラベル解決 |
 | 影響値 | 数値+% | GET/PATCH | policies[].value | 正負で色分け |
@@ -936,6 +968,17 @@ features/driver-tree/
 
 ### 7.5 データ紐付け画面（tree-data-binding）
 
+#### 共通タブナビゲーション
+
+| タブ名 | 遷移先 | 説明 |
+|--------|--------|------|
+| ツリー編集 | tree-edit | ツリー構造の編集 |
+| 施策設定 | tree-policies | 施策の追加・編集 |
+| データ紐付け | tree-data-binding | ノードへのデータ紐付け（アクティブ） |
+| 計算結果 | tree-results | 計算結果とシミュレーション |
+
+#### 画面項目
+
 | 画面項目 | 表示/入力形式 | APIエンドポイント | フィールド | 変換処理/バリデーション |
 |---------|-------------|------------------|-----------|----------------------|
 | ファイル選択 | セレクト | GET /driver-tree/file | files[] | - |
@@ -952,6 +995,17 @@ features/driver-tree/
 | 保存ボタン | ボタン | PATCH /driver-tree/file/{id}/sheet/{id}/column | columns[] | - |
 
 ### 7.6 計算結果画面（tree-results）
+
+#### 共通タブナビゲーション
+
+| タブ名 | 遷移先 | 説明 |
+|--------|--------|------|
+| ツリー編集 | tree-edit | ツリー構造の編集 |
+| 施策設定 | tree-policies | 施策の追加・編集 |
+| データ紐付け | tree-data-binding | ノードへのデータ紐付け |
+| 計算結果 | tree-results | 計算結果とシミュレーション（アクティブ） |
+
+#### 画面項目
 
 | 画面項目 | 表示形式 | APIエンドポイント | フィールド | 変換処理 |
 |---------|---------|------------------|-----------|---------|
