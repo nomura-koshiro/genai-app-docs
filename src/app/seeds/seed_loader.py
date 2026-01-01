@@ -325,23 +325,28 @@ async def load_driver_tree_categories(session: AsyncSession) -> int:
     count = 0
 
     for record_data in records:
+        # UUIDフィールドをパース
+        category_id = parse_uuid(record_data["category_id"])
+        industry_id = parse_uuid(record_data["industry_id"])
+        driver_type_id = parse_uuid(record_data["driver_type_id"])
+
         # 既存チェック（category_id + industry_id + driver_type_id の組み合わせ）
         existing = await session.execute(
             select(DriverTreeCategory).where(
-                DriverTreeCategory.category_id == record_data["category_id"],
-                DriverTreeCategory.industry_id == record_data["industry_id"],
-                DriverTreeCategory.driver_type_id == record_data["driver_type_id"],
+                DriverTreeCategory.category_id == category_id,
+                DriverTreeCategory.industry_id == industry_id,
+                DriverTreeCategory.driver_type_id == driver_type_id,
             )
         )
         if existing.scalar_one_or_none():
             continue
 
         record = DriverTreeCategory(
-            category_id=record_data["category_id"],
+            category_id=category_id,
             category_name=record_data["category_name"],
-            industry_id=record_data["industry_id"],
+            industry_id=industry_id,
             industry_name=record_data["industry_name"],
-            driver_type_id=record_data["driver_type_id"],
+            driver_type_id=driver_type_id,
             driver_type=record_data["driver_type"],
             description=record_data.get("description"),
             created_by=parse_uuid(record_data.get("created_by", "")),
@@ -358,10 +363,13 @@ async def load_driver_tree_formulas(session: AsyncSession) -> int:
     count = 0
 
     for record_data in records:
+        # UUIDフィールドをパース
+        driver_type_id = parse_uuid(record_data["driver_type_id"])
+
         # 既存チェック（driver_type_id + kpi の組み合わせ）
         existing = await session.execute(
             select(DriverTreeFormula).where(
-                DriverTreeFormula.driver_type_id == record_data["driver_type_id"],
+                DriverTreeFormula.driver_type_id == driver_type_id,
                 DriverTreeFormula.kpi == record_data["kpi"],
             )
         )
@@ -369,7 +377,7 @@ async def load_driver_tree_formulas(session: AsyncSession) -> int:
             continue
 
         record = DriverTreeFormula(
-            driver_type_id=record_data["driver_type_id"],
+            driver_type_id=driver_type_id,
             driver_type=record_data["driver_type"],
             kpi=record_data["kpi"],
             formulas=record_data["formulas"],
