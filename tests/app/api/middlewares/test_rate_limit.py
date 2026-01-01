@@ -5,7 +5,7 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_cors_headers(client: AsyncClient):
+async def test_cors_with_origin_header_returns_cors_headers(client: AsyncClient):
     """[test_rate_limit-001] CORS ヘッダーのテスト。"""
     # Act
     # GETリクエストでCORSヘッダーを確認
@@ -22,7 +22,7 @@ async def test_cors_headers(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_rate_limiting(client: AsyncClient):
+async def test_rate_limit_within_threshold_allows_requests(client: AsyncClient):
     """[test_rate_limit-002] レート制限のテスト（簡易版）。"""
     # Act
     # 連続してリクエスト

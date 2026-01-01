@@ -27,7 +27,7 @@ class TestMeasurePerformance:
     """measure_performanceデコレータのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_performance_measurement(self):
+    async def test_measure_performance_logs_execution_time(self):
         """[test_basic-001] 実行時間が測定されログに記録されることをテスト。"""
         # Arrange
         @measure_performance
@@ -53,7 +53,7 @@ class TestLogExecution:
     """log_executionデコレータのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_basic_logging(self):
+    async def test_log_execution_records_start_and_completion(self):
         """[test_basic-002] 基本的なログ記録がされることをテスト。"""
         # Arrange
         @log_execution(level="info")

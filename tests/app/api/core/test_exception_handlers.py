@@ -23,7 +23,7 @@ from app.core.exceptions import (
 class TestExceptionHandlers:
     """RFC 9457準拠の例外ハンドラーのテストクラス。"""
 
-    def test_register_exception_handlers(self):
+    def test_exception_handlers_register_successfully(self):
         """[test_exception_handlers-001] 例外ハンドラーが正しく登録されること。"""
         # Arrange
         app = FastAPI()
@@ -35,7 +35,7 @@ class TestExceptionHandlers:
         assert len(app.exception_handlers) > 0
 
     @pytest.mark.asyncio
-    async def test_validation_error_handler(self):
+    async def test_validation_error_returns_422_response(self):
         """[test_exception_handlers-002] ValidationErrorがRFC 9457準拠の422レスポンスになること。"""
         # Arrange
         from app.api.core.exception_handlers import app_exception_handler
@@ -75,7 +75,7 @@ class TestExceptionHandlers:
         assert data["field"] == "email"  # カスタムフィールド
 
     @pytest.mark.asyncio
-    async def test_authentication_error_handler(self):
+    async def test_authentication_error_returns_401_response(self):
         """[test_exception_handlers-003] AuthenticationErrorがRFC 9457準拠の401レスポンスになること。"""
         # Arrange
         from app.api.core.exception_handlers import app_exception_handler
@@ -109,7 +109,7 @@ class TestExceptionHandlers:
         assert data["detail"] == "Unauthorized"
 
     @pytest.mark.asyncio
-    async def test_authorization_error_handler(self):
+    async def test_authorization_error_returns_403_response(self):
         """[test_exception_handlers-004] AuthorizationErrorがRFC 9457準拠の403レスポンスになること。"""
         # Arrange
         from app.api.core.exception_handlers import app_exception_handler
@@ -143,7 +143,7 @@ class TestExceptionHandlers:
         assert data["detail"] == "Forbidden"
 
     @pytest.mark.asyncio
-    async def test_not_found_error_handler(self):
+    async def test_not_found_error_returns_404_response(self):
         """[test_exception_handlers-005] NotFoundErrorがRFC 9457準拠の404レスポンスになること。"""
         # Arrange
         from app.api.core.exception_handlers import app_exception_handler

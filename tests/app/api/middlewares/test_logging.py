@@ -9,7 +9,7 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_process_time_header_added(client: AsyncClient):
+async def test_response_headers_health_endpoint_include_process_time(client: AsyncClient):
     """[test_logging-001] X-Process-Timeヘッダーが追加されることを確認。"""
     # Act
     response = await client.get("/health")
@@ -24,7 +24,7 @@ async def test_process_time_header_added(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_process_time_on_api_endpoint(client: AsyncClient):
+async def test_response_headers_api_endpoint_include_process_time(client: AsyncClient):
     """[test_logging-002] APIエンドポイントでもX-Process-Timeが追加されることを確認。"""
     # Act
     response = await client.get("/")
@@ -37,7 +37,7 @@ async def test_process_time_on_api_endpoint(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_logging_on_successful_request(client: AsyncClient):
+async def test_logging_successful_request_adds_header(client: AsyncClient):
     """[test_logging-003] 正常なリクエストでログが記録されることを確認（ヘッダーで間接的に検証）。"""
     # Act
     response = await client.get("/")
@@ -48,7 +48,7 @@ async def test_logging_on_successful_request(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_logging_on_post_request(client: AsyncClient):
+async def test_logging_post_request_adds_header(client: AsyncClient):
     """[test_logging-004] POSTリクエストでもログとヘッダーが正しく処理されることを確認。"""
     # Act
     # エラーになるPOSTリクエスト（Method Not Allowed）
@@ -60,7 +60,7 @@ async def test_logging_on_post_request(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_logging_on_error_response(client: AsyncClient):
+async def test_logging_error_response_adds_header(client: AsyncClient):
     """[test_logging-005] エラーレスポンスでもX-Process-Timeが追加されることを確認。"""
     # Act
     response = await client.get("/nonexistent")
@@ -72,7 +72,7 @@ async def test_logging_on_error_response(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_process_time_increases_with_complexity(client: AsyncClient):
+async def test_process_time_complex_request_returns_positive_value(client: AsyncClient):
     """[test_logging-006] 複雑な処理ほど処理時間が増加することを確認（相対的な比較）。"""
     # Act
     # シンプルなヘルスチェック

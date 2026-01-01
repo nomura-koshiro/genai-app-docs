@@ -21,7 +21,7 @@ class TestMetricsEndpoint:
         assert "text/plain" in response.headers["content-type"]
 
     @pytest.mark.asyncio
-    async def test_metrics_no_auth_required(self, client: AsyncClient):
+    async def test_metrics_without_auth_returns_200(self, client: AsyncClient):
         """[test_metrics-002] メトリクスエンドポイントが認証不要であること。"""
         # Act
         response = await client.get("/metrics")

@@ -9,7 +9,7 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_metrics_endpoint_exists(client: AsyncClient):
+async def test_metrics_endpoint_accessible_returns_success(client: AsyncClient):
     """[test_metrics-001] /metricsエンドポイントが存在し、アクセス可能であることを確認。"""
     # Act
     response = await client.get("/metrics")
@@ -21,7 +21,7 @@ async def test_metrics_endpoint_exists(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_contain_http_requests(client: AsyncClient):
+async def test_metrics_content_includes_http_requests_total(client: AsyncClient):
     """[test_metrics-002] メトリクスにHTTPリクエスト数が含まれることを確認。"""
     # Arrange
     # 先にリクエストを発行してメトリクスを生成
@@ -38,7 +38,7 @@ async def test_metrics_contain_http_requests(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_contain_request_duration(client: AsyncClient):
+async def test_metrics_content_includes_request_duration(client: AsyncClient):
     """[test_metrics-003] メトリクスにリクエスト処理時間が含まれることを確認。"""
     # Arrange
     # リクエストを発行
@@ -55,7 +55,7 @@ async def test_metrics_contain_request_duration(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_updated_after_requests(client: AsyncClient):
+async def test_metrics_after_requests_content_updated(client: AsyncClient):
     """[test_metrics-004] リクエスト後にメトリクスが更新されることを確認。"""
     # Arrange
     # 新しいリクエストを複数発行
@@ -75,7 +75,7 @@ async def test_metrics_updated_after_requests(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_format_is_prometheus(client: AsyncClient):
+async def test_metrics_format_prometheus_compliant(client: AsyncClient):
     """[test_metrics-005] メトリクスがPrometheus形式であることを確認。"""
     # Act
     response = await client.get("/metrics")
@@ -90,7 +90,7 @@ async def test_metrics_format_is_prometheus(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_include_method_labels(client: AsyncClient):
+async def test_metrics_labels_include_http_method(client: AsyncClient):
     """[test_metrics-006] メトリクスにHTTPメソッドラベルが含まれることを確認。"""
     # Arrange
     # 異なるメソッドでリクエスト
@@ -108,7 +108,7 @@ async def test_metrics_include_method_labels(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_metrics_include_status_code_labels(client: AsyncClient):
+async def test_metrics_labels_include_status_code(client: AsyncClient):
     """[test_metrics-007] メトリクスにステータスコードラベルが含まれることを確認。"""
     # Arrange
     # 成功とエラーのリクエストを発行

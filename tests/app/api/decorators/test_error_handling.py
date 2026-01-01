@@ -31,7 +31,7 @@ class TestHandleServiceErrors:
     """handle_service_errorsデコレータのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_custom_error_conversion(self):
+    async def test_handle_service_errors_validation_error_reraises(self):
         """[test_error_handling-001] カスタムエラーがログ出力後に再送出されることをテスト。"""
         # Arrange
         @handle_service_errors
@@ -48,7 +48,7 @@ class TestHandleServiceErrors:
         assert exc_info.value.details == {"field": "email"}
 
     @pytest.mark.asyncio
-    async def test_http_exception_pass_through(self):
+    async def test_handle_service_errors_http_exception_reraises(self):
         """[test_error_handling-002] HTTPExceptionがそのまま再送出されることをテスト。"""
         # Arrange
         @handle_service_errors
@@ -64,7 +64,7 @@ class TestHandleServiceErrors:
         assert exc_info.value.detail == "I'm a teapot"
 
     @pytest.mark.asyncio
-    async def test_successful_execution(self):
+    async def test_handle_service_errors_success_returns_result(self):
         """[test_error_handling-003] 正常実行時にエラーハンドリングが介入しないことをテスト。"""
         # Arrange
         @handle_service_errors

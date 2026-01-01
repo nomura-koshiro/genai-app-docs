@@ -20,7 +20,7 @@ class TestRootEndpoint:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_root_response_structure(self, client: AsyncClient):
+    async def test_root_endpoint_returns_valid_structure(self, client: AsyncClient):
         """[test_root-002] レスポンスが期待される構造を持つこと。"""
         # Act
         response = await client.get("/")
@@ -37,7 +37,7 @@ class TestOpenAPISchema:
     """OpenAPIスキーマのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_openapi_schema_available(self, client: AsyncClient):
+    async def test_openapi_schema_returns_200(self, client: AsyncClient):
         """[test_root-003] OpenAPIスキーマが取得できること。"""
         # Act
         response = await client.get("/openapi.json")

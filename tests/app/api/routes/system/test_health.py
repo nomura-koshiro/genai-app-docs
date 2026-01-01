@@ -22,7 +22,7 @@ class TestHealthEndpoint:
         assert response.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_health_response_structure(self, client: AsyncClient, db_session):
+    async def test_health_with_db_connection_returns_valid_structure(self, client: AsyncClient, db_session):
         """[test_health-002] レスポンスが期待される構造を持つこと。"""
         # Arrange
         # get_dbをモックしてテスト用セッションを返す
