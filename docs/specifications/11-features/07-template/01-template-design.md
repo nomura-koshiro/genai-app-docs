@@ -16,7 +16,7 @@
 | | TM-004 | テンプレート適用 |
 | | TM-005 | テンプレート削除 |
 
-### 1.3 追加コンポーネント数
+### 1.3 コンポーネント数
 
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
@@ -29,7 +29,7 @@
 
 ## 2. データベース設計
 
-### 2.1 テーブル一覧
+### 2.1 関連テーブル一覧
 
 | テーブル名 | 説明 |
 |-----------|------|
@@ -268,7 +268,26 @@ project ──1:N── driver_tree_template
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 分析テンプレートスキーマ
+### 4.1 Enum定義
+
+```python
+from enum import Enum
+
+class TemplateType(str, Enum):
+    """テンプレートタイプ"""
+    SESSION = "session"
+    STEP = "step"
+
+class TemplateCategory(str, Enum):
+    """テンプレートカテゴリ（業種）"""
+    RETAIL_EC = "小売・EC"
+    MANUFACTURING = "製造業"
+    SERVICE = "サービス業"
+    SAAS = "SaaS"
+    OTHER = "その他"
+```
+
+### 4.2 Info/Dataスキーマ
 
 ```python
 class AnalysisTemplateInfo(BaseCamelCaseModel):
@@ -290,22 +309,6 @@ class AnalysisTemplateConfig(BaseCamelCaseModel):
     default_file_types: list[str] = []
     analysis_type: str | None = None
 
-class AnalysisTemplateCreateRequest(BaseCamelCaseModel):
-    """分析テンプレート作成リクエスト"""
-    name: str = Field(..., min_length=1, max_length=255)
-    description: str | None = None
-    source_session_id: UUID
-    is_public: bool = False
-
-class AnalysisTemplateListResponse(BaseCamelCaseModel):
-    """分析テンプレート一覧レスポンス"""
-    templates: list[AnalysisTemplateInfo] = []
-    total: int
-```
-
-### 4.2 ドライバーツリーテンプレートスキーマ
-
-```python
 class DriverTreeTemplateInfo(BaseCamelCaseModel):
     """ドライバーツリーテンプレート情報"""
     template_id: UUID
@@ -324,6 +327,22 @@ class DriverTreeTemplateConfig(BaseCamelCaseModel):
     nodes: list[dict] = []
     relationships: list[dict] = []
     formulas: list[str] = []
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+class AnalysisTemplateCreateRequest(BaseCamelCaseModel):
+    """分析テンプレート作成リクエスト"""
+    name: str = Field(..., min_length=1, max_length=255)
+    description: str | None = None
+    source_session_id: UUID
+    is_public: bool = False
+
+class AnalysisTemplateListResponse(BaseCamelCaseModel):
+    """分析テンプレート一覧レスポンス"""
+    templates: list[AnalysisTemplateInfo] = []
+    total: int
 
 class DriverTreeTemplateCreateRequest(BaseCamelCaseModel):
     """ドライバーツリーテンプレート作成リクエスト"""
@@ -343,7 +362,16 @@ class DriverTreeTemplateListResponse(BaseCamelCaseModel):
 
 ## 5. サービス層設計
 
-### 5.1 サービスクラス
+### 5.1 サービスクラス構成
+
+| サービスクラス | 責務 | 主要メソッド |
+|-------------|------|------------|
+| AnalysisTemplateService | 分析テンプレートの管理 | list_templates, create_template, delete_template, apply_template |
+| DriverTreeTemplateService | ドライバーツリーテンプレートの管理 | list_templates, create_template, delete_template, apply_template |
+
+### 5.2 主要メソッド
+
+#### AnalysisTemplateService
 
 ```python
 class AnalysisTemplateService:
@@ -355,8 +383,34 @@ class AnalysisTemplateService:
         include_public: bool = True,
         template_type: str | None = None
     ) -> AnalysisTemplateListResponse:
-        """テンプレート一覧を取得"""
-        ...
+        """
+        テンプレート一覧を取得
+
+        Args:
+            project_id: プロジェクトID
+            include_public: 公開テンプレートを含めるか
+            template_type: テンプレートタイプでフィルター
+
+        Returns:
+            テンプレート一覧
+        """
+        query = select(AnalysisTemplate).where(
+            or_(
+                AnalysisTemplate.project_id == project_id,
+                AnalysisTemplate.is_public == True if include_public else False
+            )
+        )
+
+        if template_type:
+            query = query.where(AnalysisTemplate.template_type == template_type)
+
+        result = await self.db.execute(query)
+        templates = result.scalars().all()
+
+        return AnalysisTemplateListResponse(
+            templates=[AnalysisTemplateInfo.from_orm(t) for t in templates],
+            total=len(templates)
+        )
 
     async def create_template(
         self,
@@ -367,20 +421,55 @@ class AnalysisTemplateService:
         is_public: bool,
         user_id: UUID
     ) -> AnalysisTemplateInfo:
-        """セッションからテンプレートを作成"""
-        # 1. 元セッションの取得
-        # 2. テンプレート設定の抽出
-        # 3. テンプレートの保存
-        ...
+        """
+        セッションからテンプレートを作成
 
-    async def delete_template(
-        self,
-        project_id: UUID,
-        template_id: UUID,
-        user_id: UUID
-    ) -> dict:
-        """テンプレートを削除"""
-        ...
+        処理フロー:
+        1. 元セッションの取得と検証
+        2. テンプレート設定の抽出（steps, prompt等）
+        3. テンプレートの保存
+
+        Args:
+            project_id: プロジェクトID
+            name: テンプレート名
+            description: 説明
+            source_session_id: 元セッションID
+            is_public: 公開フラグ
+            user_id: 作成者ID
+
+        Returns:
+            作成されたテンプレート情報
+        """
+        # 1. 元セッションの取得
+        session = await self.session_service.get_session(project_id, source_session_id)
+        if not session:
+            raise SessionNotFoundError()
+
+        # 2. テンプレート設定の抽出
+        template_config = AnalysisTemplateConfig(
+            initial_prompt=session.initial_prompt,
+            steps=[step.to_dict() for step in session.steps],
+            default_file_types=session.file_types,
+            analysis_type=session.analysis_type
+        )
+
+        # 3. テンプレートの保存
+        template = AnalysisTemplate(
+            project_id=project_id,
+            name=name,
+            description=description,
+            template_type=session.session_type,
+            template_config=template_config.model_dump(),
+            source_session_id=source_session_id,
+            is_public=is_public,
+            created_by=user_id
+        )
+
+        self.db.add(template)
+        await self.db.commit()
+        await self.db.refresh(template)
+
+        return AnalysisTemplateInfo.from_orm(template)
 
     async def apply_template(
         self,
@@ -389,21 +478,46 @@ class AnalysisTemplateService:
         session_name: str,
         user_id: UUID
     ) -> dict:
-        """テンプレートを適用してセッション作成"""
-        ...
+        """
+        テンプレートを適用してセッション作成
 
+        Args:
+            project_id: プロジェクトID
+            template_id: テンプレートID
+            session_name: 新セッション名
+            user_id: ユーザーID
 
+        Returns:
+            作成されたセッション情報
+        """
+        template = await self.get_template(project_id, template_id)
+        if not template:
+            raise TemplateNotFoundError()
+
+        # テンプレート設定を使用してセッション作成
+        session_data = {
+            "name": session_name,
+            "initial_prompt": template.template_config.get("initial_prompt"),
+            "steps": template.template_config.get("steps", []),
+            "analysis_type": template.template_config.get("analysis_type")
+        }
+
+        new_session = await self.session_service.create_session(
+            project_id, session_data, user_id
+        )
+
+        # 使用回数をインクリメント
+        template.usage_count += 1
+        await self.db.commit()
+
+        return new_session
+```
+
+#### DriverTreeTemplateService
+
+```python
 class DriverTreeTemplateService:
     """ドライバーツリーテンプレートサービス"""
-
-    async def list_templates(
-        self,
-        project_id: UUID,
-        include_public: bool = True,
-        category: str | None = None
-    ) -> DriverTreeTemplateListResponse:
-        """テンプレート一覧を取得"""
-        ...
 
     async def create_template(
         self,
@@ -415,20 +529,81 @@ class DriverTreeTemplateService:
         is_public: bool,
         user_id: UUID
     ) -> DriverTreeTemplateInfo:
-        """ツリーからテンプレートを作成"""
-        # 1. 元ツリーとノード・リレーションの取得
-        # 2. テンプレート設定の抽出（相対座標変換）
-        # 3. テンプレートの保存
-        ...
+        """
+        ツリーからテンプレートを作成
 
-    async def delete_template(
-        self,
-        project_id: UUID,
-        template_id: UUID,
-        user_id: UUID
-    ) -> dict:
-        """テンプレートを削除"""
-        ...
+        処理フロー:
+        1. 元ツリーとノード・リレーションの取得
+        2. テンプレート設定の抽出（相対座標変換）
+        3. テンプレートの保存
+
+        Args:
+            project_id: プロジェクトID
+            name: テンプレート名
+            description: 説明
+            category: カテゴリ（業種）
+            source_tree_id: 元ツリーID
+            is_public: 公開フラグ
+            user_id: 作成者ID
+
+        Returns:
+            作成されたテンプレート情報
+        """
+        # 1. 元ツリーとノード・リレーションの取得
+        tree = await self.tree_service.get_tree(project_id, source_tree_id)
+        if not tree:
+            raise TreeNotFoundError()
+
+        nodes = await self.tree_service.get_tree_nodes(source_tree_id)
+        relationships = await self.tree_service.get_tree_relationships(source_tree_id)
+
+        # 2. テンプレート設定の抽出（絶対座標→相対座標変換）
+        # 基準ノード（ルート）を中心に相対座標化
+        root_node = next((n for n in nodes if n.is_root), nodes[0])
+        base_x, base_y = root_node.position_x, root_node.position_y
+
+        template_nodes = [
+            {
+                "label": node.label,
+                "nodeType": node.node_type,
+                "relativeX": node.position_x - base_x,
+                "relativeY": node.position_y - base_y
+            }
+            for node in nodes
+        ]
+
+        template_relationships = [
+            {
+                "parentLabel": rel.parent_node.label,
+                "childLabels": [child.label for child in rel.child_nodes],
+                "operator": rel.operator
+            }
+            for rel in relationships
+        ]
+
+        template_config = DriverTreeTemplateConfig(
+            nodes=template_nodes,
+            relationships=template_relationships,
+            formulas=tree.formulas
+        )
+
+        # 3. テンプレートの保存
+        template = DriverTreeTemplate(
+            project_id=project_id,
+            name=name,
+            description=description,
+            category=category,
+            template_config=template_config.model_dump(),
+            source_tree_id=source_tree_id,
+            is_public=is_public,
+            created_by=user_id
+        )
+
+        self.db.add(template)
+        await self.db.commit()
+        await self.db.refresh(template)
+
+        return DriverTreeTemplateInfo.from_orm(template)
 
     async def apply_template(
         self,
@@ -439,8 +614,54 @@ class DriverTreeTemplateService:
         position_y: int,
         user_id: UUID
     ) -> dict:
-        """テンプレートを適用してツリー作成"""
-        ...
+        """
+        テンプレートを適用してツリー作成
+
+        処理フロー:
+        1. テンプレート取得
+        2. 相対座標→絶対座標変換
+        3. ノードとリレーションの作成
+
+        Args:
+            project_id: プロジェクトID
+            template_id: テンプレートID
+            tree_name: 新ツリー名
+            position_x: 配置位置X
+            position_y: 配置位置Y
+            user_id: ユーザーID
+
+        Returns:
+            作成されたツリー情報
+        """
+        template = await self.get_template(project_id, template_id)
+        if not template:
+            raise TemplateNotFoundError()
+
+        # 相対座標→絶対座標変換
+        nodes_data = [
+            {
+                "label": node["label"],
+                "node_type": node["nodeType"],
+                "position_x": position_x + node["relativeX"],
+                "position_y": position_y + node["relativeY"]
+            }
+            for node in template.template_config["nodes"]
+        ]
+
+        # ツリー作成
+        new_tree = await self.tree_service.create_tree_with_nodes(
+            project_id=project_id,
+            tree_name=tree_name,
+            nodes=nodes_data,
+            relationships=template.template_config["relationships"],
+            user_id=user_id
+        )
+
+        # 使用回数をインクリメント
+        template.usage_count += 1
+        await self.db.commit()
+
+        return new_tree
 ```
 
 ---
@@ -452,7 +673,7 @@ class DriverTreeTemplateService:
 | 画面ID | 画面名 | パス | 説明 |
 |--------|--------|------|------|
 | templates | テンプレート一覧 | /projects/{id}/templates | テンプレート管理画面 |
-| template-select | テンプレート選択 | - | モーダル/ドロワー |
+| template-select | テンプレート選択 | - | モーダル/ドロワー（tree-new内） |
 
 ### 6.2 コンポーネント構成
 
@@ -460,28 +681,28 @@ class DriverTreeTemplateService:
 features/templates/
 ├── components/
 │   ├── TemplateList/
-│   │   ├── TemplateList.tsx
-│   │   ├── TemplateCard.tsx
-│   │   └── TemplateFilters.tsx
+│   │   ├── TemplateList.tsx          # テンプレート一覧表示
+│   │   ├── TemplateCard.tsx          # テンプレートカード
+│   │   └── TemplateFilters.tsx       # フィルター機能
 │   ├── TemplateSelector/
-│   │   ├── TemplateSelector.tsx
-│   │   ├── TemplatePreview.tsx
-│   │   └── CategoryFilter.tsx
+│   │   ├── TemplateSelector.tsx      # テンプレート選択UI（tree-new内で使用）
+│   │   ├── TemplatePreview.tsx       # プレビュー表示
+│   │   └── CategoryFilter.tsx        # 業種・分析タイプフィルター
 │   └── TemplateForm/
-│       ├── CreateTemplateModal.tsx
-│       └── TemplateFormFields.tsx
+│       ├── CreateTemplateModal.tsx   # テンプレート作成モーダル
+│       └── TemplateFormFields.tsx    # フォームフィールド
 ├── hooks/
-│   ├── useAnalysisTemplates.ts
-│   └── useDriverTreeTemplates.ts
+│   ├── useAnalysisTemplates.ts       # 分析テンプレートフック
+│   └── useDriverTreeTemplates.ts     # ツリーテンプレートフック
 ├── api/
-│   └── templateApi.ts
+│   └── templateApi.ts                # テンプレートAPI呼び出し
 └── types/
-    └── template.ts
+    └── template.ts                   # 型定義
 ```
 
-### 6.3 テンプレート選択UI（tree-new画面内）
+**テンプレート選択UI（tree-new画面内）**
 
-既存のtree-new画面内のテンプレート選択部分は、driver_tree_templateテーブルのデータを表示します。
+既存のtree-new画面内のテンプレート選択部分は、`TemplateSelector`コンポーネントを使用してdriver_tree_templateテーブルのデータを表示します。
 
 ```text
 ┌────────────────────────────────────────────────────────┐

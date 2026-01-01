@@ -16,7 +16,7 @@
 | | EX-002 | ツリー計算結果エクスポート |
 | | EX-003 | ノードデータエクスポート |
 
-### 1.3 追加コンポーネント数
+### 1.3 コンポーネント数
 
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
@@ -29,7 +29,7 @@
 
 ## 2. データベース設計
 
-### 2.1 利用テーブル
+### 2.1 関連テーブル一覧
 
 複製・エクスポート機能は専用テーブルを持たず、既存テーブルを利用します。
 
@@ -216,7 +216,23 @@ Sheet3: 施策効果比較
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 複製スキーマ
+### 4.1 Enum定義
+
+```python
+class ExportFormatEnum(str, Enum):
+    """エクスポート形式"""
+    xlsx = "xlsx"
+    csv = "csv"
+    pdf = "pdf"
+```
+
+### 4.2 Info/Dataスキーマ
+
+複製・エクスポート機能では専用のInfo/Dataスキーマは使用せず、既存のドメインモデル（Session, Tree, Node等）を利用します。
+
+### 4.3 Request/Responseスキーマ
+
+#### 複製関連スキーマ
 
 ```python
 class SessionDuplicateRequest(BaseCamelCaseModel):
@@ -240,15 +256,9 @@ class TreeDuplicateRequest(BaseCamelCaseModel):
 # TreeDuplicateResponse は既存の DriverTreeGetTreeResponse を使用
 ```
 
-### 4.2 エクスポートスキーマ
+#### エクスポート関連スキーマ
 
 ```python
-class ExportFormatEnum(str, Enum):
-    """エクスポート形式"""
-    xlsx = "xlsx"
-    csv = "csv"
-    pdf = "pdf"
-
 class SessionExportRequest(BaseCamelCaseModel):
     """セッションエクスポートリクエスト"""
     format: ExportFormatEnum = ExportFormatEnum.xlsx
@@ -264,7 +274,16 @@ class TreeExportRequest(BaseCamelCaseModel):
 
 ## 5. サービス層設計
 
-### 5.1 複製サービス
+### 5.1 サービスクラス構成
+
+| サービスクラス | ファイルパス | 責任 | 主要メソッド |
+|--------------|-------------|------|-------------|
+| DuplicationService | `app/services/duplication_service.py` | セッション・ツリーの複製処理 | `duplicate_session()`, `duplicate_tree()` |
+| ExportService | `app/services/export_service.py` | 分析結果・ツリーデータのエクスポート処理 | `export_session()`, `export_tree_results()`, `export_node_data()` |
+
+### 5.2 主要メソッド
+
+#### DuplicationService - セッション複製
 
 ```python
 class DuplicationService:
@@ -332,7 +351,7 @@ class DuplicationService:
         return await self._get_full_tree(new_tree.id)
 ```
 
-### 5.2 エクスポートサービス
+#### ExportService - セッションエクスポート
 
 ```python
 class ExportService:
@@ -413,21 +432,33 @@ class ExportService:
 
 ## 6. フロントエンド設計
 
-### 6.1 ボタン配置
+### 6.1 画面一覧
 
-複製・エクスポート機能は既存画面にボタンとして追加されます。
+複製・エクスポート機能は専用の新規画面を持たず、既存画面に機能を追加します。
 
-| 画面 | ボタン | アクション |
-|------|--------|-----------|
-| セッション一覧 | 複製ボタン | POST /session/{id}/duplicate |
-| 分析画面 | エクスポートボタン | GET /session/{id}/export |
-| ツリー一覧 | 複製ボタン | POST /tree/{id}/duplicate |
-| 計算結果画面 | エクスポートボタン | GET /tree/{id}/output |
-| ノード編集パネル | データダウンロードボタン | GET /node/{id}/preview/output |
+| 画面名 | 画面パス | 追加機能 | 実装状況 |
+|-------|---------|---------|---------|
+| セッション一覧 | `/projects/{id}/sessions` | セッション複製ボタン | 実装済 |
+| 分析画面 | `/projects/{id}/analysis/{id}` | 分析結果エクスポートボタン | 未実装 |
+| ツリー一覧 | `/projects/{id}/trees` | ツリー複製ボタン | 実装済 |
+| 計算結果画面 | `/projects/{id}/trees/{id}/results` | ツリー計算結果エクスポートボタン | 実装済 |
+| ノード編集パネル | `/projects/{id}/trees/{id}/edit` | ノードデータダウンロードボタン | 実装済 |
 
-### 6.2 UI設計
+### 6.2 コンポーネント構成
 
-#### 複製確認ダイアログ
+#### ボタンコンポーネント
+
+| コンポーネント | 配置場所 | APIエンドポイント | トリガーアクション |
+|--------------|---------|------------------|------------------|
+| 複製ボタン (Session) | セッション一覧の各行 | POST /session/{id}/duplicate | 複製確認ダイアログを表示 |
+| 複製ボタン (Tree) | ツリー一覧の各行 | POST /tree/{id}/duplicate | 複製確認ダイアログを表示 |
+| エクスポートボタン (Session) | 分析画面ヘッダー | GET /session/{id}/export | エクスポートオプションダイアログを表示 |
+| エクスポートボタン (Tree) | 計算結果画面ヘッダー | GET /tree/{id}/output | ファイルダウンロード |
+| データダウンロードボタン | ノード編集パネル | GET /node/{id}/preview/output | CSVファイルダウンロード |
+
+#### ダイアログコンポーネント
+
+**複製確認ダイアログ**
 
 ```text
 ┌────────────────────────────────────────┐
@@ -445,7 +476,7 @@ class ExportService:
 └────────────────────────────────────────┘
 ```
 
-#### エクスポートオプションダイアログ
+**エクスポートオプションダイアログ**
 
 ```text
 ┌────────────────────────────────────────┐

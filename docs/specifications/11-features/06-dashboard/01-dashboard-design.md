@@ -17,7 +17,7 @@
 | **アクティビティ** | D-005 | 最近のアクティビティ表示 |
 | **クイックアクセス** | D-006 | クイックアクセス・最近のプロジェクト表示 |
 
-### 1.3 追加コンポーネント数
+### 1.3 コンポーネント数
 
 | コンポーネント | 数量 |
 |--------------|------|
@@ -30,7 +30,7 @@
 
 ## 2. データベース設計
 
-### 2.1 利用テーブル
+### 2.1 関連テーブル一覧
 
 ダッシュボードは専用テーブルを持たず、既存テーブルから統計情報を集計します。
 
@@ -235,7 +235,34 @@ FROM project_file;
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 統計情報スキーマ
+### 4.1 Enum定義
+
+```python
+from enum import Enum
+
+class ActivityAction(str, Enum):
+    """アクティビティアクション種別"""
+    CREATED = "created"
+    UPDATED = "updated"
+    DELETED = "deleted"
+    ACCESSED = "accessed"
+
+class ResourceType(str, Enum):
+    """リソース種別"""
+    PROJECT = "project"
+    SESSION = "session"
+    TREE = "tree"
+    FILE = "file"
+
+class ChartType(str, Enum):
+    """チャート種別"""
+    LINE = "line"
+    BAR = "bar"
+    PIE = "pie"
+    AREA = "area"
+```
+
+### 4.2 Info/Dataスキーマ
 
 ```python
 class ProjectStats(BaseCamelCaseModel):
@@ -268,6 +295,35 @@ class FileStats(BaseCamelCaseModel):
     total: int
     total_size_bytes: int = 0
 
+class ChartDataPoint(BaseCamelCaseModel):
+    """チャートデータポイント"""
+    label: str
+    value: float
+
+class ChartDataInfo(BaseCamelCaseModel):
+    """チャートデータ情報"""
+    chart_type: ChartType
+    title: str
+    data: list[ChartDataPoint] = []
+    x_axis_label: str | None = None
+    y_axis_label: str | None = None
+
+class ActivityLogInfo(BaseCamelCaseModel):
+    """アクティビティログ情報"""
+    id: UUID
+    user_id: UUID
+    user_name: str
+    action: ActivityAction
+    resource_type: ResourceType
+    resource_id: UUID
+    resource_name: str
+    details: dict[str, Any] | None = None
+    created_at: datetime
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
 class DashboardStatsResponse(BaseCamelCaseModel):
     """ダッシュボード統計レスポンス"""
     projects: ProjectStats
@@ -276,55 +332,22 @@ class DashboardStatsResponse(BaseCamelCaseModel):
     users: UserStats
     files: FileStats
     generated_at: datetime
-```
-
-### 4.2 アクティビティスキーマ
-
-```python
-class ActivityLogResponse(BaseCamelCaseModel):
-    """アクティビティログ"""
-    id: UUID
-    user_id: UUID
-    user_name: str
-    action: str  # created/updated/deleted/accessed
-    resource_type: str  # project/session/tree/file
-    resource_id: UUID
-    resource_name: str
-    details: dict[str, Any] | None = None
-    created_at: datetime
 
 class DashboardActivitiesResponse(BaseCamelCaseModel):
     """アクティビティ一覧レスポンス"""
-    activities: list[ActivityLogResponse] = []
+    activities: list[ActivityLogInfo] = []
     total: int
     skip: int
     limit: int
-```
-
-### 4.3 チャートスキーマ
-
-```python
-class ChartDataPoint(BaseCamelCaseModel):
-    """チャートデータポイント"""
-    label: str
-    value: float
-
-class ChartDataResponse(BaseCamelCaseModel):
-    """チャートデータ"""
-    chart_type: str  # line/bar/pie/area
-    title: str
-    data: list[ChartDataPoint] = []
-    x_axis_label: str | None = None
-    y_axis_label: str | None = None
 
 class DashboardChartsResponse(BaseCamelCaseModel):
     """チャート一覧レスポンス"""
-    session_trend: ChartDataResponse
-    snapshot_trend: ChartDataResponse
-    tree_trend: ChartDataResponse
-    project_distribution: ChartDataResponse
-    project_progress: ChartDataResponse
-    user_activity: ChartDataResponse
+    session_trend: ChartDataInfo
+    snapshot_trend: ChartDataInfo
+    tree_trend: ChartDataInfo
+    project_distribution: ChartDataInfo
+    project_progress: ChartDataInfo
+    user_activity: ChartDataInfo
     generated_at: datetime
 ```
 
@@ -332,7 +355,34 @@ class DashboardChartsResponse(BaseCamelCaseModel):
 
 ## 5. サービス層設計
 
-### 5.1 サービスクラス
+### 5.1 サービスクラス構成
+
+| サービスクラス | 責務 | 主要メソッド |
+|--------------|------|------------|
+| DashboardService | ダッシュボード統計・チャート・アクティビティ管理 | get_stats()<br>get_activities()<br>get_charts() |
+
+**DashboardServiceメソッド一覧:**
+
+| メソッド名 | 戻り値型 | 説明 |
+|-----------|---------|------|
+| get_stats() | DashboardStatsResponse | 統計情報を集計して取得 |
+| get_activities(skip, limit) | DashboardActivitiesResponse | アクティビティログを取得 |
+| get_charts(days) | DashboardChartsResponse | チャートデータを取得 |
+| _get_project_stats() | ProjectStats | プロジェクト統計を取得 |
+| _get_session_stats() | SessionStats | セッション統計を取得 |
+| _get_tree_stats() | TreeStats | ツリー統計を取得 |
+| _get_user_stats() | UserStats | ユーザー統計を取得 |
+| _get_file_stats() | FileStats | ファイル統計を取得 |
+| _get_session_trend(days) | ChartDataInfo | セッション作成トレンドを取得 |
+| _get_snapshot_trend(days) | ChartDataInfo | スナップショット作成トレンドを取得 |
+| _get_tree_trend(days) | ChartDataInfo | ツリー作成トレンドを取得 |
+| _get_project_distribution() | ChartDataInfo | プロジェクト状態分布を取得 |
+| _get_project_progress() | ChartDataInfo | プロジェクト進捗を取得 |
+| _get_user_activity_trend(days) | ChartDataInfo | ユーザーアクティビティトレンドを取得 |
+
+### 5.2 主要メソッド
+
+#### get_stats() - 統計情報取得
 
 ```python
 class DashboardService:
@@ -342,7 +392,12 @@ class DashboardService:
         self.db = db
 
     async def get_stats(self) -> DashboardStatsResponse:
-        """統計情報を取得"""
+        """
+        統計情報を取得
+
+        Returns:
+            DashboardStatsResponse: プロジェクト、セッション、ツリー、ユーザー、ファイルの統計情報
+        """
         projects = await self._get_project_stats()
         sessions = await self._get_session_stats()
         trees = await self._get_tree_stats()
@@ -357,16 +412,83 @@ class DashboardService:
             files=files,
             generated_at=datetime.utcnow()
         )
+```
 
+#### get_activities() - アクティビティログ取得
+
+```python
     async def get_activities(
         self, skip: int = 0, limit: int = 20
     ) -> DashboardActivitiesResponse:
-        """アクティビティログを取得"""
-        # user_activityテーブルから取得
-        ...
+        """
+        アクティビティログを取得
 
+        Args:
+            skip: スキップ数
+            limit: 取得件数（最大100）
+
+        Returns:
+            DashboardActivitiesResponse: アクティビティログ一覧
+        """
+        # 取得件数の上限チェック
+        limit = min(limit, 100)
+
+        # user_activityテーブルから取得
+        query = (
+            select(UserActivity)
+            .order_by(UserActivity.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.db.execute(query)
+        activities = result.scalars().all()
+
+        # 総件数取得
+        count_query = select(func.count(UserActivity.id))
+        total_result = await self.db.execute(count_query)
+        total = total_result.scalar()
+
+        # レスポンス変換
+        activity_list = [
+            ActivityLogInfo(
+                id=activity.id,
+                user_id=activity.user_id,
+                user_name=activity.user_name,
+                action=ActivityAction(activity.action),
+                resource_type=ResourceType(activity.resource_type),
+                resource_id=activity.resource_id,
+                resource_name=activity.resource_name,
+                details=activity.details,
+                created_at=activity.created_at
+            )
+            for activity in activities
+        ]
+
+        return DashboardActivitiesResponse(
+            activities=activity_list,
+            total=total,
+            skip=skip,
+            limit=limit
+        )
+```
+
+#### get_charts() - チャートデータ取得
+
+```python
     async def get_charts(self, days: int = 30) -> DashboardChartsResponse:
-        """チャートデータを取得"""
+        """
+        チャートデータを取得
+
+        Args:
+            days: 集計対象日数（最大365）
+
+        Returns:
+            DashboardChartsResponse: 各種チャートデータ
+        """
+        # 日数の上限チェック
+        days = min(days, 365)
+
+        # 各チャートデータを並行取得
         session_trend = await self._get_session_trend(days)
         snapshot_trend = await self._get_snapshot_trend(days)
         tree_trend = await self._get_tree_trend(days)
@@ -383,50 +505,83 @@ class DashboardService:
             user_activity=user_activity,
             generated_at=datetime.utcnow()
         )
+```
 
+#### _get_project_stats() - プロジェクト統計取得
+
+```python
     async def _get_project_stats(self) -> ProjectStats:
-        """プロジェクト統計を取得"""
-        ...
+        """
+        プロジェクト統計を取得
 
-    async def _get_session_stats(self) -> SessionStats:
-        """セッション統計を取得"""
-        ...
+        Returns:
+            ProjectStats: 総数、アクティブ数、アーカイブ数
+        """
+        # 総数
+        total_query = select(func.count(Project.id))
+        total_result = await self.db.execute(total_query)
+        total = total_result.scalar()
 
-    async def _get_tree_stats(self) -> TreeStats:
-        """ツリー統計を取得"""
-        ...
+        # アクティブ数
+        active_query = select(func.count(Project.id)).where(Project.is_active == True)
+        active_result = await self.db.execute(active_query)
+        active = active_result.scalar()
 
-    async def _get_user_stats(self) -> UserStats:
-        """ユーザー統計を取得"""
-        ...
+        # アーカイブ数
+        archived = total - active
 
-    async def _get_file_stats(self) -> FileStats:
-        """ファイル統計を取得"""
-        ...
+        return ProjectStats(
+            total=total,
+            active=active,
+            archived=archived
+        )
+```
 
-    async def _get_session_trend(self, days: int) -> ChartDataResponse:
-        """セッション作成トレンドを取得"""
-        ...
+#### _get_session_trend() - セッション作成トレンド取得
 
-    async def _get_snapshot_trend(self, days: int) -> ChartDataResponse:
-        """スナップショット作成トレンドを取得"""
-        ...
+```python
+    async def _get_session_trend(self, days: int) -> ChartDataInfo:
+        """
+        セッション作成トレンドを取得
 
-    async def _get_tree_trend(self, days: int) -> ChartDataResponse:
-        """ツリー作成トレンドを取得"""
-        ...
+        Args:
+            days: 集計対象日数
 
-    async def _get_project_distribution(self) -> ChartDataResponse:
-        """プロジェクト状態分布を取得"""
-        ...
+        Returns:
+            ChartDataInfo: セッション作成トレンドチャート
+        """
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=days)
 
-    async def _get_project_progress(self) -> ChartDataResponse:
-        """プロジェクト進捗を取得"""
-        ...
+        # 日付ごとにグループ化して集計
+        query = (
+            select(
+                func.date(AnalysisSession.created_at).label('date'),
+                func.count(AnalysisSession.id).label('count')
+            )
+            .where(AnalysisSession.created_at >= start_date)
+            .group_by(func.date(AnalysisSession.created_at))
+            .order_by(func.date(AnalysisSession.created_at))
+        )
+        result = await self.db.execute(query)
+        rows = result.all()
 
-    async def _get_user_activity_trend(self, days: int) -> ChartDataResponse:
-        """ユーザーアクティビティトレンドを取得"""
-        ...
+        # チャートデータポイント作成
+        data_points = [
+            ChartDataPoint(
+                label=row.date.strftime('%m/%d'),
+                value=float(row.count)
+            )
+            for row in rows
+        ]
+
+        return ChartDataInfo(
+            chart_type=ChartType.BAR,
+            title="セッション作成トレンド",
+            data=data_points,
+            x_axis_label="日付",
+            y_axis_label="件数"
+        )
 ```
 
 ---
@@ -441,33 +596,35 @@ class DashboardService:
 
 ### 6.2 コンポーネント構成
 
+#### コンポーネントツリー
+
 ```text
 features/dashboard/
 ├── components/
 │   ├── StatsGrid/
-│   │   ├── StatsGrid.tsx
-│   │   └── StatCard.tsx
+│   │   ├── StatsGrid.tsx          # 統計カードグリッド
+│   │   └── StatCard.tsx           # 統計カード
 │   ├── Charts/
-│   │   ├── ActivityChart.tsx
-│   │   ├── ProjectProgressChart.tsx
-│   │   └── ChartContainer.tsx
+│   │   ├── ActivityChart.tsx      # アクティビティチャート
+│   │   ├── ProjectProgressChart.tsx  # プロジェクト進捗チャート
+│   │   └── ChartContainer.tsx     # チャート共通コンテナ
 │   ├── ActivityList/
-│   │   ├── ActivityList.tsx
-│   │   └── ActivityItem.tsx
+│   │   ├── ActivityList.tsx       # アクティビティリスト
+│   │   └── ActivityItem.tsx       # アクティビティアイテム
 │   └── QuickAccess/
-│       ├── QuickActions.tsx
-│       └── RecentProjects.tsx
+│       ├── QuickActions.tsx       # クイックアクションボタン群
+│       └── RecentProjects.tsx     # 最近のプロジェクト
 ├── hooks/
-│   ├── useDashboardStats.ts
-│   ├── useDashboardActivities.ts
-│   └── useDashboardCharts.ts
+│   ├── useDashboardStats.ts       # 統計データフック
+│   ├── useDashboardActivities.ts  # アクティビティデータフック
+│   └── useDashboardCharts.ts      # チャートデータフック
 ├── api/
-│   └── dashboardApi.ts
+│   └── dashboardApi.ts            # API通信関数
 └── types/
-    └── dashboard.ts
+    └── dashboard.ts               # 型定義
 ```
 
-### 6.3 レイアウト構成
+#### レイアウト構成
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
@@ -478,19 +635,36 @@ features/dashboard/
 │  プロジェクト│  セッション │  ツリー     │  ファイル     │
 │  12         │  5          │  8          │  47           │
 │  +2 今月    │  アクティブ │  +1 今週    │  合計         │
+│  [StatsGrid > StatCard × 4]                            │
 ├─────────────┴─────────────┼─────────────┴───────────────┤
 │  分析アクティビティ       │  プロジェクト進捗           │
 │  ┌───────────────────┐   │  ┌───────────────────┐     │
 │  │ [バーチャート]    │   │  │ [プログレスバー]  │     │
 │  └───────────────────┘   │  └───────────────────┘     │
+│  [ActivityChart]          │  [ProjectProgressChart]    │
 ├───────────────────────────┼─────────────────────────────┤
 │  最近のアクティビティ     │  クイックアクセス           │
 │  ┌───────────────────┐   │  ┌───────────────────┐     │
 │  │ [アクティビティ   │   │  │ [クイックアクション]│    │
 │  │  リスト]          │   │  │ [最近のプロジェクト]│    │
 │  └───────────────────┘   │  └───────────────────┘     │
+│  [ActivityList]           │  [QuickAccess]             │
 └───────────────────────────┴─────────────────────────────┘
 ```
+
+**コンポーネント責務:**
+
+| コンポーネント | 責務 | 使用API |
+|--------------|------|---------|
+| StatsGrid | 統計カードのグリッドレイアウト表示 | - |
+| StatCard | 各統計項目（プロジェクト数、セッション数等）の表示 | GET /dashboard/stats |
+| ActivityChart | 分析アクティビティのバーチャート表示 | GET /dashboard/charts |
+| ProjectProgressChart | プロジェクト進捗のプログレスバー表示 | GET /dashboard/charts |
+| ChartContainer | チャートの共通ラッパー（タイトル、凡例等） | - |
+| ActivityList | 最近のアクティビティリスト表示 | GET /dashboard/activities |
+| ActivityItem | 個別のアクティビティアイテム表示 | - |
+| QuickActions | クイックアクションボタン群 | - |
+| RecentProjects | 最近のプロジェクト一覧表示 | GET /api/v1/projects |
 
 ---
 

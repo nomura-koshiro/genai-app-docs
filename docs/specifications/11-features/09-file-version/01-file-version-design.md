@@ -19,7 +19,7 @@
 | | FV-003 | 特定バージョンへの復元 |
 | | FV-004 | バージョン間比較 |
 
-### 1.3 追加コンポーネント数
+### 1.3 コンポーネント数
 
 | コンポーネント | 数量 | 備考 |
 |--------------|------|------|
@@ -32,7 +32,7 @@
 
 ## 2. データベース設計
 
-### 2.1 テーブル一覧
+### 2.1 関連テーブル一覧
 
 | テーブル名 | 説明 |
 |-----------|------|
@@ -323,14 +323,28 @@ project_file ──1:N── project_file_version
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 ファイル情報スキーマ
+### 4.1 Enum定義
+
+```python
+from enum import Enum
+
+class FileType(str, Enum):
+    """ファイルタイプ"""
+    EXCEL = "excel"
+    PDF = "pdf"
+    IMAGE = "image"
+    WORD = "word"
+    OTHER = "other"
+```
+
+### 4.2 Info/Dataスキーマ
 
 ```python
 class FileInfo(BaseCamelCaseModel):
     """ファイル情報"""
     file_id: UUID
     name: str
-    file_type: str
+    file_type: FileType
     file_size: int
     current_version: int
     version_count: int
@@ -339,31 +353,6 @@ class FileInfo(BaseCamelCaseModel):
     updated_at: datetime
     created_at: datetime
 
-class FileListResponse(BaseCamelCaseModel):
-    """ファイル一覧レスポンス"""
-    files: list[FileInfo] = []
-    total: int
-    page: int = 1
-    limit: int = 20
-    total_pages: int
-
-class FileUploadResponse(BaseCamelCaseModel):
-    """ファイルアップロードレスポンス"""
-    file_id: UUID
-    name: str
-    file_type: str
-    file_size: int
-    current_version: int
-    version_count: int
-    comment: str | None = None
-    uploaded_by: UUID
-    uploaded_by_name: str
-    created_at: datetime
-```
-
-### 4.2 バージョン情報スキーマ
-
-```python
 class FileVersionInfo(BaseCamelCaseModel):
     """ファイルバージョン情報"""
     version_id: UUID
@@ -376,44 +365,6 @@ class FileVersionInfo(BaseCamelCaseModel):
     uploaded_by_name: str | None = None
     created_at: datetime
 
-class FileVersionListResponse(BaseCamelCaseModel):
-    """バージョン履歴レスポンス"""
-    file_id: UUID
-    file_name: str
-    current_version: int
-    versions: list[FileVersionInfo] = []
-    total_versions: int
-```
-
-### 4.3 バージョン操作スキーマ
-
-```python
-class FileVersionUploadResponse(BaseCamelCaseModel):
-    """バージョンアップロードレスポンス"""
-    version_id: UUID
-    version_number: int
-    file_size: int
-    comment: str | None = None
-    checksum: str | None = None
-    created_at: datetime
-
-class FileVersionRestoreRequest(BaseCamelCaseModel):
-    """バージョン復元リクエスト"""
-    comment: str | None = None
-
-class FileVersionRestoreResponse(BaseCamelCaseModel):
-    """バージョン復元レスポンス"""
-    file_id: UUID
-    new_version_id: UUID
-    new_version_number: int
-    restored_from_version: int
-    comment: str | None = None
-    created_at: datetime
-```
-
-### 4.4 バージョン比較スキーマ
-
-```python
 class SheetChangeInfo(BaseCamelCaseModel):
     """シート変更情報"""
     sheet_name: str
@@ -427,6 +378,63 @@ class VersionComparisonInfo(BaseCamelCaseModel):
     size_change: int
     size_change_percent: float
     sheet_changes: list[SheetChangeInfo] = []
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+# Request スキーマ
+class FileVersionRestoreRequest(BaseCamelCaseModel):
+    """バージョン復元リクエスト"""
+    comment: str | None = None
+
+# Response スキーマ
+class FileListResponse(BaseCamelCaseModel):
+    """ファイル一覧レスポンス"""
+    files: list[FileInfo] = []
+    total: int
+    page: int = 1
+    limit: int = 20
+    total_pages: int
+
+class FileUploadResponse(BaseCamelCaseModel):
+    """ファイルアップロードレスポンス"""
+    file_id: UUID
+    name: str
+    file_type: FileType
+    file_size: int
+    current_version: int
+    version_count: int
+    comment: str | None = None
+    uploaded_by: UUID
+    uploaded_by_name: str
+    created_at: datetime
+
+class FileVersionListResponse(BaseCamelCaseModel):
+    """バージョン履歴レスポンス"""
+    file_id: UUID
+    file_name: str
+    current_version: int
+    versions: list[FileVersionInfo] = []
+    total_versions: int
+
+class FileVersionUploadResponse(BaseCamelCaseModel):
+    """バージョンアップロードレスポンス"""
+    version_id: UUID
+    version_number: int
+    file_size: int
+    comment: str | None = None
+    checksum: str | None = None
+    created_at: datetime
+
+class FileVersionRestoreResponse(BaseCamelCaseModel):
+    """バージョン復元レスポンス"""
+    file_id: UUID
+    new_version_id: UUID
+    new_version_number: int
+    restored_from_version: int
+    comment: str | None = None
+    created_at: datetime
 
 class FileVersionCompareResponse(BaseCamelCaseModel):
     """バージョン比較レスポンス"""
@@ -441,7 +449,16 @@ class FileVersionCompareResponse(BaseCamelCaseModel):
 
 ## 5. サービス層設計
 
-### 5.1 サービスクラス
+### 5.1 サービスクラス構成
+
+| サービスクラス | 責務 | 主要メソッド |
+|--------------|------|------------|
+| FileManagementService | ファイル管理（一覧・アップロード・ダウンロード） | list_files, upload_file, download_file |
+| FileVersionService | バージョン管理（履歴・アップロード・復元・比較） | list_versions, upload_version, download_version, restore_version, compare_versions |
+
+### 5.2 主要メソッド
+
+#### FileManagementService
 
 ```python
 class FileManagementService:
@@ -557,7 +574,11 @@ class FileManagementService:
             media_type="application/octet-stream",
             headers={"Content-Disposition": f'attachment; filename="{file.name}"'}
         )
+```
 
+#### FileVersionService
+
+```python
 class FileVersionService:
     """ファイルバージョン管理サービス"""
 
@@ -620,30 +641,6 @@ class FileVersionService:
         await self._set_current_version(file_id, version.id)
 
         return FileVersionUploadResponse(...)
-
-    async def download_version(
-        self,
-        project_id: UUID,
-        file_id: UUID,
-        version_id: UUID,
-        user_id: UUID
-    ) -> StreamingResponse:
-        """特定バージョンをダウンロード"""
-        # 1. バージョンの存在確認
-        version = await self._get_version(version_id)
-
-        # 2. ストレージからファイル取得
-        file_stream = await self.storage.download(version.storage_path)
-
-        # 3. ファイル名生成（バージョン番号付き）
-        file = await self._get_file(file_id)
-        filename = self._generate_versioned_filename(file.name, version.version_number)
-
-        return StreamingResponse(
-            file_stream,
-            media_type="application/octet-stream",
-            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
-        )
 
     async def restore_version(
         self,
@@ -724,38 +721,9 @@ class FileVersionService:
 | upload | ファイルアップロード | /projects/{id}/files/upload | 新規ファイルアップロード |
 | file-versions | バージョン履歴 | /projects/{id}/files/{fileId}/versions | ファイルのバージョン一覧・操作 |
 
-### 6.2 画面遷移フロー
+### 6.2 コンポーネント構成
 
-```text
-[ファイル一覧 (files)]
-    │
-    ├─→ [ファイルアップロード (upload)]
-    │       │
-    │       └─→ アップロード完了 → [ファイル一覧]
-    │
-    └─→ ファイル名クリック → [バージョン履歴 (file-versions)]
-            │
-            ├─→ [新規バージョンアップロード]
-            │       │
-            │       └─→ アップロード完了 → [バージョン履歴]
-            │
-            ├─→ [バージョン比較モーダル]
-            │       │
-            │       └─→ 閉じる → [バージョン履歴]
-            │
-            └─→ [バージョン復元]
-                    │
-                    └─→ 復元完了 → [バージョン履歴]（新バージョンとして追加）
-```
-
-**主要な遷移:**
-
-1. **ファイル一覧 → アップロード画面**: 「新規アップロード」ボタンから遷移
-2. **ファイル一覧 → バージョン履歴**: ファイル名クリックで該当ファイルのバージョン履歴画面へ
-3. **バージョン履歴 → 比較モーダル**: 「比較」ボタンでモーダル表示
-4. **バージョン履歴 → 復元**: 「復元」ボタンで確認ダイアログ表示後、復元実行
-
-### 6.3 コンポーネント構成
+#### コンポーネント階層
 
 ```text
 features/file-management/
@@ -797,9 +765,40 @@ features/file-management/
     └── fileVersion.ts                # バージョン型定義
 ```
 
-### 6.4 UI設計
+#### 画面遷移フロー
 
-#### ファイル一覧画面
+```text
+[ファイル一覧 (files)]
+    │
+    ├─→ [ファイルアップロード (upload)]
+    │       │
+    │       └─→ アップロード完了 → [ファイル一覧]
+    │
+    └─→ ファイル名クリック → [バージョン履歴 (file-versions)]
+            │
+            ├─→ [新規バージョンアップロード]
+            │       │
+            │       └─→ アップロード完了 → [バージョン履歴]
+            │
+            ├─→ [バージョン比較モーダル]
+            │       │
+            │       └─→ 閉じる → [バージョン履歴]
+            │
+            └─→ [バージョン復元]
+                    │
+                    └─→ 復元完了 → [バージョン履歴]（新バージョンとして追加）
+```
+
+**主要な遷移:**
+
+1. **ファイル一覧 → アップロード画面**: 「新規アップロード」ボタンから遷移
+2. **ファイル一覧 → バージョン履歴**: ファイル名クリックで該当ファイルのバージョン履歴画面へ
+3. **バージョン履歴 → 比較モーダル**: 「比較」ボタンでモーダル表示
+4. **バージョン履歴 → 復元**: 「復元」ボタンで確認ダイアログ表示後、復元実行
+
+#### UI設計
+
+##### ファイル一覧画面
 
 ```text
 ┌────────────────────────────────────────────────────────────────┐
@@ -825,23 +824,11 @@ features/file-management/
 
 **機能:**
 
-1. **検索・フィルタ**
-   - ファイル名検索（部分一致）
-   - ファイルタイプフィルタ（Excel, PDF, 画像, その他）
+1. **検索・フィルタ**: ファイル名検索（部分一致）、ファイルタイプフィルタ
+2. **テーブル項目**: ファイル名、現在バージョン、タイプ、サイズ、更新者、更新日時
+3. **操作**: ダウンロード、履歴表示
 
-2. **テーブル項目**
-   - ファイル名（アイコン付き）
-   - 現在バージョン番号
-   - ファイルタイプ
-   - ファイルサイズ
-   - 最終更新者
-   - 最終更新日時
-
-3. **操作**
-   - ダウンロード: 現在バージョンをダウンロード
-   - 履歴: バージョン履歴画面へ遷移（ファイル名クリックでも可）
-
-#### アップロード画面
+##### アップロード画面
 
 ```text
 ┌────────────────────────────────────────────────────────────────┐
@@ -849,19 +836,14 @@ features/file-management/
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
 │   ┌────────────────────────────────────────────────────────┐  │
-│   │                                                        │  │
 │   │          📁  ここにファイルをドラッグ&ドロップ         │  │
-│   │                                                        │  │
 │   │                  または                                │  │
-│   │                                                        │  │
 │   │              [ファイルを選択]                          │  │
-│   │                                                        │  │
 │   └────────────────────────────────────────────────────────┘  │
 │                                                                │
 │   対応フォーマット: Excel (.xlsx, .xls), PDF, Word, 画像      │
 │   最大ファイルサイズ: 50MB                                    │
 │                                                                │
-├────────────────────────────────────────────────────────────────┤
 │   選択ファイル:                                                │
 │   ┌──────────────────────────────────────────────────────┐    │
 │   │  📄 sales_report_2026.xlsx                           │    │
@@ -877,23 +859,12 @@ features/file-management/
 
 **機能:**
 
-1. **ドラッグ&ドロップエリア**
-   - ファイルをドラッグ&ドロップで選択
-   - 対応フォーマット・最大サイズの表示
+1. **ドラッグ&ドロップエリア**: ファイル選択、対応フォーマット表示
+2. **ファイル選択**: ファイルプレビュー、選択解除
+3. **アップロード進捗**: プログレスバー、キャンセル機能
+4. **コメント入力**: 任意コメント入力
 
-2. **ファイル選択**
-   - ファイル選択ボタン
-   - 選択ファイルのプレビュー（ファイル名、サイズ）
-   - 選択解除ボタン
-
-3. **アップロード進捗**
-   - プログレスバー表示
-   - アップロード中のキャンセル機能
-
-4. **コメント入力**
-   - 初回アップロード時のコメント（任意）
-
-#### バージョン履歴画面
+##### バージョン履歴画面
 
 ```text
 ┌────────────────────────────────────────────────────────┐
@@ -923,7 +894,7 @@ features/file-management/
 └────────────────────────────────────────────────────────┘
 ```
 
-#### バージョン比較モーダル
+##### バージョン比較モーダル
 
 ```text
 ┌────────────────────────────────────────────────────────┐
