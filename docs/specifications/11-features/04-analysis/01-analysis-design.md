@@ -25,7 +25,7 @@
 | レイヤー | 項目数 |
 |---------|--------|
 | データベーステーブル | 10テーブル |
-| APIエンドポイント | 30エンドポイント |
+| APIエンドポイント | 20エンドポイント |
 | Pydanticスキーマ | 35スキーマ |
 | サービス | 5サービス |
 | フロントエンド画面 | 6画面 |
@@ -193,34 +193,37 @@
 | GET | `/api/v1/project/{project_id}/analysis/session/{session_id}` | セッション詳細取得 | メンバー | AS-005 |
 | GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/result` | セッション結果取得 | メンバー | AS-005 |
 | POST | `/api/v1/project/{project_id}/analysis/session` | セッション作成 | メンバー | AS-001 |
+| POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/duplicate` | セッション複製 | メンバー | - |
 | PUT | `/api/v1/project/{project_id}/analysis/session/{session_id}` | セッション更新 | メンバー | AS-006, AS-007, ASN-005 |
 | DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}` | セッション削除 | PM/Mod | AS-002 |
 
 ### 3.2 分析ファイル管理
 
-| メソッド | エンドポイント | 説明 | 権限 | 対応UC |
-|---------|---------------|------|------|--------|
-| GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/file` | ファイル一覧取得 | メンバー | AF-004 |
-| POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/file` | ファイル追加 | メンバー | AF-001 |
-| PATCH | `/api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id}` | ファイル設定更新 | メンバー | AF-002, AF-005, AF-006 |
-| DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id}` | ファイル削除 | メンバー | AF-003 |
+| メソッド | エンドポイント | 説明 | 権限 | 対応UC | 備考 |
+|---------|---------------|------|------|--------|------|
+| GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/file` | ファイル一覧取得 | メンバー | AF-004 | - |
+| POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/file` | ファイル追加 | メンバー | AF-001 | - |
+| PATCH | `/api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id}` | ファイル設定更新 | メンバー | AF-002, AF-005, AF-006 | - |
+| DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id}` | ファイル削除 | メンバー | AF-003 | 未実装 |
 
 ### 3.3 チャット・ステップ管理
 
 | メソッド | エンドポイント | 説明 | 権限 | 対応UC |
 |---------|---------------|------|------|--------|
+| GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/messages` | チャット履歴取得 | メンバー | AC-002 |
 | POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/chat` | チャット実行 | メンバー | AC-001 |
+| DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/messages/{chat_id}` | チャットメッセージ削除 | メンバー | AC-003 |
 | POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/step` | ステップ作成 | メンバー | AST-001 |
 | PUT | `/api/v1/project/{project_id}/analysis/session/{session_id}/step/{step_id}` | ステップ更新 | メンバー | AST-002, AST-005, AST-006 |
 | DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/step/{step_id}` | ステップ削除 | メンバー | AST-003 |
 
 ### 3.4 スナップショット管理
 
-| メソッド | エンドポイント | 説明 | 権限 | 対応UC |
-|---------|---------------|------|------|--------|
-| GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot` | スナップショット一覧 | メンバー | ASN-003 |
-| POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot` | スナップショット作成 | メンバー | ASN-001 |
-| DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot/{snapshot_id}` | スナップショット削除 | メンバー | ASN-002 |
+| メソッド | エンドポイント | 説明 | 権限 | 対応UC | 備考 |
+|---------|---------------|------|------|--------|------|
+| GET | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot` | スナップショット一覧 | メンバー | ASN-003 | - |
+| POST | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot` | スナップショット作成 | メンバー | ASN-001 | - |
+| DELETE | `/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot/{snapshot_id}` | スナップショット削除 | メンバー | ASN-002 | 未実装 |
 
 ---
 

@@ -4,12 +4,12 @@
 プロジェクトのCRUD操作、メンバーシップ管理、権限制御を提供します。
 
 主な機能:
-    - プロジェクト作成（POST /api/v1/projects - 認証必須、自動的にOWNERとして追加）
-    - プロジェクト一覧取得（GET /api/v1/projects - 自分がメンバーのプロジェクトのみ）
-    - プロジェクト詳細取得（GET /api/v1/projects/{project_id} - メンバーのみ）
-    - プロジェクトコード検索（GET /api/v1/projects/code/{code} - メンバーのみ）
-    - プロジェクト更新（PATCH /api/v1/projects/{project_id} - OWNER/ADMINのみ）
-    - プロジェクト削除（DELETE /api/v1/projects/{project_id} - OWNERのみ）
+    - プロジェクト作成（POST /api/v1/project - 認証必須、自動的にOWNERとして追加）
+    - プロジェクト一覧取得（GET /api/v1/project - 自分がメンバーのプロジェクトのみ）
+    - プロジェクト詳細取得（GET /api/v1/project/{project_id} - メンバーのみ）
+    - プロジェクトコード検索（GET /api/v1/project/code/{code} - メンバーのみ）
+    - プロジェクト更新（PATCH /api/v1/project/{project_id} - OWNER/ADMINのみ）
+    - プロジェクト削除（DELETE /api/v1/project/{project_id} - OWNERのみ）
 
 セキュリティ:
     - Azure AD Bearer認証（本番環境）
@@ -18,7 +18,7 @@
 
 使用例:
     >>> # プロジェクト作成
-    >>> POST /api/v1/projects
+    >>> POST /api/v1/project
     >>> Authorization: Bearer <Azure_AD_Token>
     >>> {
     ...     "name": "AI Development Project",

@@ -35,7 +35,7 @@
 | レイヤー | 項目数 |
 |---------|--------|
 | データベーステーブル | 3テーブル（project, project_member, project_file） |
-| APIエンドポイント | 18エンドポイント |
+| APIエンドポイント | 21エンドポイント |
 | Pydanticスキーマ | 20スキーマ |
 | サービス | 3サービス |
 | フロントエンド画面 | 6画面 |
@@ -151,7 +151,10 @@
 | GET | `/api/v1/project/{project_id}/file` | ファイル一覧取得 | メンバー | PF-004 |
 | GET | `/api/v1/project/{project_id}/file/{file_id}` | ファイル詳細取得 | メンバー | PF-005, PF-006 |
 | GET | `/api/v1/project/{project_id}/file/{file_id}/download` | ファイルダウンロード | メンバー | PF-002 |
+| GET | `/api/v1/project/{project_id}/file/{file_id}/usage` | ファイル使用状況取得 | メンバー | - |
+| GET | `/api/v1/project/{project_id}/file/{file_id}/versions` | バージョン履歴取得 | メンバー | - |
 | POST | `/api/v1/project/{project_id}/file` | ファイルアップロード | メンバー | PF-001 |
+| POST | `/api/v1/project/{project_id}/file/{file_id}/version` | 新バージョンアップロード | メンバー | - |
 | DELETE | `/api/v1/project/{project_id}/file/{file_id}` | ファイル削除 | PM/Mod | PF-003 |
 
 ### 3.4 主要レスポンス定義

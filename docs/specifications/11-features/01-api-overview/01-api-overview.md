@@ -35,10 +35,10 @@ graph TB
 
     APIv1[/api/v1 API Version 1]
 
-    UserAccounts[/api/v1/user_accounts ユーザー管理]
-    Projects[/api/v1/projects プロジェクト管理]
-    ProjectMembers[/api/v1/projects/:id/members メンバー管理]
-    ProjectFiles[/api/v1/projects/:id/files ファイル管理]
+    UserAccount[/api/v1/user_account ユーザー管理]
+    Project[/api/v1/project プロジェクト管理]
+    ProjectMember[/api/v1/project/:id/member メンバー管理]
+    ProjectFile[/api/v1/project/:id/file ファイル管理]
     AnalysisSession[/api/v1/analysis/session 分析セッション]
     AnalysisTemplate[/api/v1/analysis/template テンプレート]
     DriverTreeFile[/api/v1/driver-tree/file ファイル管理]
@@ -51,10 +51,10 @@ graph TB
     Root --> Metrics
     Root --> APIv1
 
-    APIv1 --> UserAccounts
-    APIv1 --> Projects
-    Projects --> ProjectMembers
-    Projects --> ProjectFiles
+    APIv1 --> UserAccount
+    APIv1 --> Project
+    Project --> ProjectMember
+    Project --> ProjectFile
     APIv1 --> AnalysisSession
     APIv1 --> AnalysisTemplate
     APIv1 --> DriverTreeFile
@@ -65,8 +65,8 @@ graph TB
 
     style Root fill:#E8F5E9
     style APIv1 fill:#C5E1A5
-    style UserAccounts fill:#AED581
-    style Projects fill:#9CCC65
+    style UserAccount fill:#AED581
+    style Project fill:#9CCC65
     style AnalysisSession fill:#8BC34A
     style DriverTreeTree fill:#7CB342
 :::
@@ -78,10 +78,10 @@ graph TB
 | **システム** | `GET /` | ルート（アプリ情報） | - |
 | | `GET /health` | ヘルスチェック | - |
 | | `GET /metrics` | Prometheusメトリクス | - |
-| **ユーザー** | `/api/v1/user_accounts/*` | ユーザー管理 | [02-user-management](../02-user-management/) |
-| **プロジェクト** | `/api/v1/projects/*` | プロジェクト管理 | [03-project-management](../03-project-management/) |
-| **メンバー** | `/api/v1/projects/{id}/members/*` | プロジェクトメンバー管理 | [03-project-management](../03-project-management/) |
-| **ファイル** | `/api/v1/projects/{id}/files/*` | プロジェクトファイル管理 | [03-project-management](../03-project-management/) |
+| **ユーザー** | `/api/v1/user_account/*` | ユーザー管理 | [02-user-management](../02-user-management/) |
+| **プロジェクト** | `/api/v1/project/*` | プロジェクト管理 | [03-project-management](../03-project-management/) |
+| **メンバー** | `/api/v1/project/{id}/member/*` | プロジェクトメンバー管理 | [03-project-management](../03-project-management/) |
+| **ファイル** | `/api/v1/project/{id}/file/*` | プロジェクトファイル管理 | [03-project-management](../03-project-management/) |
 | **分析セッション** | `/api/v1/analysis/session/*` | 分析セッション管理 | [04-analysis](../04-analysis/) |
 | **分析テンプレート** | `/api/v1/analysis/template/*` | 分析テンプレート | [07-template](../07-template/) |
 | **ドライバーツリーファイル** | `/api/v1/driver-tree/file/*` | ファイル管理 | [05-driver-tree](../05-driver-tree/) |
