@@ -593,11 +593,13 @@ features/dashboard/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - サービス: `src/app/services/dashboard/`
-  - スキーマ: `src/app/schemas/dashboard/`
-  - API: `src/app/api/routes/v1/dashboard/`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | DB-DESIGN-001 |
+| 対象ユースケース | D-001〜D-006 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/services/dashboard/` |
+|  | `src/app/schemas/dashboard/` |
+|  | `src/app/api/routes/v1/dashboard/` |

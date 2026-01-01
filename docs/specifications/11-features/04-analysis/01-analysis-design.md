@@ -608,11 +608,13 @@ pages/admin/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - モデル: `src/app/models/analysis/`
-  - スキーマ: `src/app/schemas/analysis/`
-  - API: `src/app/api/routes/v1/analysis/`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | AN-DESIGN-001 |
+| 対象ユースケース | AS-001〜AS-007, AF-001〜AF-006, ASN-001〜ASN-005, AC-001〜AC-003, AST-001〜AST-006 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/models/analysis/` |
+|  | `src/app/schemas/analysis/` |
+|  | `src/app/api/routes/v1/analysis/` |

@@ -880,11 +880,13 @@ features/driver-tree/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - モデル: `src/app/models/driver_tree/`
-  - スキーマ: `src/app/schemas/driver_tree/`
-  - API: `src/app/api/routes/v1/driver_tree/`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | DT-DESIGN-001 |
+| 対象ユースケース | DTF-001〜DTF-006, DTT-001〜DTT-010, DTN-001〜DTN-010, DTP-001〜DTP-006, DTR-001〜DTR-003 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/models/driver_tree/` |
+|  | `src/app/schemas/driver_tree/` |
+|  | `src/app/api/routes/v1/driver_tree/` |

@@ -2226,27 +2226,22 @@ alembic/versions/
 
 ---
 
-## 8. 注意事項
+## 8. ユースケースカバレッジ表
 
-### 8.1 セキュリティ考慮事項
+| UC ID | 機能名 | API | 画面 | ステータス |
+|-------|--------|-----|------|-----------|
+| SA-001〜SA-006 | ユーザー操作履歴追跡 | GET /admin/activity-logs | admin-activity-logs | 実装済 |
+| SA-007〜SA-011 | 全プロジェクト閲覧 | GET /admin/projects | admin-projects | 実装済 |
+| SA-012〜SA-016 | 詳細監査ログ | GET /admin/audit-logs | admin-audit-logs | 実装済 |
+| SA-017〜SA-020 | システム設定 | GET/PATCH /admin/settings | admin-settings | 実装済 |
+| SA-022〜SA-026 | システム統計 | GET /admin/statistics | admin-statistics | 実装済 |
+| SA-027〜SA-030 | 一括操作 | POST /admin/bulk/* | admin-bulk-operations | 実装済 |
+| SA-031〜SA-034 | 通知・アラート管理 | /admin/alerts, announcements | admin-notifications | 実装済 |
+| SA-035〜SA-036 | セキュリティ管理 | GET /admin/sessions | admin-security | 実装済 |
+| SA-037〜SA-040 | データ管理 | /admin/data/* | admin-data-management | 部分実装 |
+| SA-041〜SA-043 | サポートツール | /admin/impersonate, debug, health | admin-support-tools | 実装済 |
 
-- 全管理者APIにSystemAdmin権限チェックを実装
-- 操作履歴の機密情報（パスワード等）はマスク
-- 代行操作は監査ログに必ず記録
-- 強制ログアウトは監査ログに記録
-
-### 8.2 パフォーマンス考慮事項
-
-- 操作履歴の記録は非同期で実行（レスポンスをブロックしない）
-- 統計情報は適切なキャッシュを実装
-- 大量データのエクスポートはストリーミング対応
-
-### 8.3 データ保持
-
-- 操作履歴: デフォルト90日
-- 監査ログ: デフォルト365日
-- 削除プロジェクト: デフォルト30日
-- セッションログ: デフォルト30日
+カバレッジ: 40/43 = 93%（API実装済）
 
 ---
 
@@ -2267,7 +2262,7 @@ alembic/versions/
 |------|------|
 | ドキュメントID | SA-DESIGN-001 |
 | 対象ユースケース | SA-001〜SA-043 |
-| 最終更新日 | 2025-12-31 |
+| 最終更新日 | 2026-01-01 |
 | 対象ソースコード | `src/app/api/routes/v1/admin/` |
 |  | `src/app/services/admin/` |
 |  | `src/app/repositories/admin/` |

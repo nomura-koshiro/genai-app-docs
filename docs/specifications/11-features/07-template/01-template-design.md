@@ -561,24 +561,7 @@ features/templates/
 
 ---
 
-## 9. 備考
-
-### 9.1 既存機能との統合
-
-- **ドライバーツリー作成画面（tree-new）**: 既存のテンプレート選択UIは、driver_tree_templateテーブルのデータを表示するように拡張
-- **数式マスタ（driver_tree_formula）**: 業界分類マスタと連携してテンプレートのカテゴリフィルタリングに使用
-- **セッション作成画面（session-new）**: テンプレート選択オプションを追加
-
-### 9.2 将来拡張
-
-- テンプレートのバージョン管理
-- テンプレートのフォーク/派生
-- テンプレートマーケットプレイス（組織間共有）
-- テンプレートの評価・レビュー機能
-
----
-
-## 10. 関連ドキュメント
+## 9. 関連ドキュメント
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **分析機能設計書**: [../04-analysis/01-analysis-design.md](../04-analysis/01-analysis-design.md)
@@ -587,11 +570,16 @@ features/templates/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - モデル: `src/app/models/analysis/analysis_template.py`, `src/app/models/driver_tree/driver_tree_template.py`
-  - スキーマ: `src/app/schemas/analysis/template.py`, `src/app/schemas/driver_tree/template.py`
-  - API: `src/app/api/routes/v1/analysis/template.py`, `src/app/api/routes/v1/driver_tree/template.py`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | TM-DESIGN-001 |
+| 対象ユースケース | TM-001〜TM-005 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/models/analysis/analysis_template.py` |
+|  | `src/app/models/driver_tree/driver_tree_template.py` |
+|  | `src/app/schemas/analysis/template.py` |
+|  | `src/app/schemas/driver_tree/template.py` |
+|  | `src/app/api/routes/v1/analysis/template.py` |
+|  | `src/app/api/routes/v1/driver_tree/template.py` |

@@ -951,7 +951,7 @@ features/file-management/
 
 ---
 
-## 7. 画面詳細設計
+## 7. 画面項目・APIマッピング
 
 ### 7.1 ファイル一覧画面（files）
 
@@ -1098,60 +1098,7 @@ features/file-management/
 
 ---
 
-## 9. 備考
-
-### 9.1 ファイル管理に関する注意事項
-
-#### ファイルタイプ判定
-
-ファイルタイプは拡張子から自動判定します：
-
-- **excel**: .xlsx, .xls, .xlsm
-- **pdf**: .pdf
-- **word**: .docx, .doc
-- **image**: .png, .jpg, .jpeg, .gif, .svg
-- **other**: その他
-
-#### ファイルサイズ制限
-
-- 最大ファイルサイズ: 50MB
-- 大容量ファイル（50MB超）は今後、チャンクアップロード対応を検討
-
-#### セキュリティ
-
-- アップロード時のファイル検証（マルウェアスキャン）
-- 拡張子と実際のファイル形式の一致確認
-- プロジェクトメンバーのみアクセス可能
-
-### 9.2 ストレージ管理
-
-- プロジェクトファイルは `{storage_root}/projects/{project_id}/files/` に保存
-- バージョンファイルは `{storage_root}/versions/{file_id}/{version_number}/` に保存
-- 古いバージョンの自動削除ポリシー（例: 10バージョン以上、または1年以上前）
-- ストレージ容量の監視とアラート
-
-### 9.3 パフォーマンス考慮
-
-- ファイル一覧のページネーション対応
-- 大容量ファイルはチャンクアップロード対応（将来）
-- バージョン比較は非同期処理（Celery等）で実行
-- 比較結果のキャッシュ
-- ファイルメタデータのインデックス最適化
-
-### 9.4 将来拡張
-
-- ファイルプレビュー機能（PDF、画像、Excel等）
-- ファイル共有リンク生成
-- ファイルコメント・アノテーション機能
-- 差分バックアップによるストレージ最適化
-- バージョン間の差分ダウンロード
-- バージョンタグ/ラベル機能
-- バージョン承認ワークフロー
-- ファイル変更通知（WebSocket）
-
----
-
-## 10. 関連ドキュメント
+## 9. 関連ドキュメント
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **プロジェクト管理設計書**: [../03-project-management/01-project-management-design.md](../03-project-management/01-project-management-design.md)
@@ -1159,11 +1106,13 @@ features/file-management/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - モデル: `src/app/models/project/project_file.py`
-  - スキーマ: `src/app/schemas/project/file.py`
-  - API: `src/app/api/routes/v1/project/file.py`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | FV-DESIGN-001 |
+| 対象ユースケース | FM-001〜FM-004, FV-001〜FV-004 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/models/project/project_file.py` |
+|  | `src/app/schemas/project/file.py` |
+|  | `src/app/api/routes/v1/project/file.py` |

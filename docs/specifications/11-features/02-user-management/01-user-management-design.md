@@ -439,11 +439,13 @@ pages/admin/
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - モデル: `src/app/models/user_account/user_account.py`
-  - スキーマ: `src/app/schemas/user_account/user_account.py`
-  - API: `src/app/api/routes/v1/user_accounts/user_account.py`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | UM-DESIGN-001 |
+| 対象ユースケース | U-001〜U-011 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/models/user_account/user_account.py` |
+|  | `src/app/schemas/user_account/user_account.py` |
+|  | `src/app/api/routes/v1/user_accounts/user_account.py` |

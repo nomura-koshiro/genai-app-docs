@@ -518,30 +518,7 @@ class ExportService:
 
 ---
 
-## 9. 備考
-
-### 9.1 複製時の注意事項
-
-- **セッション複製**: ファイル参照は複製されるが、ファイル本体は共有される
-- **ツリー複製**: ノードのデータフレーム紐付けは解除される（新規紐付けが必要）
-- **施策複製**: ツリー複製時に施策は複製されない（新規設定が必要）
-
-### 9.2 エクスポートファイルサイズ制限
-
-- 最大ファイルサイズ: 50MB
-- 大規模データの場合はバックグラウンドジョブで処理
-- 完了時にダウンロードリンクを通知
-
-### 9.3 将来拡張
-
-- プロジェクト全体の複製機能
-- 他プロジェクトへの複製（クロスプロジェクトコピー）
-- エクスポートテンプレートのカスタマイズ
-- スケジュールエクスポート機能
-
----
-
-## 10. 関連ドキュメント
+## 9. 関連ドキュメント
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **分析機能設計書**: [../04-analysis/01-analysis-design.md](../04-analysis/01-analysis-design.md)
@@ -550,10 +527,14 @@ class ExportService:
 
 ---
 
-### ドキュメント管理情報
+## 10. ドキュメント管理情報
 
-- **作成日**: 2026年1月1日
-- **更新日**: 2026年1月1日
-- **対象ソースコード**:
-  - サービス: `src/app/services/analysis/`, `src/app/services/driver_tree/`
-  - API: `src/app/api/routes/v1/analysis/`, `src/app/api/routes/v1/driver_tree/`
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | CE-DESIGN-001 |
+| 対象ユースケース | CP-001〜CP-002, EX-001〜EX-003 |
+| 最終更新日 | 2026-01-01 |
+| 対象ソースコード | `src/app/services/analysis/` |
+|  | `src/app/services/driver_tree/` |
+|  | `src/app/api/routes/v1/analysis/` |
+|  | `src/app/api/routes/v1/driver_tree/` |
