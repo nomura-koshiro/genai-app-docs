@@ -1,11 +1,11 @@
 id,azure_oid,email,display_name,roles,is_active
-00000000-0000-0000-0000-000000000001,dev-azure-oid-12345,dev.user@example.com,Development User,"[""SystemAdmin"", ""User""]",true
-00000000-0000-0000-0000-000000000002,user-azure-oid-00002,tanaka.taro@example.com,田中 太郎,"[""User""]",true
-00000000-0000-0000-0000-000000000003,user-azure-oid-00003,suzuki.hanako@example.com,鈴木 花子,"[""User""]",true
-00000000-0000-0000-0000-000000000004,user-azure-oid-00004,sato.jiro@example.com,佐藤 次郎,"[""User""]",true
-00000000-0000-0000-0000-000000000005,user-azure-oid-00005,yamada.yuki@example.com,山田 由紀,"[""User""]",true
-00000000-0000-0000-0000-000000000006,user-azure-oid-00006,takahashi.ken@example.com,高橋 健,"[""User""]",true
-00000000-0000-0000-0000-000000000007,user-azure-oid-00007,watanabe.mai@example.com,渡辺 舞,"[""User""]",true
-00000000-0000-0000-0000-000000000008,user-azure-oid-00008,ito.ryo@example.com,伊藤 涼,"[""User""]",true
-00000000-0000-0000-0000-000000000009,user-azure-oid-00009,nakamura.akiko@example.com,中村 明子,"[""User""]",true
-00000000-0000-0000-0000-000000000010,user-azure-oid-00010,kobayashi.shin@example.com,小林 慎,"[""User""]",true
+00000000-0000-4000-a000-000000000001,dev-azure-oid-12345,dev.user@example.com,Development User,"[""SystemAdmin"", ""User""]",true
+00000000-0000-4000-a000-000000000002,user-azure-oid-00002,tanaka.taro@example.com,田中 太郎,"[""User""]",true
+00000000-0000-4000-a000-000000000003,user-azure-oid-00003,suzuki.hanako@example.com,鈴木 花子,"[""User""]",true
+00000000-0000-4000-a000-000000000004,user-azure-oid-00004,sato.jiro@example.com,佐藤 次郎,"[""User""]",true
+00000000-0000-4000-a000-000000000005,user-azure-oid-00005,yamada.yuki@example.com,山田 由紀,"[""User""]",true
+00000000-0000-4000-a000-000000000006,user-azure-oid-00006,takahashi.ken@example.com,高橋 健,"[""User""]",true
+00000000-0000-4000-a000-000000000007,user-azure-oid-00007,watanabe.mai@example.com,渡辺 舞,"[""User""]",true
+00000000-0000-4000-a000-000000000008,user-azure-oid-00008,ito.ryo@example.com,伊藤 涼,"[""User""]",true
+00000000-0000-4000-a000-000000000009,user-azure-oid-00009,nakamura.akiko@example.com,中村 明子,"[""User""]",true
+00000000-0000-4000-a000-000000000010,user-azure-oid-00010,kobayashi.shin@example.com,小林 慎,"[""User""]",true
