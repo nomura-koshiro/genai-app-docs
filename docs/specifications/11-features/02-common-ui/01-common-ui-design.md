@@ -30,43 +30,23 @@
 | APIエンドポイント | 7エンドポイント |
 | Pydanticスキーマ | 16スキーマ |
 | サービス | 3サービス |
+| フロントエンド画面 | 3画面（ヘッダー、サイドバー、通知一覧） |
 
 ---
 
 ## 2. データベース設計
+
+データベース設計の詳細は以下を参照してください：
+
+- [データベース設計書 - 通知管理](../../../06-database/01-database-design.md)
 
 ### 2.1 関連テーブル一覧
 
 | テーブル名 | 説明 |
 |-----------|------|
 | user_notification | ユーザー通知 |
-
-### 2.2 テーブル定義
-
-#### user_notification
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|---|------|----------|------|
-| id | UUID | NO | gen_random_uuid() | 主キー |
-| user_id | UUID | NO | - | 対象ユーザーID（FK: user_account.id） |
-| type | VARCHAR(50) | NO | - | 通知タイプ |
-| title | VARCHAR(255) | NO | - | 通知タイトル |
-| message | TEXT | YES | - | 通知メッセージ |
-| icon | VARCHAR(10) | YES | - | 通知アイコン（絵文字） |
-| link_url | VARCHAR(500) | YES | - | 遷移先URL |
-| reference_type | VARCHAR(50) | YES | - | 参照タイプ（project/session/file/tree） |
-| reference_id | UUID | YES | - | 参照ID |
-| is_read | BOOLEAN | NO | false | 既読フラグ |
-| read_at | TIMESTAMP | YES | - | 既読日時 |
-| created_at | TIMESTAMP | NO | CURRENT_TIMESTAMP | 作成日時 |
-
-**インデックス**:
-
-| インデックス名 | カラム | 説明 |
-|---------------|-------|------|
-| ix_user_notification_user_id | user_id | ユーザーID検索 |
-| ix_user_notification_user_unread | user_id, is_read | 未読通知検索 |
-| ix_user_notification_created_at | created_at DESC | 新着順ソート |
+| user_account | ユーザーアカウント（権限・プロジェクト数取得に使用） |
+| project_member | プロジェクトメンバー（ナビゲーション判定に使用） |
 
 ---
 
