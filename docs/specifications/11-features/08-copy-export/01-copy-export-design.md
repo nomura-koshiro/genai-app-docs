@@ -235,12 +235,12 @@ class ExportFormatEnum(str, Enum):
 #### 複製関連スキーマ
 
 ```python
-class SessionDuplicateRequest(BaseCamelCaseModel):
+class SessionDuplicateRequest(CamelCaseModel):
     """セッション複製リクエスト"""
     name: str | None = None
     include_snapshots: bool = True
 
-class SessionDuplicateResponse(BaseCamelCaseModel):
+class SessionDuplicateResponse(CamelCaseModel):
     """セッション複製レスポンス"""
     session_id: UUID
     name: str
@@ -249,7 +249,7 @@ class SessionDuplicateResponse(BaseCamelCaseModel):
     snapshot_count: int
     created_at: datetime
 
-class TreeDuplicateRequest(BaseCamelCaseModel):
+class TreeDuplicateRequest(CamelCaseModel):
     """ツリー複製リクエスト"""
     name: str | None = None
 
@@ -259,13 +259,13 @@ class TreeDuplicateRequest(BaseCamelCaseModel):
 #### エクスポート関連スキーマ
 
 ```python
-class SessionExportRequest(BaseCamelCaseModel):
+class SessionExportRequest(CamelCaseModel):
     """セッションエクスポートリクエスト"""
     format: ExportFormatEnum = ExportFormatEnum.xlsx
     include_steps: bool = True
     include_chat: bool = True
 
-class TreeExportRequest(BaseCamelCaseModel):
+class TreeExportRequest(CamelCaseModel):
     """ツリーエクスポートリクエスト"""
     format: ExportFormatEnum = ExportFormatEnum.xlsx
 ```
