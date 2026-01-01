@@ -44,79 +44,17 @@
 
 ## 2. データベース設計
 
-### 2.1 project（プロジェクト）
+データベース設計の詳細は以下を参照してください：
 
-**対応ユースケース**: P-001〜P-007
+- [データベース設計書 - 3.3 プロジェクト管理](../../../06-database/01-database-design.md#33-プロジェクト管理)
 
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| name | VARCHAR(255) | NO | プロジェクト名 |
-| code | VARCHAR(50) | NO | プロジェクトコード（ユニーク） |
-| description | TEXT | YES | プロジェクト説明 |
-| is_active | BOOLEAN | NO | アクティブフラグ（デフォルト: true） |
-| created_by | UUID | YES | 作成者ユーザーID |
-| start_date | DATE | YES | プロジェクト開始日 |
-| end_date | DATE | YES | プロジェクト終了日 |
-| budget | NUMERIC(15,2) | YES | プロジェクト予算 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+### 2.1 関連テーブル一覧
 
-**インデックス**:
-
-- `idx_projects_code` ON (code) UNIQUE
-
-### 2.2 project_member（プロジェクトメンバー）
-
-**対応ユースケース**: PM-001〜PM-006
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| project_id | UUID | NO | プロジェクトID（FK: project） |
-| user_id | UUID | NO | ユーザーID（FK: user_account） |
-| role | VARCHAR(50) | NO | プロジェクトロール |
-| joined_at | TIMESTAMP | NO | 参加日時 |
-| added_by | UUID | YES | 追加者ユーザーID |
-| last_activity_at | TIMESTAMP | YES | 最終アクティビティ日時 |
-
-**プロジェクトロール**:
-
-- `project_manager`: プロジェクト管理者（全操作可能）
-- `project_moderator`: モデレーター（コンテンツ管理）
-- `member`: 一般メンバー（作成・編集可能）
-- `viewer`: 閲覧者（閲覧のみ）
-
-**インデックス**:
-
-- `idx_project_member_project` ON (project_id)
-- `idx_project_member_user` ON (user_id)
-- `uq_project_member` ON (project_id, user_id) UNIQUE
-
-### 2.3 project_file（プロジェクトファイル）
-
-**対応ユースケース**: PF-001〜PF-006
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| project_id | UUID | NO | プロジェクトID（FK: project） |
-| filename | VARCHAR(255) | NO | 保存ファイル名 |
-| original_filename | VARCHAR(255) | NO | 元のファイル名 |
-| file_path | VARCHAR(512) | NO | ファイルパス |
-| file_size | INTEGER | NO | ファイルサイズ（バイト） |
-| mime_type | VARCHAR(100) | YES | MIMEタイプ |
-| uploaded_by | UUID | NO | アップロード者ID |
-| uploaded_at | TIMESTAMP | NO | アップロード日時 |
-| version | INTEGER | NO | バージョン番号（デフォルト: 1） |
-| parent_file_id | UUID | YES | 親ファイルID（バージョン管理用、FK: project_file） |
-| is_latest | BOOLEAN | NO | 最新バージョンフラグ（デフォルト: true） |
-
-**インデックス**:
-
-- `idx_project_file_project` ON (project_id)
-- `idx_project_file_uploaded_by` ON (uploaded_by)
-- `idx_project_file_parent` ON (parent_file_id)
+| テーブル名 | 説明 |
+|-----------|------|
+| project | プロジェクト基本情報 |
+| project_member | プロジェクトメンバー管理 |
+| project_file | プロジェクトファイル管理 |
 
 ---
 
@@ -188,75 +126,248 @@
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 プロジェクトスキーマ
+### 4.1 Enum定義
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| ProjectBase | 基底スキーマ |
-| ProjectCreate | 作成リクエスト |
-| ProjectUpdate | 更新リクエスト |
-| ProjectResponse | レスポンス |
-| ProjectListResponse | 一覧レスポンス |
-| ProjectDetailResponse | 詳細レスポンス |
-| ProjectStatsResponse | 統計情報 |
+```python
+class ProjectRoleEnum(str, Enum):
+    """プロジェクトロール"""
+    project_manager = "project_manager"      # プロジェクト管理者
+    project_moderator = "project_moderator"  # モデレーター
+    member = "member"                        # 一般メンバー
+    viewer = "viewer"                        # 閲覧者
+```
 
-### 4.2 メンバースキーマ
+### 4.2 Info/Dataスキーマ
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| ProjectMemberCreate | 追加リクエスト |
-| ProjectMemberBulkCreate | 一括追加リクエスト |
-| ProjectMemberUpdate | 更新リクエスト |
-| ProjectMemberDetailResponse | 詳細レスポンス |
-| ProjectMemberListResponse | 一覧レスポンス |
-| UserRoleResponse | ロール確認レスポンス |
+```python
+class ProjectInfo(CamelCaseModel):
+    """プロジェクト情報"""
+    id: UUID
+    name: str
+    code: str
+    description: str | None = None
+    is_active: bool
+    created_by: UUID | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    budget: Decimal | None = None
+    created_at: datetime
+    updated_at: datetime
 
-### 4.3 ファイルスキーマ
+class ProjectStats(CamelCaseModel):
+    """プロジェクト統計情報"""
+    member_count: int
+    file_count: int
+    session_count: int
+    tree_count: int
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| ProjectFileResponse | レスポンス |
-| ProjectFileListResponse | 一覧レスポンス |
-| ProjectFileUploadResponse | アップロードレスポンス |
-| ProjectFileDeleteResponse | 削除レスポンス |
-| ProjectFileVersionHistoryResponse | バージョン履歴 |
+class ProjectMemberInfo(CamelCaseModel):
+    """プロジェクトメンバー情報"""
+    id: UUID
+    project_id: UUID
+    user_id: UUID
+    role: ProjectRoleEnum
+    joined_at: datetime
+    added_by: UUID | None = None
+    last_activity_at: datetime | None = None
+    user: UserAccountInfo | None = None
+
+class ProjectFileInfo(CamelCaseModel):
+    """プロジェクトファイル情報"""
+    id: UUID
+    project_id: UUID
+    filename: str
+    original_filename: str
+    file_path: str
+    file_size: int
+    mime_type: str | None = None
+    uploaded_by: UUID
+    uploaded_at: datetime
+    version: int = 1
+    parent_file_id: UUID | None = None
+    is_latest: bool = True
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+# プロジェクト作成
+class ProjectCreate(CamelCaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    description: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    budget: Decimal | None = None
+
+# プロジェクト更新
+class ProjectUpdate(CamelCaseModel):
+    name: str | None = Field(None, max_length=255)
+    description: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    budget: Decimal | None = None
+    is_active: bool | None = None
+
+# プロジェクト一覧レスポンス
+class ProjectListResponse(CamelCaseModel):
+    projects: list[ProjectInfo]
+    total: int
+    skip: int
+    limit: int
+
+# プロジェクト詳細レスポンス
+class ProjectDetailResponse(CamelCaseModel):
+    id: UUID
+    name: str
+    code: str
+    description: str | None = None
+    is_active: bool
+    created_by: UUID | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    budget: Decimal | None = None
+    created_at: datetime
+    updated_at: datetime
+    stats: ProjectStats
+
+# メンバー追加
+class ProjectMemberCreate(CamelCaseModel):
+    user_id: UUID
+    role: ProjectRoleEnum = ProjectRoleEnum.member
+
+# メンバー一括追加
+class ProjectMemberBulkCreate(CamelCaseModel):
+    members: list[ProjectMemberCreate]
+
+# メンバー更新
+class ProjectMemberUpdate(CamelCaseModel):
+    role: ProjectRoleEnum
+
+# メンバー一覧レスポンス
+class ProjectMemberListResponse(CamelCaseModel):
+    members: list[ProjectMemberInfo]
+    total: int
+    skip: int
+    limit: int
+
+# ファイル一覧レスポンス
+class ProjectFileListResponse(CamelCaseModel):
+    files: list[ProjectFileInfo]
+    total: int
+    skip: int
+    limit: int
+
+# ファイルバージョン履歴
+class ProjectFileVersionHistoryResponse(CamelCaseModel):
+    versions: list[ProjectFileInfo]
+    total: int
+```
 
 ---
 
 ## 5. サービス層設計
 
-### 5.1 ProjectService
+### 5.1 サービスクラス構成
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `create_project(data, user_id)` | プロジェクト作成 | P-001 |
-| `update_project(project_id, data)` | プロジェクト更新 | P-002 |
-| `list_user_projects(user_id, skip, limit, is_active)` | ユーザーのプロジェクト一覧 | P-005, PM-005 |
-| `get_project(project_id)` | プロジェクト詳細取得 | P-006 |
-| `get_project_by_code(code)` | コードで検索 | P-007 |
-| `delete_project(project_id)` | プロジェクト削除 | - |
+| サービス | 責務 |
+|---------|------|
+| ProjectService | プロジェクトCRUD、統計 |
+| ProjectMemberService | メンバー管理、ロール制御 |
+| ProjectFileService | ファイルアップロード/ダウンロード/削除 |
 
-### 5.2 ProjectMemberService
+### 5.2 主要メソッド
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `add_member(project_id, user_id, role, added_by)` | メンバー追加 | PM-001 |
-| `add_members_bulk(project_id, members, added_by)` | 一括追加 | PM-001 |
-| `remove_member(project_id, member_id)` | メンバー削除 | PM-002 |
-| `update_member_role(project_id, member_id, role)` | ロール更新 | PM-003 |
-| `list_members(project_id, skip, limit)` | メンバー一覧 | PM-004 |
-| `get_user_role(project_id, user_id)` | ユーザーロール取得 | PM-006 |
-| `leave_project(project_id, user_id)` | プロジェクト退出 | - |
+#### ProjectService
 
-### 5.3 ProjectFileService
+```python
+class ProjectService:
+    # プロジェクトCRUD
+    async def create_project(data: ProjectCreate, user_id: UUID) -> Project
+    async def update_project(project_id: UUID, data: ProjectUpdate) -> Project
+    async def delete_project(project_id: UUID) -> None
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `upload_file(project_id, file, user_id)` | ファイルアップロード | PF-001 |
-| `download_file(project_id, file_id)` | ファイルダウンロード | PF-002 |
-| `delete_file(project_id, file_id)` | ファイル削除 | PF-003 |
-| `list_files(project_id, skip, limit, mime_type)` | ファイル一覧 | PF-004 |
-| `get_file(project_id, file_id)` | ファイル詳細 | PF-005, PF-006 |
+    # プロジェクト取得
+    async def list_user_projects(
+        user_id: UUID,
+        skip: int = 0,
+        limit: int = 100,
+        is_active: bool | None = None
+    ) -> list[Project]
+    async def count_user_projects(user_id: UUID, is_active: bool | None = None) -> int
+    async def get_project(project_id: UUID) -> Project | None
+    async def get_project_by_code(code: str) -> Project | None
+
+    # 統計
+    async def get_project_stats(project_id: UUID) -> ProjectStats
+```
+
+#### ProjectMemberService
+
+```python
+class ProjectMemberService:
+    # メンバー管理
+    async def add_member(
+        project_id: UUID,
+        user_id: UUID,
+        role: ProjectRoleEnum,
+        added_by: UUID
+    ) -> ProjectMember
+    async def add_members_bulk(
+        project_id: UUID,
+        members: list[ProjectMemberCreate],
+        added_by: UUID
+    ) -> list[ProjectMember]
+    async def remove_member(project_id: UUID, member_id: UUID) -> None
+    async def update_member_role(
+        project_id: UUID,
+        member_id: UUID,
+        role: ProjectRoleEnum
+    ) -> ProjectMember
+
+    # メンバー取得
+    async def list_members(
+        project_id: UUID,
+        skip: int = 0,
+        limit: int = 100
+    ) -> list[ProjectMember]
+    async def count_members(project_id: UUID) -> int
+    async def get_user_role(project_id: UUID, user_id: UUID) -> ProjectRoleEnum | None
+
+    # 退出
+    async def leave_project(project_id: UUID, user_id: UUID) -> None
+```
+
+#### ProjectFileService
+
+```python
+class ProjectFileService:
+    # ファイル操作
+    async def upload_file(
+        project_id: UUID,
+        file: UploadFile,
+        user_id: UUID
+    ) -> ProjectFile
+    async def upload_new_version(
+        project_id: UUID,
+        file_id: UUID,
+        file: UploadFile,
+        user_id: UUID
+    ) -> ProjectFile
+    async def download_file(project_id: UUID, file_id: UUID) -> StreamingResponse
+    async def delete_file(project_id: UUID, file_id: UUID) -> None
+
+    # ファイル取得
+    async def list_files(
+        project_id: UUID,
+        skip: int = 0,
+        limit: int = 100,
+        mime_type: str | None = None
+    ) -> list[ProjectFile]
+    async def count_files(project_id: UUID) -> int
+    async def get_file(project_id: UUID, file_id: UUID) -> ProjectFile | None
+    async def get_file_versions(project_id: UUID, file_id: UUID) -> list[ProjectFile]
+    async def get_file_usage(project_id: UUID, file_id: UUID) -> dict
+```
 
 ---
 

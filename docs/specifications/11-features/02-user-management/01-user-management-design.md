@@ -36,46 +36,16 @@
 
 ## 2. データベース設計
 
-### 2.1 user_account（ユーザーアカウント）
+データベース設計の詳細は以下を参照してください：
 
-**対応ユースケース**: U-001〜U-008
+- [データベース設計書 - 3.2 ユーザー管理](../../../06-database/01-database-design.md#32-ユーザー管理)
 
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| azure_id | VARCHAR(255) | NO | Azure AD Object ID（ユニーク） |
-| email | VARCHAR(255) | NO | メールアドレス（ユニーク） |
-| display_name | VARCHAR(255) | YES | 表示名 |
-| roles | JSON | NO | システムロール（例: ["system_admin", "user"]） |
-| is_active | BOOLEAN | NO | アクティブフラグ（デフォルト: true） |
-| last_login | TIMESTAMP | YES | 最終ログイン日時 |
-| login_count | INTEGER | NO | ログイン回数（デフォルト: 0） |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+### 2.1 関連テーブル一覧
 
-**インデックス**:
-
-- `idx_users_azure_id` ON (azure_id) UNIQUE
-- `idx_users_email` ON (email) UNIQUE
-
-### 2.2 role_history（ロール変更履歴）
-
-**対応ユースケース**: U-009〜U-011
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| user_id | UUID | NO | ユーザーID（FK: user_account） |
-| old_roles | JSON | YES | 変更前ロール |
-| new_roles | JSON | NO | 変更後ロール |
-| changed_by | UUID | YES | 変更者ID（FK: user_account） |
-| reason | TEXT | YES | 変更理由 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-
-**インデックス**:
-
-- `idx_role_history_user_id` ON (user_id)
-- `idx_role_history_created_at` ON (created_at DESC)
+| テーブル名 | 説明 |
+|-----------|------|
+| user_account | ユーザーアカウント情報 |
+| role_history | ロール変更履歴 |
 
 ---
 
@@ -148,48 +118,168 @@
 
 ## 4. Pydanticスキーマ設計
 
-| スキーマ名 | 用途 | フィールド |
-|-----------|------|-----------|
-| UserAccountBase | 基底スキーマ | email, display_name, roles |
-| UserAccountUpdate | 更新リクエスト | display_name?, roles?, is_active? |
-| UserAccountResponse | レスポンス | id, azure_id, email, display_name, roles, is_active, created_at, updated_at, last_login, login_count |
-| UserAccountListResponse | 一覧レスポンス | users, total, skip, limit |
-| UserAccountRoleUpdate | ロール更新リクエスト | roles |
-| UserActivityStats | 統計情報 | project_count, session_count, tree_count |
-| ProjectParticipationResponse | 参加プロジェクト | project_id, project_name, project_role, joined_at, status |
-| RecentActivityResponse | 最近のアクティビティ | activity_type, activity_detail, activity_at, project_name |
-| UserAccountDetailResponse | 詳細レスポンス | UserAccountResponse + stats + projects + recent_activities |
-| RoleHistoryListResponse | ロール履歴一覧 | histories, total, skip, limit |
+### 4.1 Enum定義
+
+```python
+class SystemRoleEnum(str, Enum):
+    """システムロール"""
+    system_admin = "system_admin"  # システム管理者
+    user = "user"                  # 一般ユーザー
+```
+
+### 4.2 Info/Dataスキーマ
+
+```python
+class UserAccountInfo(CamelCaseModel):
+    """ユーザーアカウント情報"""
+    id: UUID
+    azure_id: str
+    email: str
+    display_name: str | None = None
+    roles: list[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login: datetime | None = None
+    login_count: int = 0
+
+class UserActivityStats(CamelCaseModel):
+    """ユーザー統計情報"""
+    project_count: int
+    session_count: int
+    tree_count: int
+
+class ProjectParticipationInfo(CamelCaseModel):
+    """参加プロジェクト情報"""
+    project_id: UUID
+    project_name: str
+    project_role: str
+    joined_at: datetime
+    status: str
+
+class RecentActivityInfo(CamelCaseModel):
+    """最近のアクティビティ情報"""
+    activity_type: str
+    activity_detail: str
+    activity_at: datetime
+    project_name: str | None = None
+
+class RoleHistoryInfo(CamelCaseModel):
+    """ロール変更履歴情報"""
+    id: UUID
+    user_id: UUID
+    old_roles: list[str] | None = None
+    new_roles: list[str]
+    changed_by: UUID | None = None
+    reason: str | None = None
+    created_at: datetime
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+# ユーザー更新
+class UserAccountUpdate(CamelCaseModel):
+    display_name: str | None = Field(None, max_length=255)
+    roles: list[str] | None = None
+    is_active: bool | None = None
+
+# ロール更新
+class UserAccountRoleUpdate(CamelCaseModel):
+    roles: list[str] = Field(..., min_length=1)
+
+# ユーザー一覧レスポンス
+class UserAccountListResponse(CamelCaseModel):
+    users: list[UserAccountInfo]
+    total: int
+    skip: int
+    limit: int
+
+# ユーザー詳細レスポンス
+class UserAccountDetailResponse(CamelCaseModel):
+    id: UUID
+    azure_id: str
+    email: str
+    display_name: str | None = None
+    roles: list[str]
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    last_login: datetime | None = None
+    login_count: int = 0
+    stats: UserActivityStats
+    projects: list[ProjectParticipationInfo]
+    recent_activities: list[RecentActivityInfo]
+
+# ロール履歴レスポンス
+class RoleHistoryListResponse(CamelCaseModel):
+    histories: list[RoleHistoryInfo]
+    total: int
+    skip: int
+    limit: int
+```
 
 ---
 
 ## 5. サービス層設計
 
-### 5.1 UserAccountService
+### 5.1 サービスクラス構成
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `list_users(skip, limit)` | ユーザー一覧取得 | U-007 |
-| `count_users()` | ユーザー総数取得 | U-007 |
-| `get_user(user_id)` | ユーザー取得 | U-008 |
-| `get_user_by_azure_id(azure_id)` | Azure IDでユーザー取得 | U-001 |
-| `get_user_by_email(email)` | メールでユーザー取得 | U-007 |
-| `get_user_stats(user_id)` | ユーザー統計情報取得 | U-008 |
-| `get_user_projects(user_id)` | ユーザー参加プロジェクト取得 | U-008 |
-| `get_user_recent_activities(user_id, limit)` | ユーザー最近のアクティビティ取得 | U-008 |
-| `update_user(user_id, update_data, current_user_roles)` | ユーザー情報更新 | U-003 |
-| `update_last_login(user_id, client_ip)` | 最終ログイン更新 | U-006 |
-| `activate_user(user_id)` | ユーザー有効化 | U-005 |
-| `deactivate_user(user_id)` | ユーザー無効化 | U-004 |
-| `update_user_role(user_id, roles)` | ロール更新 | U-009, U-010 |
-| `delete_user(user_id)` | ユーザー削除 | - |
+| サービス | 責務 |
+|---------|------|
+| UserAccountService | ユーザーCRUD、認証、ロール管理 |
+| RoleHistoryService | ロール変更履歴管理 |
 
-### 5.2 RoleHistoryService
+### 5.2 主要メソッド
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `get_user_role_history(user_id, skip, limit)` | ロール変更履歴取得 | U-011 |
-| `create_role_history(user_id, old_roles, new_roles, changed_by, reason)` | 履歴作成 | U-009, U-010 |
+#### UserAccountService
+
+```python
+class UserAccountService:
+    # ユーザー一覧・取得
+    async def list_users(skip: int, limit: int) -> list[UserAccount]
+    async def count_users() -> int
+    async def get_user(user_id: UUID) -> UserAccount | None
+    async def get_user_by_azure_id(azure_id: str) -> UserAccount | None
+    async def get_user_by_email(email: str) -> UserAccount | None
+
+    # ユーザー詳細情報取得
+    async def get_user_stats(user_id: UUID) -> UserActivityStats
+    async def get_user_projects(user_id: UUID) -> list[ProjectParticipationInfo]
+    async def get_user_recent_activities(user_id: UUID, limit: int = 10) -> list[RecentActivityInfo]
+
+    # ユーザー更新
+    async def update_user(user_id: UUID, update_data: UserAccountUpdate, current_user_roles: list[str]) -> UserAccount
+    async def update_last_login(user_id: UUID, client_ip: str | None = None) -> UserAccount
+
+    # 有効化・無効化
+    async def activate_user(user_id: UUID) -> UserAccount
+    async def deactivate_user(user_id: UUID) -> UserAccount
+
+    # ロール管理
+    async def update_user_role(user_id: UUID, roles: list[str], changed_by: UUID, reason: str | None = None) -> UserAccount
+
+    # 削除
+    async def delete_user(user_id: UUID) -> None
+```
+
+#### RoleHistoryService
+
+```python
+class RoleHistoryService:
+    # 履歴取得
+    async def get_user_role_history(user_id: UUID, skip: int, limit: int) -> list[RoleHistory]
+    async def count_user_role_history(user_id: UUID) -> int
+
+    # 履歴作成
+    async def create_role_history(
+        user_id: UUID,
+        old_roles: list[str] | None,
+        new_roles: list[str],
+        changed_by: UUID | None,
+        reason: str | None = None
+    ) -> RoleHistory
+```
 
 ---
 

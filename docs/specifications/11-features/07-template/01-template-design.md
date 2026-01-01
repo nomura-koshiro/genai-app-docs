@@ -152,20 +152,20 @@ project ──1:N── driver_tree_template
 
 #### 分析セッションテンプレート
 
-| メソッド | パス | 説明 | 実装状況 |
-|---------|------|------|----------|
-| GET | /api/v1/project/{project_id}/analysis/template | テンプレート一覧取得 | ✅ 実装済 |
-| GET | /api/v1/project/{project_id}/analysis/template/{issue_id} | テンプレート詳細取得 | ✅ 実装済 |
-| POST | /api/v1/project/{project_id}/analysis/template | テンプレート作成 | ✅ 実装済 |
-| DELETE | /api/v1/project/{project_id}/analysis/template/{template_id} | テンプレート削除 | ✅ 実装済 |
+| メソッド | パス | 説明 |
+|---------|------|------|
+| GET | /api/v1/project/{project_id}/analysis/template | テンプレート一覧取得 |
+| GET | /api/v1/project/{project_id}/analysis/template/{issue_id} | テンプレート詳細取得 |
+| POST | /api/v1/project/{project_id}/analysis/template | テンプレート作成 |
+| DELETE | /api/v1/project/{project_id}/analysis/template/{template_id} | テンプレート削除 |
 
 #### ドライバーツリーテンプレート
 
-| メソッド | パス | 説明 | 実装状況 |
-|---------|------|------|----------|
-| GET | /api/v1/project/{project_id}/driver-tree/template | テンプレート一覧取得 | ✅ 実装済 |
-| POST | /api/v1/project/{project_id}/driver-tree/template | テンプレート作成 | ✅ 実装済 |
-| DELETE | /api/v1/project/{project_id}/driver-tree/template/{template_id} | テンプレート削除 | ✅ 実装済 |
+| メソッド | パス | 説明 |
+|---------|------|------|
+| GET | /api/v1/project/{project_id}/driver-tree/template | テンプレート一覧取得 |
+| POST | /api/v1/project/{project_id}/driver-tree/template | テンプレート作成 |
+| DELETE | /api/v1/project/{project_id}/driver-tree/template/{template_id} | テンプレート削除 |
 
 ### 3.2 リクエスト/レスポンス定義
 
@@ -578,8 +578,20 @@ features/templates/
 
 ---
 
+## 10. 関連ドキュメント
+
+- **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
+- **分析機能設計書**: [../04-analysis/01-analysis-design.md](../04-analysis/01-analysis-design.md)
+- **ドライバーツリー設計書**: [../05-driver-tree/01-driver-tree-design.md](../05-driver-tree/01-driver-tree-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
 ### ドキュメント管理情報
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 1.0
+- **対象ソースコード**:
+  - モデル: `src/app/models/analysis/analysis_template.py`, `src/app/models/driver_tree/driver_tree_template.py`
+  - スキーマ: `src/app/schemas/analysis/template.py`, `src/app/schemas/driver_tree/template.py`
+  - API: `src/app/api/routes/v1/analysis/template.py`, `src/app/api/routes/v1/driver_tree/template.py`

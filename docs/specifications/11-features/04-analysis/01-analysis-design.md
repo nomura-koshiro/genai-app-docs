@@ -34,178 +34,25 @@
 
 ## 2. データベース設計
 
-### 2.1 analysis_validation_master（検証マスタ）
+データベース設計の詳細は以下を参照してください：
 
-**対応ユースケース**: AVM-001〜AVM-005
+- [データベース設計書 - 3.4 個別施策分析機能](../../../06-database/01-database-design.md#34-個別施策分析機能)
 
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| name | VARCHAR(255) | NO | 検証名 |
-| description | TEXT | YES | 説明 |
-| validation_order | INTEGER | NO | 表示順序 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
+### 2.1 関連テーブル一覧
 
-### 2.2 analysis_issue_master（課題マスタ）
-
-**対応ユースケース**: AIM-001〜AIM-008
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| validation_id | UUID | NO | 検証マスタID（FK） |
-| name | VARCHAR(255) | NO | 課題名 |
-| description | TEXT | YES | 説明 |
-| agent_prompt | TEXT | YES | エージェントプロンプト |
-| initial_msg | TEXT | YES | 初期メッセージ |
-| dummy_hint | TEXT | YES | ダミーヒント |
-| dummy_input | BYTEA | YES | ダミー入力データ |
-| issue_order | INTEGER | NO | 表示順序 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.3 analysis_graph_axis_master（グラフ軸マスタ）
-
-**対応ユースケース**: AGM-001〜AGM-004
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| issue_id | UUID | NO | 課題マスタID（FK） |
-| axis_name | VARCHAR(100) | NO | 軸名 |
-| axis_type | VARCHAR(50) | NO | 軸タイプ（time/value/group） |
-| description | TEXT | YES | 説明 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.4 analysis_dummy_formula_master（ダミー数式マスタ）
-
-**対応ユースケース**: ADM-001〜ADM-004
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| issue_id | UUID | NO | 課題マスタID（FK） |
-| formula_name | VARCHAR(100) | NO | 数式名 |
-| formula | TEXT | NO | 数式 |
-| description | TEXT | YES | 説明 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.5 analysis_dummy_chart_master（ダミーチャートマスタ）
-
-**対応ユースケース**: ADM-005〜ADM-008
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| issue_id | UUID | NO | 課題マスタID（FK） |
-| chart_name | VARCHAR(100) | NO | チャート名 |
-| chart_type | VARCHAR(50) | NO | チャートタイプ |
-| chart_config | JSONB | NO | チャート設定 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.6 analysis_session（分析セッション）
-
-**対応ユースケース**: AS-001〜AS-007
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| name | VARCHAR(255) | NO | セッション名 |
-| project_id | UUID | NO | プロジェクトID（FK） |
-| issue_id | UUID | NO | 課題マスタID（FK） |
-| creator_id | UUID | NO | 作成者ID（FK） |
-| input_file_id | UUID | YES | 入力ファイルID（FK） |
-| current_snapshot_id | UUID | YES | 現在のスナップショットID（FK） |
-| status | VARCHAR(20) | NO | 状態（draft/active/completed/archived） |
-| custom_system_prompt | TEXT | YES | カスタムシステムプロンプト |
-| initial_message | TEXT | YES | 初期メッセージ |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.7 analysis_file（分析ファイル）
-
-**対応ユースケース**: AF-001〜AF-006
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| session_id | UUID | NO | セッションID（FK） |
-| project_file_id | UUID | YES | プロジェクトファイルID（FK） |
-| filename | VARCHAR(255) | NO | ファイル名 |
-| axis_config | JSONB | YES | 軸設定 |
-| data | JSONB | YES | 解析済みデータ |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.8 analysis_snapshot（分析スナップショット）
-
-**対応ユースケース**: ASN-001〜ASN-005
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| session_id | UUID | NO | セッションID（FK） |
-| parent_snapshot_id | UUID | YES | 親スナップショットID（FK） |
-| snapshot_order | INTEGER | NO | スナップショット順序 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.9 analysis_chat（分析チャット）
-
-**対応ユースケース**: AC-001〜AC-003
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| snapshot_id | UUID | NO | スナップショットID（FK） |
-| chat_order | INTEGER | NO | チャット順序 |
-| role | VARCHAR(50) | NO | ロール（user/assistant） |
-| message | TEXT | YES | メッセージ内容 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.10 analysis_step（分析ステップ）
-
-**対応ユースケース**: AST-001〜AST-006
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| snapshot_id | UUID | NO | スナップショットID（FK） |
-| step_type | VARCHAR(50) | NO | ステップタイプ |
-| step_config | JSONB | NO | ステップ設定 |
-| step_order | INTEGER | NO | ステップ順序 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-### 2.11 analysis_template（分析テンプレート）
-
-**対応ユースケース**: テンプレート機能（07-template設計書参照）
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| project_id | UUID | YES | プロジェクトID（FK、NULLはグローバル） |
-| name | VARCHAR(255) | NO | テンプレート名 |
-| description | TEXT | YES | 説明 |
-| template_type | VARCHAR(50) | NO | テンプレートタイプ（session/step） |
-| template_config | JSONB | NO | テンプレート設定 |
-| source_session_id | UUID | YES | 元セッションID（FK） |
-| is_public | BOOLEAN | NO | 公開フラグ（デフォルト: false） |
-| usage_count | INTEGER | NO | 使用回数（デフォルト: 0） |
-| created_by | UUID | YES | 作成者ID（FK） |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-**インデックス**:
-
-- `idx_analysis_template_project_id` ON (project_id)
-- `idx_analysis_template_type` ON (template_type)
-- `idx_analysis_template_public` ON (is_public)
+| テーブル名 | 説明 |
+|-----------|------|
+| analysis_validation_master | 検証マスタ |
+| analysis_issue_master | 課題マスタ |
+| analysis_graph_axis_master | グラフ軸マスタ |
+| analysis_dummy_formula_master | ダミー数式マスタ |
+| analysis_dummy_chart_master | ダミーチャートマスタ |
+| analysis_session | 分析セッション |
+| analysis_file | 分析ファイル |
+| analysis_snapshot | 分析スナップショット |
+| analysis_chat | 分析チャット |
+| analysis_step | 分析ステップ |
+| analysis_template | 分析テンプレート |
 
 ---
 
@@ -255,92 +102,260 @@
 
 ## 4. Pydanticスキーマ設計
 
-### 4.1 セッションスキーマ
+### 4.1 Enum定義
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| AnalysisSessionCreate | セッション作成リクエスト |
-| AnalysisSessionUpdate | セッション更新リクエスト |
-| AnalysisSessionResponse | セッションレスポンス |
-| AnalysisSessionDetailResponse | セッション詳細レスポンス |
-| AnalysisSessionListResponse | セッション一覧レスポンス |
-| AnalysisSessionResultListResponse | セッション結果一覧 |
+```python
+class AnalysisSessionStatusEnum(str, Enum):
+    """セッション状態"""
+    draft = "draft"          # 下書き
+    active = "active"        # アクティブ
+    completed = "completed"  # 完了
+    archived = "archived"    # アーカイブ
 
-### 4.2 ファイル・スナップショットスキーマ
+class AnalysisChatRoleEnum(str, Enum):
+    """チャットロール"""
+    user = "user"            # ユーザー
+    assistant = "assistant"  # アシスタント
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| AnalysisFileCreate | ファイル追加リクエスト |
-| AnalysisFileUpdate | ファイル更新リクエスト |
-| AnalysisFileResponse | ファイルレスポンス |
-| AnalysisFileListResponse | ファイル一覧レスポンス |
-| AnalysisSnapshotCreate | スナップショット作成リクエスト |
-| AnalysisSnapshotResponse | スナップショットレスポンス |
-| AnalysisSnapshotListResponse | スナップショット一覧レスポンス |
+class AnalysisAxisTypeEnum(str, Enum):
+    """軸タイプ"""
+    time = "time"    # 時間軸
+    value = "value"  # 値軸
+    group = "group"  # グループ軸
+```
 
-### 4.3 チャット・ステップスキーマ
+### 4.2 Info/Dataスキーマ
 
-| スキーマ名 | 用途 |
-|-----------|------|
-| AnalysisChatCreate | チャット送信リクエスト |
-| AnalysisChatListResponse | チャット履歴レスポンス |
-| AnalysisStepCreate | ステップ作成リクエスト |
-| AnalysisStepUpdate | ステップ更新リクエスト |
-| AnalysisStepResponse | ステップレスポンス |
+```python
+class AnalysisSessionInfo(CamelCaseModel):
+    """分析セッション情報"""
+    id: UUID
+    name: str
+    project_id: UUID
+    issue_id: UUID
+    creator_id: UUID
+    input_file_id: UUID | None = None
+    current_snapshot_id: UUID | None = None
+    status: AnalysisSessionStatusEnum
+    custom_system_prompt: str | None = None
+    initial_message: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    snapshot_count: int = 0
+
+class AnalysisFileInfo(CamelCaseModel):
+    """分析ファイル情報"""
+    id: UUID
+    session_id: UUID
+    project_file_id: UUID | None = None
+    filename: str
+    axis_config: dict | None = None
+    data: dict | None = None
+    created_at: datetime
+    updated_at: datetime
+
+class AnalysisSnapshotInfo(CamelCaseModel):
+    """スナップショット情報"""
+    id: UUID
+    session_id: UUID
+    parent_snapshot_id: UUID | None = None
+    snapshot_order: int
+    created_at: datetime
+    updated_at: datetime
+
+class AnalysisChatInfo(CamelCaseModel):
+    """チャット情報"""
+    id: UUID
+    snapshot_id: UUID
+    chat_order: int
+    role: AnalysisChatRoleEnum
+    message: str | None = None
+    created_at: datetime
+
+class AnalysisStepInfo(CamelCaseModel):
+    """ステップ情報"""
+    id: UUID
+    snapshot_id: UUID
+    step_type: str
+    step_config: dict
+    step_order: int
+    created_at: datetime
+    updated_at: datetime
+```
+
+### 4.3 Request/Responseスキーマ
+
+```python
+# セッション作成
+class AnalysisSessionCreate(CamelCaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    issue_id: UUID
+    input_file_id: UUID | None = None
+    custom_system_prompt: str | None = None
+
+# セッション更新
+class AnalysisSessionUpdate(CamelCaseModel):
+    name: str | None = Field(None, max_length=255)
+    input_file_id: UUID | None = None
+    current_snapshot_id: UUID | None = None
+    status: AnalysisSessionStatusEnum | None = None
+    custom_system_prompt: str | None = None
+
+# セッション一覧レスポンス
+class AnalysisSessionListResponse(CamelCaseModel):
+    sessions: list[AnalysisSessionInfo]
+    total: int
+    skip: int
+    limit: int
+
+# セッション詳細レスポンス
+class AnalysisSessionDetailResponse(CamelCaseModel):
+    session: AnalysisSessionInfo
+    input_file: AnalysisFileInfo | None = None
+    current_snapshot: AnalysisSnapshotInfo | None = None
+    issue: dict  # 課題マスタ情報
+
+# ファイル追加
+class AnalysisFileCreate(CamelCaseModel):
+    project_file_id: UUID
+
+# ファイル更新
+class AnalysisFileUpdate(CamelCaseModel):
+    axis_config: dict | None = None
+
+# スナップショット一覧レスポンス
+class AnalysisSnapshotListResponse(CamelCaseModel):
+    snapshots: list[AnalysisSnapshotInfo]
+    total: int
+
+# チャット送信
+class AnalysisChatCreate(CamelCaseModel):
+    content: str = Field(..., min_length=1)
+
+# チャット履歴レスポンス
+class AnalysisChatListResponse(CamelCaseModel):
+    chats: list[AnalysisChatInfo]
+    total: int
+
+# ステップ作成
+class AnalysisStepCreate(CamelCaseModel):
+    step_type: str = Field(..., min_length=1, max_length=50)
+    step_config: dict
+
+# ステップ更新
+class AnalysisStepUpdate(CamelCaseModel):
+    step_type: str | None = None
+    step_config: dict | None = None
+    step_order: int | None = None
+```
 
 ---
 
 ## 5. サービス層設計
 
-### 5.1 AnalysisSessionService
+### 5.1 サービスクラス構成
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `create_session(project_id, issue_id, creator_id, name)` | セッション作成 | AS-001 |
-| `delete_session(session_id)` | セッション削除 | AS-002 |
-| `list_sessions(project_id, skip, limit, is_active)` | セッション一覧 | AS-003, AS-004 |
-| `get_session(session_id)` | セッション詳細 | AS-005 |
-| `update_session(session_id, update_data)` | セッション更新 | AS-006, AS-007 |
-| `set_input_file(session_id, file_id)` | 入力ファイル設定 | AS-006 |
-| `restore_snapshot(session_id, snapshot_id)` | スナップショット復元 | ASN-005 |
+| サービス | 責務 |
+|---------|------|
+| AnalysisSessionService | セッションCRUD、複製、ファイル設定 |
+| AnalysisFileService | 分析ファイル管理、軸設定 |
+| AnalysisSnapshotService | スナップショットCRUD、復元 |
+| AnalysisChatService | チャットメッセージ送受信 |
+| AnalysisStepService | ステップCRUD、並べ替え |
 
-### 5.2 AnalysisFileService
+### 5.2 主要メソッド
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `add_file(session_id, project_file_id)` | ファイル追加 | AF-001 |
-| `update_file(file_id, update_data)` | ファイル更新 | AF-002 |
-| `delete_file(file_id)` | ファイル削除 | AF-003 |
-| `list_files(session_id)` | ファイル一覧 | AF-004 |
-| `update_axis_config(file_id, axis_config)` | 軸設定更新 | AF-005 |
+#### AnalysisSessionService
 
-### 5.3 AnalysisSnapshotService
+```python
+class AnalysisSessionService:
+    # セッションCRUD
+    async def create_session(
+        project_id: UUID,
+        issue_id: UUID,
+        creator_id: UUID,
+        name: str,
+        custom_system_prompt: str | None = None
+    ) -> AnalysisSession
+    async def delete_session(session_id: UUID) -> None
+    async def update_session(session_id: UUID, update_data: AnalysisSessionUpdate) -> AnalysisSession
+    async def duplicate_session(session_id: UUID, user_id: UUID) -> AnalysisSession
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `create_snapshot(session_id, parent_snapshot_id)` | スナップショット作成 | ASN-001 |
-| `delete_snapshot(snapshot_id)` | スナップショット削除 | ASN-002 |
-| `list_snapshots(session_id)` | スナップショット一覧 | ASN-003 |
-| `get_snapshot(snapshot_id)` | スナップショット詳細 | ASN-004 |
+    # セッション取得
+    async def list_sessions(
+        project_id: UUID,
+        skip: int = 0,
+        limit: int = 100,
+        status: AnalysisSessionStatusEnum | None = None
+    ) -> list[AnalysisSession]
+    async def count_sessions(project_id: UUID, status: AnalysisSessionStatusEnum | None = None) -> int
+    async def get_session(session_id: UUID) -> AnalysisSession | None
+    async def get_session_result(session_id: UUID) -> dict
 
-### 5.4 AnalysisChatService
+    # ファイル・スナップショット設定
+    async def set_input_file(session_id: UUID, file_id: UUID) -> AnalysisSession
+    async def restore_snapshot(session_id: UUID, snapshot_id: UUID) -> AnalysisSession
+```
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `send_message(snapshot_id, content)` | メッセージ送信 | AC-001 |
-| `get_chat_history(snapshot_id)` | 履歴取得 | AC-002 |
-| `delete_message(chat_id)` | メッセージ削除 | AC-003 |
+#### AnalysisFileService
 
-### 5.5 AnalysisStepService
+```python
+class AnalysisFileService:
+    # ファイルCRUD
+    async def add_file(session_id: UUID, project_file_id: UUID) -> AnalysisFile
+    async def update_file(file_id: UUID, update_data: AnalysisFileUpdate) -> AnalysisFile
+    async def delete_file(file_id: UUID) -> None
+    async def list_files(session_id: UUID) -> list[AnalysisFile]
+    async def get_file(file_id: UUID) -> AnalysisFile | None
 
-| メソッド | 説明 | 対応UC |
-|---------|------|--------|
-| `create_step(snapshot_id, step_type, step_config)` | ステップ作成 | AST-001 |
-| `update_step(step_id, update_data)` | ステップ更新 | AST-002 |
-| `delete_step(step_id)` | ステップ削除 | AST-003 |
-| `list_steps(snapshot_id)` | ステップ一覧 | AST-004 |
-| `update_step_config(step_id, config)` | ステップ設定更新 | AST-005 |
-| `reorder_steps(snapshot_id, step_ids)` | ステップ順序変更 | AST-006 |
+    # 軸設定
+    async def update_axis_config(file_id: UUID, axis_config: dict) -> AnalysisFile
+    async def parse_file_data(file_id: UUID) -> dict
+```
+
+#### AnalysisSnapshotService
+
+```python
+class AnalysisSnapshotService:
+    # スナップショットCRUD
+    async def create_snapshot(
+        session_id: UUID,
+        parent_snapshot_id: UUID | None = None
+    ) -> AnalysisSnapshot
+    async def delete_snapshot(snapshot_id: UUID) -> None
+    async def list_snapshots(session_id: UUID) -> list[AnalysisSnapshot]
+    async def get_snapshot(snapshot_id: UUID) -> AnalysisSnapshot | None
+```
+
+#### AnalysisChatService
+
+```python
+class AnalysisChatService:
+    # チャット操作
+    async def send_message(snapshot_id: UUID, content: str) -> AnalysisChat
+    async def get_chat_history(snapshot_id: UUID) -> list[AnalysisChat]
+    async def delete_message(chat_id: UUID) -> None
+    async def count_messages(snapshot_id: UUID) -> int
+```
+
+#### AnalysisStepService
+
+```python
+class AnalysisStepService:
+    # ステップCRUD
+    async def create_step(
+        snapshot_id: UUID,
+        step_type: str,
+        step_config: dict
+    ) -> AnalysisStep
+    async def update_step(step_id: UUID, update_data: AnalysisStepUpdate) -> AnalysisStep
+    async def delete_step(step_id: UUID) -> None
+    async def list_steps(snapshot_id: UUID) -> list[AnalysisStep]
+
+    # ステップ設定
+    async def update_step_config(step_id: UUID, config: dict) -> AnalysisStep
+    async def reorder_steps(snapshot_id: UUID, step_ids: list[UUID]) -> list[AnalysisStep]
+```
 
 ---
 

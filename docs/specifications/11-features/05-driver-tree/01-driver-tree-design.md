@@ -65,7 +65,11 @@
 
 ## 2. データベース設計
 
-### 2.1 テーブル一覧
+データベース設計の詳細は以下を参照してください：
+
+- [データベース設計書 - 3.5 ドライバーツリー](../../../06-database/01-database-design.md#35-ドライバーツリー)
+
+### 2.1 関連テーブル一覧
 
 | テーブル名 | 説明 |
 |-----------|------|
@@ -79,208 +83,6 @@
 | driver_tree_category | 業界分類マスタ |
 | driver_tree_formula | 数式テンプレートマスタ |
 | driver_tree_template | ツリーテンプレート（07-template設計書参照） |
-
-### 2.2 ER図（主要テーブル）
-
-```text
-project ──1:N── driver_tree ──1:N── driver_tree_node
-                    │                     │
-                    │                     ├──1:N── driver_tree_policy
-                    │                     │
-                    │                     └──1:1── driver_tree_data_frame
-                    │
-                    └──1:N── driver_tree_relationship ──1:N── driver_tree_relationship_child
-                                                                        │
-                                                                        └── driver_tree_node
-
-project_file ──1:N── driver_tree_file ──1:N── driver_tree_data_frame
-
-driver_tree_category ──1:N── driver_tree_formula
-```
-
-### 2.3 テーブル詳細
-
-#### driver_tree（ドライバーツリー）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| project_id | UUID | NO | - | プロジェクトID（FK） |
-| name | VARCHAR(255) | NO | - | ツリー名 |
-| description | TEXT | NO | '' | 説明 |
-| root_node_id | UUID | YES | NULL | ルートノードID（FK） |
-| formula_id | UUID | YES | NULL | 数式テンプレートID（FK） |
-| status | VARCHAR(20) | NO | 'draft' | 状態（draft/active/completed） |
-| created_by | UUID | YES | NULL | 作成者ID（FK） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_project_id (project_id)
-
-**制約:**
-
-- ck_driver_tree_status: status IN ('draft', 'active', 'completed')
-
-#### driver_tree_node（ツリーノード）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| driver_tree_id | UUID | NO | - | ツリーID（FK） |
-| label | VARCHAR(255) | NO | - | ノードラベル |
-| position_x | INTEGER | YES | 0 | X座標 |
-| position_y | INTEGER | YES | 0 | Y座標 |
-| node_type | VARCHAR(50) | NO | - | ノードタイプ（計算/入力/定数） |
-| data_frame_id | UUID | YES | NULL | データフレームID（FK） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_node_tree_id (driver_tree_id)
-
-#### driver_tree_relationship（ノード間関係）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| driver_tree_id | UUID | NO | - | ツリーID（FK） |
-| parent_node_id | UUID | NO | - | 親ノードID（FK） |
-| operator | VARCHAR(1) | YES | NULL | 演算子（+, -, *, /） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_relationship_driver_tree_id (driver_tree_id)
-- idx_driver_tree_relationship_parent_node_id (parent_node_id)
-
-#### driver_tree_relationship_child（子ノードリスト）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| relationship_id | UUID | NO | - | リレーションシップID（FK） |
-| child_node_id | UUID | NO | - | 子ノードID（FK） |
-| order_index | INTEGER | NO | 0 | 順番 |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_relationship_child_relationship_id (relationship_id)
-- idx_driver_tree_relationship_child_child_node_id (child_node_id)
-- idx_driver_tree_relationship_child_order (relationship_id, order_index)
-
-#### driver_tree_policy（施策設定）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| node_id | UUID | NO | - | ノードID（FK） |
-| label | VARCHAR(255) | NO | - | 施策ラベル |
-| value | FLOAT | NO | 0 | 施策値（%） |
-| description | TEXT | YES | NULL | 施策説明 |
-| cost | FLOAT | YES | NULL | コスト |
-| duration_months | INTEGER | YES | NULL | 実施期間（月） |
-| status | VARCHAR(20) | NO | 'planned' | 状態（planned/in_progress/completed） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_policy_node_id (node_id)
-
-#### driver_tree_file（アップロードファイル）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| project_file_id | UUID | NO | - | プロジェクトファイルID（FK） |
-| sheet_name | VARCHAR(255) | NO | - | シート名 |
-| axis_config | JSONB | NO | - | 軸設定 |
-| added_by | UUID | YES | NULL | 追加者ID（FK） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-#### driver_tree_data_frame（データフレーム）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| driver_tree_file_id | UUID | NO | - | ファイルID（FK） |
-| column_name | VARCHAR(255) | NO | - | 列名 |
-| data | JSONB | YES | NULL | データキャッシュ |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-#### driver_tree_category（業界分類マスタ）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | INTEGER | NO | auto | 主キー |
-| category_id | INTEGER | NO | - | 業界分類ID |
-| category_name | VARCHAR(255) | NO | - | 業界分類名 |
-| industry_id | INTEGER | NO | - | 業界名ID |
-| industry_name | VARCHAR(255) | NO | - | 業界名 |
-| driver_type_id | INTEGER | NO | - | ドライバー型ID |
-| driver_type | VARCHAR(255) | NO | - | ドライバー型 |
-| description | TEXT | YES | NULL | 説明 |
-| created_by | UUID | YES | NULL | 作成者ID（FK） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- ix_category_industry (industry_name)
-- ix_category_driver (driver_type_id)
-
-#### driver_tree_formula（数式テンプレートマスタ）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| category_id | INTEGER | YES | NULL | カテゴリID（FK） |
-| driver_type_id | INTEGER | NO | - | ドライバー型ID |
-| driver_type | VARCHAR(255) | NO | - | ドライバー型 |
-| kpi | VARCHAR(50) | NO | - | KPI種別 |
-| formulas | JSONB | NO | - | 数式リスト |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- ix_formula_driver_kpi (driver_type_id, kpi)
-- ix_formula_category (category_id)
-
-**制約:**
-
-- uq_driver_kpi: UNIQUE (driver_type_id, kpi)
-
-#### driver_tree_template（ツリーテンプレート）
-
-| カラム名 | 型 | NULL | デフォルト | 説明 |
-|---------|-----|------|-----------|------|
-| id | UUID | NO | uuid4() | 主キー |
-| project_id | UUID | YES | NULL | プロジェクトID（FK、NULLはグローバル） |
-| name | VARCHAR(255) | NO | - | テンプレート名 |
-| description | TEXT | YES | NULL | 説明 |
-| category | VARCHAR(100) | YES | NULL | カテゴリ（業種） |
-| template_config | JSONB | NO | - | テンプレート設定 |
-| source_tree_id | UUID | YES | NULL | 元ツリーID（FK） |
-| is_public | BOOLEAN | NO | false | 公開フラグ |
-| usage_count | INTEGER | NO | 0 | 使用回数 |
-| created_by | UUID | YES | NULL | 作成者ID（FK） |
-| created_at | TIMESTAMP | NO | now() | 作成日時 |
-| updated_at | TIMESTAMP | NO | now() | 更新日時 |
-
-**インデックス:**
-
-- idx_driver_tree_template_project_id (project_id)
-- idx_driver_tree_template_category (category)
-- idx_driver_tree_template_public (is_public)
 
 ---
 
@@ -1070,8 +872,19 @@ features/driver-tree/
 
 ---
 
+## 9. 関連ドキュメント
+
+- **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
+- **モックアップ**: [../../03-mockup/pages/projects.js](../../03-mockup/pages/projects.js)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
 ### ドキュメント管理情報
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 1.0
+- **対象ソースコード**:
+  - モデル: `src/app/models/driver_tree/`
+  - スキーマ: `src/app/schemas/driver_tree/`
+  - API: `src/app/api/routes/v1/driver_tree/`

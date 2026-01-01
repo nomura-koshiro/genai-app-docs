@@ -23,220 +23,48 @@
 
 ### 1.3 追加コンポーネント数
 
-| レイヤー | 追加項目数 | 実装状況 |
-|---------|----------|---------|
-| データベーステーブル | 8テーブル | 実装済 |
-| APIエンドポイント | 40エンドポイント | 約40実装済（詳細は下記参照） |
-| Pydanticスキーマ | 16ファイル | 実装済 |
-| サービス | 8サービス | 実装済 |
-| フロントエンド画面 | 10画面 | 未実装 |
+| レイヤー | 追加項目数 |
+|---------|----------|
+| データベーステーブル | 8テーブル |
+| APIエンドポイント | 40エンドポイント |
+| Pydanticスキーマ | 16ファイル |
+| サービス | 8サービス |
+| フロントエンド画面 | 10画面 |
 
-### 1.4 実装状況サマリー
+### 1.4 機能カテゴリ一覧
 
-| カテゴリ | 対応UC | 実装状況 | 備考 |
-|---------|--------|---------|------|
-| 操作履歴API | SA-001〜SA-006 | ✅ 実装済 | 4エンドポイント |
-| 全プロジェクト管理API | SA-007〜SA-011 | ✅ 実装済 | 5エンドポイント実装済 |
-| 監査ログAPI | SA-012〜SA-016 | ✅ 実装済 | 6エンドポイント |
-| システム設定API | SA-017〜SA-021 | ✅ 実装済 | 5エンドポイント |
-| 統計API | SA-022〜SA-026 | ✅ 実装済 | 5エンドポイント（storage, api-requests, errors追加） |
-| 一括操作API | SA-027〜SA-030 | ✅ 実装済 | 4エンドポイント |
-| 通知管理API | SA-031〜SA-034 | ✅ 実装済 | alerts, templates, announcements |
-| セキュリティ管理API | SA-035〜SA-036 | ✅ 実装済 | 4エンドポイント |
-| データ管理API | SA-037〜SA-040 | ⚠️ 部分実装 | 4エンドポイント（orphan-files, master/import未実装） |
-| サポートツールAPI | SA-041〜SA-043 | ✅ 実装済 | 6エンドポイント |
+| カテゴリ | 対応UC | エンドポイント数 |
+|---------|--------|-----------------|
+| 操作履歴API | SA-001〜SA-006 | 4エンドポイント |
+| 全プロジェクト管理API | SA-007〜SA-011 | 5エンドポイント |
+| 監査ログAPI | SA-012〜SA-016 | 6エンドポイント |
+| システム設定API | SA-017〜SA-021 | 5エンドポイント |
+| 統計API | SA-022〜SA-026 | 5エンドポイント |
+| 一括操作API | SA-027〜SA-030 | 4エンドポイント |
+| 通知管理API | SA-031〜SA-034 | alerts, templates, announcements |
+| セキュリティ管理API | SA-035〜SA-036 | 4エンドポイント |
+| データ管理API | SA-037〜SA-040 | 4エンドポイント |
+| サポートツールAPI | SA-041〜SA-043 | 6エンドポイント |
 
 ---
 
 ## 2. データベース設計
 
-### 2.1 user_activity（ユーザー操作履歴）
+データベースの詳細設計は以下のドキュメントを参照してください：
 
-**対応ユースケース**: SA-001〜SA-006
+- [データベース設計書 - システム管理](../../../06-database/01-database-design.md#36-システム管理)
 
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| user_id | UUID | YES | 操作ユーザー（FK: user_account）※未認証リクエストはNULL |
-| action_type | VARCHAR(50) | NO | 操作種別（CREATE/READ/UPDATE/DELETE/LOGIN/LOGOUT等） |
-| resource_type | VARCHAR(50) | YES | リソース種別（PROJECT/SESSION/TREE等） |
-| resource_id | UUID | YES | 操作対象リソースID |
-| endpoint | VARCHAR(255) | NO | APIエンドポイント |
-| method | VARCHAR(10) | NO | HTTPメソッド |
-| request_body | JSONB | YES | リクエストボディ（機密情報除外） |
-| response_status | INTEGER | NO | HTTPレスポンスステータス |
-| error_message | TEXT | YES | エラーメッセージ（エラー時のみ） |
-| error_code | VARCHAR(50) | YES | エラーコード |
-| ip_address | VARCHAR(45) | YES | クライアントIPアドレス |
-| user_agent | VARCHAR(500) | YES | ユーザーエージェント |
-| duration_ms | INTEGER | NO | 処理時間（ミリ秒） |
-| created_at | TIMESTAMP | NO | 作成日時 |
+### 2.1 関連テーブル一覧
 
-**インデックス**:
-
-- `idx_user_activity_user_id` ON (user_id)
-- `idx_user_activity_action_type` ON (action_type)
-- `idx_user_activity_resource` ON (resource_type, resource_id)
-- `idx_user_activity_created_at` ON (created_at DESC)
-- `idx_user_activity_status` ON (response_status)
-- `idx_user_activity_error` ON (created_at DESC) WHERE error_message IS NOT NULL
-
----
-
-### 2.2 audit_log（監査ログ）
-
-**対応ユースケース**: SA-012〜SA-016
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| user_id | UUID | YES | 操作ユーザー |
-| event_type | VARCHAR(50) | NO | イベント種別（DATA_CHANGE/ACCESS/SECURITY） |
-| action | VARCHAR(50) | NO | アクション（CREATE/UPDATE/DELETE/LOGIN_SUCCESS/LOGIN_FAILED等） |
-| resource_type | VARCHAR(50) | NO | リソース種別 |
-| resource_id | UUID | YES | リソースID |
-| old_value | JSONB | YES | 変更前の値 |
-| new_value | JSONB | YES | 変更後の値 |
-| changed_fields | JSONB | YES | 変更されたフィールド一覧 |
-| ip_address | VARCHAR(45) | YES | IPアドレス |
-| user_agent | VARCHAR(500) | YES | ユーザーエージェント |
-| severity | VARCHAR(20) | NO | 重要度（INFO/WARNING/CRITICAL） |
-| metadata | JSONB | YES | 追加メタデータ |
-| created_at | TIMESTAMP | NO | 作成日時 |
-
-**インデックス**:
-
-- `idx_audit_log_user_id` ON (user_id)
-- `idx_audit_log_event_type` ON (event_type)
-- `idx_audit_log_resource` ON (resource_type, resource_id)
-- `idx_audit_log_severity` ON (severity)
-- `idx_audit_log_created_at` ON (created_at DESC)
-
----
-
-### 2.3 system_setting（システム設定）
-
-**対応ユースケース**: SA-017〜SA-020
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| category | VARCHAR(50) | NO | カテゴリ（GENERAL/SECURITY/MAINTENANCE） |
-| key | VARCHAR(100) | NO | 設定キー |
-| value | JSONB | NO | 設定値 |
-| value_type | VARCHAR(20) | NO | 値の型（STRING/NUMBER/BOOLEAN/JSON） |
-| description | TEXT | YES | 説明 |
-| is_secret | BOOLEAN | NO | 機密設定フラグ（デフォルト: false） |
-| is_editable | BOOLEAN | NO | 編集可能フラグ（デフォルト: true） |
-| updated_by | UUID | YES | 更新者 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-**ユニーク制約**: `uq_system_setting_category_key` ON (category, key)
-
-**初期データ例**:
-
-```json
-[
-  {"category": "GENERAL", "key": "max_file_size_mb", "value": "100", "value_type": "NUMBER"},
-  {"category": "GENERAL", "key": "session_timeout_minutes", "value": "60", "value_type": "NUMBER"},
-  {"category": "SECURITY", "key": "max_login_attempts", "value": "5", "value_type": "NUMBER"},
-  {"category": "SECURITY", "key": "password_expiry_days", "value": "90", "value_type": "NUMBER"},
-  {"category": "MAINTENANCE", "key": "maintenance_mode", "value": "false", "value_type": "BOOLEAN"},
-  {"category": "MAINTENANCE", "key": "maintenance_message", "value": "\"\"", "value_type": "STRING"}
-]
-```
-
----
-
-### 2.4 system_announcement（システムお知らせ）
-
-**対応ユースケース**: SA-033〜SA-034
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| title | VARCHAR(200) | NO | タイトル |
-| content | TEXT | NO | 本文 |
-| announcement_type | VARCHAR(30) | NO | 種別（INFO/WARNING/MAINTENANCE） |
-| priority | INTEGER | NO | 優先度（1が最高、デフォルト: 5） |
-| start_at | TIMESTAMP | NO | 表示開始日時 |
-| end_at | TIMESTAMP | YES | 表示終了日時（NULLは無期限） |
-| is_active | BOOLEAN | NO | 有効フラグ（デフォルト: true） |
-| target_roles | JSONB | YES | 対象ロール（NULLまたは空配列は全員） |
-| created_by | UUID | NO | 作成者 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
-**インデックス**:
-
-- `idx_announcement_active` ON (is_active, start_at, end_at)
-
----
-
-### 2.6 notification_template（通知テンプレート）
-
-**対応ユースケース**: SA-032
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| name | VARCHAR(100) | NO | テンプレート名 |
-| event_type | VARCHAR(50) | NO | イベント種別（PROJECT_CREATED/MEMBER_ADDED等） |
-| subject | VARCHAR(200) | NO | 件名テンプレート |
-| body | TEXT | NO | 本文テンプレート |
-| variables | JSONB | NO | 利用可能変数リスト |
-| is_active | BOOLEAN | NO | 有効フラグ（デフォルト: true） |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
----
-
-### 2.7 system_alert（システムアラート設定）
-
-**対応ユースケース**: SA-031
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| name | VARCHAR(100) | NO | アラート名 |
-| condition_type | VARCHAR(50) | NO | 条件種別（ERROR_RATE/STORAGE_USAGE/INACTIVE_USERS等） |
-| threshold | JSONB | NO | 閾値設定 |
-| comparison_operator | VARCHAR(10) | NO | 比較演算子（GT/GTE/LT/LTE/EQ） |
-| notification_channels | JSONB | NO | 通知先（EMAIL/SLACK等） |
-| is_enabled | BOOLEAN | NO | 有効フラグ（デフォルト: true） |
-| last_triggered_at | TIMESTAMP | YES | 最終発火日時 |
-| trigger_count | INTEGER | NO | 発火回数（デフォルト: 0） |
-| created_by | UUID | NO | 作成者 |
-| created_at | TIMESTAMP | NO | 作成日時 |
-| updated_at | TIMESTAMP | NO | 更新日時 |
-
----
-
-### 2.8 user_session（ユーザーセッション）
-
-**対応ユースケース**: SA-035〜SA-036
-
-| カラム名 | 型 | NULL | 説明 |
-|---------|---|------|------|
-| id | UUID | NO | 主キー |
-| user_id | UUID | NO | ユーザーID（FK: user_account） |
-| session_token_hash | VARCHAR(64) | NO | セッショントークンハッシュ（SHA-256） |
-| ip_address | VARCHAR(45) | YES | IPアドレス |
-| user_agent | VARCHAR(500) | YES | ユーザーエージェント |
-| device_info | JSONB | YES | デバイス情報（OS、ブラウザ等） |
-| login_at | TIMESTAMP | NO | ログイン日時 |
-| last_activity_at | TIMESTAMP | NO | 最終アクティビティ日時 |
-| expires_at | TIMESTAMP | NO | 有効期限 |
-| is_active | BOOLEAN | NO | アクティブフラグ（デフォルト: true） |
-| logout_at | TIMESTAMP | YES | ログアウト日時 |
-| logout_reason | VARCHAR(50) | YES | ログアウト理由（MANUAL/FORCED/EXPIRED/SESSION_LIMIT） |
-
-**インデックス**:
-
-- `idx_user_session_user_id` ON (user_id)
-- `idx_user_session_active` ON (is_active, expires_at)
-- `idx_user_session_token` ON (session_token_hash)
+| テーブル名 | 対応ユースケース | 説明 |
+|-----------|----------------|------|
+| user_activity | SA-001〜SA-006 | ユーザー操作履歴 |
+| audit_log | SA-012〜SA-016 | 監査ログ |
+| system_setting | SA-017〜SA-020 | システム設定 |
+| system_announcement | SA-033〜SA-034 | システムお知らせ |
+| notification_template | SA-032 | 通知テンプレート |
+| system_alert | SA-031 | システムアラート設定 |
+| user_session | SA-035〜SA-036 | ユーザーセッション |
 
 ---
 
@@ -2143,3 +1971,31 @@ alembic/versions/
 - 監査ログ: デフォルト365日
 - 削除プロジェクト: デフォルト30日
 - セッションログ: デフォルト30日
+
+---
+
+## 9. 関連ドキュメント
+
+| ドキュメント | 説明 |
+|-------------|------|
+| [データベース設計書](../../../06-database/01-database-design.md#36-システム管理) | システム管理関連テーブル定義 |
+| [ユースケース定義書](../../../02-usecase/01-usecase-definition.md) | SA-001〜SA-043 ユースケース定義 |
+| [API設計書](../../../05-api-design/01-api-endpoints.md) | 管理者API エンドポイント一覧 |
+| [認証・認可設計書](../../../08-security/01-authentication.md) | SystemAdmin権限の定義 |
+
+---
+
+## 10. ドキュメント管理情報
+
+| 項目 | 内容 |
+|------|------|
+| ドキュメントID | SA-DESIGN-001 |
+| 対象ユースケース | SA-001〜SA-043 |
+| 最終更新日 | 2025-12-31 |
+| 対象ソースコード | `src/app/api/routes/v1/admin/` |
+|  | `src/app/services/admin/` |
+|  | `src/app/repositories/admin/` |
+|  | `src/app/schemas/admin/` |
+|  | `src/app/models/audit/` |
+|  | `src/app/models/system/` |
+|  | `src/app/api/middlewares/activity_tracking.py` |

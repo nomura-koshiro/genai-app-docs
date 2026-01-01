@@ -585,11 +585,19 @@ features/dashboard/
 
 ---
 
+## 9. 関連ドキュメント
+
+- **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
+- **モックアップ**: [../../03-mockup/pages/index.js](../../03-mockup/pages/index.js)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
 ### ドキュメント管理情報
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 1.1
-- **変更履歴**:
-  - v1.1 (2026-01-01): snapshotTrend、projectProgressのAPI定義追加、最近のプロジェクト取得方法を明確化
-  - v1.0 (2026-01-01): 初版作成
+- **対象ソースコード**:
+  - サービス: `src/app/services/dashboard/`
+  - スキーマ: `src/app/schemas/dashboard/`
+  - API: `src/app/api/routes/v1/dashboard/`

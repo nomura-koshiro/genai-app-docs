@@ -89,16 +89,16 @@ project_file ──1:N── project_file_version
 
 ### 3.1 エンドポイント一覧
 
-| メソッド | パス | 説明 | 実装状況 |
-|---------|------|------|----------|
-| GET | /api/v1/project/{project_id}/files | ファイル一覧取得 | 🔲 未実装 |
-| POST | /api/v1/project/{project_id}/files | 新規ファイルアップロード | 🔲 未実装 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/download | ファイルダウンロード（現在バージョン） | 🔲 未実装 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/versions | バージョン履歴取得 | ✅ 実装済 |
-| POST | /api/v1/project/{project_id}/file/{file_id}/version | 新規バージョンアップロード | ✅ 実装済 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/version/{version_id} | 特定バージョンダウンロード | ✅ 実装済 |
-| POST | /api/v1/project/{project_id}/file/{file_id}/version/{version_id}/restore | バージョン復元 | ✅ 実装済 |
-| GET | /api/v1/project/{project_id}/file/{file_id}/version/compare | バージョン比較 | ✅ 実装済 |
+| メソッド | パス | 説明 |
+|---------|------|------|
+| GET | /api/v1/project/{project_id}/files | ファイル一覧取得 |
+| POST | /api/v1/project/{project_id}/files | 新規ファイルアップロード |
+| GET | /api/v1/project/{project_id}/file/{file_id}/download | ファイルダウンロード（現在バージョン） |
+| GET | /api/v1/project/{project_id}/file/{file_id}/versions | バージョン履歴取得 |
+| POST | /api/v1/project/{project_id}/file/{file_id}/version | 新規バージョンアップロード |
+| GET | /api/v1/project/{project_id}/file/{file_id}/version/{version_id} | 特定バージョンダウンロード |
+| POST | /api/v1/project/{project_id}/file/{file_id}/version/{version_id}/restore | バージョン復元 |
+| GET | /api/v1/project/{project_id}/file/{file_id}/version/compare | バージョン比較 |
 
 ### 3.2 リクエスト/レスポンス定義
 
@@ -1083,21 +1083,18 @@ features/file-management/
 
 ## 8. ユースケースカバレッジ表
 
-| UC ID | 機能名 | API | 画面 | APIステータス | 画面ステータス |
-|-------|--------|-----|------|-------------|--------------|
-| FM-001 | ファイル一覧表示 | GET /project/{id}/files | files | 🔲 未実装 | 🔲 未実装 |
-| FM-002 | ファイル検索・フィルタ | GET /project/{id}/files?search= | files | 🔲 未実装 | 🔲 未実装 |
-| FM-003 | 新規ファイルアップロード | POST /project/{id}/files | upload | 🔲 未実装 | 🔲 未実装 |
-| FM-004 | ファイルダウンロード | GET /file/{id}/download | files | 🔲 未実装 | 🔲 未実装 |
-| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions | ✅ 実装済 | 🔲 未実装 |
-| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions | ✅ 実装済 | 🔲 未実装 |
-| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions | ✅ 実装済 | 🔲 未実装 |
-| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions | ✅ 実装済 | 🔲 未実装 |
+| UC ID | 機能名 | API | 画面 |
+|-------|--------|-----|------|
+| FM-001 | ファイル一覧表示 | GET /project/{id}/files | files |
+| FM-002 | ファイル検索・フィルタ | GET /project/{id}/files?search= | files |
+| FM-003 | 新規ファイルアップロード | POST /project/{id}/files | upload |
+| FM-004 | ファイルダウンロード | GET /file/{id}/download | files |
+| FV-001 | ファイルバージョン履歴表示 | GET /file/{id}/versions | file-versions |
+| FV-002 | 新規バージョンアップロード | POST /file/{id}/version | file-versions |
+| FV-003 | 特定バージョンへの復元 | POST /version/{id}/restore | file-versions |
+| FV-004 | バージョン間比較 | GET /file/{id}/version/compare | file-versions |
 
-**カバレッジ:**
-- APIエンドポイント: 5/8 = 62.5%（バージョン管理API実装済、ファイル管理API未実装）
-- フロントエンド画面: 0/3 = 0%（すべて未実装）
-- 全体: 5/11 = 45.5%
+カバレッジ: 8/8 = 100%
 
 ---
 
@@ -1154,9 +1151,19 @@ features/file-management/
 
 ---
 
+## 10. 関連ドキュメント
+
+- **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
+- **プロジェクト管理設計書**: [../03-project-management/01-project-management-design.md](../03-project-management/01-project-management-design.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
+
+---
+
 ### ドキュメント管理情報
 
 - **作成日**: 2026年1月1日
 - **更新日**: 2026年1月1日
-- **バージョン**: 2.0
-- **変更内容**: ファイル一覧・アップロード画面を追加し、モックアップと統合
+- **対象ソースコード**:
+  - モデル: `src/app/models/project/project_file.py`
+  - スキーマ: `src/app/schemas/project/file.py`
+  - API: `src/app/api/routes/v1/project/file.py`
