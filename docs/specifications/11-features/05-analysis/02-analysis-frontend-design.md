@@ -213,7 +213,7 @@ pages/admin/
 - **バックエンド設計**: [01-analysis-design.md](./01-analysis-design.md)
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **モックアップ**: [../../03-mockup/pages/sessions.js](../../03-mockup/pages/sessions.js)
-- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
 
 ---
 

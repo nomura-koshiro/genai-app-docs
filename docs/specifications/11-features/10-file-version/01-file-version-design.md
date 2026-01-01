@@ -740,7 +740,7 @@ class FileVersionService:
 
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
 - **プロジェクト管理設計書**: [../04-project-management/01-project-management-design.md](../04-project-management/01-project-management-design.md)
-- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
 
 ---
 

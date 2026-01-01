@@ -484,7 +484,7 @@ SIDEBAR_SECTIONS = {
 
 - **ユーザー管理**: [../03-user-management/01-user-management-design.md](../03-user-management/01-user-management-design.md)
 - **モックアップ**: [../../03-mockup/index.html](../../03-mockup/index.html)
-- **API共通仕様**: [../02-api-overview/01-api-overview.md](../02-api-overview/01-api-overview.md)
+- **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
 - **システム管理（管理者通知）**: [../11-system-admin/01-system-admin-design.md](../11-system-admin/01-system-admin-design.md)
 
 ---
