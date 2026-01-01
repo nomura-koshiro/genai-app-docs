@@ -229,48 +229,6 @@ async def client(db_session: AsyncSession, mock_storage_service) -> AsyncGenerat
     await asyncio.sleep(0.1)
 
 
-# サンプルデータフィクスチャ
-@pytest.fixture
-def user_data():
-    """テスト用ユーザーデータ。"""
-    return {
-        "email": "test@example.com",
-        "username": "testuser",
-        "password": "password123",
-    }
-
-
-@pytest.fixture
-def session_data():
-    """テスト用セッションデータ。"""
-    return {
-        "session_id": "test-session-123",
-        "session_metadata": {"key": "value"},
-    }
-
-
-@pytest.fixture
-def file_data():
-    """テスト用ファイルデータ。"""
-    return {
-        "filename": "test.txt",
-        "filepath": "/uploads/test.txt",
-        "content_type": "text/plain",
-        "size": 1024,
-    }
-
-
-@pytest.fixture
-def mock_azure_user():
-    """Azure ADユーザーのモックデータ。"""
-    return {
-        "oid": "test-azure-oid-12345",
-        "email": "test@example.com",
-        "name": "Test User",
-        "preferred_username": "testuser",
-    }
-
-
 @pytest.fixture
 def override_auth(request):
     """認証依存性をオーバーライドするヘルパーfixture。
@@ -351,36 +309,6 @@ async def test_project(db_session, test_user):
     return project
 
 
-@pytest.fixture(scope="function")
-async def seeded_templates(db_session):
-    """validation.ymlからテンプレートデータをシードします。
-
-    このフィクスチャを使用するテストは、自動的にテンプレートデータが
-    データベースにロードされた状態で開始されます。
-
-    使用例:
-        async def test_template_query(db_session, seeded_templates):
-            # seeded_templatesはシード結果の統計情報を含む
-            assert seeded_templates["templates_created"] > 0
-
-            # テンプレートクエリをテスト
-            template_repo = AnalysisTemplateRepository(db_session)
-            templates = await template_repo.list_active()
-            assert len(templates) > 0
-
-    Returns:
-        dict[str, int]: シード結果の統計
-            - templates_created: 作成されたテンプレート数
-            - charts_created: 作成されたチャート数
-    """
-    from app.utils.template_seeder import seed_templates
-
-    # テンプレートデータをシード
-    result = await seed_templates(db_session, clear_existing=True)
-
-    return result
-
-
 # =============================================================================
 # テストデータシーダー関連フィクスチャ
 # =============================================================================
@@ -401,34 +329,6 @@ def test_data_seeder(db_session):
 
 
 @pytest.fixture
-async def basic_test_data(test_data_seeder):
-    """基本的なテストデータセット（admin, owner, members, project）。
-
-    使用例:
-        async def test_example(basic_test_data):
-            admin = basic_test_data["admin"]
-            project = basic_test_data["project"]
-    """
-    return await test_data_seeder.seed_basic_dataset()
-
-
-@pytest.fixture
-async def admin_user(test_data_seeder):
-    """管理者ユーザーを作成。"""
-    user = await test_data_seeder.create_admin_user()
-    await test_data_seeder.db.commit()
-    return user
-
-
-@pytest.fixture
-async def regular_user(test_data_seeder):
-    """一般ユーザーを作成。"""
-    user = await test_data_seeder.create_user()
-    await test_data_seeder.db.commit()
-    return user
-
-
-@pytest.fixture
 async def project_with_owner(test_data_seeder):
     """オーナー付きプロジェクトを作成。
 
@@ -438,51 +338,3 @@ async def project_with_owner(test_data_seeder):
     project, owner = await test_data_seeder.create_project_with_owner()
     await test_data_seeder.db.commit()
     return project, owner
-
-
-@pytest.fixture
-async def project_with_members(test_data_seeder):
-    """複数メンバーを持つプロジェクトを作成。
-
-    Returns:
-        dict: {project, owner, moderator, member, viewer}
-    """
-    from app.models import ProjectRole
-
-    owner = await test_data_seeder.create_user(display_name="Owner")
-    project = await test_data_seeder.create_project(
-        name="Project with Members",
-        created_by=owner.id,
-    )
-
-    # 各ロールのメンバーを作成
-    await test_data_seeder.create_member(project=project, user=owner, role=ProjectRole.PROJECT_MANAGER)
-
-    moderator = await test_data_seeder.create_user(display_name="Moderator")
-    await test_data_seeder.create_member(project=project, user=moderator, role=ProjectRole.PROJECT_MODERATOR, added_by=owner.id)
-
-    member = await test_data_seeder.create_user(display_name="Member")
-    await test_data_seeder.create_member(project=project, user=member, role=ProjectRole.MEMBER, added_by=owner.id)
-
-    viewer = await test_data_seeder.create_user(display_name="Viewer")
-    await test_data_seeder.create_member(project=project, user=viewer, role=ProjectRole.VIEWER, added_by=owner.id)
-
-    await test_data_seeder.db.commit()
-
-    return {
-        "project": project,
-        "owner": owner,
-        "moderator": moderator,
-        "member": member,
-        "viewer": viewer,
-    }
-
-
-@pytest.fixture
-async def analysis_session_data(test_data_seeder):
-    """分析セッション用テストデータを作成。
-
-    Returns:
-        dict: {project, owner, validation, issue, session, snapshot}
-    """
-    return await test_data_seeder.seed_analysis_session_dataset()
