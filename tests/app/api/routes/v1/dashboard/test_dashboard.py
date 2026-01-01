@@ -1,6 +1,12 @@
 """ダッシュボードAPIのテスト。
 
-このモジュールは、ダッシュボードAPIエンドポイントのテストを含みます。
+このテストファイルは docs/specifications/13-testing/01-test-strategy.md に従い、
+Happy Pathとビジネスルールエラーのみをテストします。
+
+対応エンドポイント:
+    - GET /api/v1/dashboard/stats - 統計情報取得
+    - GET /api/v1/dashboard/activities - アクティビティ取得
+    - GET /api/v1/dashboard/charts - チャートデータ取得
 """
 
 import pytest
@@ -12,7 +18,7 @@ class TestDashboardStatsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_stats_success(self, client: AsyncClient, test_user, override_auth):
-        """認証済みユーザーで統計情報を取得。"""
+        """[test_dashboard-001] 認証済みユーザーで統計情報を取得。"""
         # Arrange
         override_auth(test_user)
 
@@ -30,7 +36,7 @@ class TestDashboardStatsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_stats_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは403エラー。"""
+        """[test_dashboard-002] 未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/stats")
 
@@ -39,7 +45,7 @@ class TestDashboardStatsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_stats_response_structure(self, client: AsyncClient, test_user, override_auth):
-        """レスポンス構造の検証。"""
+        """[test_dashboard-003] レスポンス構造の検証。"""
         # Arrange
         override_auth(test_user)
 
@@ -77,7 +83,7 @@ class TestDashboardActivitiesEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_activities_success(self, client: AsyncClient, test_user, override_auth):
-        """認証済みユーザーでアクティビティを取得。"""
+        """[test_dashboard-004] 認証済みユーザーでアクティビティを取得。"""
         # Arrange
         override_auth(test_user)
 
@@ -94,7 +100,7 @@ class TestDashboardActivitiesEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_activities_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは403エラー。"""
+        """[test_dashboard-005] 未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/activities")
 
@@ -103,7 +109,7 @@ class TestDashboardActivitiesEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_activities_with_pagination(self, client: AsyncClient, test_user, override_auth):
-        """ページネーションパラメータのテスト。"""
+        """[test_dashboard-006] ページネーションパラメータのテスト。"""
         # Arrange
         override_auth(test_user)
 
@@ -121,7 +127,7 @@ class TestDashboardActivitiesEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_activities_limit_validation(self, client: AsyncClient, test_user, override_auth):
-        """limitパラメータの上限検証。"""
+        """[test_dashboard-007] limitパラメータの上限検証。"""
         # Arrange
         override_auth(test_user)
 
@@ -142,7 +148,7 @@ class TestDashboardActivitiesEndpoint:
         test_project,
         override_auth,
     ):
-        """データがある状態でアクティビティを取得。"""
+        """[test_dashboard-008] データがある状態でアクティビティを取得。"""
         # Arrange
         override_auth(test_user)
 
@@ -161,7 +167,7 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_success(self, client: AsyncClient, test_user, override_auth):
-        """認証済みユーザーでチャートデータを取得。"""
+        """[test_dashboard-009] 認証済みユーザーでチャートデータを取得。"""
         # Arrange
         override_auth(test_user)
 
@@ -179,7 +185,7 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_unauthorized(self, client: AsyncClient):
-        """未認証ユーザーは403エラー。"""
+        """[test_dashboard-010] 未認証ユーザーは403エラー。"""
         # Act
         response = await client.get("/api/v1/dashboard/charts")
 
@@ -188,7 +194,7 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_with_days_parameter(self, client: AsyncClient, test_user, override_auth):
-        """daysパラメータのテスト。"""
+        """[test_dashboard-011] daysパラメータのテスト。"""
         # Arrange
         override_auth(test_user)
 
@@ -206,7 +212,7 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_days_validation(self, client: AsyncClient, test_user, override_auth):
-        """daysパラメータの上限検証。"""
+        """[test_dashboard-012] daysパラメータの上限検証。"""
         # Arrange
         override_auth(test_user)
 
@@ -221,7 +227,7 @@ class TestDashboardChartsEndpoint:
 
     @pytest.mark.asyncio
     async def test_get_charts_response_structure(self, client: AsyncClient, test_user, override_auth):
-        """チャートレスポンス構造の検証。"""
+        """[test_dashboard-013] チャートレスポンス構造の検証。"""
         # Arrange
         override_auth(test_user)
 

@@ -25,6 +25,7 @@ class TestRetryOnError:
     @pytest.mark.asyncio
     async def test_retry_and_success(self):
         """[test_reliability-001] リトライ後に成功することをテスト（Happy Path）。"""
+        # Arrange
         call_count = 0
 
         @retry_on_error(max_retries=3, delay=0.01, exceptions=(ValueError,))
@@ -35,14 +36,17 @@ class TestRetryOnError:
                 raise ValueError("一時的なエラー")
             return "success"
 
+        # Act
         result = await test_func()
 
+        # Assert
         assert result == "success"
         assert call_count == 3  # 3回目で成功
 
     @pytest.mark.asyncio
     async def test_all_retries_failed(self):
         """[test_reliability-002] すべてのリトライが失敗した場合にエラーが送出されることをテスト（Error Case）。"""
+        # Arrange
         call_count = 0
 
         @retry_on_error(max_retries=2, delay=0.01, exceptions=(ValueError,))
@@ -51,7 +55,9 @@ class TestRetryOnError:
             call_count += 1
             raise ValueError("永続的なエラー")
 
+        # Act
         with pytest.raises(ValueError, match="永続的なエラー"):
             await test_func()
 
+        # Assert
         assert call_count == 3  # 初回 + 2回リトライ

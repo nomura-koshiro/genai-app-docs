@@ -32,6 +32,7 @@ class TestDevAuthProductionValidation:
         セキュリティリスク防止のため、ENVIRONMENT=production かつ
         AUTH_MODE=development の組み合わせは禁止される。
         """
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -45,6 +46,7 @@ class TestDevAuthProductionValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValidationError,
                 match="Development authentication cannot be enabled in production environment",
@@ -53,6 +55,7 @@ class TestDevAuthProductionValidation:
 
     def test_production_with_production_auth_success(self):
         """[test_config-002] 本番環境で本番モード認証を使用する場合は正常に動作する。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -68,12 +71,16 @@ class TestDevAuthProductionValidation:
             },
             clear=True,
         ):
+            # Act
             settings = Settings()
+
+            # Assert
             assert settings.ENVIRONMENT == "production"
             assert settings.AUTH_MODE == "production"
 
     def test_development_with_dev_auth_success(self):
         """[test_config-003] 開発環境では開発モード認証を許可する。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -82,12 +89,16 @@ class TestDevAuthProductionValidation:
             },
             clear=True,
         ):
+            # Act
             settings = Settings()
+
+            # Assert
             assert settings.ENVIRONMENT == "development"
             assert settings.AUTH_MODE == "development"
 
     def test_staging_with_dev_auth_success(self):
         """[test_config-004] ステージング環境では開発モード認証を許可する。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -96,7 +107,10 @@ class TestDevAuthProductionValidation:
             },
             clear=True,
         ):
+            # Act
             settings = Settings()
+
+            # Assert
             assert settings.ENVIRONMENT == "staging"
             assert settings.AUTH_MODE == "development"
 
@@ -106,6 +120,7 @@ class TestSecretKeyValidation:
 
     def test_production_without_secret_key_raises_error(self):
         """[test_config-005] 本番環境でSECRET_KEYが未設定の場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -121,6 +136,7 @@ class TestSecretKeyValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="本番環境ではSECRET_KEYを設定する必要があります",
@@ -129,6 +145,7 @@ class TestSecretKeyValidation:
 
     def test_production_with_default_secret_key_raises_error(self):
         """[test_config-006] 本番環境でデフォルトSECRET_KEYを使用した場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -144,6 +161,7 @@ class TestSecretKeyValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="本番環境ではSECRET_KEYを設定する必要があります",
@@ -156,6 +174,7 @@ class TestAllowedOriginsValidation:
 
     def test_production_without_allowed_origins_raises_error(self):
         """[test_config-007] 本番環境でALLOWED_ORIGINSが未設定の場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -170,6 +189,7 @@ class TestAllowedOriginsValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="本番環境ではALLOWED_ORIGINSを明示的に設定する必要があります",
@@ -179,6 +199,7 @@ class TestAllowedOriginsValidation:
 
     def test_production_with_wildcard_cors_raises_error(self):
         """[test_config-008] 本番環境でワイルドカードCORSを使用した場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -194,6 +215,7 @@ class TestAllowedOriginsValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="本番環境ではワイルドカードCORS",
@@ -206,6 +228,7 @@ class TestAzureAdValidation:
 
     def test_production_auth_without_tenant_id_raises_error(self):
         """[test_config-009] 本番モード認証でAZURE_TENANT_IDが未設定の場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -220,6 +243,7 @@ class TestAzureAdValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="AUTH_MODE=productionの場合、AZURE_TENANT_IDが必要です",
@@ -228,6 +252,7 @@ class TestAzureAdValidation:
 
     def test_production_auth_without_client_id_raises_error(self):
         """[test_config-010] 本番モード認証でAZURE_CLIENT_IDが未設定の場合にエラーを発生させる。"""
+        # Arrange
         with patch.dict(
             os.environ,
             {
@@ -242,6 +267,7 @@ class TestAzureAdValidation:
             },
             clear=True,
         ):
+            # Act & Assert
             with pytest.raises(
                 ValueError,
                 match="AUTH_MODE=productionの場合、AZURE_CLIENT_IDが必要です",

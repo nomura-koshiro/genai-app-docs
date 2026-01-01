@@ -27,9 +27,11 @@ class TestCacheResult:
     @pytest.mark.asyncio
     async def test_cache_hit(self):
         """[test_data_access-001] キャッシュヒット時にキャッシュから返却されることをテスト。"""
+        # Arrange
         mock_cache = AsyncMock()
         mock_cache.get.return_value = {"cached": "data"}
 
+        # Act
         with patch("app.api.decorators.data_access.cache_manager", mock_cache):
 
             @cache_result(ttl=300, key_prefix="test")
@@ -38,6 +40,7 @@ class TestCacheResult:
 
             result = await test_func(123)
 
+            # Assert
             assert result == {"cached": "data"}
             assert mock_cache.get.called
             # キャッシュヒットなので関数は実行されない（dbデータは返らない）
@@ -45,9 +48,11 @@ class TestCacheResult:
     @pytest.mark.asyncio
     async def test_cache_miss_and_set(self):
         """[test_data_access-002] キャッシュミス時に関数実行後キャッシュに保存されることをテスト。"""
+        # Arrange
         mock_cache = AsyncMock()
         mock_cache.get.return_value = None  # キャッシュミス
 
+        # Act
         with patch("app.api.decorators.data_access.cache_manager", mock_cache):
 
             @cache_result(ttl=300, key_prefix="test")
@@ -56,6 +61,7 @@ class TestCacheResult:
 
             result = await test_func(123)
 
+            # Assert
             assert result == {"db": "data"}
             assert mock_cache.get.called
             assert mock_cache.set.called
@@ -71,6 +77,7 @@ class TestTransactional:
     @pytest.mark.asyncio
     async def test_commit_on_success(self):
         """[test_data_access-003] 正常終了時にコミットされることをテスト。"""
+        # Arrange
         mock_db = AsyncMock()
 
         class TestService:
@@ -82,8 +89,11 @@ class TestTransactional:
                 return "success"
 
         service = TestService()
+
+        # Act
         result = await service.test_method()
 
+        # Assert
         assert result == "success"
         assert mock_db.commit.called
         assert not mock_db.rollback.called
@@ -91,6 +101,7 @@ class TestTransactional:
     @pytest.mark.asyncio
     async def test_rollback_on_error(self):
         """[test_data_access-004] 例外発生時にロールバックされることをテスト。"""
+        # Arrange
         mock_db = AsyncMock()
 
         class TestService:
@@ -103,8 +114,10 @@ class TestTransactional:
 
         service = TestService()
 
+        # Act
         with pytest.raises(ValueError):
             await service.test_method()
 
+        # Assert
         assert not mock_db.commit.called
         assert mock_db.rollback.called
