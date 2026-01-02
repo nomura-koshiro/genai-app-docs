@@ -59,6 +59,14 @@ from app.api.core.dependencies import (
     RoleHistoryServiceDep,
     SuperuserAccountDep,
     UserServiceDep,
+    # 共通サービス
+    UserContextServiceDep,
+    # 通知サービス
+    UserNotificationServiceDep,
+    # 検索サービス
+    GlobalSearchServiceDep,
+    # ユーザー設定サービス
+    UserSettingsServiceDep,
     get_activity_tracking_service,
     get_admin_category_service,
     get_admin_dummy_chart_service,
@@ -78,6 +86,7 @@ from app.api.core.dependencies import (
     get_driver_tree_file_service,
     get_driver_tree_node_service,
     get_driver_tree_service,
+    get_global_search_service,
     get_notification_service,
     get_project_file_service,
     get_project_manager,
@@ -90,7 +99,10 @@ from app.api.core.dependencies import (
     get_statistics_service,
     get_support_tools_service,
     get_system_setting_service,
+    get_user_context_service,
+    get_user_notification_service,
     get_user_service,
+    get_user_settings_service,
     require_system_admin,
 )
 
@@ -140,6 +152,17 @@ __all__ = [
     "get_user_service",
     "RoleHistoryServiceDep",
     "get_role_history_service",
+    "UserSettingsServiceDep",
+    "get_user_settings_service",
+    # Common Service Dependencies
+    "UserContextServiceDep",
+    "get_user_context_service",
+    # Notification Service Dependencies
+    "UserNotificationServiceDep",
+    "get_user_notification_service",
+    # Search Service Dependencies
+    "GlobalSearchServiceDep",
+    "get_global_search_service",
     # Project Service Dependencies
     "ProjectServiceDep",
     "get_project_service",

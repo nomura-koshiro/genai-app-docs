@@ -3,6 +3,7 @@
 このモジュールは、DriverTreeCategoryモデルに特化したデータベース操作を提供します。
 """
 
+import uuid
 from typing import Any
 
 from sqlalchemy import select
@@ -15,7 +16,7 @@ from app.repositories.base import BaseRepository
 logger = get_logger(__name__)
 
 
-class DriverTreeCategoryRepository(BaseRepository[DriverTreeCategory, int]):
+class DriverTreeCategoryRepository(BaseRepository[DriverTreeCategory, uuid.UUID]):
     """DriverTreeCategoryモデル用のリポジトリクラス。
 
     BaseRepositoryの共通CRUD操作に加えて、
@@ -30,7 +31,7 @@ class DriverTreeCategoryRepository(BaseRepository[DriverTreeCategory, int]):
         """
         super().__init__(DriverTreeCategory, db)
 
-    async def get_grouped_by_category(self) -> dict[int, dict[str, Any]]:
+    async def get_grouped_by_category(self) -> dict[uuid.UUID, dict[str, Any]]:
         """業界分類でグループ化したカテゴリ情報を取得します。
 
         Returns:
@@ -79,7 +80,7 @@ class DriverTreeCategoryRepository(BaseRepository[DriverTreeCategory, int]):
         categories = result.scalars().all()
 
         # 業界分類ID → {業界分類名, 業界名ID → {業界名, ドライバー型}} の階層構造を構築
-        grouped: dict[int, dict[str, Any]] = {}
+        grouped: dict[uuid.UUID, dict[str, Any]] = {}
 
         for category in categories:
             category_id = category.category_id

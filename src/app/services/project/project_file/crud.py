@@ -445,24 +445,22 @@ class ProjectFileCrudService(ProjectFileServiceBase):
 
         # 既存の最新バージョンのis_latestをFalseに更新
         if latest_version and latest_version.is_latest:
-            await self.repository.update(latest_version.id, {"is_latest": False})
+            await self.repository.update(latest_version, is_latest=False)
 
         # 新規バージョンレコードを作成
-        new_version_data = {
-            "id": new_file_id,
-            "project_id": source_version.project_id,
-            "filename": source_version.filename,
-            "original_filename": source_version.original_filename,
-            "file_path": new_storage_path,
-            "file_size": source_version.file_size,
-            "mime_type": source_version.mime_type,
-            "version": new_version_number,
-            "parent_file_id": source_version.parent_file_id or source_version.id,
-            "is_latest": True,
-            "uploaded_by": requester_id,
-        }
-
-        new_version = await self.repository.create(ProjectFile(**new_version_data))
+        new_version = await self.repository.create(
+            id=new_file_id,
+            project_id=source_version.project_id,
+            filename=source_version.filename,
+            original_filename=source_version.original_filename,
+            file_path=new_storage_path,
+            file_size=source_version.file_size,
+            mime_type=source_version.mime_type,
+            version=new_version_number,
+            parent_file_id=source_version.parent_file_id or source_version.id,
+            is_latest=True,
+            uploaded_by=requester_id,
+        )
         await self.db.commit()
         await self.db.refresh(new_version)
 
@@ -478,8 +476,6 @@ class ProjectFileCrudService(ProjectFileServiceBase):
             new_version_id=new_version.id,
             new_version_number=new_version_number,
             restored_from_version=source_version.version,
-            comment=restore_comment,
-            created_at=new_version.uploaded_at,
         )
 
     @measure_performance

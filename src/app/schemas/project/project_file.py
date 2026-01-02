@@ -282,3 +282,65 @@ class ProjectFileVersionHistoryResponse(BaseCamelCaseModel):
     original_filename: str = Field(..., description="元のファイル名")
     total_versions: int = Field(..., description="総バージョン数")
     versions: list[ProjectFileVersionItem] = Field(..., description="バージョン履歴リスト")
+
+
+class VersionComparisonBasicInfo(BaseCamelCaseModel):
+    """バージョン比較用の基本情報。
+
+    Attributes:
+        version_number (int): バージョン番号
+        file_size (int): ファイルサイズ（バイト）
+        created_at (datetime): 作成日時
+    """
+
+    version_number: int = Field(..., description="バージョン番号")
+    file_size: int = Field(..., description="ファイルサイズ（バイト）")
+    created_at: datetime = Field(..., description="作成日時")
+
+
+class VersionComparisonInfo(BaseCamelCaseModel):
+    """バージョン比較情報。
+
+    Attributes:
+        size_change (int): サイズ変化（バイト）
+        size_change_percent (float): サイズ変化割合（%）
+    """
+
+    size_change: int = Field(..., description="サイズ変化（バイト）")
+    size_change_percent: float = Field(..., description="サイズ変化割合（%）")
+
+
+class FileVersionCompareResponse(BaseCamelCaseModel):
+    """ファイルバージョン比較レスポンス。
+
+    Attributes:
+        file_id (uuid.UUID): ファイルID
+        file_name (str): ファイル名
+        version1 (VersionComparisonBasicInfo): バージョン1情報
+        version2 (VersionComparisonBasicInfo): バージョン2情報
+        comparison (VersionComparisonInfo): 比較情報
+    """
+
+    file_id: uuid.UUID = Field(..., description="ファイルID")
+    file_name: str = Field(..., description="ファイル名")
+    version1: VersionComparisonBasicInfo = Field(..., description="バージョン1情報")
+    version2: VersionComparisonBasicInfo = Field(..., description="バージョン2情報")
+    comparison: VersionComparisonInfo = Field(..., description="比較情報")
+
+
+class FileVersionRestoreResponse(BaseCamelCaseModel):
+    """ファイルバージョン復元レスポンス。
+
+    Attributes:
+        file_id (uuid.UUID): 元のファイルID
+        new_version_id (uuid.UUID): 新しいバージョンのファイルID
+        new_version_number (int): 新しいバージョン番号
+        restored_from_version (int): 復元元のバージョン番号
+        message (str): 成功メッセージ
+    """
+
+    file_id: uuid.UUID = Field(..., description="元のファイルID")
+    new_version_id: uuid.UUID = Field(..., description="新しいバージョンのファイルID")
+    new_version_number: int = Field(..., description="新しいバージョン番号")
+    restored_from_version: int = Field(..., description="復元元のバージョン番号")
+    message: str = Field(default="バージョンを復元しました", description="成功メッセージ")
