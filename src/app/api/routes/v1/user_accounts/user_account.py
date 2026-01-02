@@ -36,11 +36,18 @@ import uuid
 
 from fastapi import APIRouter, Query, Request, status
 
-from app.api.core import CurrentUserAccountDep, RoleHistoryServiceDep, UserServiceDep, UserSettingsServiceDep
+from app.api.core import (
+    CurrentUserAccountDep,
+    RoleHistoryServiceDep,
+    UserContextServiceDep,
+    UserServiceDep,
+    UserSettingsServiceDep,
+)
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
+from app.schemas.common import UserContextResponse
 from app.schemas.user_account import RoleHistoryListResponse, UserSettingsResponse, UserSettingsUpdate
 
 logger = get_logger(__name__)
@@ -203,6 +210,55 @@ async def get_current_user(
     )
 
     return UserAccountResponse.model_validate(updated_user)
+
+
+@user_accounts_router.get(
+    "/user_account/me/context",
+    response_model=UserContextResponse,
+    summary="ユーザーコンテキスト取得",
+    description="""
+    現在の認証済みユーザーのコンテキスト情報を取得します。
+
+    ログイン直後およびページリロード時に呼び出され、
+    UIの動的表示に必要な情報をまとめて返却します。
+
+    **認証が必要です。**
+
+    レスポンス:
+        - UserContextResponse: ユーザーコンテキスト情報
+            - user: ユーザー基本情報
+            - permissions: 権限情報
+            - navigation: ナビゲーション情報
+            - notifications: 通知バッジ情報
+            - sidebar: サイドバー表示情報
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+    """,
+)
+@handle_service_errors
+async def get_user_context(
+    current_user: CurrentUserAccountDep,
+    context_service: UserContextServiceDep,
+) -> UserContextResponse:
+    """現在のユーザーのコンテキスト情報を取得します。"""
+    logger.info(
+        "ユーザーコンテキスト取得",
+        user_id=str(current_user.id),
+        action="get_user_context",
+    )
+
+    context = await context_service.get_user_context(current_user)
+
+    logger.info(
+        "ユーザーコンテキストを取得しました",
+        user_id=str(current_user.id),
+        project_count=context.navigation.project_count,
+        unread_count=context.notifications.unread_count,
+    )
+
+    return context
 
 
 @user_accounts_router.get(

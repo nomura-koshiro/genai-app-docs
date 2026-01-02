@@ -51,6 +51,13 @@ from app.models.enums import (
     SettingValueType,
 )
 
+# Notification models
+from app.models.notification import (
+    NotificationTypeEnum,
+    ReferenceTypeEnum,
+    UserNotification,
+)
+
 # Project models
 from app.models.project import Project, ProjectFile, ProjectMember, ProjectRole
 
@@ -119,6 +126,10 @@ __all__ = [
     "DriverTreeDataFrame",
     "DriverTreePolicy",
     "DriverTreeTemplate",
+    # Notification models
+    "NotificationTypeEnum",
+    "ReferenceTypeEnum",
+    "UserNotification",
     # Audit models
     "UserActivity",
     "AuditLog",

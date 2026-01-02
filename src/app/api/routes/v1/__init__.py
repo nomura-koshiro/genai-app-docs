@@ -39,6 +39,8 @@ from app.api.routes.v1.project import (
     project_members_router,
     projects_router,
 )
+from app.api.routes.v1.notifications import user_notifications_router
+from app.api.routes.v1.search import search_router
 from app.api.routes.v1.user_accounts import user_accounts_router
 
 __all__ = [
@@ -76,4 +78,8 @@ __all__ = [
     "projects_router",
     # User Account API
     "user_accounts_router",
+    # User Notifications API
+    "user_notifications_router",
+    # Search API
+    "search_router",
 ]
