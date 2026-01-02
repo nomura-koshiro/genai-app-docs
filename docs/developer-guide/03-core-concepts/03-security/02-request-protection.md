@@ -5,7 +5,9 @@
 ## 目次
 
 - [CORS設定](#cors設定)
+- [CSRF保護](#csrf保護)
 - [レート制限](#レート制限)
+- [X-Forwarded-For検証](#x-forwarded-for検証)
 - [入力バリデーション](#入力バリデーション)
 
 ---
@@ -55,6 +57,72 @@ if self.ENVIRONMENT == "production":
 ```
 
 **参照**: `src/app/core/config.py:317-324`
+
+---
+
+## CSRF保護
+
+**実装場所**: `src/app/api/middlewares/csrf.py`
+
+### 概要
+
+Cross-Site Request Forgery（CSRF）攻撃からアプリケーションを保護するミドルウェアです。
+
+### 防御戦略（二重防御）
+
+1. **SameSite Cookie属性**: `lax`または`strict`を設定し、クロスサイトリクエストでのCookie送信を制限
+2. **カスタムヘッダー検証**: ブラウザのSame-Origin Policyにより、クロスオリジンからカスタムヘッダーを付与することは不可能
+3. **トークン比較**: Cookie内のトークンとヘッダー内のトークンを比較
+
+### セキュリティモデル
+
+| リクエストタイプ | CSRF検証 | 理由 |
+|----------------|---------|------|
+| 安全なメソッド（GET, HEAD, OPTIONS, TRACE） | スキップ | 副作用のない操作 |
+| API認証（Bearer token） | スキップ | Cookieベース認証を使用しない |
+| Cookie認証 | **実施** | ブラウザが自動的にCookieを送信するため |
+
+### 使用方法
+
+```python
+from app.api.middlewares.csrf import CSRFMiddleware
+
+app.add_middleware(
+    CSRFMiddleware,
+    secret_key=settings.SECRET_KEY,
+    cookie_secure=not settings.DEBUG  # HTTPS環境ではTrue
+)
+```
+
+### フロントエンド実装
+
+フロントエンドは、CSRFトークンをCookieから取得し、リクエストヘッダーに含める必要があります：
+
+```javascript
+// Cookieからトークンを取得
+const csrfToken = document.cookie
+  .split('; ')
+  .find(row => row.startsWith('csrf_token='))
+  ?.split('=')[1];
+
+// リクエストヘッダーに含める
+fetch('/api/v1/resource', {
+  method: 'POST',
+  headers: {
+    'X-CSRF-Token': csrfToken,
+    'Content-Type': 'application/json'
+  },
+  credentials: 'include'  // Cookieを送信
+});
+```
+
+### Cookie設定
+
+| 属性 | 値 | 説明 |
+|-----|-----|------|
+| `Secure` | 本番環境で`True` | HTTPSでのみ送信 |
+| `HttpOnly` | `False` | JavaScriptからアクセス可能（トークン取得のため） |
+| `SameSite` | `lax` | 通常のナビゲーションは許可、フォーム送信は制限 |
 
 ---
 
@@ -142,6 +210,81 @@ if settings.DEBUG:
 if not cache_manager._redis:
     logger.warning("Redis not available, skipping rate limit")
     return await call_next(request)
+```
+
+---
+
+## X-Forwarded-For検証
+
+**実装場所**: `src/app/utils/request_helpers.py`, `src/app/core/config.py`
+
+### 概要
+
+リバースプロキシ経由のアクセスで、クライアントの実IPアドレスを安全に取得するための検証機能です。
+信頼できないプロキシからの`X-Forwarded-For`ヘッダー偽装攻撃を防止します。
+
+### 脅威シナリオ
+
+**攻撃シナリオ（X-Forwarded-For偽装）**:
+```
+攻撃者(8.8.8.8) → アプリケーション
+X-Forwarded-For: 203.0.113.10 (偽装)
+
+# 対策なしの場合: 偽装されたIP 203.0.113.10 を記録 ❌
+# 対策ありの場合: 実際のIP 8.8.8.8 を記録 ✅
+```
+
+### TRUSTED_PROXIES設定
+
+**実装場所**: `src/app/core/config.py`
+
+```python
+TRUSTED_PROXIES: list[str] = Field(
+    default=[
+        "10.0.0.0/8",      # プライベートネットワーク（クラスA）
+        "172.16.0.0/12",   # プライベートネットワーク（クラスB）
+        "192.168.0.0/16",  # プライベートネットワーク（クラスC）
+        "127.0.0.1/32",    # ローカルホスト
+    ],
+    description="信頼できるプロキシのCIDR（X-Forwarded-Forを信頼）",
+)
+```
+
+### 検証ロジック
+
+```python
+def get_client_ip(request: Request) -> str | None:
+    direct_ip = request.client.host if request.client else None
+
+    # 直接接続元が信頼できるプロキシでない場合はX-Forwarded-Forを無視
+    if direct_ip and not RequestHelper.is_trusted_proxy(direct_ip):
+        return direct_ip  # 偽装されたヘッダーを無視
+
+    # 信頼できるプロキシからのX-Forwarded-Forのみ使用
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        client_ip = forwarded_for.split(",")[0].strip()
+        if RequestHelper.is_valid_ip(client_ip):
+            return client_ip
+
+    return direct_ip
+```
+
+### 動作シナリオ
+
+| シナリオ | 直接接続元 | X-Forwarded-For | 記録されるIP |
+|---------|----------|-----------------|-------------|
+| 信頼できるプロキシ経由 | 192.168.1.1（信頼） | 203.0.113.10 | 203.0.113.10 ✅ |
+| 信頼できないプロキシ経由 | 8.8.8.8（非信頼） | 203.0.113.10（偽装） | 8.8.8.8 ✅ |
+| 直接アクセス | 203.0.113.30 | なし | 203.0.113.30 ✅ |
+
+### 本番環境での設定
+
+Azure App Service等で追加のプロキシを信頼する場合：
+
+```ini
+# .env.production
+TRUSTED_PROXIES='["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "127.0.0.1/32", "100.64.0.0/10"]'
 ```
 
 ---

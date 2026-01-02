@@ -5,6 +5,7 @@
 ## 目次
 
 - [データベースセキュリティ](#データベースセキュリティ)
+- [機密情報マスキング](#機密情報マスキング)
 - [ファイルアップロードセキュリティ](#ファイルアップロードセキュリティ)
 
 ---
@@ -158,6 +159,103 @@ async def get_db():
 - 例外発生時の自動ロールバック
 - データ整合性の維持
 - トランザクションリークの防止
+
+---
+
+## 機密情報マスキング
+
+**実装場所**: `src/app/utils/sensitive_data.py`, `src/app/api/middlewares/audit_log.py`
+
+### 概要
+
+監査ログ、操作履歴などで機密情報を自動的にマスクする機能です。
+パスワード、トークン、個人情報などがログに記録されることを防止します。
+
+### 機密情報パターン
+
+#### 完全一致キー（SENSITIVE_KEYS）- 33項目
+
+```python
+SENSITIVE_KEYS: set[str] = {
+    # 認証関連（13項目）
+    "password", "password_hash", "token", "secret", "api_key",
+    "apikey", "credential", "authorization", "access_token",
+    "refresh_token", "session_token", "bearer", "jwt",
+
+    # CSRF（4項目）
+    "csrf_token", "csrf", "xsrf_token", "xsrf",
+
+    # Azure/クラウド関連（6項目）
+    "client_secret", "client_id", "azure_client_secret",
+    "connection_string", "sas_token", "account_key",
+
+    # 暗号化関連（5項目）
+    "private_key", "secret_key", "encryption_key",
+    "signing_key", "master_key",
+
+    # 個人情報（7項目）
+    "ssn", "social_security_number", "credit_card",
+    "card_number", "cvv", "cvc", "bank_account",
+
+    # その他（4項目）
+    "pin", "otp", "session_id", "cookie",
+}
+```
+
+#### 正規表現パターン（SENSITIVE_PATTERNS）- 8パターン
+
+```python
+SENSITIVE_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"^password$|_password$|^password_|_password_", re.IGNORECASE),
+    re.compile(r"^secret$|_secret$|^secret_|_secret_", re.IGNORECASE),
+    re.compile(r"^token$|_token$|^token_|_token_", re.IGNORECASE),
+    re.compile(r"^key$|_key$|^key_|_key_", re.IGNORECASE),
+    re.compile(r"credential", re.IGNORECASE),
+    re.compile(r"bearer", re.IGNORECASE),
+    re.compile(r"^auth$|_auth$|^auth_|_auth_|oauth", re.IGNORECASE),
+    re.compile(r"^sas$|_sas$|^sas_|_sas_|shared_access", re.IGNORECASE),
+]
+```
+
+### 使用方法
+
+```python
+from app.utils.sensitive_data import is_sensitive_field, mask_sensitive_data
+
+# フィールド名の判定
+is_sensitive_field("password")       # True
+is_sensitive_field("user_password")  # True（パターンマッチ）
+is_sensitive_field("author")         # False（誤検知防止）
+is_sensitive_field("keyboard")       # False（誤検知防止）
+
+# データのマスキング
+data = {"username": "john", "password": "secret123"}
+masked = mask_sensitive_data(data)
+# {"username": "john", "password": "[REDACTED]"}
+```
+
+### 監査ログでの適用
+
+**実装場所**: `src/app/api/middlewares/audit_log.py`
+
+監査ログミドルウェアは、データベース変更を記録する際に自動的に機密情報をマスクします：
+
+```python
+def _get_changes_before(self, result: Any) -> dict[str, Any]:
+    return {
+        key: self._serialize_value(value)
+        for key, value in result.__dict__.items()
+        if not key.startswith("_") and not self._is_sensitive_field(key)
+    }
+```
+
+### 誤検知防止
+
+以下のような単語は機密情報として**検出されません**（意図的に除外）：
+
+- `author`（`auth`パターンにマッチしない）
+- `keyboard`（`key`パターンにマッチしない）
+- `monkey`（`key`パターンにマッチしない）
 
 ---
 

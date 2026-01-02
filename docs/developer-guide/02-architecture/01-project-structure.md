@@ -86,8 +86,7 @@ camp_backend/
 │       │   ├── core/       # APIコア機能
 │       │   │   ├── dependencies/ # 依存性注入（機能別に分割）
 │       │   │   └── exception_handlers.py
-│       │   ├── decorators/ # デコレータ
-│       │   ├── middlewares/# ミドルウェア
+│       │   ├── middlewares/# ミドルウェア（CSRF, レート制限, 監査ログ等）
 │       │   └── routes/     # エンドポイント定義
 │       │       ├── system/ # システムエンドポイント
 │       │       └── v1/     # API v1エンドポイント（機能別サブディレクトリ）
@@ -96,6 +95,7 @@ camp_backend/
 │       │   ├── cache.py        # キャッシュ管理
 │       │   ├── config.py       # アプリケーション設定
 │       │   ├── database.py     # データベース設定
+│       │   ├── decorators/     # デコレータ（横断的関心事）
 │       │   ├── exceptions.py   # 例外定義
 │       │   ├── lifespan.py     # ライフサイクル管理
 │       │   ├── logging.py      # ログ設定
@@ -305,7 +305,9 @@ APIレイヤーの基盤となる依存性注入と例外ハンドリング機�
 - カスタム例外を適切なHTTPレスポンスに変換
 - 統一的なエラーレスポンス形式を提供
 
-#### `api/decorators/` - デコレータ（横断的関心事）
+#### `core/decorators/` - デコレータ（横断的関心事）
+
+> **Note**: デコレータはAPI層に依存しないため、`core/`レイヤーに配置されています。
 
 関数やメソッドに追加機能を付与するデコレータを提供します。機能別に4つのモジュールに分割されています。
 
@@ -315,9 +317,8 @@ APIレイヤーの基盤となる依存性注入と例外ハンドリング機�
 - `@measure_performance`: 実行時間を測定
 - `@async_timeout`: タイムアウト制御
 
-**`security.py`** - セキュリティデコレータ:
+**`error_handling.py`** - エラーハンドリングデコレータ:
 
-- `@validate_permissions`: リソースベースの権限検証
 - `@handle_service_errors`: サービス層のエラーをHTTP例外に変換
 
 **`data_access.py`** - データアクセスデコレータ:
@@ -328,6 +329,14 @@ APIレイヤーの基盤となる依存性注入と例外ハンドリング機�
 **`reliability.py`** - 信頼性向上デコレータ:
 
 - `@retry_on_error`: エラー時の自動リトライ（Exponential Backoff）
+
+**インポート方法**:
+
+```python
+# 旧: from app.api.decorators import log_execution
+# 新:
+from app.core.decorators import log_execution, retry_on_error, transactional
+```
 
 #### `api/routes/v1/sample_agents.py` - AI Agentエンドポイント（API v1）
 

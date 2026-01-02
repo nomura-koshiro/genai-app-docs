@@ -319,6 +319,80 @@ def test_user_validation(test_case):
     assert result == test_case["expected"]
 ```
 
+### Parametrizeによるテスト効率化
+
+#### Before: 個別テスト関数（非効率）
+
+```python
+# ❌ 悪い例：同じロジックのテストを個別関数で記述
+def test_sensitive_field_password():
+    assert is_sensitive_field("password") == True
+
+def test_sensitive_field_api_key():
+    assert is_sensitive_field("api_key") == True
+
+def test_sensitive_field_token():
+    assert is_sensitive_field("token") == True
+
+def test_sensitive_field_author_not_sensitive():
+    assert is_sensitive_field("author") == False
+
+def test_sensitive_field_keyboard_not_sensitive():
+    assert is_sensitive_field("keyboard") == False
+```
+
+#### After: Parametrize化（効率的）
+
+```python
+# ✅ 良い例：1つのテスト関数で全ケースをカバー
+@pytest.mark.parametrize("field_name,expected", [
+    # 機密フィールド（完全一致）
+    ("password", True),
+    ("api_key", True),
+    ("token", True),
+    ("secret", True),
+    ("credential", True),
+    # 機密フィールド（パターンマッチ）
+    ("user_password", True),
+    ("access_token", True),
+    ("oauth_token", True),
+    # 非機密フィールド（誤検知防止）
+    ("author", False),
+    ("keyboard", False),
+    ("monkey", False),
+    ("username", False),
+], ids=[
+    "password", "api_key", "token", "secret", "credential",
+    "user_password_pattern", "access_token_pattern", "oauth_pattern",
+    "author_not_auth", "keyboard_not_key", "monkey_not_key", "username_safe"
+])
+def test_is_sensitive_field(field_name, expected):
+    """機密フィールド判定のパラメータ化テスト"""
+    assert is_sensitive_field(field_name) == expected
+```
+
+#### 例外テストのParametrize化
+
+```python
+from app.core.exceptions import (
+    ValidationError,
+    NotFoundError,
+    AuthenticationError,
+    AuthorizationError,
+)
+
+@pytest.mark.parametrize("exception_class,expected_status", [
+    (ValidationError, 422),
+    (NotFoundError, 404),
+    (AuthenticationError, 401),
+    (AuthorizationError, 403),
+], ids=["validation", "not_found", "authentication", "authorization"])
+def test_custom_exception_status_codes(exception_class, expected_status):
+    """カスタム例外のステータスコードをテスト"""
+    exc = exception_class("Test message")
+    assert exc.status_code == expected_status
+```
+
 ## 実践例：セキュリティ機能のテスト
 
 ### パスワードハッシュ化のテスト

@@ -1,6 +1,9 @@
 # デコレータ使用例
 
-このドキュメントでは、`app.api.decorators` モジュールで提供されるデコレータの使用例を示します。
+このドキュメントでは、`app.core.decorators` モジュールで提供されるデコレータの使用例を示します。
+
+> **Note**: デコレータは `app.api.decorators` から `app.core.decorators` に移動しました。
+> API層に依存しない横断的関心事として、coreレイヤーに配置されています。
 
 ## 目次
 
@@ -38,7 +41,7 @@
 関数の実行をログに記録します。
 
 ```python
-from app.api.decorators import log_execution
+from app.core.decorators import log_execution
 
 class PaymentService:
     @log_execution(level="info", include_args=True)
@@ -82,7 +85,7 @@ class SecurityService:
 非同期関数の実行時間を測定し、ログに記録します。
 
 ```python
-from app.api.decorators import measure_performance
+from app.core.decorators import measure_performance
 
 class SampleUserService:
     @measure_performance
@@ -125,7 +128,7 @@ class AnalyticsService:
 サービス層のエラーを統一的にHTTPExceptionに変換します。
 
 ```python
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from fastapi import APIRouter
 
 router = APIRouter()
@@ -158,7 +161,7 @@ async def create_user(
 データベーストランザクションを自動管理します。
 
 ```python
-from app.api.decorators import transactional
+from app.core.decorators import transactional
 
 class SampleUserService:
     def __init__(self, db: AsyncSession):
@@ -212,7 +215,7 @@ async def create_user(self, user_data: UserCreate):
 関数の結果をRedisにキャッシュします。
 
 ```python
-from app.api.decorators import cache_result
+from app.core.decorators import cache_result
 
 class SampleUserService:
     @cache_result(ttl=3600, key_prefix="user")
@@ -261,7 +264,7 @@ class SampleUserService:
 エラー時に自動リトライします（Exponential Backoff）。
 
 ```python
-from app.api.decorators import retry_on_error
+from app.core.decorators import retry_on_error
 
 class ExternalAPIService:
     @retry_on_error(
@@ -355,7 +358,7 @@ class ExternalAPIService:
 
 ```python
 from fastapi import APIRouter
-from app.api.decorators import handle_service_errors, measure_performance
+from app.core.decorators import handle_service_errors, measure_performance
 
 router = APIRouter()
 
