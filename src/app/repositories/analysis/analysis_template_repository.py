@@ -144,13 +144,16 @@ class AnalysisTemplateRepository:
         result = await self.db.execute(delete(AnalysisTemplate).where(AnalysisTemplate.id == template_id))
         await self.db.commit()
 
+        # TODO: SQLAlchemy 2.0の型スタブではResult型にrowcount属性が定義されていない
+        # DML操作（delete/update）後のresultは実際にはCursorResultでrowcount属性を持つ
+        deleted = (result.rowcount or 0) > 0  # type: ignore[attr-defined]
         logger.info(
             "分析テンプレート削除完了",
             template_id=str(template_id),
-            deleted=result.rowcount > 0,
+            deleted=deleted,
         )
 
-        return result.rowcount > 0
+        return deleted
 
     async def increment_usage_count(self, template_id: uuid.UUID) -> None:
         """使用回数をインクリメントします。
