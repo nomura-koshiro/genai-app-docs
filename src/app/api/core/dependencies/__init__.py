@@ -39,6 +39,24 @@
     ...     return {"email": current_user.email}
 """
 
+# 共通サービス依存性
+from app.api.core.dependencies.common import (
+    UserContextServiceDep,
+    get_user_context_service,
+)
+
+# 通知サービス依存性
+from app.api.core.dependencies.notification import (
+    UserNotificationServiceDep,
+    get_user_notification_service,
+)
+
+# 検索サービス依存性
+from app.api.core.dependencies.search import (
+    GlobalSearchServiceDep,
+    get_global_search_service,
+)
+
 # Admin管理サービス依存性
 from app.api.core.dependencies.admin import (
     AdminCategoryServiceDep,
@@ -139,8 +157,10 @@ from app.api.core.dependencies.project import (
 from app.api.core.dependencies.user_account import (
     RoleHistoryServiceDep,
     UserServiceDep,
+    UserSettingsServiceDep,
     get_role_history_service,
     get_user_service,
+    get_user_settings_service,
 )
 
 __all__ = [
@@ -149,6 +169,15 @@ __all__ = [
     # データベース依存性
     "DatabaseDep",
     "get_db",
+    # 共通サービス依存性
+    "UserContextServiceDep",
+    "get_user_context_service",
+    # 通知サービス依存性
+    "UserNotificationServiceDep",
+    "get_user_notification_service",
+    # 検索サービス依存性
+    "GlobalSearchServiceDep",
+    "get_global_search_service",
     # Admin管理サービス依存性
     "AdminCategoryServiceDep",
     "AdminDummyChartServiceDep",
@@ -186,8 +215,10 @@ __all__ = [
     # UserAccountサービス依存性
     "UserServiceDep",
     "RoleHistoryServiceDep",
+    "UserSettingsServiceDep",
     "get_user_service",
     "get_role_history_service",
+    "get_user_settings_service",
     # Projectサービス依存性
     "ProjectServiceDep",
     "ProjectFileServiceDep",

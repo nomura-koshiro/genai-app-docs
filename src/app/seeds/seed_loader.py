@@ -40,15 +40,18 @@ from app.models import (
     DriverTreeRelationship,
     DriverTreeRelationshipChild,
     NotificationTemplate,
+    NotificationTypeEnum,
     Project,
     ProjectFile,
     ProjectMember,
+    ReferenceTypeEnum,
     RoleHistory,
     SystemAlert,
     SystemAnnouncement,
     SystemSetting,
     UserAccount,
     UserActivity,
+    UserNotification,
     UserSession,
 )
 from app.models.project.project_member import ProjectRole
@@ -1001,6 +1004,38 @@ async def load_role_histories(session: AsyncSession) -> int:
     return count
 
 
+async def load_user_notifications(session: AsyncSession) -> int:
+    """ユーザー通知を読み込みます。"""
+    rows = read_csv(TRANSACTION_DIR / "user_notification.csv")
+    count = 0
+
+    for row in rows:
+        record_id = parse_uuid(row["id"])
+        existing = await session.execute(select(UserNotification).where(UserNotification.id == record_id))
+        if existing.scalar_one_or_none():
+            continue
+
+        record = UserNotification(
+            id=record_id,
+            user_id=parse_uuid(row["user_id"]),
+            type=NotificationTypeEnum(row["type"]),
+            title=row["title"],
+            message=row["message"],
+            icon=row.get("icon") or None,
+            link_url=row.get("link_url") or None,
+            reference_type=ReferenceTypeEnum(row["reference_type"]) if row.get("reference_type") else None,
+            reference_id=parse_uuid(row.get("reference_id", "")),
+            is_read=parse_bool(row["is_read"]),
+            read_at=parse_datetime(row.get("read_at", "")),
+            created_at=parse_datetime(row["created_at"]),
+            updated_at=parse_datetime(row["updated_at"]),
+        )
+        session.add(record)
+        count += 1
+
+    return count
+
+
 async def load_seed_data(session: AsyncSession) -> dict[str, int]:
     """すべてのシードデータを読み込みます。
 
@@ -1055,6 +1090,7 @@ async def load_seed_data(session: AsyncSession) -> dict[str, int]:
         ("system_announcement", load_system_announcements),
         ("user_session", load_user_sessions),
         ("role_history", load_role_histories),
+        ("user_notification", load_user_notifications),
     ]
 
     for table_name, loader in loaders:

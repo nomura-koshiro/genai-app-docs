@@ -51,6 +51,16 @@ from app.schemas.common.responses import (
     ProblemDetails,
 )
 
+# ユーザーコンテキストスキーマ
+from app.schemas.common.user_context import (
+    NavigationInfo,
+    NotificationBadgeInfo,
+    PermissionsInfo,
+    SidebarInfo,
+    UserContextInfo,
+    UserContextResponse,
+)
+
 __all__ = [
     # 共通レスポンス
     "MessageResponse",
@@ -81,4 +91,11 @@ __all__ = [
     # 統合
     "ListQueryParams",
     "FilterResult",
+    # ユーザーコンテキスト
+    "NavigationInfo",
+    "NotificationBadgeInfo",
+    "PermissionsInfo",
+    "SidebarInfo",
+    "UserContextInfo",
+    "UserContextResponse",
 ]

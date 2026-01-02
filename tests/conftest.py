@@ -338,3 +338,27 @@ async def project_with_owner(test_data_seeder):
     project, owner = await test_data_seeder.create_project_with_owner()
     await test_data_seeder.db.commit()
     return project, owner
+
+
+@pytest.fixture
+async def admin_user(test_data_seeder):
+    """テスト用管理者ユーザーを作成。
+
+    Returns:
+        UserAccount: システム管理者権限を持つユーザー
+    """
+    admin = await test_data_seeder.create_admin_user()
+    await test_data_seeder.db.commit()
+    return admin
+
+
+@pytest.fixture
+async def regular_user(test_data_seeder):
+    """テスト用一般ユーザーを作成。
+
+    Returns:
+        UserAccount: 一般権限を持つユーザー
+    """
+    user = await test_data_seeder.create_user(display_name="Regular User")
+    await test_data_seeder.db.commit()
+    return user

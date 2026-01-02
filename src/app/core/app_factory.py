@@ -61,8 +61,12 @@ from app.api.routes.v1 import (
     settings_router,
     statistics_router,
     support_tools_router,
+    # 検索
+    search_router,
     # ユーザー管理
     user_accounts_router,
+    # ユーザー通知
+    user_notifications_router,
 )
 from app.core.config import settings
 from app.core.lifespan import lifespan
@@ -269,6 +273,12 @@ def create_app() -> FastAPI:
 
     # Driver Tree API - ノード管理
     app.include_router(driver_tree_nodes_router, prefix="/api/v1", tags=["driver-tree-node"])
+
+    # 共通UI API - 検索
+    app.include_router(search_router, prefix="/api/v1", tags=["search"])
+
+    # 共通UI API - ユーザー通知
+    app.include_router(user_notifications_router, prefix="/api/v1", tags=["notification"])
 
     # 基本エンドポイントを登録
     app.include_router(root_router, tags=["root"])

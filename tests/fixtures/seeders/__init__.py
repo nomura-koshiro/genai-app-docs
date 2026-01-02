@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .analysis_session import AnalysisSessionSeederMixin
 from .base import TestDataSet
 from .driver_tree import DriverTreeSeederMixin
+from .notification import NotificationSeederMixin
 from .project_file import ProjectFileSeederMixin
 from .system_setting import SystemSettingSeederMixin
 
@@ -12,6 +13,7 @@ from .system_setting import SystemSettingSeederMixin
 class TestDataSeeder(
     AnalysisSessionSeederMixin,
     DriverTreeSeederMixin,
+    NotificationSeederMixin,
     ProjectFileSeederMixin,
     SystemSettingSeederMixin,
 ):
