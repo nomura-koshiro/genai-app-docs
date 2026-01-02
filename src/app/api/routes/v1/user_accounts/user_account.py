@@ -7,6 +7,7 @@
     - ユーザー一覧取得（GET /api/v1/user_account - 管理者のみ、ページネーション対応）
     - 現在のユーザー情報取得（GET /api/v1/user_account/me - 認証必須）
     - 特定ユーザー取得（GET /api/v1/user_account/{user_id} - 管理者のみ）
+    - ユーザーログアウト（POST /api/v1/user_account/logout - 認証必須）
     - ユーザー情報更新（PATCH /api/v1/user_account/me）
     - ユーザー削除（DELETE /api/v1/user_account/{user_id} - 管理者のみ）
 
@@ -43,7 +44,7 @@ from app.api.core import (
     UserServiceDep,
     UserSettingsServiceDep,
 )
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
@@ -334,6 +335,58 @@ async def get_user(
     )
 
     return UserAccountResponse.model_validate(user)
+
+
+# ================================================================================
+# POST Endpoints
+# ================================================================================
+
+
+@user_accounts_router.post(
+    "/user_account/logout",
+    status_code=status.HTTP_200_OK,
+    summary="ユーザーログアウト",
+    description="""
+    現在の認証済みユーザーをログアウトします。
+
+    **認証が必要です。**
+
+    このエンドポイントは以下の処理を行います:
+        - サーバーサイドでログアウトイベントを記録
+        - クライアントはこのレスポンスを受け取った後、
+          ローカルに保存されたトークンをクリアする必要があります
+
+    Note:
+        Azure AD認証の場合、実際のトークン無効化は
+        Azure AD側で行われます。このエンドポイントは
+        アプリケーション側のログアウト記録用です。
+
+    レスポンス:
+        - message: str - ログアウト成功メッセージ
+
+    ステータスコード:
+        - 200: ログアウト成功
+        - 401: 認証されていない
+    """,
+)
+@handle_service_errors
+async def logout(
+    request: Request,
+    current_user: CurrentUserAccountDep,
+) -> dict[str, str]:
+    """現在の認証済みユーザーをログアウトします。"""
+    # クライアントIPアドレスを取得
+    client_ip = request.client.host if request.client else None
+
+    logger.info(
+        "ユーザーログアウト",
+        user_id=str(current_user.id),
+        email=current_user.email,
+        client_ip=client_ip,
+        action="logout",
+    )
+
+    return {"message": "ログアウトしました"}
 
 
 # ================================================================================

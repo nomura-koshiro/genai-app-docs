@@ -16,39 +16,30 @@ from httpx import AsyncClient
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "params,expected_keys",
+    [
+        ({}, ["users", "projects", "storage", "api"]),
+        ({"period": "week"}, ["users", "projects"]),
+    ],
+    ids=["basic", "with_period"],
+)
 @pytest.mark.asyncio
-async def test_get_statistics_overview_success(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-001] 統計概要取得の成功ケース。"""
+async def test_get_statistics_overview_success(
+    client: AsyncClient, override_auth, admin_user, params, expected_keys
+):
+    """[test_statistics-001-002] 統計概要取得の成功ケース（基本/期間指定付き）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/statistics/overview")
+    response = await client.get("/api/v1/admin/statistics/overview", params=params)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "users" in data
-    assert "projects" in data
-    assert "storage" in data
-    assert "api" in data
-
-
-@pytest.mark.asyncio
-async def test_get_statistics_overview_with_period(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-002] 期間指定付き統計概要取得。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/statistics/overview", params={"period": "week"})
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    # レスポンスに必須フィールドが含まれていることを確認
-    assert "users" in data
-    assert "projects" in data
+    for key in expected_keys:
+        assert key in data
 
 
 # ================================================================================
@@ -56,34 +47,27 @@ async def test_get_statistics_overview_with_period(client: AsyncClient, override
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "params,expected_keys",
+    [
+        ({}, ["total", "activeUsers", "newUsers"]),
+        ({"days": 7}, ["activeUsers"]),
+    ],
+    ids=["basic", "with_days"],
+)
 @pytest.mark.asyncio
-async def test_get_user_statistics_success(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-003] ユーザー統計取得の成功ケース。"""
+async def test_get_user_statistics_success(
+    client: AsyncClient, override_auth, admin_user, params, expected_keys
+):
+    """[test_statistics-003-004] ユーザー統計取得の成功ケース（基本/日数指定付き）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/statistics/users")
+    response = await client.get("/api/v1/admin/statistics/users", params=params)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "total" in data
-    assert "activeUsers" in data
-    assert "newUsers" in data
-
-
-@pytest.mark.asyncio
-async def test_get_user_statistics_with_days(client: AsyncClient, override_auth, admin_user):
-    """[test_statistics-004] 日数指定付きユーザー統計取得。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/statistics/users", params={"days": 7})
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    # レスポンスにactiveUsersが含まれ、daysパラメータに応じたデータ数が返される
-    assert "activeUsers" in data
+    for key in expected_keys:
+        assert key in data

@@ -21,7 +21,7 @@ import uuid
 from fastapi import APIRouter, Body, Path, Query, status
 
 from app.api.core import AnalysisSessionServiceDep, ProjectMemberDep
-from app.api.decorators import async_timeout, handle_service_errors
+from app.core.decorators import async_timeout, handle_service_errors
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.schemas.analysis import (

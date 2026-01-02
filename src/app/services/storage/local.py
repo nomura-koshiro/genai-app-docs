@@ -8,7 +8,7 @@ from pathlib import Path
 import aiofiles
 import aiofiles.os
 
-from app.api.decorators import async_timeout
+from app.core.decorators import async_timeout
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 

@@ -17,7 +17,6 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-
 # ================================================================================
 # GET /api/v1/admin/audit-logs - 監査ログ一覧取得
 # ================================================================================
@@ -66,66 +65,35 @@ async def test_list_audit_logs_with_filters(client: AsyncClient, override_auth, 
 
 
 # ================================================================================
-# GET /api/v1/admin/audit-logs/changes - データ変更履歴取得
+# GET /api/v1/admin/audit-logs/{type} - 各種監査ログ取得
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "endpoint,expected_keys",
+    [
+        ("/api/v1/admin/audit-logs/changes", ["items", "total"]),
+        ("/api/v1/admin/audit-logs/access", ["items", "total"]),
+        ("/api/v1/admin/audit-logs/security", ["items", "total"]),
+    ],
+    ids=["data_changes", "access_logs", "security_events"],
+)
 @pytest.mark.asyncio
-async def test_list_data_changes_success(client: AsyncClient, override_auth, admin_user):
-    """[test_audit_logs-003] データ変更履歴取得の成功ケース。"""
+async def test_list_specific_audit_logs_success(
+    client: AsyncClient, override_auth, admin_user, endpoint, expected_keys
+):
+    """[test_audit_logs-003-005] 各種監査ログ取得の成功ケース（データ変更/アクセス/セキュリティ）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/audit-logs/changes")
+    response = await client.get(endpoint)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "items" in data
-    assert "total" in data
-
-
-# ================================================================================
-# GET /api/v1/admin/audit-logs/access - アクセスログ取得
-# ================================================================================
-
-
-@pytest.mark.asyncio
-async def test_list_access_logs_success(client: AsyncClient, override_auth, admin_user):
-    """[test_audit_logs-004] アクセスログ取得の成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/audit-logs/access")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "items" in data
-    assert "total" in data
-
-
-# ================================================================================
-# GET /api/v1/admin/audit-logs/security - セキュリティイベント取得
-# ================================================================================
-
-
-@pytest.mark.asyncio
-async def test_list_security_events_success(client: AsyncClient, override_auth, admin_user):
-    """[test_audit_logs-005] セキュリティイベント取得の成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/audit-logs/security")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "items" in data
-    assert "total" in data
+    for key in expected_keys:
+        assert key in data
 
 
 # ================================================================================
@@ -155,31 +123,26 @@ async def test_get_resource_history_success(client: AsyncClient, override_auth, 
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "export_format,expected_content_type",
+    [
+        ("csv", "text/csv; charset=utf-8"),
+        ("json", "application/json"),
+    ],
+    ids=["csv_format", "json_format"],
+)
 @pytest.mark.asyncio
-async def test_export_audit_logs_csv_success(client: AsyncClient, override_auth, admin_user):
-    """[test_audit_logs-007] 監査ログCSVエクスポートの成功ケース。"""
+async def test_export_audit_logs_success(
+    client: AsyncClient, override_auth, admin_user, export_format, expected_content_type
+):
+    """[test_audit_logs-007-008] 監査ログエクスポートの成功ケース（CSV/JSON）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/audit-logs/export", params={"format": "csv"})
+    response = await client.get("/api/v1/admin/audit-logs/export", params={"format": export_format})
 
     # Assert
     assert response.status_code == 200
-    assert response.headers["content-type"] == "text/csv; charset=utf-8"
-    assert "attachment" in response.headers["content-disposition"]
-
-
-@pytest.mark.asyncio
-async def test_export_audit_logs_json_success(client: AsyncClient, override_auth, admin_user):
-    """[test_audit_logs-008] 監査ログJSONエクスポートの成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/audit-logs/export", params={"format": "json"})
-
-    # Assert
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "application/json"
+    assert response.headers["content-type"] == expected_content_type
     assert "attachment" in response.headers["content-disposition"]

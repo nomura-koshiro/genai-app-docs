@@ -7,6 +7,7 @@
 - [エラーハンドリング](#エラーハンドリング)
 - [環境設定管理](#環境設定管理)
 - [セキュリティヘッダー](#セキュリティヘッダー)
+- [依存関係セキュリティスキャン](#依存関係セキュリティスキャン)
 
 ---
 
@@ -181,6 +182,82 @@ app.add_middleware(SecurityHeadersMiddleware)
 ```
 
 CSPを有効化する場合は、フロントエンドの要件に応じてポリシーを調整してください。
+
+---
+
+## 依存関係セキュリティスキャン
+
+**実装場所**: `.azure/pipelines/templates/build-template.yml`, `pyproject.toml`
+
+### 概要
+
+pip-auditを使用して、Pythonパッケージの既知の脆弱性を検出します。
+CI/CDパイプラインとローカル開発の両方で実行可能です。
+
+### pip-auditとは
+
+pip-auditは、Pythonパッケージの既知の脆弱性をPyPI Advisory Database（およびOSV）と照合してチェックするツールです。
+
+### ローカルでの実行
+
+```bash
+# インストール（開発依存に含まれています）
+pip install pip-audit
+
+# スキャン実行
+pip-audit
+
+# 詳細出力
+pip-audit --desc
+
+# JSON形式で出力
+pip-audit --format json
+```
+
+### CI/CDでの実行
+
+Azure Pipelinesで自動実行されます：
+
+```yaml
+# .azure/pipelines/templates/build-template.yml
+- script: |
+    pip-audit --desc
+  displayName: 'Security: pip-audit scan'
+  continueOnError: true  # 脆弱性が見つかってもビルドは継続
+```
+
+### 脆弱性が見つかった場合
+
+```
+Found 2 known vulnerabilities in 1 package
+
+Name       Version  ID                   Fix Versions
+---------- -------- -------------------- ------------
+requests   2.25.1   GHSA-xxx-xxx-xxx     2.31.0
+```
+
+**対応手順**:
+1. 該当パッケージを安全なバージョンにアップデート
+2. `pip-audit --fix`で自動修正を試行
+3. 互換性の問題がある場合は、リスク評価を行い対応を決定
+
+### pyproject.tomlでの設定
+
+```toml
+[project.optional-dependencies]
+dev = [
+    "pip-audit>=2.6.0",
+    # その他の開発依存...
+]
+```
+
+### 推奨運用
+
+| 環境 | 実行タイミング | 失敗時の動作 |
+|-----|--------------|------------|
+| ローカル開発 | コミット前（任意） | 警告表示 |
+| CI/CD | プルリクエスト時 | 警告表示（ビルド継続） |
+| 本番デプロイ前 | 手動確認 | 重大な脆弱性は対応必須 |
 
 ---
 

@@ -197,12 +197,22 @@ class TestDashboardServiceGetActivities:
         assert len(role_activities) > 0
         assert role_activities[0].action == "grant"
 
+    @pytest.mark.parametrize(
+        "test_type,project_count,skip,limit",
+        [
+            ("pagination", 5, 0, 2),
+            ("sorted", 3, 0, 10),
+        ],
+        ids=["pagination", "sorted_by_date"],
+    )
     @pytest.mark.asyncio
-    async def test_get_activities_pagination(self, db_session, test_data_seeder):
-        """[test_dashboard-008] ページネーションのテスト。"""
+    async def test_get_activities_pagination_and_sorting(
+        self, db_session, test_data_seeder, test_type: str, project_count: int, skip: int, limit: int
+    ):
+        """[test_dashboard-008/009] ページネーションとソートのテスト。"""
         # Arrange
         user = await test_data_seeder.create_user(display_name="TestUser")
-        for i in range(5):
+        for i in range(project_count):
             await test_data_seeder.create_project(
                 name=f"Project{i}",
                 created_by=user.id,
@@ -211,37 +221,22 @@ class TestDashboardServiceGetActivities:
 
         service = DashboardService(db_session)
 
-        # Act
-        page1 = await service.get_activities(skip=0, limit=2)
-        page2 = await service.get_activities(skip=2, limit=2)
+        # Act & Assert
+        if test_type == "pagination":
+            page1 = await service.get_activities(skip=0, limit=2)
+            page2 = await service.get_activities(skip=2, limit=2)
 
-        # Assert
-        assert len(page1.activities) <= 2
-        assert len(page2.activities) <= 2
-        # 異なるアクティビティが返されていることを確認
-        if page1.activities and page2.activities:
-            page1_ids = {a.id for a in page1.activities}
-            page2_ids = {a.id for a in page2.activities}
-            assert page1_ids.isdisjoint(page2_ids)
+            assert len(page1.activities) <= 2
+            assert len(page2.activities) <= 2
+            # 異なるアクティビティが返されていることを確認
+            if page1.activities and page2.activities:
+                page1_ids = {a.id for a in page1.activities}
+                page2_ids = {a.id for a in page2.activities}
+                assert page1_ids.isdisjoint(page2_ids)
+        else:  # sorted
+            activities = await service.get_activities(skip=skip, limit=limit)
 
-    @pytest.mark.asyncio
-    async def test_get_activities_sorted_by_date(self, db_session, test_data_seeder):
-        """[test_dashboard-009] 日時順でソートされていることを確認。"""
-        # Arrange
-        user = await test_data_seeder.create_user(display_name="TestUser")
-        for i in range(3):
-            await test_data_seeder.create_project(
-                name=f"Project{i}",
-                created_by=user.id,
-            )
-        await db_session.commit()
-
-        service = DashboardService(db_session)
-
-        # Act
-        activities = await service.get_activities(skip=0, limit=10)
-
-        # Assert
-        if len(activities.activities) > 1:
-            for i in range(len(activities.activities) - 1):
-                assert activities.activities[i].created_at >= activities.activities[i + 1].created_at
+            # 日時順でソートされていることを確認
+            if len(activities.activities) > 1:
+                for i in range(len(activities.activities) - 1):
+                    assert activities.activities[i].created_at >= activities.activities[i + 1].created_at

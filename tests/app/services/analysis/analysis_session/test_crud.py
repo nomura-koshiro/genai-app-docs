@@ -35,58 +35,50 @@ from tests.fixtures.excel_helper import create_test_excel_bytes
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "setup_type,skip,limit,expected_count",
+    [
+        ("with_session", 0, 100, 1),
+        ("empty", 0, 100, 0),
+        ("multiple_sessions", 0, 3, 3),
+    ],
+    ids=["success", "empty", "pagination"],
+)
 @pytest.mark.asyncio
-async def test_list_sessions_success(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-001] セッション一覧取得の成功ケース。"""
+async def test_list_sessions(
+    db_session: AsyncSession,
+    test_data_seeder,
+    setup_type: str,
+    skip: int,
+    limit: int,
+    expected_count: int,
+):
+    """[test_analysis_session-001] セッション一覧取得のテスト。"""
     # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
+    if setup_type == "with_session":
+        data = await test_data_seeder.seed_analysis_session_dataset()
+        project = data["project"]
+    elif setup_type == "empty":
+        project, _ = await test_data_seeder.create_project_with_owner()
+        await test_data_seeder.db.commit()
+    else:  # multiple_sessions
+        project, owner = await test_data_seeder.create_project_with_owner()
+        validation = await test_data_seeder.create_validation_master()
+        issue = await test_data_seeder.create_issue_master(validation=validation)
+        for _ in range(5):
+            session = await test_data_seeder.create_analysis_session(project=project, creator=owner, issue=issue)
+            await test_data_seeder.create_analysis_snapshot(session=session)
+        await test_data_seeder.db.commit()
+
     service = AnalysisSessionService(db_session)
 
     # Act
-    sessions = await service.list_sessions(project_id=project.id)
+    sessions = await service.list_sessions(project_id=project.id, skip=skip, limit=limit)
 
     # Assert
-    assert len(sessions) == 1
-    assert sessions[0].project_id == project.id
-
-
-@pytest.mark.asyncio
-async def test_list_sessions_empty(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-002] セッションがない場合は空リストを返す。"""
-    # Arrange
-    project, _ = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-    service = AnalysisSessionService(db_session)
-
-    # Act
-    sessions = await service.list_sessions(project_id=project.id)
-
-    # Assert
-    assert len(sessions) == 0
-
-
-@pytest.mark.asyncio
-async def test_list_sessions_with_pagination(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-003] ページネーション付きセッション一覧取得。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    validation = await test_data_seeder.create_validation_master()
-    issue = await test_data_seeder.create_issue_master(validation=validation)
-
-    # 複数セッションを作成
-    for _ in range(5):
-        session = await test_data_seeder.create_analysis_session(project=project, creator=owner, issue=issue)
-        await test_data_seeder.create_analysis_snapshot(session=session)
-
-    await test_data_seeder.db.commit()
-    service = AnalysisSessionService(db_session)
-
-    # Act
-    sessions = await service.list_sessions(project_id=project.id, skip=0, limit=3)
-
-    # Assert
-    assert len(sessions) == 3
+    assert len(sessions) == expected_count
+    if expected_count > 0:
+        assert sessions[0].project_id == project.id
 
 
 @pytest.mark.asyncio
@@ -140,32 +132,39 @@ async def test_get_session_success(db_session: AsyncSession, test_data_seeder):
     assert result.project_id == project.id
 
 
+@pytest.mark.parametrize(
+    "method_name,setup_type",
+    [
+        ("get_session", "empty_project"),
+        ("get_session", "wrong_project"),
+        ("delete_session", "empty_project"),
+    ],
+    ids=["get_not_found", "get_wrong_project", "delete_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_session_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-006] 存在しないセッションの取得でNotFoundError。"""
+async def test_session_not_found_error(
+    db_session: AsyncSession,
+    test_data_seeder,
+    method_name: str,
+    setup_type: str,
+):
+    """[test_analysis_session-006] セッションNotFoundエラーケース。"""
     # Arrange
-    project, _ = await test_data_seeder.create_project_with_owner()
+    if setup_type == "empty_project":
+        project, _ = await test_data_seeder.create_project_with_owner()
+        session_id = uuid.uuid4()
+    else:  # wrong_project
+        data = await test_data_seeder.seed_analysis_session_dataset()
+        session_id = data["session"].id
+        project, _ = await test_data_seeder.create_project_with_owner()
+
     await test_data_seeder.db.commit()
     service = AnalysisSessionService(db_session)
 
     # Act & Assert
     with pytest.raises(NotFoundError):
-        await service.get_session(project_id=project.id, session_id=uuid.uuid4())
-
-
-@pytest.mark.asyncio
-async def test_get_session_wrong_project(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-007] 異なるプロジェクトIDでのセッション取得でNotFoundError。"""
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    session = data["session"]
-    other_project, _ = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-    service = AnalysisSessionService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_session(project_id=other_project.id, session_id=session.id)
+        method = getattr(service, method_name)
+        await method(project_id=project.id, session_id=session_id)
 
 
 @pytest.mark.asyncio
@@ -185,19 +184,6 @@ async def test_delete_session_success(db_session: AsyncSession, test_data_seeder
     # Assert - 削除されたことを確認
     with pytest.raises(NotFoundError):
         await service.get_session(project_id=project.id, session_id=session_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_session_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-009] 存在しないセッションの削除でNotFoundError。"""
-    # Arrange
-    project, _ = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-    service = AnalysisSessionService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.delete_session(project_id=project.id, session_id=uuid.uuid4())
 
 
 # ================================================================================
@@ -229,17 +215,60 @@ async def test_list_session_files_success(db_session: AsyncSession, test_data_se
     assert files[0].sheet_name == "TestSheet"
 
 
+@pytest.mark.parametrize(
+    "method_name,needs_file_id",
+    [
+        ("list_session_files", False),
+        ("upload_session_file", False),
+        ("update_file_config", True),
+    ],
+    ids=["list_files_not_found", "upload_session_not_found", "update_file_not_found"],
+)
 @pytest.mark.asyncio
-async def test_list_session_files_session_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-011] 存在しないセッションでのファイル一覧取得でNotFoundError。"""
+async def test_file_operation_not_found_error(
+    db_session: AsyncSession,
+    test_data_seeder,
+    method_name: str,
+    needs_file_id: bool,
+):
+    """[test_analysis_session-011] ファイル操作のNotFoundエラー。"""
     # Arrange
-    project, _ = await test_data_seeder.create_project_with_owner()
+    if needs_file_id:
+        # update_file_configの場合
+        data = await test_data_seeder.seed_analysis_session_dataset()
+        project = data["project"]
+        session = data["session"]
+        file_id = uuid.uuid4()
+    else:
+        # list_session_filesやupload_session_fileの場合
+        project, owner = await test_data_seeder.create_project_with_owner()
+        if method_name == "upload_session_file":
+            project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+        session_id = uuid.uuid4()
+
     await test_data_seeder.db.commit()
     service = AnalysisSessionService(db_session)
 
     # Act & Assert
     with pytest.raises(NotFoundError):
-        await service.list_session_files(project_id=project.id, session_id=uuid.uuid4())
+        method = getattr(service, method_name)
+        if needs_file_id:
+            from app.schemas.analysis import AnalysisFileUpdate
+            await method(
+                project_id=project.id,
+                session_id=session.id,
+                file_id=file_id,
+                config_data=AnalysisFileUpdate(sheet_name="UpdatedSheet"),
+            )
+        elif method_name == "upload_session_file":
+            from app.schemas.analysis import AnalysisFileCreate
+            await method(
+                project_id=project.id,
+                session_id=session_id,
+                file_create=AnalysisFileCreate(project_file_id=project_file.id),
+            )
+        else:
+            await method(project_id=project.id, session_id=session_id)
 
 
 @pytest.mark.asyncio
@@ -267,22 +296,6 @@ async def test_upload_session_file_success(db_session: AsyncSession, test_data_s
     # Assert
     assert result.id is not None
     assert isinstance(result.config_list, list)
-
-
-@pytest.mark.asyncio
-async def test_upload_session_file_session_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-013] 存在しないセッションへのファイルアップロードでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
-    await test_data_seeder.db.commit()
-
-    service = AnalysisSessionService(db_session)
-    file_create = AnalysisFileCreate(project_file_id=project_file.id)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.upload_session_file(project_id=project.id, session_id=uuid.uuid4(), file_create=file_create)
 
 
 @pytest.mark.asyncio
@@ -320,26 +333,6 @@ async def test_update_file_config_success(db_session: AsyncSession, test_data_se
     # Assert
     assert result.sheet_name == "Sheet1"
     assert result.axis_config == {"axis1": "年度", "axis2": "部門"}
-
-
-@pytest.mark.asyncio
-async def test_update_file_config_file_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_analysis_session-015] 存在しないファイルの設定更新でNotFoundError。"""
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
-    session = data["session"]
-    service = AnalysisSessionService(db_session)
-    config_data = AnalysisFileUpdate(sheet_name="UpdatedSheet")
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.update_file_config(
-            project_id=project.id,
-            session_id=session.id,
-            file_id=uuid.uuid4(),
-            config_data=config_data,
-        )
 
 
 @pytest.mark.asyncio

@@ -13,18 +13,27 @@ from app.services.project.project_file.download import ProjectFileDownloadServic
 class TestProjectFileDownloadService:
     """ProjectFileDownloadServiceのテストクラス。"""
 
+    @pytest.mark.parametrize(
+        "role,file_size",
+        [
+            (ProjectRole.MEMBER, 1024),
+            (ProjectRole.VIEWER, 2048),
+            (ProjectRole.PROJECT_MANAGER, 4096),
+        ],
+        ids=["member_download", "viewer_download", "project_manager_download"],
+    )
     @pytest.mark.asyncio
-    async def test_download_file_success_as_member(self, db_session, mock_storage_service):
-        """[test_download-001] MEMBERロールでのファイルダウンロード成功テスト。"""
+    async def test_download_file_success_by_role(self, db_session, mock_storage_service, role, file_size):
+        """[test_download-001] 異なるロールでのファイルダウンロード成功テスト。"""
         # Arrange
         user = UserAccount(
-            azure_oid="download-member-oid",
-            email="downloadmember@company.com",
-            display_name="Download Member",
+            azure_oid="download-role-oid",
+            email="downloadrole@company.com",
+            display_name="Download Role Test",
         )
         project = Project(
-            name="Download Project",
-            code="DOWNLOAD-001",
+            name="Download Role Project",
+            code="DOWNLOAD-ROLE",
         )
         db_session.add(user)
         db_session.add(project)
@@ -32,11 +41,11 @@ class TestProjectFileDownloadService:
         await db_session.refresh(user)
         await db_session.refresh(project)
 
-        # MEMBERとして追加
+        # 指定されたロールでメンバーとして追加
         member = ProjectMember(
             project_id=project.id,
             user_id=user.id,
-            role=ProjectRole.MEMBER,
+            role=role,
         )
         db_session.add(member)
         await db_session.commit()
@@ -50,7 +59,7 @@ class TestProjectFileDownloadService:
             filename="test.pdf",
             original_filename="test.pdf",
             file_path=storage_path,
-            file_size=1024,
+            file_size=file_size,
             mime_type="application/pdf",
             uploaded_by=user.id,
         )
@@ -59,122 +68,6 @@ class TestProjectFileDownloadService:
 
         # ストレージモック設定
         expected_temp_path = "/tmp/downloaded_test.pdf"
-        mock_storage_service.exists.return_value = True
-        mock_storage_service.download_to_temp_file.return_value = expected_temp_path
-
-        # Act
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileDownloadService(db_session)
-            result = await service.download_file(file_id, user.id)
-
-        # Assert
-        assert result == expected_temp_path
-        mock_storage_service.exists.assert_called_once_with("", storage_path)
-        mock_storage_service.download_to_temp_file.assert_called_once_with("", storage_path)
-
-    @pytest.mark.asyncio
-    async def test_download_file_success_as_viewer(self, db_session, mock_storage_service):
-        """[test_download-002] VIEWERロールでのファイルダウンロード成功テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="download-viewer-oid",
-            email="downloadviewer@company.com",
-            display_name="Download Viewer",
-        )
-        project = Project(
-            name="Download Viewer Project",
-            code="DOWNLOAD-002",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # VIEWERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.VIEWER,
-        )
-        db_session.add(member)
-        await db_session.commit()
-
-        # ファイルレコードを作成
-        file_id = uuid.uuid4()
-        storage_path = f"projects/{project.id}/{file_id}_viewer_test.pdf"
-        project_file = ProjectFile(
-            id=file_id,
-            project_id=project.id,
-            filename="viewer_test.pdf",
-            original_filename="viewer_test.pdf",
-            file_path=storage_path,
-            file_size=2048,
-            mime_type="application/pdf",
-            uploaded_by=user.id,
-        )
-        db_session.add(project_file)
-        await db_session.commit()
-
-        # ストレージモック設定
-        expected_temp_path = "/tmp/downloaded_viewer_test.pdf"
-        mock_storage_service.exists.return_value = True
-        mock_storage_service.download_to_temp_file.return_value = expected_temp_path
-
-        # Act
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileDownloadService(db_session)
-            result = await service.download_file(file_id, user.id)
-
-        # Assert
-        assert result == expected_temp_path
-
-    @pytest.mark.asyncio
-    async def test_download_file_success_as_project_manager(self, db_session, mock_storage_service):
-        """[test_download-003] PROJECT_MANAGERロールでのファイルダウンロード成功テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="download-manager-oid",
-            email="downloadmanager@company.com",
-            display_name="Download Manager",
-        )
-        project = Project(
-            name="Download Manager Project",
-            code="DOWNLOAD-003",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # PROJECT_MANAGERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.PROJECT_MANAGER,
-        )
-        db_session.add(member)
-        await db_session.commit()
-
-        # ファイルレコードを作成
-        file_id = uuid.uuid4()
-        storage_path = f"projects/{project.id}/{file_id}_manager_test.pdf"
-        project_file = ProjectFile(
-            id=file_id,
-            project_id=project.id,
-            filename="manager_test.pdf",
-            original_filename="manager_test.pdf",
-            file_path=storage_path,
-            file_size=4096,
-            mime_type="application/pdf",
-            uploaded_by=user.id,
-        )
-        db_session.add(project_file)
-        await db_session.commit()
-
-        # ストレージモック設定
-        expected_temp_path = "/tmp/downloaded_manager_test.pdf"
         mock_storage_service.exists.return_value = True
         mock_storage_service.download_to_temp_file.return_value = expected_temp_path
 

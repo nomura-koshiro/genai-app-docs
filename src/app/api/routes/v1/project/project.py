@@ -32,7 +32,7 @@ import uuid
 from fastapi import APIRouter, Query, status
 
 from app.api.core import CurrentUserAccountDep, ProjectServiceDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.schemas import ProjectCreate, ProjectDetailResponse, ProjectListResponse, ProjectResponse, ProjectUpdate

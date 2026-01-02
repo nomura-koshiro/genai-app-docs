@@ -601,6 +601,41 @@ pytest -x
 pytest --maxfail=3
 ```
 
+### 6. Parametrizeによるテスト効率化
+
+`@pytest.mark.parametrize`を活用することで、テストコードの重複を削減し、保守性を向上させます。
+
+```python
+# ❌ Before: 個別のテスト関数（保守困難）
+def test_validate_email_valid():
+    assert validate_email("user@example.com") == True
+
+def test_validate_email_invalid():
+    assert validate_email("invalid") == False
+
+def test_validate_email_no_domain():
+    assert validate_email("user@") == False
+
+
+# ✅ After: Parametrize化（保守容易）
+@pytest.mark.parametrize("email,expected", [
+    ("user@example.com", True),
+    ("invalid", False),
+    ("user@", False),
+    ("@example.com", False),
+], ids=["valid", "no_at", "no_domain", "no_local"])
+def test_validate_email(email, expected):
+    assert validate_email(email) == expected
+```
+
+**効果**:
+- テスト関数数の削減（4関数 → 1関数）
+- テストケースの一覧性向上
+- 新しいケース追加が容易
+- 失敗時にどのケースが失敗したか明確
+
+詳細は[ベストプラクティス: Parametrizeパターン](./06-best-practices/index.md#parametrizeパターンテストの効率化)を参照してください。
+
 ## 継続的な改善
 
 ### テストの定期的なレビュー

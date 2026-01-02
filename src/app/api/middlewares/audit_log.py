@@ -3,9 +3,13 @@
 重要なデータ変更操作を監査ログに記録します。
 """
 
+import asyncio
+import json
 import re
 import uuid
 from collections.abc import Awaitable, Callable
+from datetime import date, datetime
+from enum import Enum
 from typing import Any
 
 from fastapi import Request, Response
@@ -15,8 +19,22 @@ from starlette.types import ASGIApp
 from app.core.database import get_async_session_context
 from app.core.logging import get_logger
 from app.models import AuditEventType, AuditLog, AuditSeverity
+from app.models.project import Project
+from app.models.system import SystemSetting
+from app.models.user_account import UserAccount
+from app.utils import RequestHelper
+from app.utils.sensitive_data import mask_sensitive_data
 
 logger = get_logger(__name__)
+
+
+# リソースタイプとモデルのマッピング
+RESOURCE_MODEL_MAPPING: dict[str, type] = {
+    "PROJECT": Project,
+    "USER": UserAccount,
+    "SYSTEM_SETTING": SystemSetting,
+    # 必要に応じて追加
+}
 
 
 class AuditLogMiddleware(BaseHTTPMiddleware):
@@ -118,24 +136,43 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         if not audit_config:
             return await call_next(request)
 
+        # 変更前の値を取得（リクエスト処理の前に実行）
+        old_value: dict[str, Any] | None = None
+        resource_id_str: str | None = None
+        if method in {"PUT", "PATCH", "DELETE"}:
+            resource_id_str = self._extract_resource_id(path, audit_config["pattern"])
+            if resource_id_str:
+                try:
+                    old_value = await self._get_old_value(
+                        resource_type=audit_config["resource_type"],
+                        resource_id=uuid.UUID(resource_id_str),
+                    )
+                except Exception as e:
+                    logger.warning("old_value取得エラー", error=str(e))
+
         # リクエストボディを取得
         request_body: dict[str, Any] | None = None
         if method in {"POST", "PUT", "PATCH"}:
             try:
-                request_body = await request.json()
+                body_bytes = await request.body()
+                request._body = body_bytes  # キャッシュして後続処理で再利用可能に
+                request_body = json.loads(body_bytes)
             except Exception:
                 pass
 
         # リクエスト処理
         response = await call_next(request)
 
-        # 成功時のみ監査ログを記録（2xxのみ）
+        # 成功時のみ監査ログを記録（2xxのみ）- バックグラウンドタスクで実行
         if 200 <= response.status_code < 300:
-            await self._record_audit_log(
-                request=request,
-                request_body=request_body,
-                response=response,
-                audit_config=audit_config,
+            asyncio.create_task(
+                self._record_audit_log(
+                    request=request,
+                    request_body=request_body,
+                    old_value=old_value,
+                    response=response,
+                    audit_config=audit_config,
+                )
             )
 
         return response
@@ -215,10 +252,87 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
 
         return changed
 
+    def _mask_request_body(self, body: dict[str, Any] | None) -> dict[str, Any] | None:
+        """リクエストボディから機密情報をマスクします。
+
+        共通モジュールのmask_sensitive_dataを使用して、
+        ネストされた辞書やリストも再帰的に処理します。
+
+        Args:
+            body: リクエストボディ
+
+        Returns:
+            dict | None: マスク処理済みのリクエストボディ
+        """
+        if not body:
+            return None
+
+        return mask_sensitive_data(body)
+
+    def _serialize_value(self, value: Any) -> Any:
+        """値をシリアライズ可能な形式に変換します。
+
+        Args:
+            value: シリアライズする値
+
+        Returns:
+            Any: シリアライズされた値
+        """
+        if isinstance(value, uuid.UUID):
+            return str(value)
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, date):
+            return value.isoformat()
+        if isinstance(value, Enum):
+            return value.value
+        return value
+
+    async def _get_old_value(
+        self,
+        resource_type: str,
+        resource_id: uuid.UUID,
+    ) -> dict[str, Any] | None:
+        """変更前の値を取得します。
+
+        Args:
+            resource_type: リソースタイプ
+            resource_id: リソースID
+
+        Returns:
+            変更前の値の辞書、または取得できない場合はNone
+        """
+        try:
+            model = RESOURCE_MODEL_MAPPING.get(resource_type)
+            if not model:
+                return None
+
+            async with get_async_session_context() as session:
+                result = await session.get(model, resource_id)  # type: ignore[func-returns-value]
+                if not result:
+                    return None
+
+                # モデルを辞書に変換してから機密情報を再帰的にマスク
+                raw_dict = {
+                    key: self._serialize_value(value)
+                    for key, value in result.__dict__.items()
+                    if not key.startswith("_")
+                }
+                return mask_sensitive_data(raw_dict)
+        except Exception as e:
+            logger.warning(
+                "変更前の値の取得に失敗",
+                error=str(e),
+                resource_type=resource_type,
+                resource_id=str(resource_id),
+            )
+            return None
+
     async def _record_audit_log(
         self,
         request: Request,
         request_body: dict[str, Any] | None,
+        old_value: dict[str, Any] | None,
         response: Response,
         audit_config: dict[str, Any],
     ) -> None:
@@ -227,6 +341,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
         Args:
             request: HTTPリクエスト
             request_body: リクエストボディ
+            old_value: 変更前の値（リクエスト処理前に取得済み）
             response: HTTPレスポンス
             audit_config: 監査設定
         """
@@ -242,6 +357,14 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             if hasattr(request.state, "user") and request.state.user:
                 user_id = request.state.user.id
 
+            # リクエストボディから機密情報をマスク
+            masked_request_body = self._mask_request_body(request_body)
+
+            # 変更されたフィールドを特定
+            changed_fields = self._get_changed_fields(old_value, request_body)
+            if not changed_fields and request_body:
+                changed_fields = list(request_body.keys())
+
             # 監査ログを作成
             audit_log = AuditLog(
                 user_id=user_id,
@@ -249,10 +372,10 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
                 action=self._infer_action(request.method),
                 resource_type=audit_config["resource_type"],
                 resource_id=uuid.UUID(resource_id_str) if resource_id_str else None,
-                old_value=None,  # 変更前の値は別途取得が必要
-                new_value=request_body,
-                changed_fields=list(request_body.keys()) if request_body else None,
-                ip_address=self._get_client_ip(request),
+                old_value=old_value,
+                new_value=masked_request_body,  # マスク処理済みのデータを使用
+                changed_fields=changed_fields,
+                ip_address=RequestHelper.get_client_ip(request),
                 user_agent=request.headers.get("user-agent", "")[:500],
                 severity=audit_config["severity"].value,
                 metadata={
@@ -268,26 +391,14 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
                 await session.commit()
 
         except Exception as e:
+            # NOTE: バックグラウンドタスクでは例外は親に伝播しないため、
+            # 失敗時はエラーログを記録して監視システムでアラート検知する
             logger.error(
-                "監査ログの記録に失敗しました",
+                "監査ログの記録に失敗しました（要調査）",
                 error=str(e),
+                error_type=type(e).__name__,
                 path=request.url.path,
+                method=request.method,
+                resource_type=audit_config.get("resource_type"),
+                severity="CRITICAL",  # 監視システムでアラート対象とする
             )
-
-    def _get_client_ip(self, request: Request) -> str | None:
-        """クライアントIPアドレスを取得します。
-
-        Args:
-            request: HTTPリクエスト
-
-        Returns:
-            str | None: クライアントIPアドレス
-        """
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            return forwarded_for.split(",")[0].strip()
-
-        if request.client:
-            return request.client.host
-
-        return None

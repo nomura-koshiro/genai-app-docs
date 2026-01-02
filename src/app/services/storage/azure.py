@@ -10,7 +10,7 @@ import aiofiles
 from azure.core.exceptions import ResourceNotFoundError
 from azure.storage.blob.aio import BlobServiceClient, ContainerClient
 
-from app.api.decorators import async_timeout
+from app.core.decorators import async_timeout
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 

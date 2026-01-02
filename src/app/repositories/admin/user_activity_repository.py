@@ -3,6 +3,7 @@
 このモジュールは、ユーザー操作履歴のデータアクセスを提供します。
 """
 
+import asyncio
 import uuid
 from datetime import datetime
 from typing import Any
@@ -37,6 +38,46 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
             db: SQLAlchemyの非同期データベースセッション
         """
         super().__init__(UserActivity, db)
+
+    def _build_filter_conditions(
+        self,
+        *,
+        user_id: uuid.UUID | None = None,
+        action_type: str | None = None,
+        resource_type: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+        has_error: bool | None = None,
+    ) -> list:
+        """フィルタ条件を構築します（DRY原則適用）。
+
+        Args:
+            user_id: ユーザーID
+            action_type: 操作種別
+            resource_type: リソース種別
+            start_date: 開始日時
+            end_date: 終了日時
+            has_error: エラーのみ
+
+        Returns:
+            list: SQLAlchemy条件式のリスト
+        """
+        conditions = []
+
+        if user_id:
+            conditions.append(UserActivity.user_id == user_id)
+        if action_type:
+            conditions.append(UserActivity.action_type == action_type)
+        if resource_type:
+            conditions.append(UserActivity.resource_type == resource_type)
+        if start_date:
+            conditions.append(UserActivity.created_at >= start_date)
+        if end_date:
+            conditions.append(UserActivity.created_at <= end_date)
+        if has_error is True:
+            conditions.append(UserActivity.error_message.isnot(None))
+
+        return conditions
 
     async def get_with_user(self, id: uuid.UUID) -> UserActivity | None:
         """ユーザー情報付きで操作履歴を取得します。
@@ -80,21 +121,15 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
         """
         query = select(UserActivity).options(selectinload(UserActivity.user))
 
-        # フィルタ条件を構築
-        conditions = []
-
-        if user_id:
-            conditions.append(UserActivity.user_id == user_id)
-        if action_type:
-            conditions.append(UserActivity.action_type == action_type)
-        if resource_type:
-            conditions.append(UserActivity.resource_type == resource_type)
-        if start_date:
-            conditions.append(UserActivity.created_at >= start_date)
-        if end_date:
-            conditions.append(UserActivity.created_at <= end_date)
-        if has_error is True:
-            conditions.append(UserActivity.error_message.isnot(None))
+        # 共通メソッドでフィルタ条件を構築（DRY原則）
+        conditions = self._build_filter_conditions(
+            user_id=user_id,
+            action_type=action_type,
+            resource_type=resource_type,
+            start_date=start_date,
+            end_date=end_date,
+            has_error=has_error,
+        )
 
         if conditions:
             query = query.where(and_(*conditions))
@@ -156,20 +191,15 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
         """
         query = select(func.count()).select_from(UserActivity)
 
-        conditions = []
-
-        if user_id:
-            conditions.append(UserActivity.user_id == user_id)
-        if action_type:
-            conditions.append(UserActivity.action_type == action_type)
-        if resource_type:
-            conditions.append(UserActivity.resource_type == resource_type)
-        if start_date:
-            conditions.append(UserActivity.created_at >= start_date)
-        if end_date:
-            conditions.append(UserActivity.created_at <= end_date)
-        if has_error is True:
-            conditions.append(UserActivity.error_message.isnot(None))
+        # 共通メソッドでフィルタ条件を構築（DRY原則）
+        conditions = self._build_filter_conditions(
+            user_id=user_id,
+            action_type=action_type,
+            resource_type=resource_type,
+            start_date=start_date,
+            end_date=end_date,
+            has_error=has_error,
+        )
 
         if conditions:
             query = query.where(and_(*conditions))
@@ -195,37 +225,35 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
                 - error_count: エラー件数
                 - average_duration_ms: 平均処理時間
         """
-        conditions = []
+        # 日付条件を構築
+        conditions = self._build_filter_conditions(
+            start_date=start_date,
+            end_date=end_date,
+        )
 
-        if start_date:
-            conditions.append(UserActivity.created_at >= start_date)
-        if end_date:
-            conditions.append(UserActivity.created_at <= end_date)
-
-        # 総件数
+        # クエリを構築
         total_query = select(func.count()).select_from(UserActivity)
         if conditions:
             total_query = total_query.where(and_(*conditions))
-        total_result = await self.db.execute(total_query)
-        total_count = total_result.scalar_one()
 
-        # エラー件数
         error_conditions = [*conditions, UserActivity.error_message.isnot(None)]
         error_query = select(func.count()).select_from(UserActivity).where(and_(*error_conditions))
-        error_result = await self.db.execute(error_query)
-        error_count = error_result.scalar_one()
 
-        # 平均処理時間
         avg_query = select(func.avg(UserActivity.duration_ms)).select_from(UserActivity)
         if conditions:
             avg_query = avg_query.where(and_(*conditions))
-        avg_result = await self.db.execute(avg_query)
-        average_duration_ms = avg_result.scalar_one() or 0
+
+        # 3つのクエリを並行実行（パフォーマンス最適化）
+        total_result, error_result, avg_result = await asyncio.gather(
+            self.db.execute(total_query),
+            self.db.execute(error_query),
+            self.db.execute(avg_query),
+        )
 
         return {
-            "total_count": total_count,
-            "error_count": error_count,
-            "average_duration_ms": float(average_duration_ms),
+            "total_count": total_result.scalar_one(),
+            "error_count": error_result.scalar_one(),
+            "average_duration_ms": float(avg_result.scalar_one() or 0),
         }
 
     async def get_date_range(
@@ -241,25 +269,17 @@ class UserActivityRepository(BaseRepository[UserActivity, uuid.UUID]):
         Returns:
             tuple[datetime | None, datetime | None]: (最古日時, 最新日時)
         """
-        conditions = []
+        # MIN/MAXを単一クエリで取得（パフォーマンス最適化）
+        query = select(
+            func.min(UserActivity.created_at).label("oldest"),
+            func.max(UserActivity.created_at).label("newest"),
+        )
         if end_date:
-            conditions.append(UserActivity.created_at <= end_date)
+            query = query.where(UserActivity.created_at <= end_date)
 
-        # 最古レコード
-        oldest_query = select(func.min(UserActivity.created_at))
-        if conditions:
-            oldest_query = oldest_query.where(and_(*conditions))
-        oldest_result = await self.db.execute(oldest_query)
-        oldest = oldest_result.scalar_one_or_none()
-
-        # 最新レコード
-        newest_query = select(func.max(UserActivity.created_at))
-        if conditions:
-            newest_query = newest_query.where(and_(*conditions))
-        newest_result = await self.db.execute(newest_query)
-        newest = newest_result.scalar_one_or_none()
-
-        return (oldest, newest)
+        result = await self.db.execute(query)
+        row = result.one()
+        return (row.oldest, row.newest)
 
     async def delete_old_records(self, before_date: datetime) -> int:
         """古いレコードを削除します。

@@ -3,6 +3,7 @@
 このモジュールは、監査ログの記録・検索機能を提供します。
 """
 
+import asyncio
 import csv
 import io
 import json
@@ -10,7 +11,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance
+from app.core.decorators import measure_performance
 from app.core.logging import get_logger
 from app.models.enums.admin_enums import AuditEventType, AuditSeverity
 from app.repositories.admin.audit_log_repository import AuditLogRepository
@@ -103,6 +104,7 @@ class AuditLogService:
                 error=str(e),
                 resource_type=resource_type,
             )
+            raise
 
     async def record_access(
         self,
@@ -145,6 +147,7 @@ class AuditLogService:
                 error=str(e),
                 action=action,
             )
+            raise
 
     async def record_security_event(
         self,
@@ -196,6 +199,7 @@ class AuditLogService:
                 error=str(e),
                 action=action,
             )
+            raise
 
     @measure_performance
     async def list_audit_logs(
@@ -216,26 +220,28 @@ class AuditLogService:
             action="list_audit_logs",
         )
 
-        logs = await self.repository.list_with_filters(
-            event_type=filter_params.event_type,
-            user_id=filter_params.user_id,
-            resource_type=filter_params.resource_type,
-            resource_id=filter_params.resource_id,
-            severity=filter_params.severity,
-            start_date=filter_params.start_date,
-            end_date=filter_params.end_date,
-            skip=(filter_params.page - 1) * filter_params.limit,
-            limit=filter_params.limit,
-        )
-
-        total = await self.repository.count_with_filters(
-            event_type=filter_params.event_type,
-            user_id=filter_params.user_id,
-            resource_type=filter_params.resource_type,
-            resource_id=filter_params.resource_id,
-            severity=filter_params.severity,
-            start_date=filter_params.start_date,
-            end_date=filter_params.end_date,
+        # 一覧取得とカウントを並行実行（パフォーマンス最適化）
+        logs, total = await asyncio.gather(
+            self.repository.list_with_filters(
+                event_type=filter_params.event_type,
+                user_id=filter_params.user_id,
+                resource_type=filter_params.resource_type,
+                resource_id=filter_params.resource_id,
+                severity=filter_params.severity,
+                start_date=filter_params.start_date,
+                end_date=filter_params.end_date,
+                skip=(filter_params.page - 1) * filter_params.limit,
+                limit=filter_params.limit,
+            ),
+            self.repository.count_with_filters(
+                event_type=filter_params.event_type,
+                user_id=filter_params.user_id,
+                resource_type=filter_params.resource_type,
+                resource_id=filter_params.resource_id,
+                severity=filter_params.severity,
+                start_date=filter_params.start_date,
+                end_date=filter_params.end_date,
+            ),
         )
 
         total_pages = (total + filter_params.limit - 1) // filter_params.limit

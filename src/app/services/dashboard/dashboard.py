@@ -3,6 +3,7 @@
 このモジュールは、ダッシュボード機能のビジネスロジックを提供します。
 """
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -49,61 +50,62 @@ class DashboardService:
         """統計情報を取得。
 
         条件付きCOUNTを使用して、テーブルごとに1クエリで全統計を取得します。
-        （14クエリ → 5クエリに最適化）
+        並行処理により、5つのクエリを同時実行します（14クエリ → 5クエリ → 並列実行）。
 
         Returns:
             DashboardStatsResponse: 統計情報
         """
-        # プロジェクト統計（1クエリで全カウントを取得）
-        project_result = await self.db.execute(
-            select(
-                func.count(Project.id).label("total"),
-                func.count(case((Project.is_active == True, 1))).label("active"),  # noqa: E712
-            )
+        # 5つの独立したクエリを並行実行
+        project_result, session_result, tree_result, user_result, file_result = await asyncio.gather(
+            # プロジェクト統計（1クエリで全カウントを取得）
+            self.db.execute(
+                select(
+                    func.count(Project.id).label("total"),
+                    func.count(case((Project.is_active == True, 1))).label("active"),  # noqa: E712
+                )
+            ),
+            # セッション統計（1クエリで全カウントを取得）
+            self.db.execute(
+                select(
+                    func.count(AnalysisSession.id).label("total"),
+                    func.count(case((AnalysisSession.status == "draft", 1))).label("draft"),
+                    func.count(case((AnalysisSession.status == "active", 1))).label("active"),
+                    func.count(case((AnalysisSession.status == "completed", 1))).label("completed"),
+                )
+            ),
+            # ツリー統計（1クエリで全カウントを取得）
+            self.db.execute(
+                select(
+                    func.count(DriverTree.id).label("total"),
+                    func.count(case((DriverTree.status == "draft", 1))).label("draft"),
+                    func.count(case((DriverTree.status == "active", 1))).label("active"),
+                    func.count(case((DriverTree.status == "completed", 1))).label("completed"),
+                )
+            ),
+            # ユーザー統計（1クエリで全カウントを取得）
+            self.db.execute(
+                select(
+                    func.count(UserAccount.id).label("total"),
+                    func.count(case((UserAccount.is_active == True, 1))).label("active"),  # noqa: E712
+                )
+            ),
+            # ファイル統計（1クエリで全カウントとサイズを取得）
+            self.db.execute(
+                select(
+                    func.count(ProjectFile.id).label("total"),
+                    func.coalesce(func.sum(ProjectFile.file_size), 0).label("total_size"),
+                )
+            ),
         )
+
         project_row = project_result.one()
         project_total = project_row.total or 0
         project_active = project_row.active or 0
         project_archived = project_total - project_active
 
-        # セッション統計（1クエリで全カウントを取得）
-        session_result = await self.db.execute(
-            select(
-                func.count(AnalysisSession.id).label("total"),
-                func.count(case((AnalysisSession.status == "draft", 1))).label("draft"),
-                func.count(case((AnalysisSession.status == "active", 1))).label("active"),
-                func.count(case((AnalysisSession.status == "completed", 1))).label("completed"),
-            )
-        )
         session_row = session_result.one()
-
-        # ツリー統計（1クエリで全カウントを取得）
-        tree_result = await self.db.execute(
-            select(
-                func.count(DriverTree.id).label("total"),
-                func.count(case((DriverTree.status == "draft", 1))).label("draft"),
-                func.count(case((DriverTree.status == "active", 1))).label("active"),
-                func.count(case((DriverTree.status == "completed", 1))).label("completed"),
-            )
-        )
         tree_row = tree_result.one()
-
-        # ユーザー統計（1クエリで全カウントを取得）
-        user_result = await self.db.execute(
-            select(
-                func.count(UserAccount.id).label("total"),
-                func.count(case((UserAccount.is_active == True, 1))).label("active"),  # noqa: E712
-            )
-        )
         user_row = user_result.one()
-
-        # ファイル統計（1クエリで全カウントとサイズを取得）
-        file_result = await self.db.execute(
-            select(
-                func.count(ProjectFile.id).label("total"),
-                func.coalesce(func.sum(ProjectFile.file_size), 0).label("total_size"),
-            )
-        )
         file_row = file_result.one()
 
         return DashboardStatsResponse(
@@ -138,6 +140,8 @@ class DashboardService:
     async def get_charts(self, days: int = 30) -> DashboardChartsResponse:
         """チャートデータを取得。
 
+        並行処理により、複数のチャートデータを同時取得してパフォーマンスを向上させます。
+
         Args:
             days: 集計対象日数（デフォルト30日）
 
@@ -146,22 +150,35 @@ class DashboardService:
         """
         start_date = datetime.now(UTC) - timedelta(days=days)
 
-        # セッション作成トレンド（日別）
-        session_trend_data = await self._get_creation_trend(AnalysisSession, start_date, days)
-
-        # ツリー作成トレンド（日別）
-        tree_trend_data = await self._get_creation_trend(DriverTree, start_date, days)
-
-        # スナップショット作成トレンド（日別）
-        snapshot_trend_data = await self._get_snapshot_trend(days)
-
-        # プロジェクト状態分布
-        project_active = await self.db.scalar(
-            select(func.count(Project.id)).where(Project.is_active == True)  # noqa: E712
+        # 7つの独立したクエリを並行実行
+        results = await asyncio.gather(
+            # セッション作成トレンド（日別）
+            self._get_creation_trend(AnalysisSession, start_date, days),
+            # ツリー作成トレンド（日別）
+            self._get_creation_trend(DriverTree, start_date, days),
+            # スナップショット作成トレンド（日別）
+            self._get_snapshot_trend(days),
+            # プロジェクト状態分布 - アクティブ
+            self.db.scalar(select(func.count(Project.id)).where(Project.is_active == True)),  # noqa: E712
+            # プロジェクト状態分布 - アーカイブ
+            self.db.scalar(select(func.count(Project.id)).where(Project.is_active == False)),  # noqa: E712
+            # プロジェクト進捗率
+            self._get_project_progress(),
+            # ユーザーアクティビティ - アクティブ
+            self.db.scalar(select(func.count(UserAccount.id)).where(UserAccount.is_active == True)),  # noqa: E712
+            # ユーザーアクティビティ - 非アクティブ
+            self.db.scalar(select(func.count(UserAccount.id)).where(UserAccount.is_active == False)),  # noqa: E712
         )
-        project_archived = await self.db.scalar(
-            select(func.count(Project.id)).where(Project.is_active == False)  # noqa: E712
-        )
+
+        # 型を明示的に指定して個別に変数に代入
+        session_trend_data: list[ChartDataPoint] = results[0]  # type: ignore[assignment]
+        tree_trend_data: list[ChartDataPoint] = results[1]  # type: ignore[assignment]
+        snapshot_trend_data: list[ChartDataPoint] = results[2]  # type: ignore[assignment]
+        project_active: int | None = results[3]  # type: ignore[assignment]
+        project_archived: int | None = results[4]  # type: ignore[assignment]
+        project_progress_data: ChartDataResponse = results[5]  # type: ignore[assignment]
+        user_active: int | None = results[6]  # type: ignore[assignment]
+        user_inactive: int | None = results[7]  # type: ignore[assignment]
 
         project_distribution = ChartDataResponse(
             chart_type="pie",
@@ -170,17 +187,6 @@ class DashboardService:
                 ChartDataPoint(label="アクティブ", value=float(project_active or 0)),
                 ChartDataPoint(label="アーカイブ", value=float(project_archived or 0)),
             ],
-        )
-
-        # プロジェクト進捗率
-        project_progress_data = await self._get_project_progress()
-
-        # ユーザーアクティビティ（直近のログイン状況）
-        user_active = await self.db.scalar(
-            select(func.count(UserAccount.id)).where(UserAccount.is_active == True)  # noqa: E712
-        )
-        user_inactive = await self.db.scalar(
-            select(func.count(UserAccount.id)).where(UserAccount.is_active == False)  # noqa: E712
         )
 
         user_activity = ChartDataResponse(
@@ -358,10 +364,11 @@ class DashboardService:
         )
 
     async def get_activities(self, skip: int = 0, limit: int = 20) -> DashboardActivitiesResponse:
-        """アクティビティログを効率的に取得。
+        """アクティビティログを並行処理で高速取得。
 
         複数のデータソースから最近のアクティビティを集約して返します。
         各リソースタイプから必要最小限のデータを取得し、メモリ上でマージします。
+        asyncio.gatherにより4つのクエリを並行実行し、レスポンス時間を短縮します。
 
         Args:
             skip: スキップ数
@@ -373,26 +380,22 @@ class DashboardService:
         # 各リソースから取得する件数（skip + limit で必要な件数を確保）
         fetch_limit = skip + limit
 
-        # 並列でクエリを実行するためのリストを構築
+        # 4つのクエリを並行実行
+        projects, sessions, trees, files = await asyncio.gather(
+            self._get_recent_projects(fetch_limit),
+            self._get_recent_sessions(fetch_limit),
+            self._get_recent_trees(fetch_limit),
+            self._get_recent_files(fetch_limit),
+        )
+
+        # 結果をマージ
         activities: list[ActivityLogResponse] = []
-
-        # プロジェクト作成を取得
-        projects = await self._get_recent_projects(fetch_limit)
         activities.extend(projects)
-
-        # セッション作成を取得
-        sessions = await self._get_recent_sessions(fetch_limit)
         activities.extend(sessions)
-
-        # ツリー作成を取得
-        trees = await self._get_recent_trees(fetch_limit)
         activities.extend(trees)
-
-        # ファイルアップロードを取得
-        files = await self._get_recent_files(fetch_limit)
         activities.extend(files)
 
-        # 日時でソートして上位を返す
+        # ソートとページネーション
         activities.sort(key=lambda x: x.created_at, reverse=True)
         total = len(activities)
         paginated = activities[skip : skip + limit]

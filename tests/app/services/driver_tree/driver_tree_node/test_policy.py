@@ -140,9 +140,19 @@ async def test_update_policy_success(db_session: AsyncSession):
         assert result["node_id"] == node_id
 
 
+@pytest.mark.parametrize(
+    "scenario,policy_return,expected_error_msg",
+    [
+        ("not_found", None, "施策が見つかりません"),
+        ("node_mismatch", "mismatch", "このノードに施策が見つかりません"),
+    ],
+    ids=["not_found", "node_mismatch"],
+)
 @pytest.mark.asyncio
-async def test_update_policy_not_found(db_session: AsyncSession):
-    """[test_policy-004] 存在しない施策の更新時のエラー。"""
+async def test_update_policy_errors(
+    db_session: AsyncSession, scenario: str, policy_return, expected_error_msg: str
+):
+    """[test_policy-004/005] 施策更新時のエラーケース。"""
     # Arrange
     service = DriverTreeNodePolicyService(db_session)
     project_id = uuid.uuid4()
@@ -151,6 +161,14 @@ async def test_update_policy_not_found(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     mock_node = MagicMock()
+
+    if policy_return == "mismatch":
+        mock_policy = MagicMock()
+        mock_policy.id = policy_id
+        mock_policy.node_id = uuid.uuid4()  # 異なるノードID
+        policy_return_value = mock_policy
+    else:
+        policy_return_value = None
 
     with (
         patch.object(
@@ -163,50 +181,14 @@ async def test_update_policy_not_found(db_session: AsyncSession):
             service.policy_repository,
             "get",
             new_callable=AsyncMock,
-            return_value=None,
+            return_value=policy_return_value,
         ),
     ):
         # Act & Assert
         with pytest.raises(NotFoundError) as exc_info:
             await service.update_policy(project_id, node_id, policy_id, "更新施策", 200.0, user_id)
 
-        assert "施策が見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_update_policy_node_mismatch(db_session: AsyncSession):
-    """[test_policy-005] 異なるノードの施策を更新しようとした場合のエラー。"""
-    # Arrange
-    service = DriverTreeNodePolicyService(db_session)
-    project_id = uuid.uuid4()
-    node_id = uuid.uuid4()
-    policy_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-
-    mock_node = MagicMock()
-    mock_policy = MagicMock()
-    mock_policy.id = policy_id
-    mock_policy.node_id = uuid.uuid4()  # 異なるノードID
-
-    with (
-        patch.object(
-            service,
-            "_get_node_with_validation",
-            new_callable=AsyncMock,
-            return_value=mock_node,
-        ),
-        patch.object(
-            service.policy_repository,
-            "get",
-            new_callable=AsyncMock,
-            return_value=mock_policy,
-        ),
-    ):
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.update_policy(project_id, node_id, policy_id, "更新施策", 200.0, user_id)
-
-        assert "このノードに施策が見つかりません" in str(exc_info.value)
+        assert expected_error_msg in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -257,9 +239,19 @@ async def test_delete_policy_success(db_session: AsyncSession):
         assert result["node_id"] == node_id
 
 
+@pytest.mark.parametrize(
+    "scenario,policy_return,expected_error_msg",
+    [
+        ("not_found", None, "施策が見つかりません"),
+        ("node_mismatch", "mismatch", "このノードに施策が見つかりません"),
+    ],
+    ids=["not_found", "node_mismatch"],
+)
 @pytest.mark.asyncio
-async def test_delete_policy_not_found(db_session: AsyncSession):
-    """[test_policy-007] 存在しない施策の削除時のエラー。"""
+async def test_delete_policy_errors(
+    db_session: AsyncSession, scenario: str, policy_return, expected_error_msg: str
+):
+    """[test_policy-007/008] 施策削除時のエラーケース。"""
     # Arrange
     service = DriverTreeNodePolicyService(db_session)
     project_id = uuid.uuid4()
@@ -268,6 +260,14 @@ async def test_delete_policy_not_found(db_session: AsyncSession):
     user_id = uuid.uuid4()
 
     mock_node = MagicMock()
+
+    if policy_return == "mismatch":
+        mock_policy = MagicMock()
+        mock_policy.id = policy_id
+        mock_policy.node_id = uuid.uuid4()  # 異なるノードID
+        policy_return_value = mock_policy
+    else:
+        policy_return_value = None
 
     with (
         patch.object(
@@ -280,47 +280,11 @@ async def test_delete_policy_not_found(db_session: AsyncSession):
             service.policy_repository,
             "get",
             new_callable=AsyncMock,
-            return_value=None,
+            return_value=policy_return_value,
         ),
     ):
         # Act & Assert
         with pytest.raises(NotFoundError) as exc_info:
             await service.delete_policy(project_id, node_id, policy_id, user_id)
 
-        assert "施策が見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_delete_policy_node_mismatch(db_session: AsyncSession):
-    """[test_policy-008] 異なるノードの施策を削除しようとした場合のエラー。"""
-    # Arrange
-    service = DriverTreeNodePolicyService(db_session)
-    project_id = uuid.uuid4()
-    node_id = uuid.uuid4()
-    policy_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-
-    mock_node = MagicMock()
-    mock_policy = MagicMock()
-    mock_policy.id = policy_id
-    mock_policy.node_id = uuid.uuid4()  # 異なるノードID
-
-    with (
-        patch.object(
-            service,
-            "_get_node_with_validation",
-            new_callable=AsyncMock,
-            return_value=mock_node,
-        ),
-        patch.object(
-            service.policy_repository,
-            "get",
-            new_callable=AsyncMock,
-            return_value=mock_policy,
-        ),
-    ):
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.delete_policy(project_id, node_id, policy_id, user_id)
-
-        assert "このノードに施策が見つかりません" in str(exc_info.value)
+        assert expected_error_msg in str(exc_info.value)

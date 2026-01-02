@@ -309,26 +309,22 @@ async def test_get_tree_data_success(client: AsyncClient, override_auth, test_da
 
 
 @pytest.mark.asyncio
-async def test_download_simulation_output_success(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree-010] シミュレーション結果ダウンロードの成功ケース。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    tree = data["tree"]
-    override_auth(owner)
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/output")
-
-    # Assert
-    assert response.status_code == 200
-    assert "application/vnd.openxmlformats" in response.headers.get("content-type", "") or response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_download_simulation_output_csv(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree-011] CSV形式でのダウンロードの成功ケース。"""
+@pytest.mark.parametrize(
+    "params,expected_content_type",
+    [
+        ({}, "application/vnd.openxmlformats"),
+        ({"format": "csv"}, None),
+    ],
+    ids=["default_excel", "csv_format"],
+)
+async def test_download_simulation_output(
+    client: AsyncClient,
+    override_auth,
+    test_data_seeder,
+    params,
+    expected_content_type,
+):
+    """[test_driver_tree-010,011] シミュレーション結果ダウンロードの成功ケース（Excel/CSV）。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -339,11 +335,13 @@ async def test_download_simulation_output_csv(client: AsyncClient, override_auth
     # Act
     response = await client.get(
         f"/api/v1/project/{project.id}/driver-tree/tree/{tree.id}/output",
-        params={"format": "csv"},
+        params=params,
     )
 
     # Assert
     assert response.status_code == 200
+    if expected_content_type:
+        assert expected_content_type in response.headers.get("content-type", "")
 
 
 # ================================================================================

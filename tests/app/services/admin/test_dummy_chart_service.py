@@ -147,18 +147,33 @@ async def test_get_chart_success(db_session: AsyncSession, test_issue):
     assert result.chart_order == 1
 
 
+@pytest.mark.parametrize(
+    "operation,error_msg",
+    [
+        ("get", "ダミーチャートマスタが見つかりません"),
+        ("update", "ダミーチャートマスタが見つかりません"),
+        ("delete", "ダミーチャートマスタが見つかりません"),
+    ],
+    ids=["get_not_found", "update_not_found", "delete_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_chart_not_found(db_session: AsyncSession):
-    """[test_dummy_chart_service-005] 存在しないダミーチャート取得時のNotFoundError。"""
+async def test_chart_not_found_errors(db_session: AsyncSession, operation: str, error_msg: str):
+    """[test_dummy_chart_service-005-008-010] ダミーチャート操作でのNotFoundError。"""
     # Arrange
     service = AdminDummyChartService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert
     with pytest.raises(NotFoundError) as exc_info:
-        await service.get_chart(non_existent_id)
+        if operation == "get":
+            await service.get_chart(non_existent_id)
+        elif operation == "update":
+            chart_update = AnalysisDummyChartUpdate(chart_order=2)
+            await service.update_chart(non_existent_id, chart_update)
+        elif operation == "delete":
+            await service.delete_chart(non_existent_id)
 
-    assert "ダミーチャートマスタが見つかりません" in str(exc_info.value)
+    assert error_msg in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -214,21 +229,6 @@ async def test_update_chart_success(db_session: AsyncSession, test_issue):
 
 
 @pytest.mark.asyncio
-async def test_update_chart_not_found(db_session: AsyncSession):
-    """[test_dummy_chart_service-008] 存在しないダミーチャート更新時のNotFoundError。"""
-    # Arrange
-    service = AdminDummyChartService(db_session)
-    non_existent_id = uuid.uuid4()
-    chart_update = AnalysisDummyChartUpdate(chart_order=2)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.update_chart(non_existent_id, chart_update)
-
-    assert "ダミーチャートマスタが見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_delete_chart_success(db_session: AsyncSession, test_issue):
     """[test_dummy_chart_service-009] ダミーチャート削除の成功ケース。"""
     # Arrange
@@ -251,17 +251,3 @@ async def test_delete_chart_success(db_session: AsyncSession, test_issue):
     # Assert - 削除後に取得するとNotFoundError
     with pytest.raises(NotFoundError):
         await service.get_chart(chart_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_chart_not_found(db_session: AsyncSession):
-    """[test_dummy_chart_service-010] 存在しないダミーチャート削除時のNotFoundError。"""
-    # Arrange
-    service = AdminDummyChartService(db_session)
-    non_existent_id = uuid.uuid4()
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.delete_chart(non_existent_id)
-
-    assert "ダミーチャートマスタが見つかりません" in str(exc_info.value)

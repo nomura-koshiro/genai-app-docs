@@ -12,55 +12,59 @@ from app.schemas.admin.system_setting import MaintenanceModeEnable
 from app.services.admin.system_setting_service import SystemSettingService
 
 
+@pytest.mark.parametrize(
+    "operation,category,expected_type",
+    [
+        ("get_all", None, "dict"),
+        ("get_by_category", "MAINTENANCE", "list"),
+    ],
+    ids=["get_all_settings", "get_by_category"],
+)
 @pytest.mark.asyncio
-async def test_get_all_settings_success(db_session: AsyncSession):
-    """[test_system_setting_service-001] 全設定取得の成功ケース。"""
+async def test_get_settings_success(
+    db_session: AsyncSession,
+    operation: str,
+    category: str | None,
+    expected_type: str,
+):
+    """[test_system_setting_service-001-002] 設定取得の成功ケース。"""
     # Arrange
     service = SystemSettingService(db_session)
 
     # システム設定を作成
-    setting = SystemSetting(
-        category="GENERAL",
-        key="app_name",
-        value="Test App",
-        value_type="STRING",
-        description="Application name",
-        is_editable=True,
-    )
+    if operation == "get_all":
+        setting = SystemSetting(
+            category="GENERAL",
+            key="app_name",
+            value="Test App",
+            value_type="STRING",
+            description="Application name",
+            is_editable=True,
+        )
+    else:
+        setting = SystemSetting(
+            category="MAINTENANCE",
+            key="maintenance_mode",
+            value=False,
+            value_type="BOOLEAN",
+            description="Maintenance mode",
+            is_editable=True,
+        )
     db_session.add(setting)
     await db_session.commit()
 
     # Act
-    result = await service.get_all_settings()
+    if operation == "get_all":
+        result = await service.get_all_settings()
+    else:
+        result = await service.get_settings_by_category(category)
 
     # Assert
     assert result is not None
-    assert "GENERAL" in result.categories or len(result.categories) >= 0
-
-
-@pytest.mark.asyncio
-async def test_get_settings_by_category_success(db_session: AsyncSession):
-    """[test_system_setting_service-002] カテゴリ別設定取得の成功ケース。"""
-    # Arrange
-    service = SystemSettingService(db_session)
-
-    # システム設定を作成
-    setting = SystemSetting(
-        category="MAINTENANCE",
-        key="maintenance_mode",
-        value=False,
-        value_type="BOOLEAN",
-        description="Maintenance mode",
-        is_editable=True,
-    )
-    db_session.add(setting)
-    await db_session.commit()
-
-    # Act
-    result = await service.get_settings_by_category("MAINTENANCE")
-
-    # Assert
-    assert isinstance(result, list)
+    if expected_type == "dict":
+        assert len(result.categories) >= 0
+    else:
+        assert isinstance(result, list)
 
 
 @pytest.mark.asyncio

@@ -63,24 +63,42 @@ class TestProjectFileService:
         assert result.mime_type == "application/pdf"
         assert result.uploaded_by == user.id
 
+    @pytest.mark.parametrize(
+        "role,is_member,expected_error_msg",
+        [
+            (None, False, "not a member"),
+            (ProjectRole.VIEWER, True, "Insufficient permissions"),
+        ],
+        ids=["non_member", "viewer_no_permission"],
+    )
     @pytest.mark.asyncio
-    async def test_upload_file_not_member(self, db_session):
-        """[test_project_file-002] 非メンバーのアップロード失敗テスト。"""
+    async def test_upload_file_permission_denied(self, db_session, role, is_member, expected_error_msg):
+        """[test_project_file-002] アップロード権限不足テスト。"""
         # Arrange
         user = UserAccount(
-            azure_oid="non-member-oid",
-            email="nonmember@company.com",
-            display_name="Non Member",
+            azure_oid="permission-test-oid",
+            email="permissiontest@company.com",
+            display_name="Permission Test User",
         )
         project = Project(
-            name="Non Member Project",
-            code="NONMEMBER-001",
+            name="Permission Test Project",
+            code="PERM-001",
         )
         db_session.add(user)
         db_session.add(project)
         await db_session.commit()
         await db_session.refresh(user)
         await db_session.refresh(project)
+
+        # メンバーとして追加（is_memberがTrueの場合のみ）
+        if is_member:
+            member = ProjectMember(
+                project_id=project.id,
+                user_id=user.id,
+                role=role,
+            )
+            db_session.add(member)
+            await db_session.commit()
 
         service = ProjectFileService(db_session)
         file = MagicMock(spec=UploadFile)
@@ -91,46 +109,7 @@ class TestProjectFileService:
         with pytest.raises(AuthorizationError) as exc_info:
             await service.upload_file(project.id, file, uploaded_by=user.id)
 
-        assert "not a member" in str(exc_info.value).lower()
-
-    @pytest.mark.asyncio
-    async def test_upload_file_viewer_no_permission(self, db_session):
-        """[test_project_file-003] VIEWERロールのアップロード失敗テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="viewer-oid",
-            email="viewer@company.com",
-            display_name="Viewer User",
-        )
-        project = Project(
-            name="Viewer Project",
-            code="VIEWER-001",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # VIEWERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.VIEWER,
-        )
-        db_session.add(member)
-        await db_session.commit()
-
-        service = ProjectFileService(db_session)
-        file = MagicMock(spec=UploadFile)
-        file.filename = "test.txt"
-        file.content_type = "text/plain"
-
-        # Act & Assert
-        with pytest.raises(AuthorizationError) as exc_info:
-            await service.upload_file(project.id, file, uploaded_by=user.id)
-
-        assert "Insufficient permissions" in str(exc_info.value)
+        assert expected_error_msg in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
     async def test_upload_file_invalid_mime_type(self, db_session):
@@ -390,30 +369,38 @@ class TestProjectFileService:
         # Assert
         assert result is True
 
+    @pytest.mark.parametrize(
+        "deleter_role,can_delete,expected_result",
+        [
+            (ProjectRole.PROJECT_MANAGER, True, True),
+            (ProjectRole.MEMBER, False, AuthorizationError),
+        ],
+        ids=["admin_can_delete", "member_cannot_delete"],
+    )
     @pytest.mark.asyncio
-    async def test_delete_file_by_admin(self, db_session):
-        """[test_project_file-010] ADMIN による他人のファイル削除のテスト。"""
+    async def test_delete_file_by_different_roles(self, db_session, deleter_role, can_delete, expected_result):
+        """[test_project_file-010] 異なるロールによるファイル削除のテスト。"""
         # Arrange
         uploader = UserAccount(
             azure_oid="uploader-oid",
             email="uploader@company.com",
             display_name="Uploader",
         )
-        admin = UserAccount(
-            azure_oid="admin-oid",
-            email="admin@company.com",
-            display_name="Admin",
+        deleter = UserAccount(
+            azure_oid="deleter-oid",
+            email="deleter@company.com",
+            display_name="Deleter",
         )
         project = Project(
-            name="Admin Delete Project",
-            code="ADMINDEL-001",
+            name="Delete Test Project",
+            code="DELTEST-001",
         )
         db_session.add(uploader)
-        db_session.add(admin)
+        db_session.add(deleter)
         db_session.add(project)
         await db_session.commit()
         await db_session.refresh(uploader)
-        await db_session.refresh(admin)
+        await db_session.refresh(deleter)
         await db_session.refresh(project)
 
         # uploaderをMEMBERとして追加
@@ -422,92 +409,36 @@ class TestProjectFileService:
             user_id=uploader.id,
             role=ProjectRole.MEMBER,
         )
-        # adminをADMINとして追加
-        admin_member = ProjectMember(
+        # deleterを指定されたロールとして追加
+        deleter_member = ProjectMember(
             project_id=project.id,
-            user_id=admin.id,
-            role=ProjectRole.PROJECT_MANAGER,
+            user_id=deleter.id,
+            role=deleter_role,
         )
         db_session.add(uploader_member)
-        db_session.add(admin_member)
+        db_session.add(deleter_member)
         await db_session.commit()
 
         service = ProjectFileService(db_session)
 
         # uploaderがファイルをアップロード
-        file_content = b"Admin delete test"
+        file_content = b"Delete test content"
         file = MagicMock(spec=UploadFile)
-        file.filename = "admindel.txt"
+        file.filename = "delete_test.txt"
         file.content_type = "text/plain"
 
         with patch.object(file, "read", return_value=file_content):
             with patch.object(file, "seek", return_value=None):
                 uploaded_file = await service.upload_file(project.id, file, uploaded_by=uploader.id)
 
-        # Act - adminが削除
-        result = await service.delete_file(uploaded_file.id, admin.id)
-
-        # Assert
-        assert result is True
-
-    @pytest.mark.asyncio
-    async def test_delete_file_by_member_no_permission(self, db_session):
-        """[test_project_file-011] 一般MEMBERによる他人のファイル削除失敗のテスト。"""
-        # Arrange
-        uploader = UserAccount(
-            azure_oid="uploader2-oid",
-            email="uploader2@company.com",
-            display_name="Uploader2",
-        )
-        other_member = UserAccount(
-            azure_oid="othermember-oid",
-            email="othermember@company.com",
-            display_name="Other Member",
-        )
-        project = Project(
-            name="Member Delete Project",
-            code="MEMBERDEL-001",
-        )
-        db_session.add(uploader)
-        db_session.add(other_member)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(uploader)
-        await db_session.refresh(other_member)
-        await db_session.refresh(project)
-
-        # 両方をMEMBERとして追加
-        uploader_member = ProjectMember(
-            project_id=project.id,
-            user_id=uploader.id,
-            role=ProjectRole.MEMBER,
-        )
-        other_member_member = ProjectMember(
-            project_id=project.id,
-            user_id=other_member.id,
-            role=ProjectRole.MEMBER,
-        )
-        db_session.add(uploader_member)
-        db_session.add(other_member_member)
-        await db_session.commit()
-
-        service = ProjectFileService(db_session)
-
-        # uploaderがファイルをアップロード
-        file_content = b"Member delete test"
-        file = MagicMock(spec=UploadFile)
-        file.filename = "memberdel.txt"
-        file.content_type = "text/plain"
-
-        with patch.object(file, "read", return_value=file_content):
-            with patch.object(file, "seek", return_value=None):
-                uploaded_file = await service.upload_file(project.id, file, uploaded_by=uploader.id)
-
-        # Act & Assert - other_memberが削除しようとする
-        with pytest.raises(AuthorizationError) as exc_info:
-            await service.delete_file(uploaded_file.id, other_member.id)
-
-        assert "ファイルのアップロード者またはプロジェクト管理者のみが削除できます" in str(exc_info.value)
+        # Act & Assert
+        if can_delete:
+            result = await service.delete_file(uploaded_file.id, deleter.id)
+            assert result is expected_result
+        else:
+            with pytest.raises(expected_result) as exc_info:
+                await service.delete_file(uploaded_file.id, deleter.id)
+            assert "ファイルのアップロード者またはプロジェクト管理者のみが削除できます" in str(exc_info.value)
 
     def test_sanitize_filename(self):
         """[test_project_file-012] ファイル名サニタイズのテスト。"""

@@ -17,7 +17,7 @@ from fastapi import APIRouter, File, Query, UploadFile, status
 from fastapi.responses import FileResponse
 
 from app.api.core import CurrentUserAccountDep, ProjectFileServiceDep
-from app.api.decorators import async_timeout, handle_service_errors
+from app.core.decorators import async_timeout, handle_service_errors
 from app.core.logging import get_logger
 from app.schemas import (
     ProjectFileDeleteResponse,

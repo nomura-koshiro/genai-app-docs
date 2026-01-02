@@ -73,54 +73,40 @@ class TestDashboardActivitiesEndpoint:
     """GET /api/v1/dashboard/activities エンドポイントのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_get_activities_success(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-003] 認証済みユーザーでアクティビティを取得。"""
+    @pytest.mark.parametrize(
+        "params,expected_status,check_fields",
+        [
+            ({}, 200, {"activities": True, "total": True, "skip": True, "limit": True}),
+            ({"skip": 5, "limit": 10}, 200, {"skip": 5, "limit": 10}),
+            ({"limit": 150}, 422, {}),
+        ],
+        ids=["success", "pagination", "over_limit"],
+    )
+    async def test_get_activities(
+        self,
+        client: AsyncClient,
+        test_user,
+        override_auth,
+        params,
+        expected_status,
+        check_fields,
+    ):
+        """[test_dashboard-003-005] アクティビティ取得のテストケース。"""
         # Arrange
         override_auth(test_user)
 
         # Act
-        response = await client.get("/api/v1/dashboard/activities")
+        response = await client.get("/api/v1/dashboard/activities", params=params)
 
         # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "activities" in data
-        assert "total" in data
-        assert "skip" in data
-        assert "limit" in data
-
-    @pytest.mark.asyncio
-    async def test_get_activities_with_pagination(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-004] ページネーションパラメータのテスト。"""
-        # Arrange
-        override_auth(test_user)
-
-        # Act
-        response = await client.get(
-            "/api/v1/dashboard/activities",
-            params={"skip": 5, "limit": 10},
-        )
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert data["skip"] == 5
-        assert data["limit"] == 10
-
-    @pytest.mark.asyncio
-    async def test_get_activities_limit_validation(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-005] limitパラメータの上限検証。"""
-        # Arrange
-        override_auth(test_user)
-
-        # Act - limitが100を超える場合
-        response = await client.get(
-            "/api/v1/dashboard/activities",
-            params={"limit": 150},
-        )
-
-        # Assert - バリデーションエラー
-        assert response.status_code == 422
+        assert response.status_code == expected_status
+        if expected_status == 200:
+            data = response.json()
+            for field, value in check_fields.items():
+                if value is True:
+                    assert field in data
+                else:
+                    assert data[field] == value
 
     @pytest.mark.asyncio
     async def test_get_activities_with_data(
@@ -148,55 +134,50 @@ class TestDashboardChartsEndpoint:
     """GET /api/v1/dashboard/charts エンドポイントのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_get_charts_success(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-007] 認証済みユーザーでチャートデータを取得。"""
+    @pytest.mark.parametrize(
+        "params,expected_status,check_fields",
+        [
+            (
+                {},
+                200,
+                {
+                    "sessionTrend": True,
+                    "treeTrend": True,
+                    "projectDistribution": True,
+                    "userActivity": True,
+                    "generatedAt": True,
+                },
+            ),
+            ({"days": 7}, 200, {"sessionTrend_data_length": 7}),
+            ({"days": 400}, 422, {}),
+        ],
+        ids=["success", "with_days_parameter", "days_over_limit"],
+    )
+    async def test_get_charts(
+        self,
+        client: AsyncClient,
+        test_user,
+        override_auth,
+        params,
+        expected_status,
+        check_fields,
+    ):
+        """[test_dashboard-007-009] チャートデータ取得のテストケース。"""
         # Arrange
         override_auth(test_user)
 
         # Act
-        response = await client.get("/api/v1/dashboard/charts")
+        response = await client.get("/api/v1/dashboard/charts", params=params)
 
         # Assert
-        assert response.status_code == 200
-        data = response.json()
-        assert "sessionTrend" in data
-        assert "treeTrend" in data
-        assert "projectDistribution" in data
-        assert "userActivity" in data
-        assert "generatedAt" in data
-
-    @pytest.mark.asyncio
-    async def test_get_charts_with_days_parameter(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-008] daysパラメータのテスト。"""
-        # Arrange
-        override_auth(test_user)
-
-        # Act
-        response = await client.get(
-            "/api/v1/dashboard/charts",
-            params={"days": 7},
-        )
-
-        # Assert
-        assert response.status_code == 200
-        data = response.json()
-        # セッショントレンドのデータポイント数が7日分
-        assert len(data["sessionTrend"]["data"]) == 7
-
-    @pytest.mark.asyncio
-    async def test_get_charts_days_validation(self, client: AsyncClient, test_user, override_auth):
-        """[test_dashboard-009] daysパラメータの上限検証。"""
-        # Arrange
-        override_auth(test_user)
-
-        # Act - daysが365を超える場合
-        response = await client.get(
-            "/api/v1/dashboard/charts",
-            params={"days": 400},
-        )
-
-        # Assert - バリデーションエラー
-        assert response.status_code == 422
+        assert response.status_code == expected_status
+        if expected_status == 200:
+            data = response.json()
+            for field, value in check_fields.items():
+                if field == "sessionTrend_data_length":
+                    assert len(data["sessionTrend"]["data"]) == value
+                elif value is True:
+                    assert field in data
 
     @pytest.mark.asyncio
     async def test_get_charts_response_structure(self, client: AsyncClient, test_user, override_auth):

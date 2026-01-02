@@ -49,3 +49,4 @@ dmypy.json
 
 # Ruff
 .ruff_cache/
+coverage.xml

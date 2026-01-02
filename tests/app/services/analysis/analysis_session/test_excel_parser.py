@@ -136,27 +136,27 @@ class TestCreateUniqueKey:
 class TestValidateUniqueness:
     """_validate_uniqueness関数のテスト。"""
 
-    def test_validate_uniqueness_success(self):
-        """[test_excel_parser-007] 一意性検証成功ケース（重複なし）。"""
+    @pytest.mark.parametrize(
+        "has_duplicate,should_raise",
+        [
+            (False, False),
+            (True, True),
+        ],
+        ids=["no_duplicate", "duplicate_error"],
+    )
+    def test_validate_uniqueness(self, has_duplicate: bool, should_raise: bool):
+        """[test_excel_parser-007/008] 一意性検証テスト。"""
         # Arrange
         unique_key = ("2023", "営業", "売上")
-        existing_keys: set = set()
-        axis_order = ["年度", "部門"]
-        item_name = "売上"
-
-        # Act & Assert - 例外が発生しないこと
-        _validate_uniqueness(unique_key, existing_keys, axis_order, item_name)
-
-    def test_validate_uniqueness_duplicate_error(self):
-        """[test_excel_parser-008] 一意性検証失敗ケース（重複あり）。"""
-        # Arrange
-        unique_key = ("2023", "営業", "売上")
-        existing_keys = {unique_key}
+        existing_keys: set = {unique_key} if has_duplicate else set()
         axis_order = ["年度", "部門"]
         item_name = "売上"
 
         # Act & Assert
-        with pytest.raises(ValueError) as exc_info:
+        if should_raise:
+            with pytest.raises(ValueError) as exc_info:
+                _validate_uniqueness(unique_key, existing_keys, axis_order, item_name)
+            assert "重複した組み合わせ" in str(exc_info.value)
+        else:
+            # 例外が発生しないこと
             _validate_uniqueness(unique_key, existing_keys, axis_order, item_name)
-
-        assert "重複した組み合わせ" in str(exc_info.value)

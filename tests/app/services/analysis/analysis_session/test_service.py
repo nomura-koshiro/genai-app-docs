@@ -28,139 +28,113 @@ async def test_init_service(db_session: AsyncSession):
     assert service._step_service is not None
 
 
+@pytest.mark.parametrize(
+    "method_name,service_attr,method_to_call,call_args,call_kwargs,expected_args",
+    [
+        (
+            "list_sessions",
+            "_crud_service",
+            "list_sessions",
+            ["project_id"],
+            {"skip": 0, "limit": 100},
+            ["project_id", 0, 100, None],
+        ),
+        (
+            "get_session",
+            "_crud_service",
+            "get_session",
+            ["project_id", "session_id"],
+            {},
+            ["project_id", "session_id"],
+        ),
+        (
+            "delete_session",
+            "_crud_service",
+            "delete_session",
+            ["project_id", "session_id"],
+            {},
+            ["project_id", "session_id"],
+        ),
+        (
+            "list_session_files",
+            "_file_service",
+            "list_session_files",
+            ["project_id", "session_id"],
+            {},
+            ["project_id", "session_id"],
+        ),
+        (
+            "get_session_result",
+            "_analysis_service",
+            "get_session_result",
+            ["project_id", "session_id"],
+            {},
+            ["project_id", "session_id"],
+        ),
+        (
+            "create_step",
+            "_step_service",
+            "create_step",
+            ["project_id", "session_id", "step1", "filter", "original"],
+            {},
+            ["project_id", "session_id", "step1", "filter", "original", None],
+        ),
+    ],
+    ids=["list_sessions", "get_session", "delete_session", "list_session_files", "get_session_result", "create_step"],
+)
 @pytest.mark.asyncio
-async def test_list_sessions_delegates_to_crud_service(db_session: AsyncSession):
-    """[test_service-002] list_sessionsがcrud_serviceに委譲されること。"""
-    # Arrange
-    service = AnalysisSessionService(db_session)
-    project_id = uuid.uuid4()
-    expected_result = []
-
-    with patch.object(
-        service._crud_service,
-        "list_sessions",
-        new_callable=AsyncMock,
-        return_value=expected_result,
-    ) as mock_list:
-        # Act
-        result = await service.list_sessions(project_id, skip=0, limit=100)
-
-        # Assert
-        mock_list.assert_called_once_with(project_id, 0, 100, None)
-        assert result == expected_result
-
-
-@pytest.mark.asyncio
-async def test_get_session_delegates_to_crud_service(db_session: AsyncSession):
-    """[test_service-003] get_sessionがcrud_serviceに委譲されること。"""
-    # Arrange
-    service = AnalysisSessionService(db_session)
-    project_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-    expected_result = MagicMock()
-
-    with patch.object(
-        service._crud_service,
-        "get_session",
-        new_callable=AsyncMock,
-        return_value=expected_result,
-    ) as mock_get:
-        # Act
-        result = await service.get_session(project_id, session_id)
-
-        # Assert
-        mock_get.assert_called_once_with(project_id, session_id)
-        assert result == expected_result
-
-
-@pytest.mark.asyncio
-async def test_delete_session_delegates_to_crud_service(db_session: AsyncSession):
-    """[test_service-004] delete_sessionがcrud_serviceに委譲されること。"""
-    # Arrange
-    service = AnalysisSessionService(db_session)
-    project_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-
-    with patch.object(
-        service._crud_service,
-        "delete_session",
-        new_callable=AsyncMock,
-        return_value=None,
-    ) as mock_delete:
-        # Act
-        await service.delete_session(project_id, session_id)
-
-        # Assert
-        mock_delete.assert_called_once_with(project_id, session_id)
-
-
-@pytest.mark.asyncio
-async def test_list_session_files_delegates_to_file_service(db_session: AsyncSession):
-    """[test_service-005] list_session_filesがfile_serviceに委譲されること。"""
+async def test_service_delegation(
+    db_session: AsyncSession,
+    method_name: str,
+    service_attr: str,
+    method_to_call: str,
+    call_args: list,
+    call_kwargs: dict,
+    expected_args: list,
+):
+    """[test_service-002] サービスメソッドが適切なサービスに委譲されること。"""
     # Arrange
     service = AnalysisSessionService(db_session)
     project_id = uuid.uuid4()
     session_id = uuid.uuid4()
-    expected_result = []
 
+    # 引数を実際のIDに置き換え
+    actual_call_args = []
+    for arg in call_args:
+        if arg == "project_id":
+            actual_call_args.append(project_id)
+        elif arg == "session_id":
+            actual_call_args.append(session_id)
+        else:
+            actual_call_args.append(arg)
+
+    actual_expected_args = []
+    for arg in expected_args:
+        if arg == "project_id":
+            actual_expected_args.append(project_id)
+        elif arg == "session_id":
+            actual_expected_args.append(session_id)
+        else:
+            actual_expected_args.append(arg)
+
+    expected_result = [] if method_name in ["list_sessions", "list_session_files"] else MagicMock()
+
+    # 委譲先サービスのモック
+    target_service = getattr(service, service_attr)
     with patch.object(
-        service._file_service,
-        "list_session_files",
+        target_service,
+        method_to_call,
         new_callable=AsyncMock,
         return_value=expected_result,
-    ) as mock_list:
+    ) as mock_method:
         # Act
-        result = await service.list_session_files(project_id, session_id)
+        method = getattr(service, method_name)
+        result = await method(*actual_call_args, **call_kwargs)
 
         # Assert
-        mock_list.assert_called_once_with(project_id, session_id)
-        assert result == expected_result
-
-
-@pytest.mark.asyncio
-async def test_get_session_result_delegates_to_analysis_service(db_session: AsyncSession):
-    """[test_service-006] get_session_resultがanalysis_serviceに委譲されること。"""
-    # Arrange
-    service = AnalysisSessionService(db_session)
-    project_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-    expected_result = MagicMock()
-
-    with patch.object(
-        service._analysis_service,
-        "get_session_result",
-        new_callable=AsyncMock,
-        return_value=expected_result,
-    ) as mock_get:
-        # Act
-        result = await service.get_session_result(project_id, session_id)
-
-        # Assert
-        mock_get.assert_called_once_with(project_id, session_id)
-        assert result == expected_result
-
-
-@pytest.mark.asyncio
-async def test_create_step_delegates_to_step_service(db_session: AsyncSession):
-    """[test_service-007] create_stepがstep_serviceに委譲されること。"""
-    # Arrange
-    service = AnalysisSessionService(db_session)
-    project_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-    expected_result = MagicMock()
-
-    with patch.object(
-        service._step_service,
-        "create_step",
-        new_callable=AsyncMock,
-        return_value=expected_result,
-    ) as mock_create:
-        # Act
-        result = await service.create_step(project_id, session_id, "step1", "filter", "original")
-
-        # Assert
-        mock_create.assert_called_once_with(project_id, session_id, "step1", "filter", "original", None)
-        assert result == expected_result
+        mock_method.assert_called_once_with(*actual_expected_args)
+        if method_name not in ["delete_session"]:
+            assert result == expected_result
 
 
 @pytest.mark.asyncio

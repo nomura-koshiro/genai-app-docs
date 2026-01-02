@@ -7,7 +7,7 @@ import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import async_timeout, measure_performance, transactional
+from app.core.decorators import async_timeout, measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.core.logging import get_logger
 from app.models import ProjectFile, ProjectRole

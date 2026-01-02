@@ -111,19 +111,30 @@ async def test_upload_driver_tree_file_success(
 
 
 @pytest.mark.asyncio
-async def test_upload_driver_tree_file_unsupported_type(
+@pytest.mark.parametrize(
+    "file_content,filename,content_type,expected_status",
+    [
+        (b"This is a text file", "test.txt", "text/plain", 415),
+        (b"x" * (51 * 1024 * 1024), "large_file.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 413),
+    ],
+    ids=["unsupported_type", "too_large"],
+)
+async def test_upload_driver_tree_file_errors(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
+    file_content,
+    filename,
+    content_type,
+    expected_status,
 ):
-    """[test_driver_tree_file-002] サポートされていないファイル形式のアップロード失敗ケース。"""
+    """[test_driver_tree_file-002,003] ファイルアップロードエラーケース（非対応形式・サイズ超過）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
 
-    file_content = b"This is a text file"
-    files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
+    files = {"file": (filename, BytesIO(file_content), content_type)}
 
     # Act
     with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
@@ -133,36 +144,7 @@ async def test_upload_driver_tree_file_unsupported_type(
         )
 
     # Assert
-    assert response.status_code == 415  # Unsupported Media Type
-    data = response.json()
-    assert "detail" in data
-
-
-@pytest.mark.asyncio
-async def test_upload_driver_tree_file_too_large(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-    tmp_path,
-):
-    """[test_driver_tree_file-003] ファイルサイズ超過のアップロード失敗ケース。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # 50MBを超えるファイルを作成（モック）
-    large_content = b"x" * (51 * 1024 * 1024)  # 51MB
-    files = {"file": ("large_file.xlsx", BytesIO(large_content), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-
-    # Act
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        response = await client.post(
-            f"/api/v1/project/{project.id}/driver-tree/file",
-            files=files,
-        )
-
-    # Assert
-    assert response.status_code == 413  # Payload Too Large
+    assert response.status_code == expected_status
     data = response.json()
     assert "detail" in data
 
@@ -284,30 +266,41 @@ async def test_select_sheet_success(
 
 
 @pytest.mark.asyncio
-async def test_list_selected_sheets_success(
+@pytest.mark.parametrize(
+    "should_upload_and_select,expected_file_count",
+    [
+        (True, 1),
+        (False, 0),
+    ],
+    ids=["with_sheets", "empty"],
+)
+async def test_list_selected_sheets(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
+    should_upload_and_select,
+    expected_file_count,
 ):
-    """[test_driver_tree_file-007] 選択済みシート一覧取得の成功ケース。"""
+    """[test_driver_tree_file-007,008] 選択済みシート一覧取得（データあり・なし）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
 
-    # ファイルをアップロードしてシートを選択
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        excel_file = create_test_excel_file()
-        files = {"file": ("selected_test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-        upload_response = await client.post(
-            f"/api/v1/project/{project.id}/driver-tree/file",
-            files=files,
-        )
-        file_id = upload_response.json()["files"][0]["fileId"]
-        sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
+    if should_upload_and_select:
+        # ファイルをアップロードしてシートを選択
+        with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
+            excel_file = create_test_excel_file()
+            files = {"file": ("selected_test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+            upload_response = await client.post(
+                f"/api/v1/project/{project.id}/driver-tree/file",
+                files=files,
+            )
+            file_id = upload_response.json()["files"][0]["fileId"]
+            sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
 
-        # シートを選択
-        await client.post(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
+            # シートを選択
+            await client.post(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
 
     # Act
     response = await client.get(f"/api/v1/project/{project.id}/driver-tree/sheet")
@@ -316,40 +309,20 @@ async def test_list_selected_sheets_success(
     assert response.status_code == 200
     data = response.json()
     assert "files" in data
-    assert len(data["files"]) >= 1
+    assert len(data["files"]) == expected_file_count
 
-    # 選択済みシートにはcolumns情報が含まれることを確認
-    selected_sheet = data["files"][0]["sheets"][0]
-    assert "columns" in selected_sheet
-    assert len(selected_sheet["columns"]) > 0
+    if should_upload_and_select:
+        # 選択済みシートにはcolumns情報が含まれることを確認
+        selected_sheet = data["files"][0]["sheets"][0]
+        assert "columns" in selected_sheet
+        assert len(selected_sheet["columns"]) > 0
 
-    # 各カラムにcolumnIdが含まれることを確認
-    for column in selected_sheet["columns"]:
-        assert "columnId" in column
-        assert "columnName" in column
-        assert "role" in column
-        assert "items" in column
-
-
-@pytest.mark.asyncio
-async def test_list_selected_sheets_empty(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-):
-    """[test_driver_tree_file-008] 選択済みシートがない場合の空リスト。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/sheet")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "files" in data
-    assert len(data["files"]) == 0
+        # 各カラムにcolumnIdが含まれることを確認
+        for column in selected_sheet["columns"]:
+            assert "columnId" in column
+            assert "columnName" in column
+            assert "role" in column
+            assert "items" in column
 
 
 # ================================================================================
@@ -491,13 +464,24 @@ async def test_update_column_config_success(
 
 
 @pytest.mark.asyncio
-async def test_update_column_config_invalid_role(
+@pytest.mark.parametrize(
+    "error_type,expected_status,error_message_check",
+    [
+        ("invalid_role", 422, None),
+        ("invalid_column_id", 404, "カラム設定に該当カラムIDが見つかりません"),
+    ],
+    ids=["invalid_role", "invalid_column_id"],
+)
+async def test_update_column_config_errors(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
+    error_type,
+    expected_status,
+    error_message_check,
 ):
-    """[test_driver_tree_file-011] 不正なrole値でのカラム設定更新失敗（422エラー）。"""
+    """[test_driver_tree_file-011,012] カラム設定更新エラーケース（不正role・不正column_id）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
@@ -524,64 +508,31 @@ async def test_update_column_config_invalid_role(
         columns = list_data["files"][0]["sheets"][0]["columns"]
         fy_column_id = next((col["columnId"] for col in columns if col["columnName"] == "FY"), None)
 
-        # Act - 不正なrole値
-        column_config = {
-            "columns": [
-                {"columnId": fy_column_id, "role": "invalid_role"},  # 不正な値
-            ]
-        }
+        # Act - エラーケース別の設定
+        if error_type == "invalid_role":
+            column_config = {
+                "columns": [
+                    {"columnId": fy_column_id, "role": "invalid_role"},
+                ]
+            }
+        else:  # invalid_column_id
+            invalid_column_id = str(uuid.uuid4())
+            column_config = {
+                "columns": [
+                    {"columnId": invalid_column_id, "role": "推移"},
+                ]
+            }
+
         response = await client.patch(
             f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/column",
             json=column_config,
         )
 
     # Assert
-    assert response.status_code == 422  # Validation Error
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_invalid_column_id(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-    tmp_path,
-):
-    """[test_driver_tree_file-012] 存在しないcolumn_idでのカラム設定更新失敗（404エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # ファイルをアップロードしてシート選択
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        excel_file = create_test_excel_file()
-        files = {"file": ("test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-        upload_response = await client.post(
-            f"/api/v1/project/{project.id}/driver-tree/file",
-            files=files,
-        )
-        file_id = upload_response.json()["files"][0]["fileId"]
-        sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
-
-        # シート選択
-        select_response = await client.post(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}")
-        assert select_response.status_code == 200, f"Sheet selection failed: {select_response.json()}"
-
-        # Act - 存在しないcolumn_idを使用
-        invalid_column_id = str(uuid.uuid4())
-        column_config = {
-            "columns": [
-                {"columnId": invalid_column_id, "role": "推移"},
-            ]
-        }
-        response = await client.patch(
-            f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/column",
-            json=column_config,
-        )
-
-    # Assert
-    assert response.status_code == 404
-    data = response.json()
-    assert "カラム設定に該当カラムIDが見つかりません" in data["detail"]
+    assert response.status_code == expected_status
+    if error_message_check:
+        data = response.json()
+        assert error_message_check in data["detail"]
 
 
 # ================================================================================
@@ -590,13 +541,19 @@ async def test_update_column_config_invalid_column_id(
 
 
 @pytest.mark.asyncio
-async def test_get_sheet_detail_success(
+@pytest.mark.parametrize(
+    "check_type",
+    ["basic_fields", "data_types"],
+    ids=["basic_fields", "data_types"],
+)
+async def test_get_sheet_detail(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     tmp_path,
+    check_type,
 ):
-    """[test_driver_tree_file-013] シート詳細取得の成功ケース。
+    """[test_driver_tree_file-013,014] シート詳細取得（基本フィールド・データ型検証）。
 
     07-api-extensions.md の実装により、SheetDetailResponse が返されることを確認。
     シート詳細には ColumnInfo（カラム情報）、行数、サンプルデータが含まれる。
@@ -617,87 +574,50 @@ async def test_get_sheet_detail_success(
         sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
 
     # Act
-    # 注: このエンドポイントは実装されていない可能性があります
-    # 実装されている場合は以下のようなパスになる想定
     response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
 
     # Assert
     if response.status_code == 200:
         result = response.json()
 
-        # SheetDetailResponse のフィールドを確認
-        assert "sheetId" in result
-        assert "sheetName" in result
-        assert "columns" in result
-        assert "rowCount" in result
-        assert "sampleData" in result
+        if check_type == "basic_fields":
+            # SheetDetailResponse のフィールドを確認
+            assert "sheetId" in result
+            assert "sheetName" in result
+            assert "columns" in result
+            assert "rowCount" in result
+            assert "sampleData" in result
 
-        assert result["sheetId"] == sheet_id
-        assert result["sheetName"] == "Sheet1"
-        assert isinstance(result["columns"], list)
-        assert isinstance(result["rowCount"], int)
-        assert isinstance(result["sampleData"], list)
+            assert result["sheetId"] == sheet_id
+            assert result["sheetName"] == "Sheet1"
+            assert isinstance(result["columns"], list)
+            assert isinstance(result["rowCount"], int)
+            assert isinstance(result["sampleData"], list)
 
-        # カラム情報の検証
-        if len(result["columns"]) > 0:
-            column = result["columns"][0]
-            assert "name" in column
-            assert "displayName" in column
-            assert "dataType" in column
-            # role はオプションなので、存在チェックのみ
-            if "role" in column:
-                assert isinstance(column["role"], str | None)
+            # カラム情報の検証
+            if len(result["columns"]) > 0:
+                column = result["columns"][0]
+                assert "name" in column
+                assert "displayName" in column
+                assert "dataType" in column
+                # role はオプションなので、存在チェックのみ
+                if "role" in column:
+                    assert isinstance(column["role"], str | None)
 
-        # サンプルデータの検証（最初の10行程度）
-        if result["rowCount"] > 0:
-            assert len(result["sampleData"]) > 0
-            assert len(result["sampleData"]) <= 10  # サンプルデータは最大10行
+            # サンプルデータの検証（最初の10行程度）
+            if result["rowCount"] > 0:
+                assert len(result["sampleData"]) > 0
+                assert len(result["sampleData"]) <= 10  # サンプルデータは最大10行
+        else:  # data_types
+            columns = result["columns"]
+
+            # データ型が適切に設定されているか確認
+            data_types = {col["dataType"] for col in columns}
+            # 少なくとも1つのデータ型が存在することを確認
+            assert len(data_types) > 0
+            # 有効なデータ型のみが使用されているか確認
+            valid_types = {"string", "number", "datetime", "boolean"}
+            assert data_types.issubset(valid_types)
     else:
         # エンドポイントが未実装の場合はスキップ
-        pytest.skip("Sheet detail endpoint not implemented yet")
-
-
-@pytest.mark.asyncio
-async def test_sheet_detail_column_info_types(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-    tmp_path,
-):
-    """[test_driver_tree_file-014] シート詳細のColumnInfoで各種データ型が返されることを確認。
-
-    ColumnInfo の dataType フィールドが適切に設定されていることを確認。
-    """
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # ファイルをアップロード
-    with patch("app.core.config.settings.LOCAL_STORAGE_PATH", str(tmp_path)):
-        excel_file = create_test_excel_file()
-        files = {"file": ("types_test.xlsx", excel_file, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
-        upload_response = await client.post(
-            f"/api/v1/project/{project.id}/driver-tree/file",
-            files=files,
-        )
-        file_id = upload_response.json()["files"][0]["fileId"]
-        sheet_id = upload_response.json()["files"][0]["sheets"][0]["sheetId"]
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/driver-tree/file/{file_id}/sheet/{sheet_id}/detail")
-
-    # Assert
-    if response.status_code == 200:
-        result = response.json()
-        columns = result["columns"]
-
-        # データ型が適切に設定されているか確認
-        # テストファイルには string, number などのデータが含まれる
-        data_types = {col["dataType"] for col in columns}
-        # 少なくとも1つのデータ型が存在することを確認
-        assert len(data_types) > 0
-        # 有効なデータ型のみが使用されているか確認
-        valid_types = {"string", "number", "datetime", "boolean"}
-        assert data_types.issubset(valid_types)
-    else:
         pytest.skip("Sheet detail endpoint not implemented yet")

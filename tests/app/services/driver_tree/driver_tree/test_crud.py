@@ -28,8 +28,22 @@ from app.services.driver_tree import DriverTreeService
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "name,description,expected_description",
+    [
+        ("新規ツリー", "テスト用ツリー", "テスト用ツリー"),
+        ("説明なしツリー", None, ""),
+    ],
+    ids=["with_description", "without_description"],
+)
 @pytest.mark.asyncio
-async def test_create_tree_success(db_session: AsyncSession, test_data_seeder):
+async def test_create_tree(
+    db_session: AsyncSession,
+    test_data_seeder,
+    name: str,
+    description: str | None,
+    expected_description: str,
+):
     """[test_driver_tree_tree-001] ツリー作成の成功ケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
@@ -40,41 +54,17 @@ async def test_create_tree_success(db_session: AsyncSession, test_data_seeder):
     # Act
     result = await service.create_tree(
         project_id=project.id,
-        name="新規ツリー",
-        description="テスト用ツリー",
+        name=name,
+        description=description,
         user_id=owner.id,
     )
     await db_session.commit()
 
     # Assert
     assert result["tree_id"] is not None
-    assert result["name"] == "新規ツリー"
-    assert result["description"] == "テスト用ツリー"
+    assert result["name"] == name
+    assert result["description"] == expected_description
     assert result["created_at"] is not None
-
-
-@pytest.mark.asyncio
-async def test_create_tree_without_description(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-002] 説明なしでツリー作成。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeService(db_session)
-
-    # Act
-    result = await service.create_tree(
-        project_id=project.id,
-        name="説明なしツリー",
-        description=None,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
-    assert result["tree_id"] is not None
-    assert result["name"] == "説明なしツリー"
-    assert result["description"] == ""
 
 
 @pytest.mark.asyncio
@@ -162,42 +152,38 @@ async def test_get_tree_success(db_session: AsyncSession, test_data_seeder):
     assert "relationship" in result
 
 
+@pytest.mark.parametrize(
+    "error_type",
+    ["tree_not_found", "wrong_project"],
+    ids=["tree_not_found", "wrong_project"],
+)
 @pytest.mark.asyncio
-async def test_get_tree_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-007] 存在しないツリーの取得でNotFoundError。"""
+async def test_get_tree_not_found_errors(
+    db_session: AsyncSession, test_data_seeder, error_type: str
+):
+    """[test_driver_tree_tree-007] get_treeのNotFoundErrorケース。"""
     # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
     service = DriverTreeService(db_session)
+
+    if error_type == "tree_not_found":
+        project, owner = await test_data_seeder.create_project_with_owner()
+        await test_data_seeder.db.commit()
+        project_id = project.id
+        tree_id = uuid.uuid4()  # 存在しないツリー
+    else:  # wrong_project
+        data = await test_data_seeder.seed_driver_tree_dataset()
+        tree = data["tree"]
+        owner = data["owner"]
+        other_project, _ = await test_data_seeder.create_project_with_owner()
+        await test_data_seeder.db.commit()
+        project_id = other_project.id  # 異なるプロジェクト
+        tree_id = tree.id
 
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.get_tree(
-            project_id=project.id,
-            tree_id=uuid.uuid4(),
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_get_tree_wrong_project(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-008] 異なるプロジェクトIDでのツリー取得でNotFoundError。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    tree = data["tree"]
-    owner = data["owner"]
-
-    other_project, _ = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_tree(
-            project_id=other_project.id,
-            tree_id=tree.id,
+            project_id=project_id,
+            tree_id=tree_id,
             user_id=owner.id,
         )
 
@@ -262,9 +248,19 @@ async def test_import_formula_multiple(db_session: AsyncSession, test_data_seede
     assert len(result["nodes"]) >= 1
 
 
+@pytest.mark.parametrize(
+    "formulas,error_reason",
+    [
+        ([], "empty_list"),
+        (["不正な数式"], "invalid_format"),
+    ],
+    ids=["empty_list", "invalid_format"],
+)
 @pytest.mark.asyncio
-async def test_import_formula_empty_list(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-011] 空の数式リストでValidationError。"""
+async def test_import_formula_validation_errors(
+    db_session: AsyncSession, test_data_seeder, formulas: list, error_reason: str
+):
+    """[test_driver_tree_tree-011] 数式インポートのValidationErrorケース。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -280,53 +276,7 @@ async def test_import_formula_empty_list(db_session: AsyncSession, test_data_see
             tree_id=tree.id,
             position_x=100,
             position_y=100,
-            formulas=[],
-            sheet_id=None,
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_import_formula_invalid_format(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-012] 不正な数式フォーマットでValidationError。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    tree = data["tree"]
-
-    service = DriverTreeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(ValidationError):
-        await service.import_formula(
-            project_id=project.id,
-            tree_id=tree.id,
-            position_x=100,
-            position_y=100,
-            formulas=["不正な数式"],  # = がない
-            sheet_id=None,
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_import_formula_tree_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-013] 存在しないツリーへの数式インポートでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.import_formula(
-            project_id=project.id,
-            tree_id=uuid.uuid4(),
-            position_x=100,
-            position_y=100,
-            formulas=["売上高 = 単価 * 数量"],
+            formulas=formulas,
             sheet_id=None,
             user_id=owner.id,
         )
@@ -362,18 +312,26 @@ async def test_reset_tree_success(db_session: AsyncSession, test_data_seeder):
     assert result["reset_at"] is not None
 
 
+@pytest.mark.parametrize(
+    "operation",
+    ["reset_tree", "delete_tree"],
+    ids=["reset", "delete"],
+)
 @pytest.mark.asyncio
-async def test_reset_tree_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-015] 存在しないツリーのリセットでNotFoundError。"""
+async def test_tree_operations_not_found(
+    db_session: AsyncSession, test_data_seeder, operation: str
+):
+    """[test_driver_tree_tree-014] reset/deleteツリー操作のNotFoundErrorケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
     await test_data_seeder.db.commit()
 
     service = DriverTreeService(db_session)
+    operation_method = getattr(service, operation)
 
     # Act & Assert
     with pytest.raises(NotFoundError):
-        await service.reset_tree(
+        await operation_method(
             project_id=project.id,
             tree_id=uuid.uuid4(),
             user_id=owner.id,
@@ -382,7 +340,7 @@ async def test_reset_tree_not_found(db_session: AsyncSession, test_data_seeder):
 
 @pytest.mark.asyncio
 async def test_delete_tree_success(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-016] ツリー削除の成功ケース。"""
+    """[test_driver_tree_tree-015] ツリー削除の成功ケース。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -409,24 +367,6 @@ async def test_delete_tree_success(db_session: AsyncSession, test_data_seeder):
         await service.get_tree(
             project_id=project.id,
             tree_id=tree_id,
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_delete_tree_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-017] 存在しないツリーの削除でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.delete_tree(
-            project_id=project.id,
-            tree_id=uuid.uuid4(),
             user_id=owner.id,
         )
 
@@ -569,9 +509,19 @@ async def test_get_tree_data_not_found(db_session: AsyncSession, test_data_seede
         )
 
 
+@pytest.mark.parametrize(
+    "format,expected_media_type",
+    [
+        ("csv", "text/csv"),
+        ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+    ],
+    ids=["csv", "excel"],
+)
 @pytest.mark.asyncio
-async def test_download_simulation_output_csv(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-022] シミュレーション出力のCSVダウンロード。"""
+async def test_download_simulation_output_format(
+    db_session: AsyncSession, test_data_seeder, format: str, expected_media_type: str
+):
+    """[test_driver_tree_tree-022] シミュレーション出力の各フォーマットダウンロード。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -584,35 +534,12 @@ async def test_download_simulation_output_csv(db_session: AsyncSession, test_dat
     response = await service.download_simulation_output(
         project_id=project.id,
         tree_id=tree.id,
-        format="csv",
+        format=format,
         user_id=owner.id,
     )
 
     # Assert
-    assert response.media_type == "text/csv"
-
-
-@pytest.mark.asyncio
-async def test_download_simulation_output_excel(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_tree-023] シミュレーション出力のExcelダウンロード。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    tree = data["tree"]
-
-    service = DriverTreeService(db_session)
-
-    # Act
-    response = await service.download_simulation_output(
-        project_id=project.id,
-        tree_id=tree.id,
-        format="xlsx",
-        user_id=owner.id,
-    )
-
-    # Assert
-    assert response.media_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    assert response.media_type == expected_media_type
 
 
 @pytest.mark.asyncio

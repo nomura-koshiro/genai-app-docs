@@ -3,12 +3,13 @@
 このモジュールは、システム統計情報の集計機能を提供します。
 """
 
+import asyncio
 from datetime import UTC, date, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import Date, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance
+from app.core.decorators import measure_performance
 from app.core.logging import get_logger
 from app.models import Project, UserAccount
 from app.models.audit.user_activity import UserActivity
@@ -24,6 +25,7 @@ from app.schemas.admin.statistics import (
     UserStatistics,
     UserStatisticsDetailResponse,
 )
+from app.utils import DataFormatter
 
 logger = get_logger(__name__)
 
@@ -68,17 +70,13 @@ class StatisticsService:
             action="get_statistics_overview",
         )
 
-        # ユーザー統計
-        users = await self._get_user_summary()
-
-        # プロジェクト統計
-        projects = await self._get_project_summary()
-
-        # ストレージ統計
-        storage = await self._get_storage_summary()
-
-        # API統計
-        api = await self._get_api_summary()
+        # 4つの統計を並行実行
+        users, projects, storage, api = await asyncio.gather(
+            self._get_user_summary(),
+            self._get_project_summary(),
+            self._get_storage_summary(),
+            self._get_api_summary(),
+        )
 
         return StatisticsOverviewResponse(
             users=users,
@@ -91,20 +89,35 @@ class StatisticsService:
         """ユーザー統計サマリーを取得します。"""
         # 総ユーザー数
         total_query = select(func.count()).select_from(UserAccount)
-        result = await self.db.execute(total_query)
-        total = result.scalar_one() or 0
 
         # 今日アクティブなユーザー数
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        active_query = select(func.count(func.distinct(UserActivity.user_id))).where(UserActivity.created_at >= today_start)
-        result = await self.db.execute(active_query)
-        active_today = result.scalar_one() or 0
+        today_start = datetime.now(UTC).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        active_query = select(func.count(func.distinct(UserActivity.user_id))).where(
+            UserActivity.created_at >= today_start
+        )
 
         # 今月の新規ユーザー数
-        month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        new_query = select(func.count()).select_from(UserAccount).where(UserAccount.created_at >= month_start)
-        result = await self.db.execute(new_query)
-        new_this_month = result.scalar_one() or 0
+        month_start = datetime.now(UTC).replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
+        )
+        new_query = (
+            select(func.count())
+            .select_from(UserAccount)
+            .where(UserAccount.created_at >= month_start)
+        )
+
+        # 3つのクエリを並行実行
+        total_result, active_result, new_result = await asyncio.gather(
+            self.db.execute(total_query),
+            self.db.execute(active_query),
+            self.db.execute(new_query),
+        )
+
+        total = total_result.scalar_one() or 0
+        active_today = active_result.scalar_one() or 0
+        new_this_month = new_result.scalar_one() or 0
 
         return UserStatistics(
             total=total,
@@ -114,28 +127,30 @@ class StatisticsService:
 
     async def _get_project_summary(self) -> ProjectStatistics:
         """プロジェクト統計サマリーを取得します。"""
-        # 総プロジェクト数
-        total_query = select(func.count()).select_from(Project)
-        result = await self.db.execute(total_query)
-        total = result.scalar_one() or 0
+        from sqlalchemy import case
 
-        # アクティブプロジェクト数
-        active_query = (
-            select(func.count()).select_from(Project).where(Project.is_active == True)  # noqa: E712
+        month_start = datetime.now(UTC).replace(
+            day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        result = await self.db.execute(active_query)
-        active = result.scalar_one() or 0
 
-        # 今月作成されたプロジェクト数
-        month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        created_query = select(func.count()).select_from(Project).where(Project.created_at >= month_start)
-        result = await self.db.execute(created_query)
-        created_this_month = result.scalar_one() or 0
+        # 1クエリで全カウントを取得
+        result = await self.db.execute(
+            select(
+                func.count(Project.id).label("total"),
+                func.count(case((Project.is_active == True, 1))).label(  # noqa: E712
+                    "active"
+                ),
+                func.count(case((Project.created_at >= month_start, 1))).label(
+                    "created_this_month"
+                ),
+            )
+        )
+        row = result.one()
 
         return ProjectStatistics(
-            total=total,
-            active=active,
-            created_this_month=created_this_month,
+            total=row.total or 0,
+            active=row.active or 0,
+            created_this_month=row.created_this_month or 0,
         )
 
     async def _get_storage_summary(self) -> StorageStatistics:
@@ -147,23 +162,27 @@ class StatisticsService:
 
         return StorageStatistics(
             total_bytes=total_bytes,
-            total_display=self._format_bytes(total_bytes),
+            total_display=DataFormatter.format_bytes(total_bytes),
             used_percentage=used_percentage,
         )
 
     async def _get_api_summary(self) -> ApiStatistics:
         """API統計サマリーを取得します。"""
-        today_start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start = datetime.now(UTC).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
 
         # 今日のリクエスト数
-        request_query = select(func.count()).select_from(UserActivity).where(UserActivity.created_at >= today_start)
-        result = await self.db.execute(request_query)
-        requests_today = result.scalar_one() or 0
+        request_query = (
+            select(func.count())
+            .select_from(UserActivity)
+            .where(UserActivity.created_at >= today_start)
+        )
 
         # 平均レスポンス時間
-        avg_query = select(func.avg(UserActivity.duration_ms)).where(UserActivity.created_at >= today_start)
-        result = await self.db.execute(avg_query)
-        average_response_ms = result.scalar_one() or 0
+        avg_query = select(func.avg(UserActivity.duration_ms)).where(
+            UserActivity.created_at >= today_start
+        )
 
         # エラー率
         error_query = (
@@ -174,8 +193,17 @@ class StatisticsService:
                 UserActivity.response_status >= 400,
             )
         )
-        result = await self.db.execute(error_query)
-        error_count = result.scalar_one() or 0
+
+        # 3つのクエリを並行実行
+        request_result, avg_result, error_result = await asyncio.gather(
+            self.db.execute(request_query),
+            self.db.execute(avg_query),
+            self.db.execute(error_query),
+        )
+
+        requests_today = request_result.scalar_one() or 0
+        average_response_ms = avg_result.scalar_one() or 0
+        error_count = error_result.scalar_one() or 0
         error_rate = (error_count / requests_today * 100) if requests_today > 0 else 0
 
         return ApiStatistics(
@@ -213,49 +241,81 @@ class StatisticsService:
 
     async def _get_active_users_trend(self, days: int) -> list[TimeSeriesDataPoint]:
         """アクティブユーザー推移を取得します。"""
-        result = []
         today = date.today()
+        start_date = today - timedelta(days=days - 1)
 
-        for i in range(days - 1, -1, -1):
-            target_date = today - timedelta(days=i)
-            start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=UTC)
-            end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=UTC)
-
-            query = select(func.count(func.distinct(UserActivity.user_id))).where(
-                UserActivity.created_at >= start,
-                UserActivity.created_at <= end,
+        # 1回のGROUP BYクエリで全日付のカウントを取得
+        query = (
+            select(
+                cast(UserActivity.created_at, Date).label("date"),
+                func.count(func.distinct(UserActivity.user_id)).label("count"),
             )
-            res = await self.db.execute(query)
-            count = res.scalar_one() or 0
+            .where(
+                UserActivity.created_at
+                >= datetime.combine(start_date, datetime.min.time()).replace(
+                    tzinfo=UTC
+                ),
+                UserActivity.created_at
+                < datetime.combine(
+                    today + timedelta(days=1), datetime.min.time()
+                ).replace(tzinfo=UTC),
+            )
+            .group_by(cast(UserActivity.created_at, Date))
+        )
 
-            result.append(TimeSeriesDataPoint(date=target_date, value=float(count)))
+        result = await self.db.execute(query)
+        count_map: dict[date, int] = {row.date: row.count for row in result.all()}  # type: ignore[misc]
 
-        return result
+        # 結果を構築（0埋め）
+        data_points = []
+        for i in range(days):
+            current_date = start_date + timedelta(days=i)
+            data_points.append(
+                TimeSeriesDataPoint(
+                    date=current_date, value=float(count_map.get(current_date, 0))
+                )
+            )
+
+        return data_points
 
     async def _get_new_users_trend(self, days: int) -> list[TimeSeriesDataPoint]:
         """新規ユーザー推移を取得します。"""
-        result = []
         today = date.today()
+        start_date = today - timedelta(days=days - 1)
 
-        for i in range(days - 1, -1, -1):
-            target_date = today - timedelta(days=i)
-            start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=UTC)
-            end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=UTC)
+        # 1回のGROUP BYクエリで全日付のカウントを取得
+        query = (
+            select(
+                cast(UserAccount.created_at, Date).label("date"),
+                func.count().label("count"),
+            )
+            .where(
+                UserAccount.created_at
+                >= datetime.combine(start_date, datetime.min.time()).replace(
+                    tzinfo=UTC
+                ),
+                UserAccount.created_at
+                < datetime.combine(
+                    today + timedelta(days=1), datetime.min.time()
+                ).replace(tzinfo=UTC),
+            )
+            .group_by(cast(UserAccount.created_at, Date))
+        )
 
-            query = (
-                select(func.count())
-                .select_from(UserAccount)
-                .where(
-                    UserAccount.created_at >= start,
-                    UserAccount.created_at <= end,
+        result = await self.db.execute(query)
+        count_map: dict[date, int] = {row.date: row.count for row in result.all()}  # type: ignore[misc]
+
+        # 結果を構築（0埋め）
+        data_points = []
+        for i in range(days):
+            current_date = start_date + timedelta(days=i)
+            data_points.append(
+                TimeSeriesDataPoint(
+                    date=current_date, value=float(count_map.get(current_date, 0))
                 )
             )
-            res = await self.db.execute(query)
-            count = res.scalar_one() or 0
 
-            result.append(TimeSeriesDataPoint(date=target_date, value=float(count)))
-
-        return result
+        return data_points
 
     @measure_performance
     async def get_storage_statistics(
@@ -278,7 +338,7 @@ class StatisticsService:
 
         return StorageStatisticsDetailResponse(
             total_bytes=total_bytes,
-            total_display=self._format_bytes(total_bytes),
+            total_display=DataFormatter.format_bytes(total_bytes),
             usage_trend=usage_trend,
         )
 
@@ -326,28 +386,42 @@ class StatisticsService:
 
     async def _get_api_request_trend(self, days: int) -> list[TimeSeriesDataPoint]:
         """APIリクエスト数推移を取得します。"""
-        result = []
         today = date.today()
+        start_date = today - timedelta(days=days - 1)
 
-        for i in range(days - 1, -1, -1):
-            target_date = today - timedelta(days=i)
-            start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=UTC)
-            end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=UTC)
+        # 1回のGROUP BYクエリで全日付のカウントを取得
+        query = (
+            select(
+                cast(UserActivity.created_at, Date).label("date"),
+                func.count().label("count"),
+            )
+            .where(
+                UserActivity.created_at
+                >= datetime.combine(start_date, datetime.min.time()).replace(
+                    tzinfo=UTC
+                ),
+                UserActivity.created_at
+                < datetime.combine(
+                    today + timedelta(days=1), datetime.min.time()
+                ).replace(tzinfo=UTC),
+            )
+            .group_by(cast(UserActivity.created_at, Date))
+        )
 
-            query = (
-                select(func.count())
-                .select_from(UserActivity)
-                .where(
-                    UserActivity.created_at >= start,
-                    UserActivity.created_at <= end,
+        result = await self.db.execute(query)
+        count_map: dict[date, int] = {row.date: row.count for row in result.all()}  # type: ignore[misc]
+
+        # 結果を構築（0埋め）
+        data_points = []
+        for i in range(days):
+            current_date = start_date + timedelta(days=i)
+            data_points.append(
+                TimeSeriesDataPoint(
+                    date=current_date, value=float(count_map.get(current_date, 0))
                 )
             )
-            res = await self.db.execute(query)
-            count = res.scalar_one() or 0
 
-            result.append(TimeSeriesDataPoint(date=target_date, value=float(count)))
-
-        return result
+        return data_points
 
     @measure_performance
     async def get_error_statistics(
@@ -362,22 +436,27 @@ class StatisticsService:
         Returns:
             ErrorStatisticsDetailResponse: エラー統計詳細
         """
-        error_trend = await self._get_error_rate_trend(days)
-
         # 総エラー数を計算
-        error_query = select(func.count()).select_from(UserActivity).where(UserActivity.response_status >= 400)
-        error_result = await self.db.execute(error_query)
-        total_errors = error_result.scalar_one() or 0
+        error_query = (
+            select(func.count())
+            .select_from(UserActivity)
+            .where(UserActivity.response_status >= 400)
+        )
 
         # エラー率を計算
         total_query = select(func.count()).select_from(UserActivity)
-        total_result = await self.db.execute(total_query)
+
+        # 4つの処理を並行実行
+        error_trend, error_result, total_result, error_by_type = await asyncio.gather(
+            self._get_error_rate_trend(days),
+            self.db.execute(error_query),
+            self.db.execute(total_query),
+            self._get_error_by_type(),
+        )
+
+        total_errors = error_result.scalar_one() or 0
         total_requests = total_result.scalar_one() or 0
-
         error_rate = (total_errors / total_requests * 100) if total_requests > 0 else 0
-
-        # エラー種別ごとのカウント
-        error_by_type = await self._get_error_by_type()
 
         return ErrorStatisticsDetailResponse(
             total_errors=total_errors,
@@ -388,44 +467,48 @@ class StatisticsService:
 
     async def _get_error_rate_trend(self, days: int) -> list[TimeSeriesDataPoint]:
         """エラー率推移を取得します。"""
-        result = []
         today = date.today()
+        start_date = today - timedelta(days=days - 1)
 
-        for i in range(days - 1, -1, -1):
-            target_date = today - timedelta(days=i)
-            start = datetime.combine(target_date, datetime.min.time()).replace(tzinfo=UTC)
-            end = datetime.combine(target_date, datetime.max.time()).replace(tzinfo=UTC)
-
-            # 総リクエスト数
-            total_query = (
-                select(func.count())
-                .select_from(UserActivity)
-                .where(
-                    UserActivity.created_at >= start,
-                    UserActivity.created_at <= end,
-                )
+        # 1回のGROUP BYクエリで全日付の総リクエスト数とエラー数を取得
+        query = (
+            select(
+                cast(UserActivity.created_at, Date).label("date"),
+                func.count().label("total_count"),
+                func.sum(
+                    func.case((UserActivity.response_status >= 400, 1), else_=0)
+                ).label("error_count"),
             )
-            total_res = await self.db.execute(total_query)
-            total_count = total_res.scalar_one() or 0
-
-            # エラー数
-            error_query = (
-                select(func.count())
-                .select_from(UserActivity)
-                .where(
-                    UserActivity.created_at >= start,
-                    UserActivity.created_at <= end,
-                    UserActivity.response_status >= 400,
-                )
+            .where(
+                UserActivity.created_at
+                >= datetime.combine(start_date, datetime.min.time()).replace(
+                    tzinfo=UTC
+                ),
+                UserActivity.created_at
+                < datetime.combine(
+                    today + timedelta(days=1), datetime.min.time()
+                ).replace(tzinfo=UTC),
             )
-            error_res = await self.db.execute(error_query)
-            error_count = error_res.scalar_one() or 0
+            .group_by(cast(UserActivity.created_at, Date))
+        )
 
+        result = await self.db.execute(query)
+        stats_map = {
+            row.date: (row.total_count, row.error_count or 0) for row in result.all()
+        }
+
+        # 結果を構築（0埋め）
+        data_points = []
+        for i in range(days):
+            current_date = start_date + timedelta(days=i)
+            total_count, error_count = stats_map.get(current_date, (0, 0))
             error_rate = (error_count / total_count * 100) if total_count > 0 else 0
 
-            result.append(TimeSeriesDataPoint(date=target_date, value=round(error_rate, 2)))
+            data_points.append(
+                TimeSeriesDataPoint(date=current_date, value=round(error_rate, 2))
+            )
 
-        return result
+        return data_points
 
     async def _get_error_by_type(self) -> dict[str, int]:
         """エラー種別ごとのカウントを取得します。"""
@@ -454,12 +537,3 @@ class StatisticsService:
             error_by_type[status_name] = count
 
         return error_by_type
-
-    def _format_bytes(self, bytes_value: int) -> str:
-        """バイト数を人間が読める形式に変換します。"""
-        value: float = float(bytes_value)
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if value < 1024:
-                return f"{value:.1f} {unit}"
-            value /= 1024
-        return f"{value:.1f} PB"

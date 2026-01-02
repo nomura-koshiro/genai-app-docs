@@ -39,8 +39,8 @@ class TestParseDriverTreeExcel:
         assert isinstance(df_metadata, pd.DataFrame)
         assert isinstance(df_data, pd.DataFrame)
 
-    def test_parse_metadata_columns(self):
-        """[test_excel_parser-002] メタデータカラムの検証。"""
+    def test_parse_columns(self):
+        """[test_excel_parser-002] メタデータとデータカラムの検証。"""
         # Arrange
         excel_bytes = create_test_excel_bytes()
 
@@ -50,14 +50,6 @@ class TestParseDriverTreeExcel:
         # Assert: メタデータには年度・部門が含まれる
         assert "年度" in df_metadata.columns
         assert "部門" in df_metadata.columns
-
-    def test_parse_data_columns(self):
-        """[test_excel_parser-003] データカラムの検証。"""
-        # Arrange
-        excel_bytes = create_test_excel_bytes()
-
-        # Act
-        df_metadata, df_data = parse_driver_tree_excel(BytesIO(excel_bytes), "Sheet1")
 
         # Assert: データには売上・コストが含まれる
         assert "売上" in df_data.columns
@@ -108,29 +100,23 @@ class TestParseDriverTreeExcel:
         with pytest.raises(ValidationError):
             parse_driver_tree_excel(BytesIO(excel_bytes), "NonExistentSheet")
 
-    def test_parse_with_path_string(self, tmp_path):
-        """[test_excel_parser-008] パス文字列での解析。"""
+    @pytest.mark.parametrize(
+        "path_type",
+        ["string", "path_object"],
+        ids=["string", "path_object"],
+    )
+    def test_parse_with_path_types(self, tmp_path, path_type: str):
+        """[test_excel_parser-008] パス文字列/Pathオブジェクトでの解析。"""
         # Arrange
         excel_bytes = create_test_excel_bytes()
         file_path = tmp_path / "test.xlsx"
         file_path.write_bytes(excel_bytes)
 
         # Act
-        df_metadata, df_data = parse_driver_tree_excel(str(file_path), "Sheet1")
-
-        # Assert
-        assert isinstance(df_metadata, pd.DataFrame)
-        assert isinstance(df_data, pd.DataFrame)
-
-    def test_parse_with_path_object(self, tmp_path):
-        """[test_excel_parser-009] Pathオブジェクトでの解析。"""
-        # Arrange
-        excel_bytes = create_test_excel_bytes()
-        file_path = tmp_path / "test.xlsx"
-        file_path.write_bytes(excel_bytes)
-
-        # Act
-        df_metadata, df_data = parse_driver_tree_excel(file_path, "Sheet1")
+        if path_type == "string":
+            df_metadata, df_data = parse_driver_tree_excel(str(file_path), "Sheet1")
+        else:  # path_object
+            df_metadata, df_data = parse_driver_tree_excel(file_path, "Sheet1")
 
         # Assert
         assert isinstance(df_metadata, pd.DataFrame)

@@ -233,85 +233,48 @@ def test_get_source_data_invalid_step_index():
 # ================================================================================
 
 
-def test_add_step_filter_success():
-    """[test_state-009] filterステップの追加成功。"""
+@pytest.mark.parametrize(
+    "step_name,step_type,expected_config_keys",
+    [
+        ("フィルタステップ", "filter", ["category_filter", "numeric_filter"]),
+        ("集計ステップ", "aggregate", ["group_by_axis", "aggregation_config"]),
+        ("サマリステップ", "summary", ["formulas", "chart_config"]),
+        ("変換ステップ", "transform", ["transform_config"]),
+    ],
+    ids=["filter", "aggregate", "summary", "transform"],
+)
+def test_add_step_success(step_name: str, step_type: str, expected_config_keys: list):
+    """[test_state-009] ステップ追加の成功ケース。"""
     # Arrange
     state = create_empty_state()
 
     # Act
-    state.add_step("フィルタステップ", "filter", "original")
+    state.add_step(step_name, step_type, "original")
 
     # Assert
     assert len(state.all_steps) == 1
-    assert state.all_steps[0]["type"] == "filter"
-    assert "category_filter" in state.all_steps[0]["config"]
-    assert "numeric_filter" in state.all_steps[0]["config"]
+    assert state.all_steps[0]["type"] == step_type
+    for key in expected_config_keys:
+        assert key in state.all_steps[0]["config"]
 
 
-def test_add_step_aggregate_success():
-    """[test_state-010] aggregateステップの追加成功。"""
-    # Arrange
-    state = create_empty_state()
-
-    # Act
-    state.add_step("集計ステップ", "aggregate", "original")
-
-    # Assert
-    assert len(state.all_steps) == 1
-    assert state.all_steps[0]["type"] == "aggregate"
-    assert "group_by_axis" in state.all_steps[0]["config"]
-    assert "aggregation_config" in state.all_steps[0]["config"]
-
-
-def test_add_step_summary_success():
-    """[test_state-011] summaryステップの追加成功。"""
-    # Arrange
-    state = create_empty_state()
-
-    # Act
-    state.add_step("サマリステップ", "summary", "original")
-
-    # Assert
-    assert len(state.all_steps) == 1
-    assert state.all_steps[0]["type"] == "summary"
-    assert "formulas" in state.all_steps[0]["config"]
-    assert "chart_config" in state.all_steps[0]["config"]
-
-
-def test_add_step_transform_success():
-    """[test_state-012] transformステップの追加成功。"""
-    # Arrange
-    state = create_empty_state()
-
-    # Act
-    state.add_step("変換ステップ", "transform", "original")
-
-    # Assert
-    assert len(state.all_steps) == 1
-    assert state.all_steps[0]["type"] == "transform"
-    assert "transform_config" in state.all_steps[0]["config"]
-
-
-def test_add_step_invalid_type():
-    """[test_state-013] 不正なステップタイプでエラー。"""
+@pytest.mark.parametrize(
+    "step_name,step_type,data_source,expected_error",
+    [
+        ("不正ステップ", "invalid", "original", "不明なステップタイプ"),
+        ("テストステップ", "filter", "invalid_source", "無効なデータソース形式"),
+    ],
+    ids=["invalid_type", "invalid_data_source"],
+)
+def test_add_step_error(step_name: str, step_type: str, data_source: str, expected_error: str):
+    """[test_state-013] ステップ追加のエラーケース。"""
     # Arrange
     state = create_empty_state()
 
     # Act & Assert
     with pytest.raises(ValueError) as exc_info:
-        state.add_step("不正ステップ", "invalid", "original")
-    assert "不明なステップタイプ" in str(exc_info.value)
-
-
-def test_add_step_invalid_data_source_format():
-    """[test_state-014] 不正なデータソース形式でエラー。"""
-    # Arrange
-    state = create_empty_state()
-
-    # Act & Assert
-    with pytest.raises(ValueError) as exc_info:
-        state.add_step("テストステップ", "filter", "invalid_source")
-    assert "無効なデータソース形式" in str(exc_info.value)
+        state.add_step(step_name, step_type, data_source)
+    assert expected_error in str(exc_info.value)
 
 
 def test_delete_step_success():
@@ -411,81 +374,62 @@ def test_get_filter_success():
     assert "table_filter" in filter_config
 
 
-def test_set_filter_category_success():
-    """[test_state-021] カテゴリフィルタ設定の成功。"""
-    # Arrange
-    state = create_empty_state()
-    state.add_step("フィルタステップ", "filter", "original")
-
-    # Act
-    state.set_filter(
-        0,
-        {
-            "category_filter": {"地域": ["日本"]},
-            "numeric_filter": {},
-            "table_filter": {},
-        },
-    )
-
-    # Assert
-    result_data = state.all_steps[0]["result_data"]
-    assert all(result_data["地域"] == "日本")
-
-
-def test_set_filter_numeric_range_success():
-    """[test_state-022] 数値範囲フィルタ設定の成功。"""
-    # Arrange
-    state = create_empty_state()
-    state.add_step("フィルタステップ", "filter", "original")
-
-    # Act
-    state.set_filter(
-        0,
-        {
-            "category_filter": {},
-            "numeric_filter": {
-                "column": "値",
-                "filter_type": "range",
-                "enable_min": True,
-                "min_value": 1000,
-                "include_min": True,
-                "enable_max": False,
-                "max_value": 0,
-                "include_max": True,
+@pytest.mark.parametrize(
+    "filter_config,assertion_fn",
+    [
+        (
+            {
+                "category_filter": {"地域": ["日本"]},
+                "numeric_filter": {},
+                "table_filter": {},
             },
-            "table_filter": {},
-        },
-    )
-
-    # Assert
-    result_data = state.all_steps[0]["result_data"]
-    assert all(result_data["値"] >= 1000)
-
-
-def test_set_filter_numeric_topk_success():
-    """[test_state-023] TopKフィルタ設定の成功。"""
+            lambda data: all(data["地域"] == "日本"),
+        ),
+        (
+            {
+                "category_filter": {},
+                "numeric_filter": {
+                    "column": "値",
+                    "filter_type": "range",
+                    "enable_min": True,
+                    "min_value": 1000,
+                    "include_min": True,
+                    "enable_max": False,
+                    "max_value": 0,
+                    "include_max": True,
+                },
+                "table_filter": {},
+            },
+            lambda data: all(data["値"] >= 1000),
+        ),
+        (
+            {
+                "category_filter": {},
+                "numeric_filter": {
+                    "column": "値",
+                    "filter_type": "topk",
+                    "k_value": 3,
+                    "ascending": False,
+                },
+                "table_filter": {},
+            },
+            lambda data: len(data) == 3,
+        ),
+    ],
+    ids=["category", "numeric_range", "numeric_topk"],
+)
+def test_set_filter_success(filter_config: dict, assertion_fn):
+    """[test_state-021] フィルタ設定の成功ケース。"""
     # Arrange
     state = create_empty_state()
     state.add_step("フィルタステップ", "filter", "original")
 
     # Act
-    state.set_filter(
-        0,
-        {
-            "category_filter": {},
-            "numeric_filter": {
-                "column": "値",
-                "filter_type": "topk",
-                "k_value": 3,
-                "ascending": False,
-            },
-            "table_filter": {},
-        },
-    )
+    state.set_filter(0, filter_config)
 
     # Assert
     result_data = state.all_steps[0]["result_data"]
-    assert len(result_data) == 3
+    assert assertion_fn(result_data)
 
 
 def test_set_filter_on_non_filter_step():
@@ -631,71 +575,70 @@ def test_get_transform_success():
     assert "operations" in transform_config
 
 
-def test_set_transform_add_axis_constant():
-    """[test_state-032] 定数値で軸追加の成功ケース。"""
-    # Arrange
-    state = create_empty_state()
-    state.add_step("変換ステップ", "transform", "original")
-
-    # Act
-    state.set_transform(
-        0,
-        {
-            "operations": [
+@pytest.mark.parametrize(
+    "df_factory,transform_config,expected_column,expected_value",
+    [
+        (
+            create_test_dataframe,
+            {
+                "operations": [
+                    {
+                        "operation_type": "add_axis",
+                        "target_name": "新しい軸",
+                        "calculation": {
+                            "type": "constant",
+                            "constant_value": 100,
+                        },
+                    }
+                ]
+            },
+            "新しい軸",
+            None,
+        ),
+        (
+            lambda: pd.DataFrame(
                 {
-                    "operation_type": "add_axis",
-                    "target_name": "新しい軸",
-                    "calculation": {
-                        "type": "constant",
-                        "constant_value": 100,
-                    },
+                    "数値A": [10, 20, 30],
+                    "数値B": [1, 2, 3],
+                    "科目": ["売上", "売上", "売上"],
+                    "値": [100, 200, 300],
                 }
-            ]
-        },
-    )
-
-    # Assert
-    result_data = state.all_steps[0]["result_data"]
-    assert "新しい軸" in result_data.columns
-
-
-def test_set_transform_add_axis_formula():
-    """[test_state-033] 計算式で軸追加の成功ケース。"""
+            ),
+            {
+                "operations": [
+                    {
+                        "operation_type": "add_axis",
+                        "target_name": "計算結果",
+                        "calculation": {
+                            "type": "formula",
+                            "formula_type": "+",
+                            "operands": ["数値A", "数値B"],
+                            "constant_value": None,
+                        },
+                    }
+                ]
+            },
+            "計算結果",
+            11,
+        ),
+    ],
+    ids=["constant", "formula"],
+)
+def test_set_transform_add_axis(df_factory, transform_config: dict, expected_column: str, expected_value):
+    """[test_state-032] 軸追加（定数/計算式）の成功ケース。"""
     # Arrange
-    df = pd.DataFrame(
-        {
-            "数値A": [10, 20, 30],
-            "数値B": [1, 2, 3],
-            "科目": ["売上", "売上", "売上"],
-            "値": [100, 200, 300],
-        }
-    )
+    df = df_factory()
     state = AnalysisState(df, [], [])
     state.add_step("変換ステップ", "transform", "original")
 
     # Act
-    state.set_transform(
-        0,
-        {
-            "operations": [
-                {
-                    "operation_type": "add_axis",
-                    "target_name": "計算結果",
-                    "calculation": {
-                        "type": "formula",
-                        "formula_type": "+",
-                        "operands": ["数値A", "数値B"],
-                        "constant_value": None,
-                    },
-                }
-            ]
-        },
-    )
+    state.set_transform(0, transform_config)
 
     # Assert
     result_data = state.all_steps[0]["result_data"]
-    assert "計算結果" in result_data.columns
-    assert result_data.iloc[0]["計算結果"] == 11  # 10 + 1
+    assert expected_column in result_data.columns
+    if expected_value is not None:
+        assert result_data.iloc[0][expected_column] == expected_value
 
 
 def test_set_transform_on_non_transform_step():
@@ -805,31 +748,25 @@ def test_set_summary_invalid_formula_type():
 # ================================================================================
 
 
-def test_get_data_overview_success():
-    """[test_state-039] get_data_overviewの成功ケース。"""
+@pytest.mark.parametrize(
+    "state_factory,expected_content",
+    [
+        (create_empty_state, ["データの概要", "original", "6件"]),
+        (lambda: (lambda s: (s.apply(0), s)[1])(create_state_with_filter_step()), ["step_1"]),
+    ],
+    ids=["empty_state", "with_steps"],
+)
+def test_get_data_overview(state_factory, expected_content: list):
+    """[test_state-039] データ概要取得のテスト。"""
     # Arrange
-    state = create_empty_state()
+    state = state_factory()
 
     # Act
     overview = state.get_data_overview()
 
     # Assert
-    assert "データの概要" in overview
-    assert "original" in overview
-    assert "6件" in overview
-
-
-def test_get_data_overview_with_steps():
-    """[test_state-040] ステップ結果を含むデータ概要。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    state.apply(0)
-
-    # Act
-    overview = state.get_data_overview()
-
-    # Assert
-    assert "step_1" in overview
+    for content in expected_content:
+        assert content in overview
 
 
 def test_get_step_overview_empty():

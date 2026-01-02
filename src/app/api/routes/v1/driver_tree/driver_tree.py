@@ -21,7 +21,7 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import StreamingResponse
 
 from app.api.core import DriverTreeServiceDep, ProjectMemberDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.driver_tree import (
     DriverTreeCalculatedDataResponse,

@@ -14,9 +14,21 @@ from app.schemas.admin.data_management import RetentionPolicyUpdate
 from app.services.admin.data_management_service import DataManagementService
 
 
+@pytest.mark.parametrize(
+    "target_types,expected_preview_count",
+    [
+        (["ACTIVITY_LOGS"], 1),
+        (["ACTIVITY_LOGS", "AUDIT_LOGS"], 2),
+    ],
+    ids=["single_type", "multiple_types"],
+)
 @pytest.mark.asyncio
-async def test_preview_cleanup_success(db_session: AsyncSession):
-    """[test_data_management_service-001] クリーンアッププレビューの成功ケース。"""
+async def test_preview_cleanup_success(
+    db_session: AsyncSession,
+    target_types: list[str],
+    expected_preview_count: int,
+):
+    """[test_data_management_service-001-005] クリーンアッププレビューの成功ケース。"""
     # Arrange
     service = DataManagementService(db_session)
     user_id = uuid.uuid4()
@@ -42,17 +54,30 @@ async def test_preview_cleanup_success(db_session: AsyncSession):
         created_at=old_date,
     )
     db_session.add(activity)
+
+    # 複数種別テストの場合は監査ログも作成
+    if "AUDIT_LOGS" in target_types:
+        audit_log = AuditLog(
+            user_id=user_id,
+            event_type="ACCESS",
+            action="LOGIN",
+            resource_type="Auth",
+            severity="INFO",
+            created_at=old_date,
+        )
+        db_session.add(audit_log)
+
     await db_session.commit()
 
     # Act
     result = await service.preview_cleanup(
-        target_types=["ACTIVITY_LOGS"],
+        target_types=target_types,
         retention_days=90,
     )
 
     # Assert
     assert result is not None
-    assert len(result.preview) >= 1
+    assert len(result.preview) >= expected_preview_count
     assert result.total_record_count >= 1
 
 
@@ -175,58 +200,6 @@ async def test_update_retention_policy_success(db_session: AsyncSession):
     # Assert
     assert result is not None
     assert result.activity_logs_days == 120
-
-
-@pytest.mark.asyncio
-async def test_preview_cleanup_multiple_types(db_session: AsyncSession):
-    """[test_data_management_service-005] 複数種別のクリーンアッププレビュー。"""
-    # Arrange
-    service = DataManagementService(db_session)
-    user_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=user_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"test-{uuid.uuid4()}@example.com",
-        display_name="Test User",
-    )
-    db_session.add(user)
-
-    # 古い操作履歴を作成
-    old_date = datetime.now(UTC) - timedelta(days=100)
-    activity = UserActivity(
-        user_id=user_id,
-        action_type="READ",
-        endpoint="/api/v1/test",
-        method="GET",
-        response_status=200,
-        duration_ms=100,
-        created_at=old_date,
-    )
-    db_session.add(activity)
-
-    # 古い監査ログを作成
-    audit_log = AuditLog(
-        user_id=user_id,
-        event_type="ACCESS",
-        action="LOGIN",
-        resource_type="Auth",
-        severity="INFO",
-        created_at=old_date,
-    )
-    db_session.add(audit_log)
-    await db_session.commit()
-
-    # Act
-    result = await service.preview_cleanup(
-        target_types=["ACTIVITY_LOGS", "AUDIT_LOGS"],
-        retention_days=90,
-    )
-
-    # Assert
-    assert result is not None
-    assert len(result.preview) >= 2
 
 
 @pytest.mark.asyncio

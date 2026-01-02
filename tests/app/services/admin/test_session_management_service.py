@@ -13,9 +13,21 @@ from app.schemas.admin.session_management import SessionFilter
 from app.services.admin.session_management_service import SessionManagementService
 
 
+@pytest.mark.parametrize(
+    "use_filter,ip_address",
+    [
+        (False, "127.0.0.1"),
+        (True, "192.168.1.1"),
+    ],
+    ids=["no_filter", "with_filter"],
+)
 @pytest.mark.asyncio
-async def test_list_sessions_success(db_session: AsyncSession):
-    """[test_session_management_service-001] セッション一覧取得の成功ケース。"""
+async def test_list_sessions_success(
+    db_session: AsyncSession,
+    use_filter: bool,
+    ip_address: str,
+):
+    """[test_session_management_service-001-006] セッション一覧取得の成功ケース。"""
     # Arrange
     service = SessionManagementService(db_session)
     user_id = uuid.uuid4()
@@ -37,19 +49,30 @@ async def test_list_sessions_success(db_session: AsyncSession):
         last_activity_at=datetime.now(UTC),
         expires_at=datetime.now(UTC) + timedelta(hours=1),
         is_active=True,
-        ip_address="127.0.0.1",
+        ip_address=ip_address,
         user_agent="TestAgent/1.0",
     )
     db_session.add(session)
     await db_session.commit()
 
     # Act
-    filter_params = SessionFilter(page=1, limit=10)
+    if use_filter:
+        filter_params = SessionFilter(
+            user_id=user_id,
+            ip_address=ip_address,
+            page=1,
+            limit=10,
+        )
+    else:
+        filter_params = SessionFilter(page=1, limit=10)
+
     result = await service.list_sessions(filter_params)
 
     # Assert
     assert result is not None
     assert len(result.items) >= 1
+    if use_filter:
+        assert all(item.ip_address == ip_address for item in result.items)
 
 
 @pytest.mark.asyncio
@@ -216,47 +239,3 @@ async def test_terminate_all_user_sessions_success(db_session: AsyncSession):
 
     # Assert
     assert count >= 3
-
-
-@pytest.mark.asyncio
-async def test_list_sessions_with_filter(db_session: AsyncSession):
-    """[test_session_management_service-006] フィルタ付きセッション一覧取得。"""
-    # Arrange
-    service = SessionManagementService(db_session)
-    user_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=user_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"test-{uuid.uuid4()}@example.com",
-        display_name="Test User",
-    )
-    db_session.add(user)
-
-    # セッションを作成
-    session = UserSession(
-        user_id=user_id,
-        session_token_hash="test_hash",
-        login_at=datetime.now(UTC),
-        last_activity_at=datetime.now(UTC),
-        expires_at=datetime.now(UTC) + timedelta(hours=1),
-        is_active=True,
-        ip_address="192.168.1.1",
-        user_agent="TestAgent/1.0",
-    )
-    db_session.add(session)
-    await db_session.commit()
-
-    # Act
-    filter_params = SessionFilter(
-        user_id=user_id,
-        ip_address="192.168.1.1",
-        page=1,
-        limit=10,
-    )
-    result = await service.list_sessions(filter_params)
-
-    # Assert
-    assert result is not None
-    assert all(item.ip_address == "192.168.1.1" for item in result.items)

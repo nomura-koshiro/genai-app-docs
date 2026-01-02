@@ -10,10 +10,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.decorators import measure_performance
+from app.core.decorators import measure_performance
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
-from app.models import Project, ProjectMember, UserAccount
+from app.models import Project, ProjectMember
 from app.schemas.admin.project_admin import (
     AdminProjectDetailResponse,
     AdminProjectListResponse,
@@ -23,6 +23,7 @@ from app.schemas.admin.project_admin import (
     ProjectStorageListResponse,
     ProjectStorageResponse,
 )
+from app.utils import DataFormatter
 
 logger = get_logger(__name__)
 
@@ -42,6 +43,42 @@ class ProjectsAdminService:
     def __init__(self, db: AsyncSession):
         """サービスを初期化します。"""
         self.db = db
+
+    def _build_project_response(
+        self,
+        project: Project,
+        member_count: int,
+        storage_used_bytes: int,
+    ) -> AdminProjectResponse:
+        """プロジェクトレスポンスを構築します（DRY原則）。
+
+        Args:
+            project: プロジェクトモデル
+            member_count: メンバー数
+            storage_used_bytes: ストレージ使用量（バイト）
+
+        Returns:
+            AdminProjectResponse: 管理者用プロジェクトレスポンス
+        """
+        # オーナー情報を構築（オーナーが存在しない場合はNone）
+        owner_info = None
+        if project.owner:
+            owner_info = ProjectOwnerInfo(
+                id=project.owner.id,
+                name=project.owner.display_name or project.owner.email,
+            )
+
+        return AdminProjectResponse(
+            id=project.id,
+            name=project.name,
+            owner=owner_info,
+            status="active" if project.is_active else "archived",
+            member_count=member_count,
+            storage_used_bytes=storage_used_bytes,
+            storage_used_display=DataFormatter.format_bytes(storage_used_bytes),
+            last_activity_at=project.updated_at,
+            created_at=project.created_at,
+        )
 
     @measure_performance
     async def get_all_projects(
@@ -119,39 +156,35 @@ class ProjectsAdminService:
         result = await self.db.execute(query)
         projects = result.scalars().all()
 
-        # レスポンス構築
-        items = []
-        for project in projects:
-            # メンバー数取得
+        # プロジェクトID一覧を取得
+        project_ids = [project.id for project in projects]
+
+        # メンバー数を一括取得（N+1回避）
+        member_counts: dict[uuid.UUID, int] = {}
+        if project_ids:
             member_count_query = (
-                select(func.count()).select_from(ProjectMember).where(ProjectMember.project_id == project.id)
+                select(ProjectMember.project_id, func.count().label("count"))
+                .where(ProjectMember.project_id.in_(project_ids))
+                .group_by(ProjectMember.project_id)
             )
             member_count_result = await self.db.execute(member_count_query)
-            member_count = member_count_result.scalar_one() or 0
+            # SQLAlchemy Rowのcount属性はmypy上Callableに見える問題の回避
+            member_counts = {
+                row.project_id: row.count  # type: ignore[misc]
+                for row in member_count_result.all()
+            }
+
+        # レスポンス構築（共通メソッドでDRY化）
+        items = []
+        for project in projects:
+            # メンバー数を辞書から取得
+            member_count = member_counts.get(project.id, 0)
 
             # TODO: 実際のストレージ使用量を計算（現在はプレースホルダ）
             storage_used_bytes = 0
 
-            # オーナー情報を構築（オーナーが存在しない場合はNone）
-            owner_info = None
-            if project.owner:
-                owner_info = ProjectOwnerInfo(
-                    id=project.owner.id,
-                    name=project.owner.display_name or project.owner.email,
-                )
-
             items.append(
-                AdminProjectResponse(
-                    id=project.id,
-                    name=project.name,
-                    owner=owner_info,
-                    status="active" if project.is_active else "archived",
-                    member_count=member_count,
-                    storage_used_bytes=storage_used_bytes,
-                    storage_used_display=self._format_bytes(storage_used_bytes),
-                    last_activity_at=project.updated_at,
-                    created_at=project.created_at,
-                )
+                self._build_project_response(project, member_count, storage_used_bytes)
             )
 
         # 統計情報取得
@@ -167,20 +200,21 @@ class ProjectsAdminService:
 
     async def _get_project_statistics(self) -> AdminProjectStatistics:
         """プロジェクト統計情報を取得します。"""
-        # 総プロジェクト数
-        total_query = select(func.count()).select_from(Project)
-        total_result = await self.db.execute(total_query)
-        total_projects = total_result.scalar_one() or 0
+        # 1クエリで全カウントを取得
+        from sqlalchemy import case
 
-        # アクティブプロジェクト数
-        active_query = select(func.count()).select_from(Project).where(Project.is_active == True)  # noqa: E712
-        active_result = await self.db.execute(active_query)
-        active_projects = active_result.scalar_one() or 0
-
-        # アーカイブ済みプロジェクト数
-        archived_query = select(func.count()).select_from(Project).where(Project.is_active == False)  # noqa: E712
-        archived_result = await self.db.execute(archived_query)
-        archived_projects = archived_result.scalar_one() or 0
+        result = await self.db.execute(
+            select(
+                func.count(Project.id).label("total"),
+                func.count(case((Project.is_active == True, 1))).label(  # noqa: E712
+                    "active"
+                ),
+                func.count(case((Project.is_active == False, 1))).label(  # noqa: E712
+                    "archived"
+                ),
+            )
+        )
+        row = result.one()
 
         # TODO: 削除済みプロジェクトのカウント（deleted_atカラム追加時）
         deleted_projects = 0
@@ -189,16 +223,18 @@ class ProjectsAdminService:
         total_storage_bytes = 0
 
         return AdminProjectStatistics(
-            total_projects=total_projects,
-            active_projects=active_projects,
-            archived_projects=archived_projects,
+            total_projects=row.total or 0,
+            active_projects=row.active or 0,
+            archived_projects=row.archived or 0,
             deleted_projects=deleted_projects,
             total_storage_bytes=total_storage_bytes,
-            total_storage_display=self._format_bytes(total_storage_bytes),
+            total_storage_display=DataFormatter.format_bytes(total_storage_bytes),
         )
 
     @measure_performance
-    async def get_project_detail(self, project_id: uuid.UUID) -> AdminProjectDetailResponse:
+    async def get_project_detail(
+        self, project_id: uuid.UUID
+    ) -> AdminProjectDetailResponse:
         """プロジェクト詳細を取得します（管理者ビュー）。
 
         Args:
@@ -216,7 +252,11 @@ class ProjectsAdminService:
             action="get_project_detail",
         )
 
-        query = select(Project).where(Project.id == project_id).options(selectinload(Project.owner))
+        query = (
+            select(Project)
+            .where(Project.id == project_id)
+            .options(selectinload(Project.owner))
+        )
 
         result = await self.db.execute(query)
         project = result.scalar_one_or_none()
@@ -229,7 +269,9 @@ class ProjectsAdminService:
 
         # メンバー数取得
         member_count_query = (
-            select(func.count()).select_from(ProjectMember).where(ProjectMember.project_id == project_id)
+            select(func.count())
+            .select_from(ProjectMember)
+            .where(ProjectMember.project_id == project_id)
         )
         member_count_result = await self.db.execute(member_count_query)
         member_count = member_count_result.scalar_one() or 0
@@ -253,7 +295,7 @@ class ProjectsAdminService:
             status="active" if project.is_active else "archived",
             member_count=member_count,
             storage_used_bytes=storage_used_bytes,
-            storage_used_display=self._format_bytes(storage_used_bytes),
+            storage_used_display=DataFormatter.format_bytes(storage_used_bytes),
             last_activity_at=project.updated_at,
             created_at=project.created_at,
             updated_at=project.updated_at,
@@ -282,7 +324,9 @@ class ProjectsAdminService:
         )
 
         # 全プロジェクト取得
-        query = select(Project).where(Project.is_active == True).limit(limit)  # noqa: E712
+        query = (
+            select(Project).where(Project.is_active == True).limit(limit)  # noqa: E712
+        )
 
         result = await self.db.execute(query)
         projects = result.scalars().all()
@@ -301,7 +345,7 @@ class ProjectsAdminService:
                     project_id=project.id,
                     project_name=project.name,
                     storage_used_bytes=storage_used_bytes,
-                    storage_used_display=self._format_bytes(storage_used_bytes),
+                    storage_used_display=DataFormatter.format_bytes(storage_used_bytes),
                     file_count=file_count,
                 )
             )
@@ -315,7 +359,7 @@ class ProjectsAdminService:
         return ProjectStorageListResponse(
             items=items,
             total_storage_bytes=total_storage_bytes,
-            total_storage_display=self._format_bytes(total_storage_bytes),
+            total_storage_display=DataFormatter.format_bytes(total_storage_bytes),
         )
 
     @measure_performance
@@ -350,7 +394,10 @@ class ProjectsAdminService:
         # 非アクティブプロジェクト取得
         query = (
             select(Project)
-            .where(Project.is_active == True, Project.updated_at < cutoff_date)  # noqa: E712
+            .where(
+                Project.is_active == True,  # noqa: E712
+                Project.updated_at < cutoff_date,
+            )
             .options(selectinload(Project.owner))
             .order_by(Project.updated_at.asc())
         )
@@ -367,39 +414,35 @@ class ProjectsAdminService:
         result = await self.db.execute(query)
         projects = result.scalars().all()
 
-        # レスポンス構築
-        items = []
-        for project in projects:
-            # メンバー数取得
+        # プロジェクトID一覧を取得
+        project_ids = [project.id for project in projects]
+
+        # メンバー数を一括取得（N+1回避）
+        member_counts: dict[uuid.UUID, int] = {}
+        if project_ids:
             member_count_query = (
-                select(func.count()).select_from(ProjectMember).where(ProjectMember.project_id == project.id)
+                select(ProjectMember.project_id, func.count().label("count"))
+                .where(ProjectMember.project_id.in_(project_ids))
+                .group_by(ProjectMember.project_id)
             )
             member_count_result = await self.db.execute(member_count_query)
-            member_count = member_count_result.scalar_one() or 0
+            # SQLAlchemy Rowのcount属性はmypy上Callableに見える問題の回避
+            member_counts = {
+                row.project_id: row.count  # type: ignore[misc]
+                for row in member_count_result.all()
+            }
+
+        # レスポンス構築（共通メソッドでDRY化）
+        items = []
+        for project in projects:
+            # メンバー数を辞書から取得
+            member_count = member_counts.get(project.id, 0)
 
             # TODO: 実際のストレージ使用量を計算
             storage_used_bytes = 0
 
-            # オーナー情報を構築（オーナーが存在しない場合はNone）
-            owner_info = None
-            if project.owner:
-                owner_info = ProjectOwnerInfo(
-                    id=project.owner.id,
-                    name=project.owner.display_name or project.owner.email,
-                )
-
             items.append(
-                AdminProjectResponse(
-                    id=project.id,
-                    name=project.name,
-                    owner=owner_info,
-                    status="active" if project.is_active else "archived",
-                    member_count=member_count,
-                    storage_used_bytes=storage_used_bytes,
-                    storage_used_display=self._format_bytes(storage_used_bytes),
-                    last_activity_at=project.updated_at,
-                    created_at=project.created_at,
-                )
+                self._build_project_response(project, member_count, storage_used_bytes)
             )
 
         # 統計情報取得
@@ -412,12 +455,3 @@ class ProjectsAdminService:
             limit=limit,
             statistics=statistics,
         )
-
-    def _format_bytes(self, bytes_value: int) -> str:
-        """バイト数を人間が読める形式に変換します。"""
-        value: float = float(bytes_value)
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if value < 1024:
-                return f"{value:.1f} {unit}"
-            value /= 1024
-        return f"{value:.1f} PB"

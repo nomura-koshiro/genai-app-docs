@@ -112,7 +112,7 @@ Table analysis_session{
   id uuid [primary key]
   name varchar(255) [not null, default: '', note: 'セッション名']
   issue_id uuid [not null]
-  creator_id uuid [not null]
+  creator_id uuid [note: '作成者ID（ユーザー削除時にNULLになる）']
   project_id uuid [not null]
   input_file_id uuid
   current_snapshot integer [not null]

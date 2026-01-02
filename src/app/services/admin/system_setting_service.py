@@ -3,12 +3,13 @@
 このモジュールは、システム設定の管理機能を提供します。
 """
 
+import asyncio
 import uuid
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance, transactional
+from app.core.decorators import measure_performance, transactional
 from app.core.exceptions import NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.repositories.admin.system_setting_repository import SystemSettingRepository
@@ -190,25 +191,26 @@ class SystemSettingService:
             action="enable_maintenance_mode",
         )
 
-        await self.repository.set_value(
-            category="MAINTENANCE",
-            key="maintenance_mode",
-            value=True,
-            updated_by=updated_by,
-        )
-
-        await self.repository.set_value(
-            category="MAINTENANCE",
-            key="maintenance_message",
-            value=params.message,
-            updated_by=updated_by,
-        )
-
-        await self.repository.set_value(
-            category="MAINTENANCE",
-            key="allow_admin_access",
-            value=params.allow_admin_access,
-            updated_by=updated_by,
+        # 3つの設定更新を並行実行
+        await asyncio.gather(
+            self.repository.set_value(
+                category="MAINTENANCE",
+                key="maintenance_mode",
+                value=True,
+                updated_by=updated_by,
+            ),
+            self.repository.set_value(
+                category="MAINTENANCE",
+                key="maintenance_message",
+                value=params.message,
+                updated_by=updated_by,
+            ),
+            self.repository.set_value(
+                category="MAINTENANCE",
+                key="allow_admin_access",
+                value=params.allow_admin_access,
+                updated_by=updated_by,
+            ),
         )
 
         logger.warning(
@@ -268,9 +270,12 @@ class SystemSettingService:
         Returns:
             MaintenanceModeResponse: メンテナンスモード状態
         """
-        enabled = await self.repository.get_value("MAINTENANCE", "maintenance_mode", default=False)
-        message = await self.repository.get_value("MAINTENANCE", "maintenance_message", default=None)
-        allow_admin = await self.repository.get_value("MAINTENANCE", "allow_admin_access", default=True)
+        # 3つの設定取得を並行実行
+        enabled, message, allow_admin = await asyncio.gather(
+            self.repository.get_value("MAINTENANCE", "maintenance_mode", default=False),
+            self.repository.get_value("MAINTENANCE", "maintenance_message", default=None),
+            self.repository.get_value("MAINTENANCE", "allow_admin_access", default=True),
+        )
 
         return MaintenanceModeResponse(
             enabled=enabled,

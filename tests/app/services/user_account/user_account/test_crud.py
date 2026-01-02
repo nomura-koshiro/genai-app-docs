@@ -9,108 +9,106 @@ from app.models import UserAccount
 from app.services import UserAccountService
 
 
+@pytest.mark.parametrize(
+    "user_exists",
+    [True, False],
+    ids=["user_found", "user_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_user(db_session):
+async def test_get_user(db_session, user_exists):
     """[test_user_account-007] ユーザー取得テスト。"""
     # Arrange
-    user = UserAccount(
-        azure_oid="get-oid",
-        email="get@company.com",
-        display_name="Get User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
     service = UserAccountService(db_session)
 
-    # Act
-    result = await service.get_user(user.id)
-
-    # Assert
-    assert result is not None
-    assert result.id == user.id
-    assert result.email == "get@company.com"
-
-
-@pytest.mark.asyncio
-async def test_get_user_not_found(db_session):
-    """[test_user_account-008] 存在しないユーザー取得テスト。"""
-    # Arrange
-    service = UserAccountService(db_session)
-    non_existent_id = uuid.uuid4()
+    if user_exists:
+        user = UserAccount(
+            azure_oid="get-oid",
+            email="get@company.com",
+            display_name="Get User",
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+        user_id = user.id
+    else:
+        user_id = uuid.uuid4()
 
     # Act
-    result = await service.get_user(non_existent_id)
+    result = await service.get_user(user_id)
 
     # Assert
-    assert result is None
+    if user_exists:
+        assert result is not None
+        assert result.id == user_id
+        assert result.email == "get@company.com"
+    else:
+        assert result is None
 
 
+@pytest.mark.parametrize(
+    "email_exists",
+    [True, False],
+    ids=["email_found", "email_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_user_by_email(db_session):
+async def test_get_user_by_email(db_session, email_exists):
     """[test_user_account-009] メールアドレスでユーザー取得テスト。"""
     # Arrange
-    user = UserAccount(
-        azure_oid="email-oid",
-        email="email@company.com",
-        display_name="Email User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
     service = UserAccountService(db_session)
 
-    # Act
-    result = await service.get_user_by_email("email@company.com")
-
-    # Assert
-    assert result is not None
-    assert result.email == "email@company.com"
-
-
-@pytest.mark.asyncio
-async def test_get_user_by_email_not_found(db_session):
-    """[test_user_account-010] 存在しないメールでユーザー取得エラーテスト。"""
-    # Arrange
-    service = UserAccountService(db_session)
+    if email_exists:
+        user = UserAccount(
+            azure_oid="email-oid",
+            email="email@company.com",
+            display_name="Email User",
+        )
+        db_session.add(user)
+        await db_session.commit()
+        email = "email@company.com"
+    else:
+        email = "nonexistent@company.com"
 
     # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_user_by_email("nonexistent@company.com")
+    if email_exists:
+        result = await service.get_user_by_email(email)
+        assert result is not None
+        assert result.email == email
+    else:
+        with pytest.raises(NotFoundError):
+            await service.get_user_by_email(email)
 
 
+@pytest.mark.parametrize(
+    "oid_exists",
+    [True, False],
+    ids=["oid_found", "oid_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_user_by_azure_oid(db_session):
+async def test_get_user_by_azure_oid(db_session, oid_exists):
     """[test_user_account-011] Azure OIDでユーザー取得テスト。"""
     # Arrange
-    user = UserAccount(
-        azure_oid="oid-test-12345",
-        email="oid@company.com",
-        display_name="OID User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
     service = UserAccountService(db_session)
 
-    # Act
-    result = await service.get_user_by_azure_oid("oid-test-12345")
-
-    # Assert
-    assert result is not None
-    assert result.azure_oid == "oid-test-12345"
-
-
-@pytest.mark.asyncio
-async def test_get_user_by_azure_oid_not_found(db_session):
-    """[test_user_account-012] 存在しないAzure OIDでユーザー取得エラーテスト。"""
-    # Arrange
-    service = UserAccountService(db_session)
+    if oid_exists:
+        user = UserAccount(
+            azure_oid="oid-test-12345",
+            email="oid@company.com",
+            display_name="OID User",
+        )
+        db_session.add(user)
+        await db_session.commit()
+        oid = "oid-test-12345"
+    else:
+        oid = "nonexistent-oid"
 
     # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_user_by_azure_oid("nonexistent-oid")
+    if oid_exists:
+        result = await service.get_user_by_azure_oid(oid)
+        assert result is not None
+        assert result.azure_oid == oid
+    else:
+        with pytest.raises(NotFoundError):
+            await service.get_user_by_azure_oid(oid)
 
 
 @pytest.mark.asyncio
@@ -251,9 +249,14 @@ async def test_count_users_inactive_only(db_session):
     assert inactive_count == 2  # 非アクティブユーザーのみ
 
 
+@pytest.mark.parametrize(
+    "is_admin",
+    [True, False],
+    ids=["admin_can_update", "non_admin_cannot_update"],
+)
 @pytest.mark.asyncio
-async def test_update_user_roles_by_admin(db_session):
-    """[test_user_account-017] ユーザーのロール更新テスト（管理者）。"""
+async def test_update_user_roles(db_session, is_admin):
+    """[test_user_account-017] ユーザーのロール更新テスト。"""
     # Arrange
     user = UserAccount(
         azure_oid="update-roles-oid",
@@ -266,49 +269,35 @@ async def test_update_user_roles_by_admin(db_session):
     await db_session.refresh(user)
 
     service = UserAccountService(db_session)
+    current_user_roles = ["SystemAdmin"] if is_admin else ["User"]
 
-    # Act - 管理者がロールを更新
-    updated_user = await service.update_user(
-        user_id=user.id,
-        update_data={"roles": ["SystemAdmin", "User"]},
-        current_user_roles=["SystemAdmin"],
-    )
-
-    # Assert
-    assert updated_user.id == user.id
-    assert updated_user.roles == ["SystemAdmin", "User"]
-
-
-@pytest.mark.asyncio
-async def test_update_user_roles_by_non_admin_fails(db_session):
-    """[test_user_account-018] 一般ユーザーによるロール更新の失敗テスト。"""
-    # Arrange
-    user = UserAccount(
-        azure_oid="fail-update-oid",
-        email="fail@company.com",
-        display_name="User",
-        roles=["User"],
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
-    service = UserAccountService(db_session)
-
-    # Act & Assert - 一般ユーザーがロールを更新しようとすると失敗
-    with pytest.raises(ValidationError) as exc_info:
-        await service.update_user(
+    # Act & Assert
+    if is_admin:
+        updated_user = await service.update_user(
             user_id=user.id,
             update_data={"roles": ["SystemAdmin", "User"]},
-            current_user_roles=["User"],  # SystemAdminではない
+            current_user_roles=current_user_roles,
         )
+        assert updated_user.id == user.id
+        assert updated_user.roles == ["SystemAdmin", "User"]
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            await service.update_user(
+                user_id=user.id,
+                update_data={"roles": ["SystemAdmin", "User"]},
+                current_user_roles=current_user_roles,
+            )
+        assert "管理者権限が必要です" in str(exc_info.value)
 
-    assert "管理者権限が必要です" in str(exc_info.value)
 
-
+@pytest.mark.parametrize(
+    "is_admin",
+    [True, False],
+    ids=["admin_can_update_active", "non_admin_cannot_update_active"],
+)
 @pytest.mark.asyncio
-async def test_update_user_is_active_by_admin(db_session):
-    """[test_user_account-019] ユーザーのis_active更新テスト（管理者）。"""
+async def test_update_user_is_active(db_session, is_admin):
+    """[test_user_account-019] ユーザーのis_active更新テスト。"""
     # Arrange
     user = UserAccount(
         azure_oid="update-active-oid",
@@ -322,45 +311,25 @@ async def test_update_user_is_active_by_admin(db_session):
     await db_session.refresh(user)
 
     service = UserAccountService(db_session)
+    current_user_roles = ["SystemAdmin"] if is_admin else ["User"]
 
-    # Act - 管理者がis_activeを更新
-    updated_user = await service.update_user(
-        user_id=user.id,
-        update_data={"is_active": False},
-        current_user_roles=["SystemAdmin"],
-    )
-
-    # Assert
-    assert updated_user.id == user.id
-    assert updated_user.is_active is False
-
-
-@pytest.mark.asyncio
-async def test_update_user_is_active_by_non_admin_fails(db_session):
-    """[test_user_account-020] 一般ユーザーによるis_active更新の失敗テスト。"""
-    # Arrange
-    user = UserAccount(
-        azure_oid="fail-active-oid",
-        email="fail-active@company.com",
-        display_name="User",
-        roles=["User"],
-        is_active=True,
-    )
-    db_session.add(user)
-    await db_session.commit()
-    await db_session.refresh(user)
-
-    service = UserAccountService(db_session)
-
-    # Act & Assert - 一般ユーザーがis_activeを更新しようとすると失敗
-    with pytest.raises(ValidationError) as exc_info:
-        await service.update_user(
+    # Act & Assert
+    if is_admin:
+        updated_user = await service.update_user(
             user_id=user.id,
             update_data={"is_active": False},
-            current_user_roles=["User"],  # SystemAdminではない
+            current_user_roles=current_user_roles,
         )
-
-    assert "管理者権限が必要です" in str(exc_info.value)
+        assert updated_user.id == user.id
+        assert updated_user.is_active is False
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            await service.update_user(
+                user_id=user.id,
+                update_data={"is_active": False},
+                current_user_roles=current_user_roles,
+            )
+        assert "管理者権限が必要です" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

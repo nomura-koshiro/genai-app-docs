@@ -21,6 +21,7 @@ from app.api.core import register_exception_handlers
 from app.api.middlewares import (
     ActivityTrackingMiddleware,
     AuditLogMiddleware,
+    CSRFMiddleware,
     LoggingMiddleware,
     MaintenanceModeMiddleware,
     PrometheusMetricsMiddleware,
@@ -57,12 +58,12 @@ from app.api.routes.v1 import (
     project_files_router,
     project_members_router,
     projects_router,
+    # 検索
+    search_router,
     security_router,
     settings_router,
     statistics_router,
     support_tools_router,
-    # 検索
-    search_router,
     # ユーザー管理
     user_accounts_router,
     # ユーザー通知
@@ -83,9 +84,19 @@ def create_app() -> FastAPI:
             ↓
         [CORS Middleware] ← クロスオリジン制御
             ↓
+        [CSRFMiddleware] ← CSRF保護（Cookie認証のみ）
+            ↓
+        [SecurityHeadersMiddleware] ← セキュリティヘッダー付与
+            ↓
         [RateLimitMiddleware] ← 100req/min制限
             ↓
+        [MaintenanceModeMiddleware] ← メンテナンスモードチェック
+            ↓
         [LoggingMiddleware] ← 構造化ログ記録
+            ↓
+        [AuditLogMiddleware] ← 監査ログ記録
+            ↓
+        [ActivityTrackingMiddleware] ← 操作履歴記録
             ↓
         [PrometheusMetricsMiddleware] ← メトリクス収集
             ↓
@@ -182,13 +193,14 @@ def create_app() -> FastAPI:
     # カスタムミドルウェアを登録（実行順序は登録の逆順 - 後に追加されたものが先に実行される）
     # ミドルウェア実行順序:
     #   1. SecurityHeadersMiddleware（最外層）
-    #   2. CORS
-    #   3. RateLimitMiddleware
-    #   4. MaintenanceModeMiddleware（メンテナンスモードチェック）
-    #   5. LoggingMiddleware
-    #   6. AuditLogMiddleware（監査ログ記録）
-    #   7. ActivityTrackingMiddleware（操作履歴記録）
-    #   8. PrometheusMetricsMiddleware（最内層）
+    #   2. CORS（クロスオリジン制御）
+    #   3. CSRFMiddleware（CSRF保護 - Cookie認証のみ）
+    #   4. RateLimitMiddleware（レート制限）
+    #   5. MaintenanceModeMiddleware（メンテナンスモードチェック）
+    #   6. LoggingMiddleware（ログ記録）
+    #   7. AuditLogMiddleware（監査ログ記録）
+    #   8. ActivityTrackingMiddleware（操作履歴記録）
+    #   9. PrometheusMetricsMiddleware（最内層 - メトリクス収集）
 
     app.add_middleware(PrometheusMetricsMiddleware)
 
@@ -210,12 +222,30 @@ def create_app() -> FastAPI:
     )
 
     # CORSミドルウェア（config.pyで必ずALLOWED_ORIGINSが設定されている）
+    # allow_credentials=True: Cookie認証をサポート（CSRF対策も実装済み）
+    # SameSite属性: CSRFMiddlewareでCookieに "lax" を設定（クロスサイトリクエスト制限）
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.ALLOWED_ORIGINS or [],  # 型安全性のためのフォールバック
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
-        allow_headers=["Accept", "Content-Type", "Authorization", "X-API-Key"],
+        allow_headers=[
+            "Accept",
+            "Content-Type",
+            "Authorization",
+            "X-API-Key",
+            "X-CSRF-Token",  # CSRF保護用カスタムヘッダー
+        ],
+    )
+
+    # CSRF保護ミドルウェア
+    # Cookie認証を使用する場合のCSRF攻撃対策
+    # Bearer token認証はCSRF攻撃のリスクがないためスキップ
+    # 二重防御: SameSite Cookie属性 + カスタムヘッダー検証
+    app.add_middleware(
+        CSRFMiddleware,
+        secret_key=settings.SECRET_KEY,
+        cookie_secure=not settings.DEBUG,  # 本番環境ではHTTPS必須
     )
 
     # セキュリティヘッダーミドルウェア

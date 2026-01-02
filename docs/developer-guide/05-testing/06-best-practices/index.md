@@ -361,6 +361,168 @@ def test_file_size_limits(file_size, should_succeed):
     assert result == should_succeed
 ```
 
+---
+
+## Parametrizeパターン（テストの効率化）
+
+`@pytest.mark.parametrize`を活用することで、テストコードの重複を削減し、保守性を向上させます。
+
+### 基本パターン：入力と期待値のペア
+
+```python
+@pytest.mark.parametrize("input_value,expected", [
+    ("valid@example.com", True),
+    ("invalid-email", False),
+    ("@example.com", False),
+    ("user@", False),
+])
+def test_email_validation(input_value, expected):
+    """メールアドレスバリデーションのパラメータ化テスト"""
+    result = validate_email(input_value)
+    assert result == expected
+```
+
+### IDsパターン：テストケースに名前を付ける
+
+```python
+@pytest.mark.parametrize("status_code,expected_message", [
+    (400, "Bad Request"),
+    (401, "Unauthorized"),
+    (403, "Forbidden"),
+    (404, "Not Found"),
+    (500, "Internal Server Error"),
+], ids=["bad_request", "unauthorized", "forbidden", "not_found", "internal_error"])
+def test_error_responses(status_code, expected_message):
+    """エラーレスポンスのテスト（IDsで可読性向上）"""
+    response = create_error_response(status_code)
+    assert response.message == expected_message
+```
+
+### 辞書パターン：複雑なテストケース
+
+```python
+# テストケースを辞書で定義（可読性向上）
+VALIDATION_TEST_CASES = [
+    {
+        "id": "valid_user",
+        "input": {"email": "user@example.com", "age": 25},
+        "expected_valid": True,
+    },
+    {
+        "id": "invalid_email",
+        "input": {"email": "invalid", "age": 25},
+        "expected_valid": False,
+    },
+    {
+        "id": "underage_user",
+        "input": {"email": "user@example.com", "age": 17},
+        "expected_valid": False,
+    },
+]
+
+@pytest.mark.parametrize(
+    "test_case",
+    VALIDATION_TEST_CASES,
+    ids=[tc["id"] for tc in VALIDATION_TEST_CASES]
+)
+def test_user_validation(test_case):
+    """ユーザーバリデーションの複雑なテストケース"""
+    result = validate_user(test_case["input"])
+    assert result == test_case["expected_valid"]
+```
+
+### 例外テストのParametrize化
+
+```python
+from app.core.exceptions import ValidationError, NotFoundError, AuthorizationError
+
+@pytest.mark.parametrize("exception_class,expected_status,expected_message", [
+    (ValidationError, 422, "Validation error"),
+    (NotFoundError, 404, "Resource not found"),
+    (AuthorizationError, 403, "Insufficient permissions"),
+])
+def test_exception_handling(exception_class, expected_status, expected_message):
+    """例外クラスのステータスコードとメッセージをテスト"""
+    exc = exception_class(expected_message)
+    assert exc.status_code == expected_status
+    assert exc.message == expected_message
+```
+
+### 複数のParametrizeの組み合わせ
+
+```python
+@pytest.mark.parametrize("user_role", ["admin", "user", "guest"])
+@pytest.mark.parametrize("resource_type", ["file", "folder", "share"])
+def test_permission_matrix(user_role, resource_type):
+    """ロールとリソースタイプの全組み合わせをテスト（3 x 3 = 9テスト）"""
+    result = check_permission(user_role, resource_type)
+    # 期待される権限をマトリクスで確認
+    expected = PERMISSION_MATRIX[user_role][resource_type]
+    assert result == expected
+```
+
+### Parametrizeのベストプラクティス
+
+```python
+# ✅ 良い例：関連するテストケースをグループ化
+@pytest.mark.parametrize("password,is_valid,reason", [
+    # 有効なパスワード
+    ("SecurePass123!", True, "valid"),
+    ("MyP@ssw0rd", True, "valid"),
+    # 長さ不足
+    ("Short1!", False, "too_short"),
+    # 大文字なし
+    ("lowercase123!", False, "no_uppercase"),
+    # 数字なし
+    ("NoNumbers!", False, "no_digit"),
+])
+def test_password_validation(password, is_valid, reason):
+    """パスワードバリデーション（理由も含めて検証）"""
+    result, error = validate_password(password)
+    assert result == is_valid
+    if not is_valid:
+        assert reason in error
+
+
+# ❌ 悪い例：個別のテスト関数を大量に作成
+def test_password_valid():
+    assert validate_password("SecurePass123!")[0] == True
+
+def test_password_too_short():
+    assert validate_password("Short1!")[0] == False
+
+def test_password_no_uppercase():
+    assert validate_password("lowercase123!")[0] == False
+# ... 以下大量の似たようなテスト
+```
+
+### テスト数削減の効果
+
+Parametrizeを活用することで、テストの保守性が大幅に向上します：
+
+| アプローチ | テスト関数数 | テストケース数 | 保守性 |
+|-----------|------------|--------------|-------|
+| 個別関数 | 10個 | 10ケース | 低（重複コード多い） |
+| Parametrize | 1個 | 10ケース | 高（1箇所で管理） |
+
+```python
+# Before: 10個の似たテスト関数（保守困難）
+def test_validate_email_valid(): ...
+def test_validate_email_no_at(): ...
+def test_validate_email_no_domain(): ...
+# ... 7個続く
+
+# After: 1個のParametrize化テスト（保守容易）
+@pytest.mark.parametrize("email,is_valid", [
+    ("user@example.com", True),
+    ("invalid", False),
+    ("@example.com", False),
+    # ... 7ケース追加
+], ids=["valid", "no_at", "no_local", ...])
+def test_validate_email(email, is_valid):
+    assert validate_email(email) == is_valid
+```
+
 ## アサーションのベストプラクティス
 
 ### 1つのテストに1つの概念

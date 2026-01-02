@@ -20,24 +20,40 @@ import pytest
 from httpx import AsyncClient
 
 # ================================================================================
-# System Alerts - システムアラート
+# Consolidated List Endpoints - 一覧取得エンドポイント統合テスト
 # ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_list_alerts_success(client: AsyncClient, override_auth, admin_user):
-    """[test_notifications-001] システムアラート一覧取得の成功ケース。"""
+@pytest.mark.parametrize(
+    "endpoint",
+    [
+        "/api/v1/admin/alerts",
+        "/api/v1/admin/notification-templates",
+        "/api/v1/admin/announcements",
+    ],
+    ids=["alerts", "templates", "announcements"],
+)
+async def test_list_notifications_success(
+    client: AsyncClient, override_auth, admin_user, endpoint: str
+):
+    """[test_notifications-001/003/004] 通知関連一覧取得の成功ケース。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/alerts")
+    response = await client.get(endpoint)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert "items" in data
     assert "total" in data
+
+
+# ================================================================================
+# System Alerts - システムアラート
+# ================================================================================
 
 
 @pytest.mark.asyncio
@@ -65,45 +81,8 @@ async def test_create_alert_success(client: AsyncClient, override_auth, admin_us
 
 
 # ================================================================================
-# Notification Templates - 通知テンプレート
-# ================================================================================
-
-
-@pytest.mark.asyncio
-async def test_list_templates_success(client: AsyncClient, override_auth, admin_user):
-    """[test_notifications-003] 通知テンプレート一覧取得の成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/notification-templates")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "items" in data
-    assert "total" in data
-
-
-# ================================================================================
 # Announcements - システムお知らせ
 # ================================================================================
-
-
-@pytest.mark.asyncio
-async def test_list_announcements_success(client: AsyncClient, override_auth, admin_user):
-    """[test_notifications-004] システムお知らせ一覧取得の成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/announcements")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "items" in data
-    assert "total" in data
 
 
 @pytest.mark.asyncio

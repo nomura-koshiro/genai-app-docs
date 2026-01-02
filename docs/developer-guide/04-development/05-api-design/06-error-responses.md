@@ -73,10 +73,47 @@ class AppException(Exception):
         super().__init__(self.message)
 
 
+# クライアントエラー (4xx)
+class BadRequestError(AppException):
+    """リクエスト形式エラー例外。"""
+    def __init__(self, message: str = "Bad request", details: dict | None = None):
+        super().__init__(message, status_code=400, details=details)
+
+
+class AuthenticationError(AppException):
+    """認証エラー例外。"""
+    def __init__(self, message: str = "Authentication failed", details: dict | None = None):
+        super().__init__(message, status_code=401, details=details)
+
+
+class AuthorizationError(AppException):
+    """権限不足例外。"""
+    def __init__(self, message: str = "Insufficient permissions", details: dict | None = None):
+        super().__init__(message, status_code=403, details=details)
+
+
 class NotFoundError(AppException):
     """リソース未検出例外。"""
     def __init__(self, message: str = "Resource not found", details: dict | None = None):
         super().__init__(message, status_code=404, details=details)
+
+
+class ConflictError(AppException):
+    """リソース競合例外。"""
+    def __init__(self, message: str = "Conflict", details: dict | None = None):
+        super().__init__(message, status_code=409, details=details)
+
+
+class PayloadTooLargeError(AppException):
+    """ペイロードサイズ超過例外。"""
+    def __init__(self, message: str = "Payload too large", details: dict | None = None):
+        super().__init__(message, status_code=413, details=details)
+
+
+class UnsupportedMediaTypeError(AppException):
+    """非対応ファイルタイプ例外。"""
+    def __init__(self, message: str = "Unsupported media type", details: dict | None = None):
+        super().__init__(message, status_code=415, details=details)
 
 
 class ValidationError(AppException):
@@ -85,11 +122,57 @@ class ValidationError(AppException):
         super().__init__(message, status_code=422, details=details)
 
 
-class AuthenticationError(AppException):
-    """認証エラー例外。"""
-    def __init__(self, message: str = "Authentication failed", details: dict | None = None):
-        super().__init__(message, status_code=401, details=details)
+class RateLimitExceededError(AppException):
+    """レート制限超過例外。
+
+    Note:
+        details に retry_after (秒) を含めると、
+        レスポンスヘッダーに Retry-After が自動設定されます。
+    """
+    def __init__(self, message: str = "Rate limit exceeded", details: dict | None = None):
+        super().__init__(message, status_code=429, details=details)
+
+
+# サーバーエラー (5xx)
+class DatabaseError(AppException):
+    """データベース操作エラー例外。"""
+    def __init__(self, message: str = "Database operation failed", details: dict | None = None):
+        super().__init__(message, status_code=500, details=details)
+
+
+class ExternalServiceError(AppException):
+    """外部サービスエラー例外。"""
+    def __init__(self, message: str = "External service error", details: dict | None = None):
+        super().__init__(message, status_code=502, details=details)
+
+
+class ServiceUnavailableError(AppException):
+    """サービス一時停止例外。
+
+    Note:
+        details に retry_after (秒) を含めると、
+        レスポンスヘッダーに Retry-After が自動設定されます。
+    """
+    def __init__(self, message: str = "Service temporarily unavailable", details: dict | None = None):
+        super().__init__(message, status_code=503, details=details)
 ```
+
+### 例外クラス一覧
+
+| 例外クラス | HTTPステータス | 用途 |
+|-----------|---------------|------|
+| `BadRequestError` | 400 | リクエスト形式エラー |
+| `AuthenticationError` | 401 | 認証失敗 |
+| `AuthorizationError` | 403 | 権限不足 |
+| `NotFoundError` | 404 | リソース未検出 |
+| `ConflictError` | 409 | リソース競合 |
+| `PayloadTooLargeError` | 413 | ペイロードサイズ超過 |
+| `UnsupportedMediaTypeError` | 415 | 非対応ファイルタイプ |
+| `ValidationError` | 422 | バリデーションエラー |
+| `RateLimitExceededError` | 429 | レート制限超過 |
+| `DatabaseError` | 500 | データベース操作エラー |
+| `ExternalServiceError` | 502 | 外部サービスエラー |
+| `ServiceUnavailableError` | 503 | サービス一時停止 |
 
 ## RFC 9457準拠の例外ハンドラー
 
@@ -106,7 +189,11 @@ STATUS_CODE_TITLES = {
     401: "Unauthorized",
     403: "Forbidden",
     404: "Not Found",
+    409: "Conflict",
+    413: "Payload Too Large",
+    415: "Unsupported Media Type",
     422: "Unprocessable Entity",
+    429: "Too Many Requests",
     500: "Internal Server Error",
     502: "Bad Gateway",
     503: "Service Unavailable",
@@ -130,10 +217,18 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
     if exc.details:
         problem_details.update(exc.details)
 
+    # レスポンスヘッダーの構築
+    headers: dict[str, str] = {}
+
+    # 429/503の場合、Retry-Afterヘッダーを自動設定
+    if exc.status_code in (429, 503) and "retry_after" in exc.details:
+        headers["Retry-After"] = str(exc.details["retry_after"])
+
     return JSONResponse(
         status_code=exc.status_code,
         content=problem_details,
         media_type="application/problem+json",  # RFC 9457準拠のContent-Type
+        headers=headers if headers else None,
     )
 
 
@@ -147,6 +242,31 @@ from app.api.core.exception_handlers import register_exception_handlers
 
 app = FastAPI()
 register_exception_handlers(app)
+```
+
+### Retry-Afterヘッダー
+
+429 (Rate Limit) と 503 (Service Unavailable) の例外では、`details` に `retry_after` を含めると、レスポンスヘッダーに `Retry-After` が自動設定されます。
+
+```python
+# レート制限超過の例
+raise RateLimitExceededError(
+    "Rate limit exceeded",
+    details={
+        "limit": 100,
+        "period": 60,
+        "retry_after": 45,  # Retry-Afterヘッダーに設定される
+    }
+)
+
+# サービス一時停止の例
+raise ServiceUnavailableError(
+    "システムはメンテナンス中です",
+    details={
+        "reason": "scheduled_maintenance",
+        "retry_after": 3600,  # Retry-Afterヘッダーに設定される
+    }
+)
 ```
 
 ## 使用例

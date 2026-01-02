@@ -17,64 +17,52 @@
 import pytest
 from httpx import AsyncClient
 
-
 # ================================================================================
 # 認証テスト（Unauthorized）
 # ================================================================================
 
 
 @pytest.mark.asyncio
-async def test_admin_api_get_unauthorized(client: AsyncClient):
-    """[test_admin_authorization-001] 認証なしでのAdmin API GETリクエスト拒否。"""
+@pytest.mark.parametrize(
+    "method,endpoint,request_body",
+    [
+        ("GET", "/api/v1/admin/category", None),
+        (
+            "POST",
+            "/api/v1/admin/category",
+            {
+                "categoryId": 100,
+                "categoryName": "テストカテゴリ",
+                "industryId": 1,
+                "industryName": "テスト業界",
+                "driverTypeId": 1,
+                "driverType": "テストドライバー型",
+            },
+        ),
+        ("PATCH", "/api/v1/admin/category/1", {"categoryName": "更新カテゴリ"}),
+        ("DELETE", "/api/v1/admin/category/1", None),
+    ],
+    ids=["get", "post", "patch", "delete"],
+)
+async def test_admin_api_unauthorized(
+    client: AsyncClient,
+    method: str,
+    endpoint: str,
+    request_body: dict | None,
+):
+    """[test_admin_authorization-001-004] 認証なしでのAdmin APIリクエスト拒否。
+
+    認証トークンなしでAdmin APIエンドポイントにアクセスした場合、
+    401または403ステータスコードを返すことを検証します。
+
+    テストケース:
+        - GET: 一覧取得
+        - POST: カテゴリ作成
+        - PATCH: カテゴリ更新
+        - DELETE: カテゴリ削除
+    """
     # Act
-    response = await client.get("/api/v1/admin/category")
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_admin_api_post_unauthorized(client: AsyncClient):
-    """[test_admin_authorization-002] 認証なしでのAdmin API POSTリクエスト拒否。"""
-    # Arrange
-    category_data = {
-        "categoryId": 100,
-        "categoryName": "テストカテゴリ",
-        "industryId": 1,
-        "industryName": "テスト業界",
-        "driverTypeId": 1,
-        "driverType": "テストドライバー型",
-    }
-
-    # Act
-    response = await client.post("/api/v1/admin/category", json=category_data)
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_admin_api_patch_unauthorized(client: AsyncClient):
-    """[test_admin_authorization-003] 認証なしでのAdmin API PATCHリクエスト拒否。"""
-    # Arrange
-    category_id = 1
-    update_data = {"categoryName": "更新カテゴリ"}
-
-    # Act
-    response = await client.patch(f"/api/v1/admin/category/{category_id}", json=update_data)
-
-    # Assert
-    assert response.status_code in [401, 403]
-
-
-@pytest.mark.asyncio
-async def test_admin_api_delete_unauthorized(client: AsyncClient):
-    """[test_admin_authorization-004] 認証なしでのAdmin API DELETEリクエスト拒否。"""
-    # Arrange
-    category_id = 1
-
-    # Act
-    response = await client.delete(f"/api/v1/admin/category/{category_id}")
+    response = await client.request(method, endpoint, json=request_body)
 
     # Assert
     assert response.status_code in [401, 403]
@@ -86,63 +74,51 @@ async def test_admin_api_delete_unauthorized(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_admin_api_get_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_admin_authorization-005] 一般ユーザーでのAdmin API GETリクエスト拒否。"""
+@pytest.mark.parametrize(
+    "method,endpoint,request_body",
+    [
+        ("GET", "/api/v1/admin/category", None),
+        (
+            "POST",
+            "/api/v1/admin/category",
+            {
+                "categoryId": 100,
+                "categoryName": "テストカテゴリ",
+                "industryId": 1,
+                "industryName": "テスト業界",
+                "driverTypeId": 1,
+                "driverType": "テストドライバー型",
+            },
+        ),
+        ("PATCH", "/api/v1/admin/category/1", {"categoryName": "更新カテゴリ"}),
+        ("DELETE", "/api/v1/admin/category/1", None),
+    ],
+    ids=["get", "post", "patch", "delete"],
+)
+async def test_admin_api_forbidden_regular_user(
+    client: AsyncClient,
+    override_auth,
+    regular_user,
+    method: str,
+    endpoint: str,
+    request_body: dict | None,
+):
+    """[test_admin_authorization-005-008] 一般ユーザーでのAdmin APIリクエスト拒否。
+
+    一般ユーザー権限でAdmin APIエンドポイントにアクセスした場合、
+    403ステータスコード（Forbidden）を返すことを検証します。
+
+    テストケース:
+        - GET: 一覧取得
+        - POST: カテゴリ作成
+        - PATCH: カテゴリ更新
+        - DELETE: カテゴリ削除
+    """
     # Arrange
     override_auth(regular_user)
 
     # Act
-    response = await client.get("/api/v1/admin/category")
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_admin_api_post_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_admin_authorization-006] 一般ユーザーでのAdmin API POSTリクエスト拒否。"""
-    # Arrange
-    override_auth(regular_user)
-    category_data = {
-        "categoryId": 100,
-        "categoryName": "テストカテゴリ",
-        "industryId": 1,
-        "industryName": "テスト業界",
-        "driverTypeId": 1,
-        "driverType": "テストドライバー型",
-    }
-
-    # Act
-    response = await client.post("/api/v1/admin/category", json=category_data)
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_admin_api_patch_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_admin_authorization-007] 一般ユーザーでのAdmin API PATCHリクエスト拒否。"""
-    # Arrange
-    override_auth(regular_user)
-    category_id = 1
-    update_data = {"categoryName": "更新カテゴリ"}
-
-    # Act
-    response = await client.patch(f"/api/v1/admin/category/{category_id}", json=update_data)
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_admin_api_delete_forbidden_regular_user(client: AsyncClient, override_auth, regular_user):
-    """[test_admin_authorization-008] 一般ユーザーでのAdmin API DELETEリクエスト拒否。"""
-    # Arrange
-    override_auth(regular_user)
-    category_id = 1
-
-    # Act
-    response = await client.delete(f"/api/v1/admin/category/{category_id}")
+    response = await client.request(method, endpoint, json=request_body)
 
     # Assert
     assert response.status_code == 403

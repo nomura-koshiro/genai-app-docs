@@ -10,10 +10,10 @@
 
 import uuid
 
-from fastapi import APIRouter, Path, Query, status
+from fastapi import APIRouter, Query, status
 
 from app.api.core import CurrentUserAccountDep, DatabaseDep, ProjectMemberDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.driver_tree import (
     DriverTreeTemplateCreateRequest,

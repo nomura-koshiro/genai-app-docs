@@ -279,22 +279,20 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
         Returns:
             tuple[datetime | None, datetime | None]: (最古日時, 最新日時)
         """
-        conditions = [
-            UserSession.is_active == False,  # noqa: E712
-            UserSession.logout_at < before_date,
-        ]
+        # MIN/MAXを単一クエリで取得（パフォーマンス最適化）
+        query = select(
+            func.min(UserSession.logout_at).label("oldest"),
+            func.max(UserSession.logout_at).label("newest"),
+        ).where(
+            and_(
+                UserSession.is_active == False,  # noqa: E712
+                UserSession.logout_at < before_date,
+            )
+        )
 
-        # 最古レコード
-        oldest_query = select(func.min(UserSession.logout_at)).where(and_(*conditions))
-        oldest_result = await self.db.execute(oldest_query)
-        oldest = oldest_result.scalar_one_or_none()
-
-        # 最新レコード
-        newest_query = select(func.max(UserSession.logout_at)).where(and_(*conditions))
-        newest_result = await self.db.execute(newest_query)
-        newest = newest_result.scalar_one_or_none()
-
-        return (oldest, newest)
+        result = await self.db.execute(query)
+        row = result.one()
+        return (row.oldest, row.newest)
 
     async def cleanup_expired(self, before_date: datetime) -> int:
         """期限切れセッションをクリーンアップします。

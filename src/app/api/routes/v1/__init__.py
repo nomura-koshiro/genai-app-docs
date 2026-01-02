@@ -4,17 +4,17 @@
 """
 
 from app.api.routes.v1.admin import (
+    # システム管理機能ルーター
+    activity_logs_router,
     # 既存の管理機能ルーター
     admin_category_router,
     admin_dummy_chart_router,
     admin_dummy_formula_router,
     admin_graph_axis_router,
     admin_issue_router,
+    admin_projects_router,
     admin_role_router,
     admin_validation_router,
-    # システム管理機能ルーター
-    activity_logs_router,
-    admin_projects_router,
     audit_logs_router,
     bulk_operations_router,
     data_management_router,
@@ -34,12 +34,12 @@ from app.api.routes.v1.driver_tree import (
     driver_tree_nodes_router,
     driver_tree_trees_router,
 )
+from app.api.routes.v1.notifications import user_notifications_router
 from app.api.routes.v1.project import (
     project_files_router,
     project_members_router,
     projects_router,
 )
-from app.api.routes.v1.notifications import user_notifications_router
 from app.api.routes.v1.search import search_router
 from app.api.routes.v1.user_accounts import user_accounts_router
 

@@ -3,12 +3,13 @@
 このモジュールは、データクリーンアップと保持ポリシー管理機能を提供します。
 """
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance, transactional
+from app.core.decorators import measure_performance, transactional
 from app.core.logging import get_logger
 from app.repositories.admin.audit_log_repository import AuditLogRepository
 from app.repositories.admin.system_setting_repository import SystemSettingRepository
@@ -22,6 +23,7 @@ from app.schemas.admin.data_management import (
     RetentionPolicyResponse,
     RetentionPolicyUpdate,
 )
+from app.utils.formatters import DataFormatter
 
 logger = get_logger(__name__)
 
@@ -73,8 +75,13 @@ class DataManagementService:
         total_record_count = 0
         total_estimated_size_bytes = 0
 
-        for target_type in target_types:
-            item = await self._get_cleanup_preview_item(target_type, cutoff_date)
+        # 並行処理でプレビューアイテムを取得（パフォーマンス最適化）
+        tasks = [
+            self._get_cleanup_preview_item(target_type, cutoff_date)
+            for target_type in target_types
+        ]
+        items = await asyncio.gather(*tasks)
+        for item in items:
             if item:
                 preview_items.append(item)
                 total_record_count += item.record_count
@@ -84,7 +91,7 @@ class DataManagementService:
             preview=preview_items,
             total_record_count=total_record_count,
             total_estimated_size_bytes=total_estimated_size_bytes,
-            total_estimated_size_display=self._format_bytes(total_estimated_size_bytes),
+            total_estimated_size_display=DataFormatter.format_bytes(total_estimated_size_bytes),
             retention_days=retention_days,
             cutoff_date=cutoff_date,
         )
@@ -105,28 +112,26 @@ class DataManagementService:
         newest_record_at: datetime | None = None
 
         if target_type == "ACTIVITY_LOGS":
-            count = await self.activity_repository.count_with_filters(
-                end_date=cutoff_date,
+            # 並行実行でパフォーマンス向上
+            count, (oldest_record_at, newest_record_at) = await asyncio.gather(
+                self.activity_repository.count_with_filters(end_date=cutoff_date),
+                self.activity_repository.get_date_range(end_date=cutoff_date),
             )
             estimated_size = count * 500  # 推定1レコード500バイト
-            oldest_record_at, newest_record_at = await self.activity_repository.get_date_range(
-                end_date=cutoff_date,
-            )
         elif target_type == "AUDIT_LOGS":
-            count = await self.audit_repository.count_with_filters(
-                end_date=cutoff_date,
+            # 並行実行でパフォーマンス向上
+            count, (oldest_record_at, newest_record_at) = await asyncio.gather(
+                self.audit_repository.count_with_filters(end_date=cutoff_date),
+                self.audit_repository.get_date_range(end_date=cutoff_date),
             )
             estimated_size = count * 1000  # 推定1レコード1000バイト
-            oldest_record_at, newest_record_at = await self.audit_repository.get_date_range(
-                end_date=cutoff_date,
-            )
         elif target_type == "SESSION_LOGS":
-            # セッションログのカウント（非アクティブかつ期限切れ）
-            count = await self.session_repository.count_expired(cutoff_date)
-            estimated_size = count * 300
-            oldest_record_at, newest_record_at = await self.session_repository.get_expired_date_range(
-                cutoff_date,
+            # 並行実行でパフォーマンス向上
+            count, (oldest_record_at, newest_record_at) = await asyncio.gather(
+                self.session_repository.count_expired(cutoff_date),
+                self.session_repository.get_expired_date_range(cutoff_date),
             )
+            estimated_size = count * 300
         else:
             return None
 
@@ -137,7 +142,7 @@ class DataManagementService:
             oldest_record_at=oldest_record_at,
             newest_record_at=newest_record_at,
             estimated_size_bytes=estimated_size,
-            estimated_size_display=self._format_bytes(estimated_size),
+            estimated_size_display=DataFormatter.format_bytes(estimated_size),
         )
 
     @measure_performance
@@ -171,8 +176,13 @@ class DataManagementService:
         total_deleted_count = 0
         total_freed_bytes = 0
 
-        for target_type in target_types:
-            result = await self._execute_cleanup_for_type(target_type, cutoff_date)
+        # 並行処理でクリーンアップを実行（パフォーマンス最適化）
+        tasks = [
+            self._execute_cleanup_for_type(target_type, cutoff_date)
+            for target_type in target_types
+        ]
+        cleanup_results = await asyncio.gather(*tasks)
+        for result in cleanup_results:
             if result:
                 results.append(result)
                 total_deleted_count += result.deleted_count
@@ -190,7 +200,7 @@ class DataManagementService:
             results=results,
             total_deleted_count=total_deleted_count,
             total_freed_bytes=total_freed_bytes,
-            total_freed_display=self._format_bytes(total_freed_bytes),
+            total_freed_display=DataFormatter.format_bytes(total_freed_bytes),
             executed_at=datetime.now(UTC),
         )
 
@@ -227,10 +237,15 @@ class DataManagementService:
         """
         logger.info("保持ポリシーを取得中", action="get_retention_policy")
 
-        activity_logs_days = await self.setting_repository.get_value("RETENTION", "activity_logs_days", default=90)
-        audit_logs_days = await self.setting_repository.get_value("RETENTION", "audit_logs_days", default=365)
-        deleted_projects_days = await self.setting_repository.get_value("RETENTION", "deleted_projects_days", default=30)
-        session_logs_days = await self.setting_repository.get_value("RETENTION", "session_logs_days", default=30)
+        # 並行処理で設定値を取得（パフォーマンス最適化）
+        activity_logs_days, audit_logs_days, deleted_projects_days, session_logs_days = (
+            await asyncio.gather(
+                self.setting_repository.get_value("RETENTION", "activity_logs_days", default=90),
+                self.setting_repository.get_value("RETENTION", "audit_logs_days", default=365),
+                self.setting_repository.get_value("RETENTION", "deleted_projects_days", default=30),
+                self.setting_repository.get_value("RETENTION", "session_logs_days", default=30),
+            )
+        )
 
         return RetentionPolicyResponse(
             activity_logs_days=activity_logs_days,
@@ -261,27 +276,28 @@ class DataManagementService:
             action="update_retention_policy",
         )
 
+        # 並行処理で設定値を更新（パフォーマンス最適化）
+        update_tasks = []
         if policy.activity_logs_days is not None:
-            await self.setting_repository.set_value("RETENTION", "activity_logs_days", policy.activity_logs_days, updated_by)
-
+            update_tasks.append(
+                self.setting_repository.set_value("RETENTION", "activity_logs_days", policy.activity_logs_days, updated_by)
+            )
         if policy.audit_logs_days is not None:
-            await self.setting_repository.set_value("RETENTION", "audit_logs_days", policy.audit_logs_days, updated_by)
-
+            update_tasks.append(
+                self.setting_repository.set_value("RETENTION", "audit_logs_days", policy.audit_logs_days, updated_by)
+            )
         if policy.deleted_projects_days is not None:
-            await self.setting_repository.set_value("RETENTION", "deleted_projects_days", policy.deleted_projects_days, updated_by)
-
+            update_tasks.append(
+                self.setting_repository.set_value("RETENTION", "deleted_projects_days", policy.deleted_projects_days, updated_by)
+            )
         if policy.session_logs_days is not None:
-            await self.setting_repository.set_value("RETENTION", "session_logs_days", policy.session_logs_days, updated_by)
+            update_tasks.append(
+                self.setting_repository.set_value("RETENTION", "session_logs_days", policy.session_logs_days, updated_by)
+            )
+
+        if update_tasks:
+            await asyncio.gather(*update_tasks)
 
         logger.info("保持ポリシーを更新しました", updated_by=str(updated_by))
 
         return await self.get_retention_policy()
-
-    def _format_bytes(self, bytes_value: int) -> str:
-        """バイト数を人間が読める形式に変換します。"""
-        value: float = float(bytes_value)
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if value < 1024:
-                return f"{value:.1f} {unit}"
-            value /= 1024
-        return f"{value:.1f} PB"

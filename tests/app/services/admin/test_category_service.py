@@ -15,61 +15,52 @@ from app.services.admin.category import AdminCategoryService
 
 
 @pytest.mark.asyncio
-async def test_list_categories_success(db_session: AsyncSession):
-    """[test_category_service-001] カテゴリ一覧取得の成功ケース。"""
+@pytest.mark.parametrize(
+    "num_categories,skip,limit,expected_min_total,expected_skip,expected_limit,expected_max_results",
+    [
+        # test_list_categories_success: 1 category, no pagination
+        (1, 0, 100, 1, 0, 100, 100),
+        # test_list_categories_with_pagination: 5 categories, skip=2, limit=2
+        (5, 2, 2, 5, 2, 2, 2),
+    ],
+    ids=["success", "with_pagination"],
+)
+async def test_list_categories(
+    db_session: AsyncSession,
+    num_categories: int,
+    skip: int,
+    limit: int,
+    expected_min_total: int,
+    expected_skip: int,
+    expected_limit: int,
+    expected_max_results: int,
+):
+    """[test_category_service-001,002] カテゴリ一覧取得の成功ケースとページネーション。"""
     # Arrange
     service = AdminCategoryService(db_session)
 
     # カテゴリを作成
-    category = DriverTreeCategory(
-        category_id=1,
-        category_name="製造業",
-        industry_id=1,
-        industry_name="自動車",
-        driver_type_id=1,
-        driver_type="収益ドライバー",
-    )
-    db_session.add(category)
-    await db_session.commit()
-
-    # Act
-    result = await service.list_categories(skip=0, limit=100)
-
-    # Assert
-    assert result is not None
-    assert result.total >= 1
-    assert len(result.categories) >= 1
-    assert result.skip == 0
-    assert result.limit == 100
-
-
-@pytest.mark.asyncio
-async def test_list_categories_with_pagination(db_session: AsyncSession):
-    """[test_category_service-002] カテゴリ一覧取得のページネーション。"""
-    # Arrange
-    service = AdminCategoryService(db_session)
-
-    # 複数のカテゴリを作成
-    for i in range(5):
+    for i in range(num_categories):
         category = DriverTreeCategory(
             category_id=i + 1,
-            category_name=f"カテゴリ{i}",
+            category_name=f"カテゴリ{i}" if num_categories > 1 else "製造業",
             industry_id=i + 1,
-            industry_name=f"業界{i}",
+            industry_name=f"業界{i}" if num_categories > 1 else "自動車",
             driver_type_id=i + 1,
-            driver_type=f"ドライバー型{i}",
+            driver_type=f"ドライバー型{i}" if num_categories > 1 else "収益ドライバー",
         )
         db_session.add(category)
     await db_session.commit()
 
     # Act
-    result = await service.list_categories(skip=2, limit=2)
+    result = await service.list_categories(skip=skip, limit=limit)
 
     # Assert
     assert result is not None
-    assert result.skip == 2
-    assert result.limit == 2
-    assert len(result.categories) <= 2
+    assert result.total >= expected_min_total
+    assert result.skip == expected_skip
+    assert result.limit == expected_limit
+    assert len(result.categories) <= expected_max_results
 
 
 @pytest.mark.asyncio
@@ -101,15 +92,26 @@ async def test_get_category_success(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_get_category_not_found(db_session: AsyncSession):
-    """[test_category_service-004] 存在しないカテゴリ取得時のNotFoundError。"""
+@pytest.mark.parametrize(
+    "operation",
+    ["get", "update", "delete"],
+    ids=["get", "update", "delete"],
+)
+async def test_category_not_found(db_session: AsyncSession, operation: str):
+    """[test_category_service-004,007,009] 存在しないカテゴリ操作時のNotFoundError。"""
     # Arrange
     service = AdminCategoryService(db_session)
     non_existent_id = 99999
 
     # Act & Assert
     with pytest.raises(NotFoundError) as exc_info:
-        await service.get_category(non_existent_id)
+        if operation == "get":
+            await service.get_category(non_existent_id)
+        elif operation == "update":
+            category_update = DriverTreeCategoryUpdate(category_name="更新")
+            await service.update_category(non_existent_id, category_update)
+        else:  # delete
+            await service.delete_category(non_existent_id)
 
     assert "カテゴリマスタが見つかりません" in str(exc_info.value)
 
@@ -171,21 +173,6 @@ async def test_update_category_success(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_update_category_not_found(db_session: AsyncSession):
-    """[test_category_service-007] 存在しないカテゴリ更新時のNotFoundError。"""
-    # Arrange
-    service = AdminCategoryService(db_session)
-    non_existent_id = 99999
-    category_update = DriverTreeCategoryUpdate(category_name="更新")
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.update_category(non_existent_id, category_update)
-
-    assert "カテゴリマスタが見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_delete_category_success(db_session: AsyncSession):
     """[test_category_service-008] カテゴリ削除の成功ケース。"""
     # Arrange
@@ -210,20 +197,6 @@ async def test_delete_category_success(db_session: AsyncSession):
     # Assert - 削除後に取得するとNotFoundError
     with pytest.raises(NotFoundError):
         await service.get_category(category_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_category_not_found(db_session: AsyncSession):
-    """[test_category_service-009] 存在しないカテゴリ削除時のNotFoundError。"""
-    # Arrange
-    service = AdminCategoryService(db_session)
-    non_existent_id = 99999
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.delete_category(non_existent_id)
-
-    assert "カテゴリマスタが見つかりません" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

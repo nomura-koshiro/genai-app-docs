@@ -7,6 +7,8 @@ Reference:
     RFC 9457: https://www.rfc-editor.org/rfc/rfc9457.html
 """
 
+import json
+
 import pytest
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
@@ -35,8 +37,25 @@ class TestExceptionHandlers:
         assert len(app.exception_handlers) > 0
 
     @pytest.mark.asyncio
-    async def test_validation_error_returns_422_response(self):
-        """[test_exception_handlers-002] ValidationErrorがRFC 9457準拠の422レスポンスになること。"""
+    @pytest.mark.parametrize(
+        "exception_class,message,expected_status,expected_title,details",
+        [
+            (ValidationError, "Invalid input", 422, "Unprocessable Entity", {"field": "email"}),
+            (AuthenticationError, "Unauthorized", 401, "Unauthorized", None),
+            (AuthorizationError, "Forbidden", 403, "Forbidden", None),
+            (NotFoundError, "Resource not found", 404, "Not Found", None),
+        ],
+        ids=["validation_422", "authentication_401", "authorization_403", "not_found_404"],
+    )
+    async def test_exception_returns_rfc9457_response(
+        self,
+        exception_class: type,
+        message: str,
+        expected_status: int,
+        expected_title: str,
+        details: dict | None,
+    ):
+        """[test_exception_handlers-002] 各例外がRFC 9457準拠のレスポンスになること。"""
         # Arrange
         from app.api.core.exception_handlers import app_exception_handler
 
@@ -50,128 +69,31 @@ class TestExceptionHandlers:
                 "query_string": b"",
             }
         )
-        exc = ValidationError("Invalid input", details={"field": "email"})
+        exc = exception_class(message, details=details) if details else exception_class(message)
 
         # Act
         response = await app_exception_handler(request, exc)
 
         # Assert
         assert isinstance(response, JSONResponse)
-        assert response.status_code == 422  # ValidationErrorは422 Unprocessable Entity
-        assert response.media_type == "application/problem+json"  # RFC 9457準拠のContent-Type
+        assert response.status_code == expected_status
+        assert response.media_type == "application/problem+json"  # RFC 9457準拠
 
         body = bytes(response.body).decode()
-        import json
-
         data = json.loads(body)
+
+        # RFC 9457必須フィールド
         assert "type" in data
         assert "title" in data
         assert "status" in data
         assert "detail" in data
         assert "instance" in data
-        assert data["status"] == 422
-        assert data["title"] == "Unprocessable Entity"
-        assert data["detail"] == "Invalid input"
-        assert data["field"] == "email"  # カスタムフィールド
 
-    @pytest.mark.asyncio
-    async def test_authentication_error_returns_401_response(self):
-        """[test_exception_handlers-003] AuthenticationErrorがRFC 9457準拠の401レスポンスになること。"""
-        # Arrange
-        from app.api.core.exception_handlers import app_exception_handler
+        assert data["status"] == expected_status
+        assert data["title"] == expected_title
+        assert data["detail"] == message
 
-        request = Request(
-            {
-                "type": "http",
-                "method": "GET",
-                "url": "http://testserver/test",
-                "path": "/test",
-                "headers": [],
-                "query_string": b"",
-            }
-        )
-        exc = AuthenticationError("Unauthorized")
-
-        # Act
-        response = await app_exception_handler(request, exc)
-
-        # Assert
-        assert isinstance(response, JSONResponse)
-        assert response.status_code == 401
-        assert response.media_type == "application/problem+json"
-
-        body = bytes(response.body).decode()
-        import json
-
-        data = json.loads(body)
-        assert data["status"] == 401
-        assert data["title"] == "Unauthorized"
-        assert data["detail"] == "Unauthorized"
-
-    @pytest.mark.asyncio
-    async def test_authorization_error_returns_403_response(self):
-        """[test_exception_handlers-004] AuthorizationErrorがRFC 9457準拠の403レスポンスになること。"""
-        # Arrange
-        from app.api.core.exception_handlers import app_exception_handler
-
-        request = Request(
-            {
-                "type": "http",
-                "method": "GET",
-                "url": "http://testserver/test",
-                "path": "/test",
-                "headers": [],
-                "query_string": b"",
-            }
-        )
-        exc = AuthorizationError("Forbidden")
-
-        # Act
-        response = await app_exception_handler(request, exc)
-
-        # Assert
-        assert isinstance(response, JSONResponse)
-        assert response.status_code == 403
-        assert response.media_type == "application/problem+json"
-
-        body = bytes(response.body).decode()
-        import json
-
-        data = json.loads(body)
-        assert data["status"] == 403
-        assert data["title"] == "Forbidden"
-        assert data["detail"] == "Forbidden"
-
-    @pytest.mark.asyncio
-    async def test_not_found_error_returns_404_response(self):
-        """[test_exception_handlers-005] NotFoundErrorがRFC 9457準拠の404レスポンスになること。"""
-        # Arrange
-        from app.api.core.exception_handlers import app_exception_handler
-
-        request = Request(
-            {
-                "type": "http",
-                "method": "GET",
-                "url": "http://testserver/test",
-                "path": "/test",
-                "headers": [],
-                "query_string": b"",
-            }
-        )
-        exc = NotFoundError("Resource not found")
-
-        # Act
-        response = await app_exception_handler(request, exc)
-
-        # Assert
-        assert isinstance(response, JSONResponse)
-        assert response.status_code == 404
-        assert response.media_type == "application/problem+json"
-
-        body = bytes(response.body).decode()
-        import json
-
-        data = json.loads(body)
-        assert data["status"] == 404
-        assert data["title"] == "Not Found"
-        assert data["detail"] == "Resource not found"
+        # カスタムフィールドの検証
+        if details:
+            for key, value in details.items():
+                assert data[key] == value

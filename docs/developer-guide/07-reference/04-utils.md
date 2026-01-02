@@ -6,6 +6,7 @@
 
 - [概要](#概要)
 - [セキュリティユーティリティ](#セキュリティユーティリティ)
+- [汎用ユーティリティ](#汎用ユーティリティ)
 - [ロギングユーティリティ](#ロギングユーティリティ)
 - [例外処理](#例外処理)
 - [ストレージバックエンド](#ストレージバックエンド)
@@ -352,6 +353,279 @@ from app.core.security import generate_api_key
 # APIキー生成
 api_key = generate_api_key()
 print(api_key)  # xrZvO8QN7rTUJc4KwYxPdE9vL2fB5gHh...
+```
+
+---
+
+## 汎用ユーティリティ
+
+`app/utils/`
+
+データ処理、リクエスト処理、機密情報管理のための汎用ユーティリティ。
+
+### モジュール構成
+
+- `sensitive_data.py`: 機密情報の検出とマスキング
+- `formatters.py`: データフォーマット変換
+- `request_helpers.py`: HTTPリクエスト情報抽出
+
+---
+
+### 機密情報マスキング（sensitive_data.py）
+
+監査ログ、操作履歴などで機密情報を自動的にマスクするためのユーティリティ。
+
+#### is_sensitive_field()
+
+フィールド名が機密情報かどうかを判定します。
+
+##### シグネチャ
+
+```python
+def is_sensitive_field(field_name: str) -> bool
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| field_name | str | チェック対象のフィールド名 |
+
+##### 戻り値
+
+- `bool`: 機密情報の場合True
+
+##### 判定ルール
+
+**完全一致キー（SENSITIVE_KEYS）**:
+- 認証関連: `password`, `password_hash`, `token`, `secret`, `api_key`, `apikey`, `credential`, `authorization`, `access_token`, `refresh_token`, `session_token`, `bearer`, `jwt`
+- CSRF: `csrf_token`, `csrf`, `xsrf_token`, `xsrf`
+- Azure/クラウド: `client_secret`, `client_id`, `azure_client_secret`, `connection_string`, `sas_token`, `account_key`
+- 暗号化: `private_key`, `secret_key`, `encryption_key`, `signing_key`, `master_key`
+- 個人情報: `ssn`, `social_security_number`, `credit_card`, `card_number`, `cvv`, `cvc`, `bank_account`
+- その他: `pin`, `otp`, `session_id`, `cookie`
+
+**パターンマッチング（SENSITIVE_PATTERNS）**:
+- `password`, `_password`, `password_` パターン
+- `secret`, `_secret`, `secret_` パターン
+- `token`, `_token`, `token_` パターン
+- `key`, `_key`, `key_` パターン（`keyboard`, `monkey`は除外）
+- `credential` を含む
+- `auth`, `_auth`, `oauth` パターン（`author`は除外）
+- `sas`, `_sas`, `shared_access` パターン
+
+##### 使用例
+
+```python
+from app.utils.sensitive_data import is_sensitive_field
+
+# 完全一致
+is_sensitive_field("password")       # True
+is_sensitive_field("api_key")        # True
+
+# パターンマッチング
+is_sensitive_field("user_password")  # True
+is_sensitive_field("new_token")      # True
+
+# 誤検知防止（意図的に除外）
+is_sensitive_field("author")         # False（authにマッチしない）
+is_sensitive_field("keyboard")       # False（keyにマッチしない）
+is_sensitive_field("monkey")         # False（keyにマッチしない）
+```
+
+---
+
+#### mask_sensitive_data()
+
+データ内の機密情報を再帰的にマスクします。
+
+##### シグネチャ
+
+```python
+def mask_sensitive_data(data: Any, depth: int = 0) -> Any
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| data | Any | マスク対象データ |
+| depth | int | ネスト深度（無限ループ防止、デフォルト0） |
+
+##### 戻り値
+
+- `Any`: マスク済みデータ
+
+##### 使用例
+
+```python
+from app.utils.sensitive_data import mask_sensitive_data
+
+# 辞書のマスキング
+data = {
+    "username": "john",
+    "password": "secret123",
+    "email": "john@example.com"
+}
+masked = mask_sensitive_data(data)
+# {"username": "john", "password": "***MASKED***", "email": "john@example.com"}
+
+# ネストされたデータ
+nested_data = {
+    "user": {
+        "name": "john",
+        "credentials": {
+            "api_key": "abc123"
+        }
+    }
+}
+masked = mask_sensitive_data(nested_data)
+# {"user": {"name": "john", "credentials": {"api_key": "***MASKED***"}}}
+```
+
+---
+
+### データフォーマッター（formatters.py）
+
+#### DataFormatter.format_bytes()
+
+バイト数を人間が読める形式に変換します。
+
+##### シグネチャ
+
+```python
+@staticmethod
+def format_bytes(bytes_value: int) -> str
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| bytes_value | int | バイト数 |
+
+##### 戻り値
+
+- `str`: フォーマット済み文字列（例: "1.5 MB", "2.3 GB"）
+
+##### 使用例
+
+```python
+from app.utils.formatters import DataFormatter
+
+DataFormatter.format_bytes(1024)        # "1.0 KB"
+DataFormatter.format_bytes(1536)        # "1.5 KB"
+DataFormatter.format_bytes(1048576)     # "1.0 MB"
+DataFormatter.format_bytes(1073741824)  # "1.0 GB"
+```
+
+---
+
+### リクエストヘルパー（request_helpers.py）
+
+#### RequestHelper.get_client_ip()
+
+クライアントIPアドレスを安全に取得します。
+
+##### シグネチャ
+
+```python
+@staticmethod
+def get_client_ip(request: Request) -> str | None
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| request | Request | FastAPIリクエストオブジェクト |
+
+##### 戻り値
+
+- `str | None`: クライアントIPアドレス、または取得できない場合はNone
+
+##### セキュリティ考慮事項
+
+- X-Forwarded-Forヘッダーは信頼できるプロキシからのみ使用
+- 直接接続元が信頼できるプロキシでない場合はX-Forwarded-Forを無視
+- IPアドレス形式の検証を実施
+
+##### 使用例
+
+```python
+from fastapi import Request
+from app.utils.request_helpers import RequestHelper
+
+@router.get("/info")
+async def get_info(request: Request):
+    client_ip = RequestHelper.get_client_ip(request)
+    return {"client_ip": client_ip}
+```
+
+---
+
+#### RequestHelper.is_trusted_proxy()
+
+IPアドレスが信頼できるプロキシか判定します。
+
+##### シグネチャ
+
+```python
+@staticmethod
+def is_trusted_proxy(ip: str) -> bool
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| ip | str | 検証するIPアドレス文字列 |
+
+##### 戻り値
+
+- `bool`: 信頼できるプロキシの場合True
+
+##### 関連設定
+
+設定ファイルの`TRUSTED_PROXIES`で信頼するプロキシのCIDR範囲を指定します。
+
+```python
+# .env
+TRUSTED_PROXIES=["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+```
+
+---
+
+#### RequestHelper.is_valid_ip()
+
+IPアドレスの形式を検証します。
+
+##### シグネチャ
+
+```python
+@staticmethod
+def is_valid_ip(ip: str) -> bool
+```
+
+##### パラメータ
+
+| 名前 | 型 | 説明 |
+|-----|---|------|
+| ip | str | 検証するIPアドレス文字列 |
+
+##### 戻り値
+
+- `bool`: 有効なIPアドレス形式の場合True
+
+##### 使用例
+
+```python
+from app.utils.request_helpers import RequestHelper
+
+RequestHelper.is_valid_ip("192.168.1.1")      # True
+RequestHelper.is_valid_ip("::1")               # True (IPv6)
+RequestHelper.is_valid_ip("invalid")           # False
+RequestHelper.is_valid_ip("192.168.1.256")    # False
 ```
 
 ---

@@ -33,9 +33,14 @@
     7. **MaintenanceModeMiddleware**: メンテナンスモード時のアクセス制御
        - メンテナンス中は管理者以外のアクセスを制限
 
+    8. **CSRFMiddleware**: CSRF保護
+       - SameSite Cookie属性とカスタムヘッダー検証による二重防御
+       - Cookie認証のみ検証（Bearer token認証はスキップ）
+
 ミドルウェア実行順序（app_factory.pyでの登録順の逆）:
     リクエスト →
         CORS →
+        CSRFMiddleware →
         SecurityHeadersMiddleware →
         RateLimitMiddleware →
         MaintenanceModeMiddleware →
@@ -67,6 +72,7 @@ Note:
 
 from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 from app.api.middlewares.audit_log import AuditLogMiddleware
+from app.api.middlewares.csrf import CSRFMiddleware
 from app.api.middlewares.logging import LoggingMiddleware
 from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
 from app.api.middlewares.metrics import PrometheusMetricsMiddleware
@@ -76,6 +82,7 @@ from app.api.middlewares.security_headers import SecurityHeadersMiddleware
 __all__ = [
     "ActivityTrackingMiddleware",
     "AuditLogMiddleware",
+    "CSRFMiddleware",
     "LoggingMiddleware",
     "MaintenanceModeMiddleware",
     "PrometheusMetricsMiddleware",

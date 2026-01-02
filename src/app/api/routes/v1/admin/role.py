@@ -5,6 +5,7 @@
 
 from fastapi import APIRouter, status
 
+from app.api.core import CurrentUserAccountDep
 from app.core.logging import get_logger
 from app.models.enums import ProjectRole, SystemUserRole
 from app.schemas.admin import AllRolesResponse, RoleInfo
@@ -61,7 +62,7 @@ PROJECT_ROLES = [
     description="""
     システムロールおよびプロジェクトロールの一覧を取得します。
 
-    **認証不要です。**
+    **認証が必要です。**
 
     レスポンス:
         - AllRolesResponse: 全ロール一覧
@@ -76,11 +77,18 @@ PROJECT_ROLES = [
 
     ステータスコード:
         - 200: 成功
+        - 401: 認証されていない
     """,
 )
-async def get_roles() -> AllRolesResponse:
+async def get_roles(
+    current_user: CurrentUserAccountDep,
+) -> AllRolesResponse:
     """システムロールおよびプロジェクトロールの一覧を取得します。"""
-    logger.info("ロール一覧取得リクエスト", action="get_roles")
+    logger.info(
+        "ロール一覧取得リクエスト",
+        user_id=str(current_user.id),
+        action="get_roles",
+    )
 
     return AllRolesResponse(
         system_roles=SYSTEM_ROLES,

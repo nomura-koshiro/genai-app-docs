@@ -235,20 +235,43 @@ def test_draw_graph_invalid_type():
 
 
 # ================================================================================
-# 散布図テスト
+# チェック関数の成功テスト（パラメトライズ）
 # ================================================================================
 
 
-def test_check_scatter_success():
-    """[test_chart-008] 散布図チェックの成功ケース。"""
+@pytest.mark.parametrize(
+    "chart_type,check_func,data_factory,params",
+    [
+        ("scatter", check_scatter, create_scatter_data, {"x_subject": "売上", "y_subject": "利益", "legend": None}),
+        ("bar", check_bar, create_bar_data, {"x_axis": "地域", "y_axis": "値", "legend": None}),
+        ("horizontal_bar", check_horizontal_bar, create_bar_data, {"x_axis": "値", "y_axis": "地域", "legend": None}),
+        ("line", check_line, create_line_data, {"x_axis": "年度", "y_axis": "値", "legend": None}),
+        ("pie", check_pie, create_pie_data, {"values": "値", "names": "地域"}),
+        (
+            "waterfall",
+            check_waterfall,
+            lambda: pd.DataFrame({"項目": ["売上", "原価", "営業費"], "値": [1000, 600, 200]}),
+            {"x_axis": "項目", "y_axis": "値", "measure_type": "relative", "base_value": 0, "legend": None},
+        ),
+        ("stacked_bar", check_stacked_bar, create_stacked_bar_data, {"x_axis": "年度", "y_axis": "値", "stack_by": "部門"}),
+    ],
+    ids=["scatter", "bar", "horizontal_bar", "line", "pie", "waterfall", "stacked_bar"],
+)
+def test_check_chart_success(chart_type, check_func, data_factory, params):
+    """[test_chart-008,013,018,020,024,028,032] 各チャートタイプのチェック成功ケース。"""
     # Arrange
-    df = create_scatter_data()
+    df = data_factory()
 
     # Act
-    success, msg = check_scatter(df, "売上", "利益", None)
+    success, msg = check_func(df, **params)
 
     # Assert
     assert success is True
+
+
+# ================================================================================
+# 散布図テスト
+# ================================================================================
 
 
 def test_check_scatter_same_subjects():
@@ -277,59 +300,192 @@ def test_check_scatter_missing_subject():
     assert "存在しません" in msg
 
 
-def test_draw_scatter_success():
-    """[test_chart-011] 散布図描画の成功ケース。"""
+# ================================================================================
+# 描画関数の成功テスト（パラメトライズ）
+# ================================================================================
+
+
+@pytest.mark.parametrize(
+    "chart_type,draw_func,data_factory,params,title",
+    [
+        (
+            "scatter",
+            draw_scatter,
+            create_scatter_data,
+            {"x_subject": "売上", "y_subject": "利益", "legend": None},
+            "散布図テスト",
+        ),
+        ("bar", draw_bar, create_bar_data, {"x_axis": "地域", "y_axis": "値", "legend": None}, "棒グラフテスト"),
+        (
+            "horizontal_bar",
+            draw_horizontal_bar,
+            create_bar_data,
+            {"x_axis": "値", "y_axis": "地域", "legend": None},
+            "横棒グラフテスト",
+        ),
+        ("line", draw_line, create_line_data, {"x_axis": "年度", "y_axis": "値", "legend": None}, "折れ線グラフテスト"),
+        ("pie", draw_pie, create_pie_data, {"values": "値", "names": "地域"}, "円グラフテスト"),
+        (
+            "waterfall",
+            draw_waterfall,
+            lambda: pd.DataFrame({"項目": ["売上", "原価", "営業費"], "値": [1000, 600, 200]}),
+            {
+                "x_axis": "項目",
+                "y_axis": "値",
+                "measure_type": "relative",
+                "base_value": 0,
+                "legend": None,
+                "show_total": False,
+                "total_label": None,
+            },
+            "ウォーターフォールテスト",
+        ),
+        (
+            "stacked_bar",
+            draw_stacked_bar,
+            create_stacked_bar_data,
+            {"x_axis": "年度", "y_axis": "値", "stack_by": "部門"},
+            "積み上げ棒グラフテスト",
+        ),
+    ],
+    ids=["scatter", "bar", "horizontal_bar", "line", "pie", "waterfall", "stacked_bar"],
+)
+def test_draw_chart_success(chart_type, draw_func, data_factory, params, title):
+    """[test_chart-011,016,019,022,027,030,035] 各チャートタイプの描画成功ケース。"""
     # Arrange
-    df = create_scatter_data()
+    df = data_factory()
 
     # Act
-    fig = draw_scatter(df, "売上", "利益", None, "散布図テスト")
+    fig = draw_func(df, **params, title=title)
 
     # Assert
     assert fig is not None
     assert isinstance(fig, go.Figure)
 
 
-def test_draw_scatter_with_legend():
-    """[test_chart-012] 凡例付き散布図描画の成功ケース。"""
+# ================================================================================
+# 凡例付き描画テスト（パラメトライズ）
+# ================================================================================
+
+
+@pytest.mark.parametrize(
+    "chart_type,draw_func,data_factory,legend_column,title",
+    [
+        ("scatter", draw_scatter, create_scatter_data, "地域", "散布図テスト"),
+        (
+            "bar",
+            draw_bar,
+            lambda: pd.DataFrame(
+                {
+                    "地域": ["日本", "日本", "アメリカ", "アメリカ"],
+                    "部門": ["営業", "開発", "営業", "開発"],
+                    "値": [1000, 500, 1500, 700],
+                }
+            ),
+            "部門",
+            "棒グラフテスト",
+        ),
+        (
+            "line",
+            draw_line,
+            lambda: pd.DataFrame(
+                {
+                    "年度": ["2022", "2023", "2022", "2023"],
+                    "地域": ["日本", "日本", "アメリカ", "アメリカ"],
+                    "値": [1000, 1200, 1500, 1800],
+                }
+            ),
+            "地域",
+            "折れ線グラフテスト",
+        ),
+    ],
+    ids=["scatter", "bar", "line"],
+)
+def test_draw_chart_with_legend(chart_type, draw_func, data_factory, legend_column, title):
+    """[test_chart-012,017,023] 凡例付き描画の成功ケース。"""
     # Arrange
-    df = create_scatter_data()
+    df = data_factory()
 
     # Act
-    fig = draw_scatter(df, "売上", "利益", "地域", "散布図テスト")
+    if chart_type == "scatter":
+        fig = draw_func(df, "売上", "利益", legend_column, title)
+    else:  # bar or line
+        fig = draw_func(df, df.columns[0], "値", legend_column, title)
 
     # Assert
     assert fig is not None
+    assert isinstance(fig, go.Figure)
 
 
 # ================================================================================
-# 棒グラフテスト
+# エラーケーステスト（パラメトライズ）
 # ================================================================================
 
 
-def test_check_bar_success():
-    """[test_chart-013] 棒グラフチェックの成功ケース。"""
+@pytest.mark.parametrize(
+    "test_id,check_func,data_factory,params,expected_error_msg",
+    [
+        (
+            "014",
+            check_bar,
+            create_bar_data,
+            {"x_axis": "存在しない列", "y_axis": "値", "legend": None},
+            "存在しません",
+        ),
+        (
+            "021",
+            check_line,
+            lambda: pd.DataFrame({"年度": ["2023"], "値": [1000]}),
+            {"x_axis": "年度", "y_axis": "値", "legend": None},
+            "2個以上",
+        ),
+        (
+            "025",
+            check_pie,
+            lambda: pd.DataFrame({"地域": ["日本", "アメリカ", "中国"], "値": [1000, -500, 2000]}),
+            {"values": "値", "names": "地域"},
+            "負の値",
+        ),
+        (
+            "026",
+            check_pie,
+            lambda: pd.DataFrame({"地域": ["日本"], "値": [1000]}),
+            {"values": "値", "names": "地域"},
+            "2つ以上",
+        ),
+        (
+            "033",
+            check_stacked_bar,
+            lambda: pd.DataFrame({"年度": ["2023", "2024"], "部門": ["営業", "営業"], "値": [1000, 1200]}),
+            {"x_axis": "年度", "y_axis": "値", "stack_by": "部門"},
+            "2つ以上",
+        ),
+        (
+            "034",
+            check_stacked_bar,
+            lambda: pd.DataFrame({"年度": ["2023", "2023"], "部門": ["営業", "開発"], "値": [1000, -500]}),
+            {"x_axis": "年度", "y_axis": "値", "stack_by": "部門"},
+            "負の値",
+        ),
+    ],
+    ids=["bar_missing_column", "line_single_point", "pie_negative", "pie_single_category", "stacked_single_stack", "stacked_negative"],
+)
+def test_check_chart_errors(test_id, check_func, data_factory, params, expected_error_msg):
+    """[test_chart-014,021,025,026,033,034] 各チャートタイプのエラーケース。"""
     # Arrange
-    df = create_bar_data()
+    df = data_factory()
 
     # Act
-    success, msg = check_bar(df, "地域", "値", None)
-
-    # Assert
-    assert success is True
-
-
-def test_check_bar_missing_column():
-    """[test_chart-014] 存在しない列を指定した場合のエラー。"""
-    # Arrange
-    df = create_bar_data()
-
-    # Act
-    success, msg = check_bar(df, "存在しない列", "値", None)
+    success, msg = check_func(df, **params)
 
     # Assert
     assert success is False
-    assert "存在しません" in msg
+    assert expected_error_msg in msg
+
+
+# ================================================================================
+# 棒グラフ個別テスト
+# ================================================================================
 
 
 def test_check_bar_non_numeric_y():
@@ -350,219 +506,9 @@ def test_check_bar_non_numeric_y():
     assert "数値" in msg
 
 
-def test_draw_bar_success():
-    """[test_chart-016] 棒グラフ描画の成功ケース。"""
-    # Arrange
-    df = create_bar_data()
-
-    # Act
-    fig = draw_bar(df, "地域", "値", None, "棒グラフテスト")
-
-    # Assert
-    assert fig is not None
-    assert isinstance(fig, go.Figure)
-
-
-def test_draw_bar_with_legend():
-    """[test_chart-017] 凡例付き棒グラフ描画の成功ケース。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "地域": ["日本", "日本", "アメリカ", "アメリカ"],
-            "部門": ["営業", "開発", "営業", "開発"],
-            "値": [1000, 500, 1500, 700],
-        }
-    )
-
-    # Act
-    fig = draw_bar(df, "地域", "値", "部門", "棒グラフテスト")
-
-    # Assert
-    assert fig is not None
-
-
 # ================================================================================
-# 横棒グラフテスト
+# ウォーターフォール図個別テスト
 # ================================================================================
-
-
-def test_check_horizontal_bar_success():
-    """[test_chart-018] 横棒グラフチェックの成功ケース。"""
-    # Arrange
-    df = create_bar_data()
-
-    # Act
-    success, msg = check_horizontal_bar(df, "値", "地域", None)
-
-    # Assert
-    assert success is True
-
-
-def test_draw_horizontal_bar_success():
-    """[test_chart-019] 横棒グラフ描画の成功ケース。"""
-    # Arrange
-    df = create_bar_data()
-
-    # Act
-    fig = draw_horizontal_bar(df, "値", "地域", None, "横棒グラフテスト")
-
-    # Assert
-    assert fig is not None
-    assert isinstance(fig, go.Figure)
-
-
-# ================================================================================
-# 折れ線グラフテスト
-# ================================================================================
-
-
-def test_check_line_success():
-    """[test_chart-020] 折れ線グラフチェックの成功ケース。"""
-    # Arrange
-    df = create_line_data()
-
-    # Act
-    success, msg = check_line(df, "年度", "値", None)
-
-    # Assert
-    assert success is True
-
-
-def test_check_line_single_point():
-    """[test_chart-021] データポイントが1個の場合のエラー。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "年度": ["2023"],
-            "値": [1000],
-        }
-    )
-
-    # Act
-    success, msg = check_line(df, "年度", "値", None)
-
-    # Assert
-    assert success is False
-    assert "2個以上" in msg
-
-
-def test_draw_line_success():
-    """[test_chart-022] 折れ線グラフ描画の成功ケース。"""
-    # Arrange
-    df = create_line_data()
-
-    # Act
-    fig = draw_line(df, "年度", "値", None, "折れ線グラフテスト")
-
-    # Assert
-    assert fig is not None
-    assert isinstance(fig, go.Figure)
-
-
-def test_draw_line_with_legend():
-    """[test_chart-023] 凡例付き折れ線グラフ描画の成功ケース。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "年度": ["2022", "2023", "2022", "2023"],
-            "地域": ["日本", "日本", "アメリカ", "アメリカ"],
-            "値": [1000, 1200, 1500, 1800],
-        }
-    )
-
-    # Act
-    fig = draw_line(df, "年度", "値", "地域", "折れ線グラフテスト")
-
-    # Assert
-    assert fig is not None
-
-
-# ================================================================================
-# 円グラフテスト
-# ================================================================================
-
-
-def test_check_pie_success():
-    """[test_chart-024] 円グラフチェックの成功ケース。"""
-    # Arrange
-    df = create_pie_data()
-
-    # Act
-    success, msg = check_pie(df, "値", "地域")
-
-    # Assert
-    assert success is True
-
-
-def test_check_pie_negative_values():
-    """[test_chart-025] 負の値がある場合のエラー。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "地域": ["日本", "アメリカ", "中国"],
-            "値": [1000, -500, 2000],
-        }
-    )
-
-    # Act
-    success, msg = check_pie(df, "値", "地域")
-
-    # Assert
-    assert success is False
-    assert "負の値" in msg
-
-
-def test_check_pie_single_category():
-    """[test_chart-026] カテゴリが1つの場合のエラー。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "地域": ["日本"],
-            "値": [1000],
-        }
-    )
-
-    # Act
-    success, msg = check_pie(df, "値", "地域")
-
-    # Assert
-    assert success is False
-    assert "2つ以上" in msg
-
-
-def test_draw_pie_success():
-    """[test_chart-027] 円グラフ描画の成功ケース。"""
-    # Arrange
-    df = create_pie_data()
-
-    # Act
-    fig = draw_pie(df, "値", "地域", "円グラフテスト")
-
-    # Assert
-    assert fig is not None
-    assert isinstance(fig, go.Figure)
-
-
-# ================================================================================
-# ウォーターフォール図テスト
-# ================================================================================
-
-
-def test_check_waterfall_success():
-    """[test_chart-028] ウォーターフォール図チェックの成功ケース。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "項目": ["売上", "原価", "営業費"],
-            "値": [1000, 600, 200],
-        }
-    )
-
-    # Act
-    success, msg = check_waterfall(df, "項目", "値", "relative", 0, None)
-
-    # Assert
-    assert success is True
 
 
 def test_check_waterfall_invalid_measure_type():
@@ -578,24 +524,6 @@ def test_check_waterfall_invalid_measure_type():
     assert "測定タイプ" in msg
 
 
-def test_draw_waterfall_success():
-    """[test_chart-030] ウォーターフォール図描画の成功ケース。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "項目": ["売上", "原価", "営業費"],
-            "値": [1000, 600, 200],
-        }
-    )
-
-    # Act
-    fig = draw_waterfall(df, "項目", "値", "relative", 0, None, False, None, "ウォーターフォールテスト")
-
-    # Assert
-    assert fig is not None
-    assert isinstance(fig, go.Figure)
-
-
 def test_draw_waterfall_with_total():
     """[test_chart-031] 合計付きウォーターフォール図描画の成功ケース。"""
     # Arrange
@@ -608,73 +536,6 @@ def test_draw_waterfall_with_total():
 
     # Act
     fig = draw_waterfall(df, "項目", "値", "relative", 0, None, True, "合計", "ウォーターフォールテスト")
-
-    # Assert
-    assert fig is not None
-
-
-# ================================================================================
-# 積み上げ棒グラフテスト
-# ================================================================================
-
-
-def test_check_stacked_bar_success():
-    """[test_chart-032] 積み上げ棒グラフチェックの成功ケース。"""
-    # Arrange
-    df = create_stacked_bar_data()
-
-    # Act
-    success, msg = check_stacked_bar(df, "年度", "値", "部門")
-
-    # Assert
-    assert success is True
-
-
-def test_check_stacked_bar_single_stack():
-    """[test_chart-033] スタック要素が1つの場合のエラー。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "年度": ["2023", "2024"],
-            "部門": ["営業", "営業"],
-            "値": [1000, 1200],
-        }
-    )
-
-    # Act
-    success, msg = check_stacked_bar(df, "年度", "値", "部門")
-
-    # Assert
-    assert success is False
-    assert "2つ以上" in msg
-
-
-def test_check_stacked_bar_negative_values():
-    """[test_chart-034] 負の値がある場合のエラー。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "年度": ["2023", "2023"],
-            "部門": ["営業", "開発"],
-            "値": [1000, -500],
-        }
-    )
-
-    # Act
-    success, msg = check_stacked_bar(df, "年度", "値", "部門")
-
-    # Assert
-    assert success is False
-    assert "負の値" in msg
-
-
-def test_draw_stacked_bar_success():
-    """[test_chart-035] 積み上げ棒グラフ描画の成功ケース。"""
-    # Arrange
-    df = create_stacked_bar_data()
-
-    # Act
-    fig = draw_stacked_bar(df, "年度", "値", "部門", "積み上げ棒グラフテスト")
 
     # Assert
     assert fig is not None

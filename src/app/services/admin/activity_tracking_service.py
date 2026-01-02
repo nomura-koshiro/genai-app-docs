@@ -10,7 +10,7 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance
+from app.core.decorators import measure_performance
 from app.core.logging import get_logger
 from app.repositories.admin.user_activity_repository import UserActivityRepository
 from app.schemas.admin.activity_log import (
@@ -100,13 +100,15 @@ class ActivityTrackingService:
             )
             await self.db.commit()
         except Exception as e:
+            # NOTE: 意図的にraiseしない（Fire-and-Forgetパターン）
+            # テレメトリ記録の失敗でリクエスト処理をブロックしない設計判断
+            # 本番環境ではエラーはログで監視し、別途アラートで対応する
             logger.error(
                 "操作履歴の記録に失敗しました",
                 endpoint=endpoint,
                 error=str(e),
                 action="record_activity_error",
             )
-            # エラーが発生してもリクエスト処理は継続
 
     @measure_performance
     async def list_activities(

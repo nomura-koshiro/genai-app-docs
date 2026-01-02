@@ -5,7 +5,7 @@ import uuid
 from fastapi import APIRouter, Query, status
 
 from app.api.core import AdminGraphAxisServiceDep, CurrentUserAccountDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError
 from app.core.logging import get_logger
 from app.schemas.admin.graph_axis import AnalysisGraphAxisListResponse

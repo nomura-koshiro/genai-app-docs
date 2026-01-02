@@ -4,7 +4,7 @@
 Happy Pathとビジネスルールエラーのみをテストします。
 
 対応エンドポイント:
-    - GET /api/v1/admin/role - ロール一覧取得
+    - GET /api/v1/admin/role - ロール一覧取得（認証必須）
 """
 
 import pytest
@@ -17,7 +17,7 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_get_roles_success(client: AsyncClient):
-    """[test_role-001] ロール一覧取得の成功ケース（認証不要）。"""
+    """[test_role-001] ロール一覧取得の成功ケース（認証済み）。"""
     # Act
     response = await client.get("/api/v1/admin/role")
 
@@ -28,65 +28,58 @@ async def test_get_roles_success(client: AsyncClient):
     assert "projectRoles" in data
 
 
+@pytest.mark.parametrize(
+    "role_type",
+    ["systemRoles", "projectRoles"],
+    ids=["system", "project"],
+)
 @pytest.mark.asyncio
-async def test_get_roles_contains_system_roles(client: AsyncClient):
-    """[test_role-002] システムロールが含まれていること。"""
+async def test_get_roles_contains_role_type(client: AsyncClient, role_type: str):
+    """[test_role-002,003] ロールタイプが含まれており、必要なフィールドがあること。"""
     # Act
     response = await client.get("/api/v1/admin/role")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    system_roles = data["systemRoles"]
-    assert len(system_roles) > 0
+    roles = data[role_type]
+    assert len(roles) > 0
     # 各ロールに必要なフィールドがあること
-    for role in system_roles:
+    for role in roles:
         assert "value" in role
         assert "label" in role
         assert "description" in role
 
 
+@pytest.mark.parametrize(
+    "role_type,role_value",
+    [
+        ("systemRoles", "system_admin"),
+        ("projectRoles", "project_manager"),
+    ],
+    ids=["system_admin", "project_manager"],
+)
 @pytest.mark.asyncio
-async def test_get_roles_contains_project_roles(client: AsyncClient):
-    """[test_role-003] プロジェクトロールが含まれていること。"""
+async def test_get_roles_specific_role_exists(
+    client: AsyncClient, role_type: str, role_value: str
+):
+    """[test_role-004,005] 特定のロールが存在すること。"""
     # Act
     response = await client.get("/api/v1/admin/role")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    project_roles = data["projectRoles"]
-    assert len(project_roles) > 0
-    # 各ロールに必要なフィールドがあること
-    for role in project_roles:
-        assert "value" in role
-        assert "label" in role
-        assert "description" in role
+    roles = data[role_type]
+    specific_role = next((role for role in roles if role["value"] == role_value), None)
+    assert specific_role is not None
 
 
 @pytest.mark.asyncio
-async def test_get_roles_system_admin_exists(client: AsyncClient):
-    """[test_role-004] system_adminロールが存在すること。"""
+async def test_get_roles_unauthenticated_returns_401(unauthenticated_client: AsyncClient):
+    """[test_role-006] 未認証でのアクセスは401エラー。"""
     # Act
-    response = await client.get("/api/v1/admin/role")
+    response = await unauthenticated_client.get("/api/v1/admin/role")
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
-    system_roles = data["systemRoles"]
-    admin_role = next((role for role in system_roles if role["value"] == "system_admin"), None)
-    assert admin_role is not None
-
-
-@pytest.mark.asyncio
-async def test_get_roles_project_manager_exists(client: AsyncClient):
-    """[test_role-005] project_managerロールが存在すること。"""
-    # Act
-    response = await client.get("/api/v1/admin/role")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    project_roles = data["projectRoles"]
-    manager_role = next((role for role in project_roles if role["value"] == "project_manager"), None)
-    assert manager_role is not None
+    assert response.status_code == 401

@@ -84,9 +84,19 @@ class TestSheetOperationsMixin:
         assert len(result["files"]) == 1
         assert result["files"][0]["filename"] == "test.xlsx"
 
+    @pytest.mark.parametrize(
+        "operation,error_type",
+        [
+            ("select_sheet", "file_not_found"),
+            ("delete_sheet", "file_not_found"),
+            ("refresh_sheet", "file_not_found"),
+            ("get_sheet_detail", "file_not_found"),
+        ],
+        ids=["select_file_not_found", "delete_file_not_found", "refresh_file_not_found", "get_detail_file_not_found"],
+    )
     @pytest.mark.asyncio
-    async def test_select_sheet_file_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-003] シート選択時にファイルが見つからない場合。"""
+    async def test_operations_file_not_found(self, db_session: AsyncSession, operation: str, error_type: str):
+        """[test_sheet_operations-003] 各操作でのファイルNotFoundErrorケース。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
         project_id = uuid.uuid4()
@@ -98,13 +108,44 @@ class TestSheetOperationsMixin:
 
         # Act & Assert
         with pytest.raises(NotFoundError) as exc_info:
-            await service.select_sheet(project_id, file_id, sheet_id, user_id)
+            operation_method = getattr(service, operation)
+            await operation_method(project_id, file_id, sheet_id, user_id)
 
         assert "ファイルが見つかりません" in str(exc_info.value)
 
+    @pytest.mark.parametrize(
+        "error_type",
+        ["select_sheet_not_found", "delete_sheet_not_found"],
+        ids=["select_sheet_not_found", "delete_sheet_not_found"],
+    )
+    @pytest.mark.asyncio
+    async def test_operations_sheet_not_found(self, db_session: AsyncSession, error_type: str):
+        """[test_sheet_operations-004] シート選択・削除時のシートNotFoundErrorケース。"""
+        # Arrange
+        service = self._create_mixin_instance(db_session)
+        project_id = uuid.uuid4()
+        file_id = uuid.uuid4()
+        sheet_id = uuid.uuid4()
+        user_id = uuid.uuid4()
+
+        mock_project_file = MagicMock()
+        mock_project_file.project_id = project_id
+
+        service.project_file_repository.get = AsyncMock(return_value=mock_project_file)
+        service.file_repository.get = AsyncMock(return_value=None)
+
+        # Act & Assert
+        with pytest.raises(NotFoundError) as exc_info:
+            if error_type == "select_sheet_not_found":
+                await service.select_sheet(project_id, file_id, sheet_id, user_id)
+            else:  # delete_sheet_not_found
+                await service.delete_sheet(project_id, file_id, sheet_id, user_id)
+
+        assert "シートが見つかりません" in str(exc_info.value)
+
     @pytest.mark.asyncio
     async def test_select_sheet_project_mismatch(self, db_session: AsyncSession):
-        """[test_sheet_operations-004] シート選択時にプロジェクトIDが一致しない場合。"""
+        """[test_sheet_operations-005] シート選択時にプロジェクトIDが一致しない場合。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
         project_id = uuid.uuid4()
@@ -124,88 +165,8 @@ class TestSheetOperationsMixin:
         assert "該当ファイルが見つかりません" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_select_sheet_sheet_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-005] シート選択時にシートが見つからない場合。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        project_id = uuid.uuid4()
-        file_id = uuid.uuid4()
-        sheet_id = uuid.uuid4()
-        user_id = uuid.uuid4()
-
-        mock_project_file = MagicMock()
-        mock_project_file.project_id = project_id
-
-        service.project_file_repository.get = AsyncMock(return_value=mock_project_file)
-        service.file_repository.get = AsyncMock(return_value=None)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.select_sheet(project_id, file_id, sheet_id, user_id)
-
-        assert "シートが見つかりません" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_delete_sheet_file_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-006] シート削除時にファイルが見つからない場合。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        project_id = uuid.uuid4()
-        file_id = uuid.uuid4()
-        sheet_id = uuid.uuid4()
-        user_id = uuid.uuid4()
-
-        service.project_file_repository.get = AsyncMock(return_value=None)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.delete_sheet(project_id, file_id, sheet_id, user_id)
-
-        assert "ファイルが見つかりません" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_delete_sheet_sheet_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-007] シート削除時にシートが見つからない場合。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        project_id = uuid.uuid4()
-        file_id = uuid.uuid4()
-        sheet_id = uuid.uuid4()
-        user_id = uuid.uuid4()
-
-        mock_project_file = MagicMock()
-        mock_project_file.project_id = project_id
-
-        service.project_file_repository.get = AsyncMock(return_value=mock_project_file)
-        service.file_repository.get = AsyncMock(return_value=None)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.delete_sheet(project_id, file_id, sheet_id, user_id)
-
-        assert "シートが見つかりません" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_refresh_sheet_file_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-008] シート更新時にファイルが見つからない場合。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        project_id = uuid.uuid4()
-        file_id = uuid.uuid4()
-        sheet_id = uuid.uuid4()
-        user_id = uuid.uuid4()
-
-        service.project_file_repository.get = AsyncMock(return_value=None)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.refresh_sheet(project_id, file_id, sheet_id, user_id)
-
-        assert "ファイルが見つかりません" in str(exc_info.value)
-
-    @pytest.mark.asyncio
     async def test_refresh_sheet_not_selected(self, db_session: AsyncSession):
-        """[test_sheet_operations-009] 選択されていないシートの更新時のエラー。"""
+        """[test_sheet_operations-006] 選択されていないシートの更新時のエラー。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
         project_id = uuid.uuid4()
@@ -229,26 +190,8 @@ class TestSheetOperationsMixin:
 
         assert "シートが選択されていません" in str(exc_info.value)
 
-    @pytest.mark.asyncio
-    async def test_get_sheet_detail_file_not_found(self, db_session: AsyncSession):
-        """[test_sheet_operations-010] シート詳細取得時にファイルが見つからない場合。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        project_id = uuid.uuid4()
-        file_id = uuid.uuid4()
-        sheet_id = uuid.uuid4()
-        user_id = uuid.uuid4()
-
-        service.project_file_repository.get = AsyncMock(return_value=None)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.get_sheet_detail(project_id, file_id, sheet_id, user_id)
-
-        assert "ファイルが見つかりません" in str(exc_info.value)
-
     def test_build_axis_config(self, db_session: AsyncSession):
-        """[test_sheet_operations-011] axis_config構築の成功ケース。"""
+        """[test_sheet_operations-007] axis_config構築の成功ケース。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
         df_metadata = pd.DataFrame({"年度": ["2023", "2024"], "部門": ["営業", "開発"]})
@@ -261,48 +204,41 @@ class TestSheetOperationsMixin:
         assert isinstance(result, dict)
         assert len(result) == 3  # 年度、部門、科目
 
-    def test_infer_data_type_number(self, db_session: AsyncSession):
-        """[test_sheet_operations-012] 数値型推定の成功ケース。"""
+    @pytest.mark.parametrize(
+        "series_data,expected_type",
+        [
+            ([100, 200, 300], "number"),
+            (["営業", "開発", "管理"], "string"),
+        ],
+        ids=["number", "string"],
+    )
+    def test_infer_data_type(self, db_session: AsyncSession, series_data: list, expected_type: str):
+        """[test_sheet_operations-008] データ型推定のテスト。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
-        series = pd.Series([100, 200, 300])
+        series = pd.Series(series_data)
 
         # Act
         result = service._infer_data_type(series)
 
         # Assert
-        assert result == "number"
+        assert result == expected_type
 
-    def test_infer_data_type_string(self, db_session: AsyncSession):
-        """[test_sheet_operations-013] 文字列型推定の成功ケース。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-        series = pd.Series(["営業", "開発", "管理"])
-
-        # Act
-        result = service._infer_data_type(series)
-
-        # Assert
-        assert result == "string"
-
-    def test_infer_role_transition(self, db_session: AsyncSession):
-        """[test_sheet_operations-014] 推移役割推定の成功ケース。"""
+    @pytest.mark.parametrize(
+        "column_name,data_type,expected_role",
+        [
+            ("FY2023", "string", "推移"),
+            ("部門", "string", "カテゴリ"),
+        ],
+        ids=["transition", "category"],
+    )
+    def test_infer_role(self, db_session: AsyncSession, column_name: str, data_type: str, expected_role: str):
+        """[test_sheet_operations-009] 役割推定のテスト。"""
         # Arrange
         service = self._create_mixin_instance(db_session)
 
         # Act
-        result = service._infer_role("FY2023", "string")
+        result = service._infer_role(column_name, data_type)
 
         # Assert
-        assert result == "推移"
-
-    def test_infer_role_category(self, db_session: AsyncSession):
-        """[test_sheet_operations-015] カテゴリ役割推定の成功ケース。"""
-        # Arrange
-        service = self._create_mixin_instance(db_session)
-
-        # Act
-        result = service._infer_role("部門", "string")
-
-        # Assert
-        assert result == "カテゴリ"
+        assert result == expected_role

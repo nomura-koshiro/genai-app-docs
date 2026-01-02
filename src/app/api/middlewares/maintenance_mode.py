@@ -15,8 +15,7 @@ from starlette.types import ASGIApp
 
 from app.core.database import get_async_session_context
 from app.core.logging import get_logger
-from app.models import SettingCategory
-from app.repositories.admin import SystemSettingRepository
+from app.core.maintenance import get_maintenance_settings
 
 logger = get_logger(__name__)
 
@@ -132,29 +131,8 @@ class MaintenanceModeMiddleware(BaseHTTPMiddleware):
 
         try:
             async with get_async_session_context() as session:
-                repository = SystemSettingRepository(session)
-
-                # メンテナンスモード設定を取得
-                maintenance_mode = await repository.get_by_category_and_key(
-                    category=SettingCategory.MAINTENANCE,
-                    key="maintenance_mode",
-                )
-
-                maintenance_message = await repository.get_by_category_and_key(
-                    category=SettingCategory.MAINTENANCE,
-                    key="maintenance_message",
-                )
-
-                allow_admin = await repository.get_by_category_and_key(
-                    category=SettingCategory.MAINTENANCE,
-                    key="allow_admin_access",
-                )
-
-                settings: dict[str, Any] = {
-                    "enabled": self._get_setting_value(maintenance_mode, False),
-                    "message": self._get_setting_value(maintenance_message, ""),
-                    "allow_admin_access": self._get_setting_value(allow_admin, True),
-                }
+                # Core層のヘルパー関数を使用（レイヤー分離を維持）
+                settings: dict[str, Any] = await get_maintenance_settings(session)
 
                 # キャッシュを更新
                 self._maintenance_cache = settings
@@ -169,28 +147,6 @@ class MaintenanceModeMiddleware(BaseHTTPMiddleware):
             )
             # エラー時はメンテナンスモードOFFとして扱う
             return {"enabled": False}
-
-    def _get_setting_value(self, setting: Any, default: Any) -> Any:
-        """設定値を取得します。
-
-        SystemSettingのvalueはJSONB型なので、dictの場合はvalue自体を、
-        それ以外の場合はそのまま返します。
-
-        Args:
-            setting: SystemSettingオブジェクト
-            default: デフォルト値
-
-        Returns:
-            Any: 設定値
-        """
-        if setting is None:
-            return default
-        value = setting.value
-        # JSONB型なので既にPythonオブジェクトに変換されている
-        # valueがdictの場合、実際の値を取得（{"value": X}形式の場合）
-        if isinstance(value, dict) and "value" in value:
-            return value["value"]
-        return value
 
     def clear_cache(self) -> None:
         """キャッシュをクリアします。

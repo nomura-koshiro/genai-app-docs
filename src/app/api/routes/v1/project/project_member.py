@@ -33,7 +33,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Query, status
 
 from app.api.core import CurrentUserAccountDep, ProjectMemberServiceDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.models import ProjectRole
 from app.schemas import (

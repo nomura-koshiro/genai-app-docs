@@ -29,7 +29,7 @@ class AnalysisSession(Base, TimestampMixin):
         id: 主キー（UUID）
         name: セッション名
         issue_id: 課題マスタID（外部キー）
-        creator_id: 作成者ID（外部キー）
+        creator_id: 作成者ID（外部キー、任意。ユーザー削除時にNULLになる）
         project_id: プロジェクトID（外部キー）
         input_file_id: 入力ファイルID（外部キー、任意）
         current_snapshot_id: 現在のスナップショットID（外部キー、任意）
@@ -62,12 +62,12 @@ class AnalysisSession(Base, TimestampMixin):
         comment="課題マスタID",
     )
 
-    creator_id: Mapped[uuid.UUID] = mapped_column(
+    creator_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("user_account.id", ondelete="SET NULL"),
-        nullable=False,
+        nullable=True,
         index=True,
-        comment="作成者ID",
+        comment="作成者ID（ユーザー削除時にNULLになる）",
     )
 
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -129,7 +129,7 @@ class AnalysisSession(Base, TimestampMixin):
         back_populates="sessions",
     )
 
-    creator: Mapped["UserAccount"] = relationship(
+    creator: Mapped["UserAccount | None"] = relationship(
         "UserAccount",
         back_populates="analysis_sessions",
     )

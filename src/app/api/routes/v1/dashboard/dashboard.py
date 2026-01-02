@@ -18,7 +18,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query
 
 from app.api.core import CurrentUserAccountDep, DatabaseDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.dashboard.dashboard import (
     DashboardActivitiesResponse,

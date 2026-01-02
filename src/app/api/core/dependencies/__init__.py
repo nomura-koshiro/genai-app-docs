@@ -40,23 +40,6 @@
 """
 
 # 共通サービス依存性
-from app.api.core.dependencies.common import (
-    UserContextServiceDep,
-    get_user_context_service,
-)
-
-# 通知サービス依存性
-from app.api.core.dependencies.notification import (
-    UserNotificationServiceDep,
-    get_user_notification_service,
-)
-
-# 検索サービス依存性
-from app.api.core.dependencies.search import (
-    GlobalSearchServiceDep,
-    get_global_search_service,
-)
-
 # Admin管理サービス依存性
 from app.api.core.dependencies.admin import (
     AdminCategoryServiceDep,
@@ -71,30 +54,6 @@ from app.api.core.dependencies.admin import (
     get_admin_graph_axis_service,
     get_admin_issue_service,
     get_admin_validation_service,
-)
-
-# システム管理サービス依存性
-from app.api.core.dependencies.system_admin import (
-    ActivityTrackingServiceDep,
-    AuditLogServiceDep,
-    BulkOperationServiceDep,
-    DataManagementServiceDep,
-    NotificationServiceDep,
-    RequireSystemAdminDep,
-    SessionManagementServiceDep,
-    StatisticsServiceDep,
-    SupportToolsServiceDep,
-    SystemSettingServiceDep,
-    get_activity_tracking_service,
-    get_audit_log_service,
-    get_bulk_operation_service,
-    get_data_management_service,
-    get_notification_service,
-    get_session_management_service,
-    get_statistics_service,
-    get_support_tools_service,
-    get_system_setting_service,
-    require_system_admin,
 )
 
 # データベース依存性
@@ -128,6 +87,10 @@ from app.api.core.dependencies.authorization import (
     get_project_member,
     get_project_moderator,
 )
+from app.api.core.dependencies.common import (
+    UserContextServiceDep,
+    get_user_context_service,
+)
 from app.api.core.dependencies.database import (
     DatabaseDep,
     get_db,
@@ -143,6 +106,12 @@ from app.api.core.dependencies.driver_tree import (
     get_driver_tree_service,
 )
 
+# 通知サービス依存性
+from app.api.core.dependencies.notification import (
+    UserNotificationServiceDep,
+    get_user_notification_service,
+)
+
 # Projectサービス依存性
 from app.api.core.dependencies.project import (
     ProjectFileServiceDep,
@@ -151,6 +120,36 @@ from app.api.core.dependencies.project import (
     get_project_file_service,
     get_project_member_service,
     get_project_service,
+)
+
+# 検索サービス依存性
+from app.api.core.dependencies.search import (
+    GlobalSearchServiceDep,
+    get_global_search_service,
+)
+
+# システム管理サービス依存性
+from app.api.core.dependencies.system_admin import (
+    ActivityTrackingServiceDep,
+    AuditLogServiceDep,
+    BulkOperationServiceDep,
+    DataManagementServiceDep,
+    NotificationServiceDep,
+    RequireSystemAdminDep,
+    SessionManagementServiceDep,
+    StatisticsServiceDep,
+    SupportToolsServiceDep,
+    SystemSettingServiceDep,
+    get_activity_tracking_service,
+    get_audit_log_service,
+    get_bulk_operation_service,
+    get_data_management_service,
+    get_notification_service,
+    get_session_management_service,
+    get_statistics_service,
+    get_support_tools_service,
+    get_system_setting_service,
+    require_system_admin,
 )
 
 # UserAccountサービス依存性

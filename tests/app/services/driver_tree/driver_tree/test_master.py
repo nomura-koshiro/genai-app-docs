@@ -21,7 +21,7 @@ from app.services.driver_tree.driver_tree.master import DriverTreeMasterService
 
 @pytest.mark.asyncio
 async def test_get_categories_success(db_session: AsyncSession, test_data_seeder):
-    """[test_master-001] カテゴリ取得の成功ケース。"""
+    """[test_master-001] カテゴリ取得の成功ケースと構造検証。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
 
@@ -49,6 +49,18 @@ async def test_get_categories_success(db_session: AsyncSession, test_data_seeder
     assert "categories" in result
     assert isinstance(result["categories"], list)
     assert len(result["categories"]) >= 1
+
+    # 構造検証
+    category_data = result["categories"][0]
+    assert "category_id" in category_data
+    assert "category_name" in category_data
+    assert "industries" in category_data
+    assert isinstance(category_data["industries"], list)
+
+    industry_data = category_data["industries"][0]
+    assert "industry_id" in industry_data
+    assert "industry_name" in industry_data
+    assert "driver_types" in industry_data
 
 
 @pytest.mark.asyncio
@@ -84,46 +96,8 @@ async def test_get_categories_with_multiple_categories(db_session: AsyncSession,
 
 
 @pytest.mark.asyncio
-async def test_get_categories_structure(db_session: AsyncSession, test_data_seeder):
-    """[test_master-003] カテゴリレスポンス構造の検証。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    category = DriverTreeCategory(
-        category_id=1,
-        category_name="構造テストカテゴリ",
-        industry_id=1,
-        industry_name="構造テスト業種",
-        driver_type_id=1,
-        driver_type="構造テストドライバー型",
-    )
-    test_data_seeder.db.add(category)
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeMasterService(db_session)
-
-    # Act
-    result = await service.get_categories(
-        project_id=project.id,
-        user_id=owner.id,
-    )
-
-    # Assert
-    category_data = result["categories"][0]
-    assert "category_id" in category_data
-    assert "category_name" in category_data
-    assert "industries" in category_data
-    assert isinstance(category_data["industries"], list)
-
-    industry_data = category_data["industries"][0]
-    assert "industry_id" in industry_data
-    assert "industry_name" in industry_data
-    assert "driver_types" in industry_data
-
-
-@pytest.mark.asyncio
 async def test_get_categories_with_multiple_industries(db_session: AsyncSession, test_data_seeder):
-    """[test_master-004] 同一カテゴリに複数業種がある場合。"""
+    """[test_master-003] 同一カテゴリに複数業種がある場合。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
 
@@ -163,7 +137,7 @@ async def test_get_categories_with_multiple_industries(db_session: AsyncSession,
 
 @pytest.mark.asyncio
 async def test_get_categories_empty(db_session: AsyncSession, test_data_seeder):
-    """[test_master-005] カテゴリが空の場合。"""
+    """[test_master-004] カテゴリが空の場合。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
     await test_data_seeder.db.commit()
@@ -188,7 +162,7 @@ async def test_get_categories_empty(db_session: AsyncSession, test_data_seeder):
 
 @pytest.mark.asyncio
 async def test_get_formulas_success(db_session: AsyncSession, test_data_seeder):
-    """[test_master-006] 数式取得の成功ケース。"""
+    """[test_master-005] 数式取得の成功ケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
 
@@ -220,7 +194,7 @@ async def test_get_formulas_success(db_session: AsyncSession, test_data_seeder):
 
 @pytest.mark.asyncio
 async def test_get_formulas_structure(db_session: AsyncSession, test_data_seeder):
-    """[test_master-007] 数式レスポンス構造の検証。"""
+    """[test_master-006] 数式レスポンス構造の検証。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
 
@@ -254,82 +228,60 @@ async def test_get_formulas_structure(db_session: AsyncSession, test_data_seeder
     assert len(formula_data["formulas"]) == 2
 
 
+@pytest.mark.parametrize(
+    "error_type",
+    ["not_found", "wrong_driver_type", "wrong_kpi"],
+    ids=["not_found", "wrong_driver_type", "wrong_kpi"],
+)
 @pytest.mark.asyncio
-async def test_get_formulas_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_master-008] 存在しない数式でNotFoundError。"""
+async def test_get_formulas_not_found_errors(
+    db_session: AsyncSession, test_data_seeder, error_type: str
+):
+    """[test_master-007] get_formulasのNotFoundErrorケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
     service = DriverTreeMasterService(db_session)
+
+    if error_type == "not_found":
+        await test_data_seeder.db.commit()
+        driver_type_id = 999
+        kpi = "存在しないKPI"
+    elif error_type == "wrong_driver_type":
+        formula = DriverTreeFormula(
+            driver_type_id=1,
+            driver_type="テストドライバー型",
+            kpi="売上",
+            formulas=["売上 = 数量 * 単価"],
+        )
+        test_data_seeder.db.add(formula)
+        await test_data_seeder.db.commit()
+        driver_type_id = 2  # 存在しないdriver_type_id
+        kpi = "売上"
+    else:  # wrong_kpi
+        formula = DriverTreeFormula(
+            driver_type_id=1,
+            driver_type="テストドライバー型",
+            kpi="売上",
+            formulas=["売上 = 数量 * 単価"],
+        )
+        test_data_seeder.db.add(formula)
+        await test_data_seeder.db.commit()
+        driver_type_id = 1
+        kpi = "利益"  # 異なるKPI
 
     # Act & Assert
     with pytest.raises(NotFoundError):
         await service.get_formulas(
             project_id=project.id,
-            driver_type_id=999,  # 存在しないID
-            kpi="存在しないKPI",
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_get_formulas_wrong_driver_type(db_session: AsyncSession, test_data_seeder):
-    """[test_master-009] 異なるdriver_type_idでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    formula = DriverTreeFormula(
-        driver_type_id=1,
-        driver_type="テストドライバー型",
-        kpi="売上",
-        formulas=["売上 = 数量 * 単価"],
-    )
-    test_data_seeder.db.add(formula)
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeMasterService(db_session)
-
-    # Act & Assert: 異なるdriver_type_idでは見つからない
-    with pytest.raises(NotFoundError):
-        await service.get_formulas(
-            project_id=project.id,
-            driver_type_id=2,  # 存在しないdriver_type_id
-            kpi="売上",
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_get_formulas_wrong_kpi(db_session: AsyncSession, test_data_seeder):
-    """[test_master-010] 異なるKPIでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    formula = DriverTreeFormula(
-        driver_type_id=1,
-        driver_type="テストドライバー型",
-        kpi="売上",
-        formulas=["売上 = 数量 * 単価"],
-    )
-    test_data_seeder.db.add(formula)
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeMasterService(db_session)
-
-    # Act & Assert: 異なるKPIでは見つからない
-    with pytest.raises(NotFoundError):
-        await service.get_formulas(
-            project_id=project.id,
-            driver_type_id=1,
-            kpi="利益",  # 異なるKPI
+            driver_type_id=driver_type_id,
+            kpi=kpi,
             user_id=owner.id,
         )
 
 
 @pytest.mark.asyncio
 async def test_get_formulas_multiple_entries(db_session: AsyncSession, test_data_seeder):
-    """[test_master-011] 複数の数式エントリがある場合。"""
+    """[test_master-008] 複数の数式エントリがある場合。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
 

@@ -267,60 +267,29 @@ def test_get_step_overview_tool_no_steps():
 # ================================================================================
 
 
-def test_add_step_tool_filter_success():
-    """[test_tools-008] filterステップ追加の成功ケース。"""
+@pytest.mark.parametrize(
+    "step_name,step_type",
+    [
+        ("テストフィルタ", "filter"),
+        ("集計", "aggregate"),
+        ("サマリ", "summary"),
+        ("変換", "transform"),
+    ],
+    ids=["filter", "aggregate", "summary", "transform"],
+)
+def test_add_step_tool_success(step_name: str, step_type: str):
+    """[test_tools-008] ステップ追加の成功ケース。"""
     # Arrange
     state = create_empty_state()
     tool = AddStepTool(analysis_state=state)
 
     # Act
-    result = tool._run("テストフィルタ, filter, original")
+    result = tool._run(f"{step_name}, {step_type}, original")
 
     # Assert
     assert "追加しました" in result
     assert len(state.all_steps) == 1
-
-
-def test_add_step_tool_aggregate_success():
-    """[test_tools-009] aggregateステップ追加の成功ケース。"""
-    # Arrange
-    state = create_empty_state()
-    tool = AddStepTool(analysis_state=state)
-
-    # Act
-    result = tool._run("集計, aggregate, original")
-
-    # Assert
-    assert "追加しました" in result
-    assert state.all_steps[0]["type"] == "aggregate"
-
-
-def test_add_step_tool_summary_success():
-    """[test_tools-010] summaryステップ追加の成功ケース。"""
-    # Arrange
-    state = create_empty_state()
-    tool = AddStepTool(analysis_state=state)
-
-    # Act
-    result = tool._run("サマリ, summary, original")
-
-    # Assert
-    assert "追加しました" in result
-    assert state.all_steps[0]["type"] == "summary"
-
-
-def test_add_step_tool_transform_success():
-    """[test_tools-011] transformステップ追加の成功ケース。"""
-    # Arrange
-    state = create_empty_state()
-    tool = AddStepTool(analysis_state=state)
-
-    # Act
-    result = tool._run("変換, transform, original")
-
-    # Assert
-    assert "追加しました" in result
-    assert state.all_steps[0]["type"] == "transform"
+    assert state.all_steps[0]["type"] == step_type
 
 
 def test_add_step_tool_invalid_type():
@@ -370,45 +339,28 @@ def test_delete_step_tool_success():
     assert len(state.all_steps) == 0
 
 
-def test_delete_step_tool_invalid_index():
-    """[test_tools-015] 不正なインデックスでエラー。"""
+@pytest.mark.parametrize(
+    "input_value,expected_error",
+    [
+        ("99", "範囲外"),
+        ("abc", "数値"),
+        ("", "実行失敗"),
+    ],
+    ids=["invalid_index", "non_numeric", "empty_input"],
+)
+def test_delete_step_tool_error(input_value: str, expected_error: str):
+    """[test_tools-015] DeleteStepToolのエラーケース。"""
     # Arrange
     state = create_state_with_filter_step()
     tool = DeleteStepTool(analysis_state=state)
 
     # Act
-    result = tool._run("99")
+    result = tool._run(input_value)
 
     # Assert
     assert "実行失敗" in result
-    assert "範囲外" in result
-
-
-def test_delete_step_tool_non_numeric():
-    """[test_tools-016] 非数値入力でエラー。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    tool = DeleteStepTool(analysis_state=state)
-
-    # Act
-    result = tool._run("abc")
-
-    # Assert
-    assert "実行失敗" in result
-    assert "数値" in result
-
-
-def test_delete_step_tool_empty_input():
-    """[test_tools-017] 空入力でエラー。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    tool = DeleteStepTool(analysis_state=state)
-
-    # Act
-    result = tool._run("")
-
-    # Assert
-    assert "実行失敗" in result
+    if expected_error != "実行失敗":
+        assert expected_error in result
 
 
 # ================================================================================
@@ -429,18 +381,29 @@ def test_get_filter_tool_success():
     assert "フィルタ設定" in result
 
 
-def test_get_filter_tool_invalid_step_type():
-    """[test_tools-019] filter以外のステップでエラー。"""
+@pytest.mark.parametrize(
+    "tool_class,state_factory,expected_error",
+    [
+        (GetFilterTool, create_state_with_aggregate_step, "フィルタステップではありません"),
+        (GetAggregationTool, create_state_with_filter_step, "集計ステップではありません"),
+        (GetTransformTool, create_state_with_filter_step, "変換ステップではありません"),
+        (GetSummaryTool, create_state_with_filter_step, "実行失敗"),
+    ],
+    ids=["filter", "aggregation", "transform", "summary"],
+)
+def test_get_tool_invalid_step_type(tool_class, state_factory, expected_error: str):
+    """[test_tools-019] Get系ツールで不正なステップタイプを指定した場合のエラー。"""
     # Arrange
-    state = create_state_with_aggregate_step()
-    tool = GetFilterTool(analysis_state=state)
+    state = state_factory()
+    tool = tool_class(analysis_state=state)
 
     # Act
     result = tool._run("0")
 
     # Assert
     assert "実行失敗" in result
-    assert "フィルタステップではありません" in result
+    if expected_error != "実行失敗":
+        assert expected_error in result
 
 
 def test_set_filter_tool_success():
@@ -465,15 +428,23 @@ def test_set_filter_tool_success():
     assert "適用しました" in result
 
 
-def test_set_filter_tool_invalid_json():
-    """[test_tools-021] 不正なJSONでエラー。"""
+@pytest.mark.parametrize(
+    "tool_class,step_type,invalid_input",
+    [
+        (SetFilterTool, "filter", "0, {invalid json}"),
+        (SetAggregationTool, "aggregate", "0, {invalid}"),
+    ],
+    ids=["filter", "aggregation"],
+)
+def test_set_tool_invalid_json(tool_class, step_type: str, invalid_input: str):
+    """[test_tools-021] Set系ツールでの不正なJSONエラー。"""
     # Arrange
     state = create_empty_state()
-    state.add_step("フィルタ", "filter", "original")
-    tool = SetFilterTool(analysis_state=state)
+    state.add_step("テストステップ", step_type, "original")
+    tool = tool_class(analysis_state=state)
 
     # Act
-    result = tool._run("0, {invalid json}")
+    result = tool._run(invalid_input)
 
     # Assert
     assert "JSON形式が不正" in result
@@ -510,20 +481,6 @@ def test_get_aggregation_tool_success():
     assert "集計設定" in result
 
 
-def test_get_aggregation_tool_invalid_step_type():
-    """[test_tools-024] aggregate以外のステップでエラー。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    tool = GetAggregationTool(analysis_state=state)
-
-    # Act
-    result = tool._run("0")
-
-    # Assert
-    assert "実行失敗" in result
-    assert "集計ステップではありません" in result
-
-
 def test_set_aggregation_tool_success():
     """[test_tools-025] 集計設定の成功ケース。"""
     # Arrange
@@ -545,20 +502,6 @@ def test_set_aggregation_tool_success():
     assert "適用しました" in result
 
 
-def test_set_aggregation_tool_invalid_json():
-    """[test_tools-026] 不正なJSONでエラー。"""
-    # Arrange
-    state = create_empty_state()
-    state.add_step("集計", "aggregate", "original")
-    tool = SetAggregationTool(analysis_state=state)
-
-    # Act
-    result = tool._run("0, {invalid}")
-
-    # Assert
-    assert "JSON形式が不正" in result
-
-
 # ================================================================================
 # GetTransformTool / SetTransformTool テスト
 # ================================================================================
@@ -575,20 +518,6 @@ def test_get_transform_tool_success():
 
     # Assert
     assert "変換設定" in result
-
-
-def test_get_transform_tool_invalid_step_type():
-    """[test_tools-028] transform以外のステップでエラー。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    tool = GetTransformTool(analysis_state=state)
-
-    # Act
-    result = tool._run("0")
-
-    # Assert
-    assert "実行失敗" in result
-    assert "変換ステップではありません" in result
 
 
 def test_set_transform_tool_success():
@@ -646,19 +575,6 @@ def test_get_summary_tool_success():
 
     # Assert
     assert "サマリ設定" in result
-
-
-def test_get_summary_tool_invalid_step_type():
-    """[test_tools-032] summary以外のステップでエラー。"""
-    # Arrange
-    state = create_state_with_filter_step()
-    tool = GetSummaryTool(analysis_state=state)
-
-    # Act
-    result = tool._run("0")
-
-    # Assert
-    assert "実行失敗" in result
 
 
 def test_set_summary_tool_success():

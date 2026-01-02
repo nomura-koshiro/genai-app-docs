@@ -3,14 +3,19 @@
 このモジュールは、プロジェクトのCRUD操作を提供します。
 """
 
+import asyncio
 import uuid
 
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance, transactional
+from app.core.decorators import measure_performance, transactional
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.models import Project, ProjectMember, ProjectRole
+from app.models.analysis import AnalysisSession
+from app.models.driver_tree import DriverTree
+from app.models.project import ProjectFile
 from app.repositories import (
     AnalysisSessionRepository,
     DriverTreeRepository,
@@ -424,7 +429,9 @@ class ProjectCrudService(ProjectServiceBase):
             bool: アクセス可能な場合はTrue、不可能な場合はFalse
         """
         # リポジトリを使用（コード重複を回避）
-        member = await self.member_repository.get_by_project_and_user(project_id, user_id)
+        member = await self.member_repository.get_by_project_and_user(
+            project_id, user_id
+        )
         return member is not None
 
     @measure_performance
@@ -450,16 +457,18 @@ class ProjectCrudService(ProjectServiceBase):
             action="get_project_stats",
         )
 
-        # 各リポジトリのカウントを取得
+        # 各リポジトリのカウントを並行取得（パフォーマンス改善）
         member_repo = ProjectMemberRepository(self.db)
         file_repo = ProjectFileRepository(self.db)
         session_repo = AnalysisSessionRepository(self.db)
         tree_repo = DriverTreeRepository(self.db)
 
-        member_count = await member_repo.count_by_project(project_id)
-        file_count = await file_repo.count_by_project(project_id)
-        session_count = await session_repo.count_by_project(project_id)
-        tree_count = await tree_repo.count_by_project(project_id)
+        member_count, file_count, session_count, tree_count = await asyncio.gather(
+            member_repo.count_by_project(project_id),
+            file_repo.count_by_project(project_id),
+            session_repo.count_by_project(project_id),
+            tree_repo.count_by_project(project_id),
+        )
 
         logger.debug(
             "プロジェクト統計情報を取得しました",
@@ -499,25 +508,57 @@ class ProjectCrudService(ProjectServiceBase):
             action="get_projects_stats_bulk",
         )
 
-        # 各リポジトリのカウントを一括取得
-        member_repo = ProjectMemberRepository(self.db)
-        file_repo = ProjectFileRepository(self.db)
-        session_repo = AnalysisSessionRepository(self.db)
-        tree_repo = DriverTreeRepository(self.db)
+        # IN句とGROUP BYで一括カウント取得（並行実行でパフォーマンス改善）
+        # メンバー数を一括取得
+        member_query = (
+            select(ProjectMember.project_id, func.count().label("count"))
+            .where(ProjectMember.project_id.in_(project_ids))
+            .group_by(ProjectMember.project_id)
+        )
 
-        # 統計情報辞書を構築
+        # ファイル数を一括取得
+        file_query = (
+            select(ProjectFile.project_id, func.count().label("count"))
+            .where(ProjectFile.project_id.in_(project_ids))
+            .group_by(ProjectFile.project_id)
+        )
+
+        # セッション数を一括取得
+        session_query = (
+            select(AnalysisSession.project_id, func.count().label("count"))
+            .where(AnalysisSession.project_id.in_(project_ids))
+            .group_by(AnalysisSession.project_id)
+        )
+
+        # ドライバーツリー数を一括取得
+        tree_query = (
+            select(DriverTree.project_id, func.count().label("count"))
+            .where(DriverTree.project_id.in_(project_ids))
+            .group_by(DriverTree.project_id)
+        )
+
+        # 全クエリを並行実行
+        member_result, file_result, session_result, tree_result = await asyncio.gather(
+            self.db.execute(member_query),
+            self.db.execute(file_query),
+            self.db.execute(session_query),
+            self.db.execute(tree_query),
+        )
+
+        # 結果を辞書に変換
+        member_counts: dict[uuid.UUID, int] = {row.project_id: row.count for row in member_result.all()}  # type: ignore[misc]
+        file_counts: dict[uuid.UUID, int] = {row.project_id: row.count for row in file_result.all()}  # type: ignore[misc]
+        session_counts: dict[uuid.UUID, int] = {row.project_id: row.count for row in session_result.all()}  # type: ignore[misc]
+        tree_counts: dict[uuid.UUID, int] = {row.project_id: row.count for row in tree_result.all()}  # type: ignore[misc]
+
+        # 統計情報辞書を構築（0埋め）
         stats_dict = {}
         for project_id in project_ids:
-            member_count = await member_repo.count_by_project(project_id)
-            file_count = await file_repo.count_by_project(project_id)
-            session_count = await session_repo.count_by_project(project_id)
-            tree_count = await tree_repo.count_by_project(project_id)
-
             stats_dict[project_id] = ProjectStatsResponse(
-                member_count=member_count,
-                file_count=file_count,
-                session_count=session_count,
-                tree_count=tree_count,
+                member_count=member_counts.get(project_id, 0),
+                file_count=file_counts.get(project_id, 0),
+                session_count=session_counts.get(project_id, 0),
+                tree_count=tree_counts.get(project_id, 0),
             )
 
         logger.debug(
