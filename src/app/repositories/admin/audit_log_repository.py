@@ -208,6 +208,39 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         result = await self.db.execute(query)
         return result.scalar_one()
 
+    async def get_date_range(
+        self,
+        *,
+        end_date: datetime | None = None,
+    ) -> tuple[datetime | None, datetime | None]:
+        """レコードの日付範囲を取得します。
+
+        Args:
+            end_date: 終了日時（フィルタ）
+
+        Returns:
+            tuple[datetime | None, datetime | None]: (最古日時, 最新日時)
+        """
+        conditions = []
+        if end_date:
+            conditions.append(AuditLog.created_at <= end_date)
+
+        # 最古レコード
+        oldest_query = select(func.min(AuditLog.created_at))
+        if conditions:
+            oldest_query = oldest_query.where(and_(*conditions))
+        oldest_result = await self.db.execute(oldest_query)
+        oldest = oldest_result.scalar_one_or_none()
+
+        # 最新レコード
+        newest_query = select(func.max(AuditLog.created_at))
+        if conditions:
+            newest_query = newest_query.where(and_(*conditions))
+        newest_result = await self.db.execute(newest_query)
+        newest = newest_result.scalar_one_or_none()
+
+        return (oldest, newest)
+
     async def delete_old_records(self, before_date: datetime) -> int:
         """古いレコードを削除します。
 
