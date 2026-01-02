@@ -109,5 +109,12 @@ class ProjectService:
         """プロジェクトの統計情報を取得します。"""
         return await self._crud_service.get_project_stats(project_id)
 
+    async def get_projects_stats_bulk(
+        self,
+        project_ids: list[uuid.UUID],
+    ) -> dict[uuid.UUID, ProjectStatsResponse]:
+        """複数プロジェクトの統計情報を一括取得します。"""
+        return await self._crud_service.get_projects_stats_bulk(project_ids)
+
 
 __all__ = ["ProjectService"]

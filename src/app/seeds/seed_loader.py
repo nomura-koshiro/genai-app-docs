@@ -54,7 +54,7 @@ from app.models import (
     UserNotification,
     UserSession,
 )
-from app.models.project.project_member import ProjectRole
+from app.models.enums import ProjectRole
 
 logger = get_logger(__name__)
 

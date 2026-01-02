@@ -226,10 +226,7 @@ class GlobalSearchService:
             .join(ProjectMember, ProjectMember.project_id == Project.id)
             .where(
                 ProjectMember.user_id == user_id,
-                or_(
-                    ProjectFile.original_filename.ilike(f"%{query}%"),
-                    ProjectFile.description.ilike(f"%{query}%"),
-                ),
+                ProjectFile.original_filename.ilike(f"%{query}%"),
             )
         )
 

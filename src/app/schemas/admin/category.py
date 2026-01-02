@@ -1,5 +1,6 @@
 """ドライバーツリーカテゴリマスタのスキーマ。"""
 
+import uuid
 from datetime import datetime
 
 from pydantic import Field
@@ -10,11 +11,11 @@ from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 class DriverTreeCategoryBase(BaseCamelCaseModel):
     """カテゴリ基本スキーマ。"""
 
-    category_id: int = Field(..., description="業界分類ID")
+    category_id: uuid.UUID = Field(..., description="業界分類ID")
     category_name: str = Field(..., max_length=255, description="業界分類名")
-    industry_id: int = Field(..., description="業界名ID")
+    industry_id: uuid.UUID = Field(..., description="業界名ID")
     industry_name: str = Field(..., max_length=255, description="業界名")
-    driver_type_id: int = Field(..., description="ドライバー型ID")
+    driver_type_id: uuid.UUID = Field(..., description="ドライバー型ID")
     driver_type: str = Field(..., max_length=255, description="ドライバー型")
 
 
@@ -27,23 +28,23 @@ class DriverTreeCategoryCreate(DriverTreeCategoryBase):
 class DriverTreeCategoryUpdate(BaseCamelCaseModel):
     """カテゴリ更新スキーマ。"""
 
-    category_id: int | None = Field(default=None, description="業界分類ID")
+    category_id: uuid.UUID | None = Field(default=None, description="業界分類ID")
     category_name: str | None = Field(default=None, max_length=255, description="業界分類名")
-    industry_id: int | None = Field(default=None, description="業界名ID")
+    industry_id: uuid.UUID | None = Field(default=None, description="業界名ID")
     industry_name: str | None = Field(default=None, max_length=255, description="業界名")
-    driver_type_id: int | None = Field(default=None, description="ドライバー型ID")
+    driver_type_id: uuid.UUID | None = Field(default=None, description="ドライバー型ID")
     driver_type: str | None = Field(default=None, max_length=255, description="ドライバー型")
 
 
 class DriverTreeCategoryResponse(BaseCamelCaseORMModel):
     """カテゴリレスポンススキーマ。"""
 
-    id: int = Field(..., description="ID")
-    category_id: int = Field(..., description="業界分類ID")
+    id: uuid.UUID = Field(..., description="ID")
+    category_id: uuid.UUID = Field(..., description="業界分類ID")
     category_name: str = Field(..., description="業界分類名")
-    industry_id: int = Field(..., description="業界名ID")
+    industry_id: uuid.UUID = Field(..., description="業界名ID")
     industry_name: str = Field(..., description="業界名")
-    driver_type_id: int = Field(..., description="ドライバー型ID")
+    driver_type_id: uuid.UUID = Field(..., description="ドライバー型ID")
     driver_type: str = Field(..., description="ドライバー型")
     formula_count: int = Field(default=0, description="関連数式数")
     created_at: datetime = Field(..., description="作成日時")

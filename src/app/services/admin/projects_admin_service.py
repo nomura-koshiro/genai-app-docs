@@ -88,17 +88,18 @@ class ProjectsAdminService:
             query = query.where(Project.is_active == False)  # noqa: E712
 
         if owner_id:
-            query = query.where(Project.owner_id == owner_id)
+            query = query.where(Project.created_by == owner_id)
 
         if search:
             query = query.where(Project.name.ilike(f"%{search}%"))
 
         # ソート
-        sort_column = {
+        sort_mapping = {
             "storage": Project.id,  # TODO: ストレージカラム追加時に変更
             "last_activity": Project.updated_at,
             "created_at": Project.created_at,
-        }.get(sort_by, Project.created_at)
+        }
+        sort_column = sort_mapping.get(sort_by or "created_at", Project.created_at)
 
         if sort_order == "asc":
             query = query.order_by(sort_column.asc())
@@ -131,14 +132,19 @@ class ProjectsAdminService:
             # TODO: 実際のストレージ使用量を計算（現在はプレースホルダ）
             storage_used_bytes = 0
 
+            # オーナー情報を構築（オーナーが存在しない場合はNone）
+            owner_info = None
+            if project.owner:
+                owner_info = ProjectOwnerInfo(
+                    id=project.owner.id,
+                    name=project.owner.display_name or project.owner.email,
+                )
+
             items.append(
                 AdminProjectResponse(
                     id=project.id,
                     name=project.name,
-                    owner=ProjectOwnerInfo(
-                        id=project.owner.id,
-                        name=project.owner.display_name,
-                    ),
+                    owner=owner_info,
                     status="active" if project.is_active else "archived",
                     member_count=member_count,
                     storage_used_bytes=storage_used_bytes,
@@ -231,14 +237,19 @@ class ProjectsAdminService:
         # TODO: 実際のストレージ使用量を計算
         storage_used_bytes = 0
 
+        # オーナー情報を構築（オーナーが存在しない場合はNone）
+        owner_info = None
+        if project.owner:
+            owner_info = ProjectOwnerInfo(
+                id=project.owner.id,
+                name=project.owner.display_name or project.owner.email,
+            )
+
         return AdminProjectDetailResponse(
             id=project.id,
             name=project.name,
             description=project.description,
-            owner=ProjectOwnerInfo(
-                id=project.owner.id,
-                name=project.owner.display_name,
-            ),
+            owner=owner_info,
             status="active" if project.is_active else "archived",
             member_count=member_count,
             storage_used_bytes=storage_used_bytes,
@@ -369,14 +380,19 @@ class ProjectsAdminService:
             # TODO: 実際のストレージ使用量を計算
             storage_used_bytes = 0
 
+            # オーナー情報を構築（オーナーが存在しない場合はNone）
+            owner_info = None
+            if project.owner:
+                owner_info = ProjectOwnerInfo(
+                    id=project.owner.id,
+                    name=project.owner.display_name or project.owner.email,
+                )
+
             items.append(
                 AdminProjectResponse(
                     id=project.id,
                     name=project.name,
-                    owner=ProjectOwnerInfo(
-                        id=project.owner.id,
-                        name=project.owner.display_name,
-                    ),
+                    owner=owner_info,
                     status="active" if project.is_active else "archived",
                     member_count=member_count,
                     storage_used_bytes=storage_used_bytes,

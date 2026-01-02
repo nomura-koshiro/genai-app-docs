@@ -101,20 +101,32 @@ class DataManagementService:
             "SESSION_LOGS": "セッションログ",
         }
 
+        oldest_record_at: datetime | None = None
+        newest_record_at: datetime | None = None
+
         if target_type == "ACTIVITY_LOGS":
             count = await self.activity_repository.count_with_filters(
                 end_date=cutoff_date,
             )
             estimated_size = count * 500  # 推定1レコード500バイト
+            oldest_record_at, newest_record_at = await self.activity_repository.get_date_range(
+                end_date=cutoff_date,
+            )
         elif target_type == "AUDIT_LOGS":
             count = await self.audit_repository.count_with_filters(
                 end_date=cutoff_date,
             )
             estimated_size = count * 1000  # 推定1レコード1000バイト
+            oldest_record_at, newest_record_at = await self.audit_repository.get_date_range(
+                end_date=cutoff_date,
+            )
         elif target_type == "SESSION_LOGS":
             # セッションログのカウント（非アクティブかつ期限切れ）
-            count = 0  # TODO: 実際のカウントを実装
+            count = await self.session_repository.count_expired(cutoff_date)
             estimated_size = count * 300
+            oldest_record_at, newest_record_at = await self.session_repository.get_expired_date_range(
+                cutoff_date,
+            )
         else:
             return None
 
@@ -122,8 +134,8 @@ class DataManagementService:
             target_type=target_type,
             target_type_display=target_type_display_map.get(target_type, target_type),
             record_count=count,
-            oldest_record_at=None,  # TODO: 実際の最古レコード日時を取得
-            newest_record_at=None,  # TODO: 実際の最新レコード日時を取得
+            oldest_record_at=oldest_record_at,
+            newest_record_at=newest_record_at,
             estimated_size_bytes=estimated_size,
             estimated_size_display=self._format_bytes(estimated_size),
         )

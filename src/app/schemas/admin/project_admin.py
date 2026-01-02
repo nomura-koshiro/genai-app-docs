@@ -45,7 +45,7 @@ class AdminProjectResponse(BaseCamelCaseORMModel):
 
     id: uuid.UUID = Field(..., description="プロジェクトID")
     name: str = Field(..., description="プロジェクト名")
-    owner: ProjectOwnerInfo = Field(..., description="オーナー情報")
+    owner: ProjectOwnerInfo | None = Field(default=None, description="オーナー情報")
     status: str = Field(..., description="ステータス")
     member_count: int = Field(..., description="メンバー数")
     storage_used_bytes: int = Field(..., description="ストレージ使用量（バイト）")
@@ -99,7 +99,7 @@ class AdminProjectDetailResponse(BaseCamelCaseORMModel):
     id: uuid.UUID = Field(..., description="プロジェクトID")
     name: str = Field(..., description="プロジェクト名")
     description: str | None = Field(default=None, description="プロジェクト説明")
-    owner: ProjectOwnerInfo = Field(..., description="オーナー情報")
+    owner: ProjectOwnerInfo | None = Field(default=None, description="オーナー情報")
     status: str = Field(..., description="ステータス")
     member_count: int = Field(..., description="メンバー数")
     storage_used_bytes: int = Field(..., description="ストレージ使用量（バイト）")

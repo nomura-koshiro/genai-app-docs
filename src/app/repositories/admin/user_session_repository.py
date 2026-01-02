@@ -243,6 +243,59 @@ class UserSessionRepository(BaseRepository[UserSession, uuid.UUID]):
         await self.db.flush()
         return result.rowcount or 0
 
+    async def count_expired(self, before_date: datetime) -> int:
+        """期限切れセッション数をカウントします。
+
+        非アクティブかつ指定日より前のセッション数を取得します。
+
+        Args:
+            before_date: この日付より前のセッションをカウント
+
+        Returns:
+            int: セッション数
+        """
+        query = (
+            select(func.count())
+            .select_from(UserSession)
+            .where(
+                and_(
+                    UserSession.is_active == False,  # noqa: E712
+                    UserSession.logout_at < before_date,
+                )
+            )
+        )
+        result = await self.db.execute(query)
+        return result.scalar_one()
+
+    async def get_expired_date_range(
+        self,
+        before_date: datetime,
+    ) -> tuple[datetime | None, datetime | None]:
+        """期限切れセッションの日付範囲を取得します。
+
+        Args:
+            before_date: この日付より前のセッションを対象
+
+        Returns:
+            tuple[datetime | None, datetime | None]: (最古日時, 最新日時)
+        """
+        conditions = [
+            UserSession.is_active == False,  # noqa: E712
+            UserSession.logout_at < before_date,
+        ]
+
+        # 最古レコード
+        oldest_query = select(func.min(UserSession.logout_at)).where(and_(*conditions))
+        oldest_result = await self.db.execute(oldest_query)
+        oldest = oldest_result.scalar_one_or_none()
+
+        # 最新レコード
+        newest_query = select(func.max(UserSession.logout_at)).where(and_(*conditions))
+        newest_result = await self.db.execute(newest_query)
+        newest = newest_result.scalar_one_or_none()
+
+        return (oldest, newest)
+
     async def cleanup_expired(self, before_date: datetime) -> int:
         """期限切れセッションをクリーンアップします。
 

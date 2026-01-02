@@ -15,35 +15,13 @@
 """
 
 import uuid
-from enum import Enum
 
 from sqlalchemy import Boolean, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
-
-
-class ThemeEnum(str, Enum):
-    """テーマ設定。"""
-
-    LIGHT = "light"
-    DARK = "dark"
-    SYSTEM = "system"
-
-
-class LanguageEnum(str, Enum):
-    """言語設定。"""
-
-    JA = "ja"
-    EN = "en"
-
-
-class ProjectViewEnum(str, Enum):
-    """プロジェクト表示形式。"""
-
-    GRID = "grid"
-    LIST = "list"
+from app.models.enums import LanguageEnum, ProjectViewEnum, ThemeEnum
 
 
 class UserSettings(Base, TimestampMixin):

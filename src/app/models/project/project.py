@@ -27,7 +27,7 @@ from datetime import date
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Date, Index, Numeric, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, Index, Numeric, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -40,6 +40,7 @@ if TYPE_CHECKING:
     from app.models.driver_tree.driver_tree_template import DriverTreeTemplate
     from app.models.project.project_file import ProjectFile
     from app.models.project.project_member import ProjectMember
+    from app.models.user_account.user_account import UserAccount
 
 
 class Project(Base, TimestampMixin):
@@ -98,6 +99,7 @@ class Project(Base, TimestampMixin):
 
     created_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
+        ForeignKey("user_account.id", ondelete="SET NULL"),
         nullable=True,
         comment="作成者ユーザーID",
     )
@@ -155,6 +157,12 @@ class Project(Base, TimestampMixin):
         "DriverTreeTemplate",
         back_populates="project",
         cascade="all, delete-orphan",
+    )
+
+    owner: Mapped["UserAccount | None"] = relationship(
+        "UserAccount",
+        foreign_keys=[created_by],
+        lazy="joined",
     )
 
     # インデックス

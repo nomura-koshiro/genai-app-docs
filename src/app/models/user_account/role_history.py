@@ -11,27 +11,13 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 
 from sqlalchemy import JSON, DateTime, ForeignKey, Index, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
-
-
-class RoleChangeActionEnum(str, Enum):
-    """ロール変更アクション種別。
-
-    Attributes:
-        GRANT: ロール付与
-        REVOKE: ロール削除
-        UPDATE: ロール更新（複数ロールの一括変更）
-    """
-
-    GRANT = "grant"
-    REVOKE = "revoke"
-    UPDATE = "update"
+from app.models.enums import RoleChangeActionEnum
 
 
 class RoleHistory(Base):

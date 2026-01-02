@@ -10,7 +10,8 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.notification import NotificationTypeEnum, ReferenceTypeEnum, UserNotification
+from app.models.enums import NotificationTypeEnum, ReferenceTypeEnum
+from app.models.notification import UserNotification
 from app.schemas.notification import (
     NotificationCreateRequest,
     NotificationInfo,
@@ -173,7 +174,9 @@ class UserNotificationService:
         result = await self.db.execute(stmt)
         await self.db.commit()
 
-        updated_count = result.rowcount
+        # TODO: SQLAlchemy 2.0の型スタブではResult型にrowcount属性が定義されていない
+        # DML操作（update/delete）後のresultは実際にはCursorResultでrowcount属性を持つ
+        updated_count: int = result.rowcount or 0  # type: ignore[attr-defined]
         logger.info(
             "すべての通知を既読にしました",
             user_id=str(user_id),
@@ -281,12 +284,12 @@ class UserNotificationService:
         """
         return NotificationInfo(
             id=notification.id,
-            type=notification.type,
+            type=NotificationTypeEnum(notification.type),
             title=notification.title,
             message=notification.message,
             icon=notification.icon,
             link_url=notification.link_url,
-            reference_type=notification.reference_type,
+            reference_type=ReferenceTypeEnum(notification.reference_type) if notification.reference_type else None,
             reference_id=notification.reference_id,
             is_read=notification.is_read,
             read_at=notification.read_at,

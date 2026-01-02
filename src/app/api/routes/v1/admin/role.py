@@ -6,8 +6,7 @@
 from fastapi import APIRouter, status
 
 from app.core.logging import get_logger
-from app.models.project.project_member import ProjectRole
-from app.models.user_account.user_account import SystemUserRole
+from app.models.enums import ProjectRole, SystemUserRole
 from app.schemas.admin import AllRolesResponse, RoleInfo
 
 logger = get_logger(__name__)

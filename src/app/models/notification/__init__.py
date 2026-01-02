@@ -4,18 +4,14 @@
 
 主なモデル:
     - UserNotification: ユーザー通知モデル
+
+Enum定義はapp.models.enumsパッケージで一元管理されています:
     - NotificationTypeEnum: 通知タイプ
     - ReferenceTypeEnum: 参照タイプ
 """
 
-from app.models.notification.user_notification import (
-    NotificationTypeEnum,
-    ReferenceTypeEnum,
-    UserNotification,
-)
+from app.models.notification.user_notification import UserNotification
 
 __all__ = [
-    "NotificationTypeEnum",
-    "ReferenceTypeEnum",
     "UserNotification",
 ]

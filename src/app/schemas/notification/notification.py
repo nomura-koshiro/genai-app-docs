@@ -8,7 +8,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from app.models.notification import NotificationTypeEnum, ReferenceTypeEnum
+from app.models.enums import NotificationTypeEnum, ReferenceTypeEnum
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
 __all__ = [

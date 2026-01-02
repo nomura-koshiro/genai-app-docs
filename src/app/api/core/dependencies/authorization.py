@@ -27,7 +27,7 @@ from app.api.core.dependencies.database import DatabaseDep
 from app.core.exceptions import AuthorizationError
 from app.core.logging import get_logger
 from app.models import ProjectMember
-from app.models.project import ProjectRole
+from app.models.enums import ProjectRole
 from app.repositories import ProjectMemberRepository
 
 __all__ = [
