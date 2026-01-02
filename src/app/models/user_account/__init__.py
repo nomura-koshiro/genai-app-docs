@@ -4,13 +4,18 @@
 
 主なモデル:
     - UserAccount: ユーザーモデル（認証、プロフィール、システムロール）
-    - SystemUserRole: システムロール（admin, user）
     - RoleHistory: ロール変更履歴モデル
-    - RoleChangeActionEnum: ロール変更アクション種別
     - UserSettings: ユーザー設定モデル
+    - UserSession: ユーザーセッションモデル
+
+Enum定義はapp.models.enumsパッケージで一元管理されています:
+    - SystemUserRole: システムロール（admin, user）
+    - RoleChangeActionEnum: ロール変更アクション種別
+    - ThemeEnum, LanguageEnum, ProjectViewEnum: ユーザー設定関連
 
 使用例:
-    >>> from app.models.user_account import UserAccount, SystemUserRole
+    >>> from app.models.user_account import UserAccount
+    >>> from app.models.enums import SystemUserRole
     >>> user = UserAccount(
     ...     email="user@example.com",
     ...     full_name="山田太郎",
@@ -18,23 +23,13 @@
     ... )
 """
 
-from app.models.user_account.role_history import RoleChangeActionEnum, RoleHistory
-from app.models.user_account.user_account import SystemUserRole, UserAccount
+from app.models.user_account.role_history import RoleHistory
+from app.models.user_account.user_account import UserAccount
 from app.models.user_account.user_session import UserSession
-from app.models.user_account.user_settings import (
-    LanguageEnum,
-    ProjectViewEnum,
-    ThemeEnum,
-    UserSettings,
-)
+from app.models.user_account.user_settings import UserSettings
 
 __all__ = [
-    "LanguageEnum",
-    "ProjectViewEnum",
-    "RoleChangeActionEnum",
     "RoleHistory",
-    "SystemUserRole",
-    "ThemeEnum",
     "UserAccount",
     "UserSession",
     "UserSettings",

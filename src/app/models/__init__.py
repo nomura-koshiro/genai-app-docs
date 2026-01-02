@@ -44,22 +44,33 @@ from app.models.enums import (
     AuditSeverity,
     CleanupTargetType,
     ComparisonOperator,
+    DriverTreeColumnRoleEnum,
+    DriverTreeKpiEnum,
+    DriverTreeNodeTypeEnum,
+    DriverTreePolicyStatusEnum,
+    LanguageEnum,
     NotificationChannel,
+    NotificationTypeEnum,
+    ProjectRole,
+    ProjectViewEnum,
+    ReferenceTypeEnum,
     ResourceType,
+    RoleChangeActionEnum,
+    RoleTypeEnum,
     SessionTerminationReason,
     SettingCategory,
     SettingValueType,
+    SystemUserRole,
+    ThemeEnum,
 )
 
 # Notification models
 from app.models.notification import (
-    NotificationTypeEnum,
-    ReferenceTypeEnum,
     UserNotification,
 )
 
 # Project models
-from app.models.project import Project, ProjectFile, ProjectMember, ProjectRole
+from app.models.project import Project, ProjectFile, ProjectMember
 
 # System models
 from app.models.system import (
@@ -70,15 +81,14 @@ from app.models.system import (
 )
 
 # User models
-from app.models.user_account import RoleHistory, UserSession
-from app.models.user_account.user_account import SystemUserRole, UserAccount
+from app.models.user_account import RoleHistory, UserAccount, UserSession
 
 __all__ = [
     # Base classes
     "Base",
     "PrimaryKeyMixin",
     "TimestampMixin",
-    # Enum definitions
+    # Enum definitions - Admin
     "ActionType",
     "ResourceType",
     "AuditEventType",
@@ -91,8 +101,24 @@ __all__ = [
     "CleanupTargetType",
     "SettingCategory",
     "SettingValueType",
-    # User models
+    # Enum definitions - User
+    "ThemeEnum",
+    "LanguageEnum",
+    "ProjectViewEnum",
+    "RoleChangeActionEnum",
+    "RoleTypeEnum",
+    # Enum definitions - Role
     "SystemUserRole",
+    "ProjectRole",
+    # Enum definitions - Notification
+    "NotificationTypeEnum",
+    "ReferenceTypeEnum",
+    # Enum definitions - Driver Tree
+    "DriverTreeNodeTypeEnum",
+    "DriverTreeColumnRoleEnum",
+    "DriverTreeKpiEnum",
+    "DriverTreePolicyStatusEnum",
+    # User models
     "UserAccount",
     "UserSession",
     "RoleHistory",
@@ -100,7 +126,6 @@ __all__ = [
     "Project",
     "ProjectFile",
     "ProjectMember",
-    "ProjectRole",
     # Analysis models - Master
     "AnalysisValidationMaster",
     "AnalysisIssueMaster",
@@ -127,8 +152,6 @@ __all__ = [
     "DriverTreePolicy",
     "DriverTreeTemplate",
     # Notification models
-    "NotificationTypeEnum",
-    "ReferenceTypeEnum",
     "UserNotification",
     # Audit models
     "UserActivity",

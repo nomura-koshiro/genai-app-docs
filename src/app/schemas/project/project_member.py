@@ -26,7 +26,7 @@ from datetime import datetime
 
 from pydantic import Field
 
-from app.models.project.project_member import ProjectRole
+from app.models.enums import ProjectRole
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 from app.schemas.user_account.user_account import UserAccountResponse
 

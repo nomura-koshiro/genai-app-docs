@@ -13,7 +13,7 @@ import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
-from app.schemas.driver_tree.common import DriverTreeColumnRoleEnum
+from app.models.enums import DriverTreeColumnRoleEnum
 from app.schemas.driver_tree.driver_tree_file import DriverTreeColumnSetupItem
 from app.services.driver_tree.driver_tree_file.service import DriverTreeFileService
 

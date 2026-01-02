@@ -24,7 +24,6 @@
 
 import uuid
 from datetime import UTC, datetime
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, UniqueConstraint
@@ -33,37 +32,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models.enums import ProjectRole
 
 if TYPE_CHECKING:
     from app.models.project.project import Project
     from app.models.user_account.user_account import UserAccount
-
-
-class ProjectRole(str, Enum):
-    """プロジェクトレベルのロール定義。
-
-    Attributes:
-        PROJECT_MANAGER: プロジェクトマネージャー（最高権限）
-            - プロジェクト削除
-            - プロジェクト設定変更
-            - メンバー追加・削除・ロール変更（全ロール）
-            - ファイルのアップロード・ダウンロード・削除
-        PROJECT_MODERATOR: 権限管理者（メンバー管理担当）
-            - メンバー追加・削除
-            - ロール変更（VIEWER/MEMBER/PROJECT_MODERATORのみ）
-            - ファイルのアップロード・ダウンロード
-            - プロジェクト内の編集
-        MEMBER: 一般メンバー（編集可能）
-            - ファイルのアップロード・ダウンロード
-            - プロジェクト内の編集
-        VIEWER: 閲覧者（閲覧のみ）
-            - ファイルの閲覧・ダウンロードのみ
-    """
-
-    PROJECT_MANAGER = "project_manager"
-    PROJECT_MODERATOR = "project_moderator"
-    MEMBER = "member"
-    VIEWER = "viewer"
 
 
 class ProjectMember(Base):

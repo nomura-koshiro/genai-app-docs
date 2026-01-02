@@ -9,37 +9,11 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 
 from pydantic import Field
 
+from app.models.enums import RoleChangeActionEnum, RoleTypeEnum
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
-
-
-class RoleChangeActionEnum(str, Enum):
-    """ロール変更アクション種別。
-
-    Attributes:
-        GRANT: ロール付与
-        REVOKE: ロール削除
-        UPDATE: ロール更新（複数ロールの一括変更）
-    """
-
-    GRANT = "grant"
-    REVOKE = "revoke"
-    UPDATE = "update"
-
-
-class RoleTypeEnum(str, Enum):
-    """ロール種別。
-
-    Attributes:
-        SYSTEM: システムロール
-        PROJECT: プロジェクトロール
-    """
-
-    SYSTEM = "system"
-    PROJECT = "project"
 
 
 class RoleHistoryResponse(BaseCamelCaseORMModel):

@@ -24,7 +24,6 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, Boolean, DateTime, Index, Integer, String
@@ -32,22 +31,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
+from app.models.enums import SystemUserRole
 
 if TYPE_CHECKING:
     from app.models.analysis.analysis_session import AnalysisSession
     from app.models.project.project_member import ProjectMember
-
-
-class SystemUserRole(str, Enum):
-    """システムレベルのロール定義。
-
-    Attributes:
-        SYSTEM_ADMIN: システム管理者（全プロジェクトアクセス可能、システム設定変更可能）
-        USER: 一般ユーザー（デフォルト、プロジェクト単位でアクセス制御）
-    """
-
-    SYSTEM_ADMIN = "system_admin"
-    USER = "user"
 
 
 class UserAccount(Base, TimestampMixin):

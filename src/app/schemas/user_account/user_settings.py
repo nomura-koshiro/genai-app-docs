@@ -9,33 +9,10 @@
     - DisplaySettingsInfo: 表示設定情報
 """
 
-from enum import Enum
-
 from pydantic import Field
 
+from app.models.enums import LanguageEnum, ProjectViewEnum, ThemeEnum
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
-
-
-class ThemeEnum(str, Enum):
-    """テーマ設定。"""
-
-    light = "light"
-    dark = "dark"
-    system = "system"
-
-
-class LanguageEnum(str, Enum):
-    """言語設定。"""
-
-    ja = "ja"
-    en = "en"
-
-
-class ProjectViewEnum(str, Enum):
-    """プロジェクト表示形式。"""
-
-    grid = "grid"
-    list = "list"
 
 
 class NotificationSettingsInfo(BaseCamelCaseModel):
@@ -67,7 +44,7 @@ class DisplaySettingsInfo(BaseCamelCaseModel):
 
     items_per_page: int = Field(default=20, ge=10, le=100, description="ページあたり表示件数")
     default_project_view: ProjectViewEnum = Field(
-        default=ProjectViewEnum.grid, description="デフォルトプロジェクト表示形式"
+        default=ProjectViewEnum.GRID, description="デフォルトプロジェクト表示形式"
     )
     show_welcome_message: bool = Field(default=True, description="ウェルカムメッセージ表示")
 
@@ -83,8 +60,8 @@ class UserSettingsResponse(BaseCamelCaseORMModel):
         display (DisplaySettingsInfo): 表示設定
     """
 
-    theme: ThemeEnum = Field(default=ThemeEnum.light, description="テーマ設定")
-    language: LanguageEnum = Field(default=LanguageEnum.ja, description="言語設定")
+    theme: ThemeEnum = Field(default=ThemeEnum.LIGHT, description="テーマ設定")
+    language: LanguageEnum = Field(default=LanguageEnum.JA, description="言語設定")
     timezone: str = Field(default="Asia/Tokyo", description="タイムゾーン設定")
     notifications: NotificationSettingsInfo = Field(..., description="通知設定")
     display: DisplaySettingsInfo = Field(..., description="表示設定")

@@ -10,34 +10,13 @@
 
 import uuid
 from datetime import datetime
-from enum import Enum
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
-
-
-class NotificationTypeEnum(str, Enum):
-    """通知タイプ。"""
-
-    MEMBER_ADDED = "member_added"
-    MEMBER_REMOVED = "member_removed"
-    SESSION_COMPLETE = "session_complete"
-    FILE_UPLOADED = "file_uploaded"
-    TREE_UPDATED = "tree_updated"
-    PROJECT_INVITATION = "project_invitation"
-    SYSTEM_ANNOUNCEMENT = "system_announcement"
-
-
-class ReferenceTypeEnum(str, Enum):
-    """参照タイプ。"""
-
-    PROJECT = "project"
-    SESSION = "session"
-    FILE = "file"
-    TREE = "tree"
+from app.models.enums import NotificationTypeEnum, ReferenceTypeEnum
 
 
 class UserNotification(Base, TimestampMixin):

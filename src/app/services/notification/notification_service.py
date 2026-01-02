@@ -10,7 +10,8 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.notification import NotificationTypeEnum, ReferenceTypeEnum, UserNotification
+from app.models.enums import NotificationTypeEnum, ReferenceTypeEnum
+from app.models.notification import UserNotification
 from app.schemas.notification import (
     NotificationCreateRequest,
     NotificationInfo,
