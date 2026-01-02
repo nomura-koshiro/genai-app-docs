@@ -313,3 +313,105 @@ async def test_delete_self_fails(client: AsyncClient, override_auth, admin_user)
 
     # Assert
     assert response.status_code == 422
+
+
+# ================================================================================
+# GET /api/v1/user_account/me/context - ユーザーコンテキスト取得
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_get_user_context_success(client: AsyncClient, override_auth, regular_user):
+    """[test_user_accounts-015] ユーザーコンテキスト取得の成功ケース。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/user_account/me/context")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "user" in data
+    assert "permissions" in data
+    assert "navigation" in data
+    assert "notifications" in data
+    assert "sidebar" in data
+
+
+@pytest.mark.asyncio
+async def test_get_user_context_with_projects(
+    client: AsyncClient, override_auth, regular_user, test_data_seeder
+):
+    """[test_user_accounts-016] プロジェクトを持つユーザーのコンテキスト取得。"""
+    # Arrange
+    # ユーザーが参加するプロジェクトを作成
+    project, owner = await test_data_seeder.create_project_with_owner(owner=regular_user)
+    await test_data_seeder.db.commit()
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/user_account/me/context")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["navigation"]["projectCount"] >= 1
+    assert len(data["sidebar"]["recentProjects"]) >= 1
+
+
+@pytest.mark.asyncio
+async def test_get_user_context_with_notifications(
+    client: AsyncClient, override_auth, regular_user, test_data_seeder
+):
+    """[test_user_accounts-017] 通知を持つユーザーのコンテキスト取得。"""
+    # Arrange
+    # 未読通知を作成
+    await test_data_seeder.create_unread_notifications(regular_user.id, count=3)
+    await test_data_seeder.db.commit()
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/user_account/me/context")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["notifications"]["unreadCount"] == 3
+    assert data["notifications"]["hasUnread"] is True
+
+
+@pytest.mark.asyncio
+async def test_get_user_context_admin_permissions(
+    client: AsyncClient, override_auth, admin_user
+):
+    """[test_user_accounts-018] 管理者のコンテキスト取得（管理者権限あり）。"""
+    # Arrange
+    override_auth(admin_user)
+
+    # Act
+    response = await client.get("/api/v1/user_account/me/context")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["permissions"]["canManageUsers"] is True
+    assert data["permissions"]["canAccessAdmin"] is True
+
+
+@pytest.mark.asyncio
+async def test_get_user_context_regular_user_permissions(
+    client: AsyncClient, override_auth, regular_user
+):
+    """[test_user_accounts-019] 一般ユーザーのコンテキスト取得（管理者権限なし）。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.get("/api/v1/user_account/me/context")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert data["permissions"]["canManageUsers"] is False
+    assert data["permissions"]["canAccessAdmin"] is False
