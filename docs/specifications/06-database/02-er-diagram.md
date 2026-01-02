@@ -1079,7 +1079,7 @@ ON driver_tree_formula USING GIN (formulas);
 - `user_account.azure_oid`, `user_account.email`, `user_account.roles`, `user_account.is_active`
 - `project.name`, `project.code`, `project.is_active`
 - `project_member.project_id`, `project_member.user_id`, `project_member.role`
-- `analysis_session.issue_id`, `analysis_session.creator_id`, `analysis_session.project_id`
+- `analysis_session.issue_id`, `analysis_session.project_id`（`creator_id`はNULLABLE - ユーザー削除時にSET NULL）
 - `driver_tree_node.label`, `driver_tree_node.node_type`
 
 ---

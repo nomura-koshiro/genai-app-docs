@@ -159,8 +159,17 @@ class TestLocalStorageServiceUpload:
             assert file_path.read_bytes() == new_data
 
     @pytest.mark.asyncio
-    async def test_upload_raises_validation_error_on_failure(self):
-        """[test_local-010] 書き込み失敗時にValidationErrorが発生することを確認。"""
+    @pytest.mark.parametrize(
+        "operation,patch_target,error,error_message",
+        [
+            ("upload", "aiofiles.open", PermissionError("Access denied"), "Failed to upload file"),
+            ("download", "aiofiles.open", OSError("Read error"), "Failed to download file"),
+            ("delete", "aiofiles.os.remove", PermissionError("Access denied"), "Failed to delete file"),
+        ],
+        ids=["upload_error", "download_error", "delete_error"],
+    )
+    async def test_file_operation_raises_validation_error(self, operation, patch_target, error, error_message):
+        """[test_local-010] ファイル操作失敗時にValidationErrorが発生することを確認。"""
         # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             service = LocalStorageService(temp_dir)
@@ -168,12 +177,28 @@ class TestLocalStorageServiceUpload:
             path = "test-file.txt"
             data = b"Test data"
 
-            # Act & Assert
-            with patch("aiofiles.open", side_effect=PermissionError("Access denied")):
-                with pytest.raises(ValidationError) as exc_info:
-                    await service.upload(container, path, data)
+            # ファイルを作成（download/delete用）
+            if operation in ["download", "delete"]:
+                await service.upload(container, path, data)
 
-                assert "Failed to upload file" in str(exc_info.value.message)
+            # Act & Assert
+            if operation == "download":
+                with patch("aiofiles.os.path.exists", new_callable=AsyncMock, return_value=True):
+                    with patch(patch_target, side_effect=error):
+                        with pytest.raises(ValidationError) as exc_info:
+                            await service.download(container, path)
+                        assert error_message in str(exc_info.value.message)
+            elif operation == "delete":
+                with patch("aiofiles.os.path.exists", new_callable=AsyncMock, return_value=True):
+                    with patch(patch_target, new_callable=AsyncMock, side_effect=error):
+                        with pytest.raises(ValidationError) as exc_info:
+                            await service.delete(container, path)
+                        assert error_message in str(exc_info.value.message)
+            else:  # upload
+                with patch(patch_target, side_effect=error):
+                    with pytest.raises(ValidationError) as exc_info:
+                        await service.upload(container, path, data)
+                    assert error_message in str(exc_info.value.message)
 
 
 class TestLocalStorageServiceDownload:
@@ -212,27 +237,6 @@ class TestLocalStorageServiceDownload:
                 await service.download(container, path)
 
             assert "File not found" in str(exc_info.value.message)
-
-    @pytest.mark.asyncio
-    async def test_download_raises_validation_error_on_read_failure(self):
-        """[test_local-013] 読み込み失敗時にValidationErrorが発生することを確認。"""
-        # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            service = LocalStorageService(temp_dir)
-            container = "test-container"
-            path = "test-file.txt"
-            data = b"Test data"
-
-            # ファイルを作成
-            await service.upload(container, path, data)
-
-            # Act & Assert
-            with patch("aiofiles.os.path.exists", new_callable=AsyncMock, return_value=True):
-                with patch("aiofiles.open", side_effect=OSError("Read error")):
-                    with pytest.raises(ValidationError) as exc_info:
-                        await service.download(container, path)
-
-                    assert "Failed to download file" in str(exc_info.value.message)
 
 
 class TestLocalStorageServiceDelete:
@@ -275,64 +279,36 @@ class TestLocalStorageServiceDelete:
 
             assert "File not found" in str(exc_info.value.message)
 
-    @pytest.mark.asyncio
-    async def test_delete_raises_validation_error_on_remove_failure(self):
-        """[test_local-016] 削除失敗時にValidationErrorが発生することを確認。"""
-        # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            service = LocalStorageService(temp_dir)
-            container = "test-container"
-            path = "test-file.txt"
-            data = b"Test data"
-
-            # ファイルを作成
-            await service.upload(container, path, data)
-
-            # Act & Assert
-            with patch("aiofiles.os.path.exists", new_callable=AsyncMock, return_value=True):
-                with patch("aiofiles.os.remove", new_callable=AsyncMock, side_effect=PermissionError("Access denied")):
-                    with pytest.raises(ValidationError) as exc_info:
-                        await service.delete(container, path)
-
-                    assert "Failed to delete file" in str(exc_info.value.message)
-
 
 class TestLocalStorageServiceExists:
     """LocalStorageService.existsメソッドのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_exists_returns_true_for_existing_file(self):
-        """[test_local-017] 存在するファイルでTrueが返されることを確認。"""
+    @pytest.mark.parametrize(
+        "path,should_create,expected",
+        [
+            ("test-file.txt", True, True),
+            ("nonexistent-file.txt", False, False),
+        ],
+        ids=["existing_file", "nonexistent_file"],
+    )
+    async def test_exists(self, path, should_create, expected):
+        """[test_local-017] existsメソッドの各種ケースをテスト。"""
         # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             service = LocalStorageService(temp_dir)
             container = "test-container"
-            path = "test-file.txt"
             data = b"Test content"
 
-            # ファイルを作成
-            await service.upload(container, path, data)
+            # ファイルを作成（必要な場合のみ）
+            if should_create:
+                await service.upload(container, path, data)
 
             # Act
             result = await service.exists(container, path)
 
             # Assert
-            assert result is True
-
-    @pytest.mark.asyncio
-    async def test_exists_returns_false_for_nonexistent_file(self):
-        """[test_local-018] 存在しないファイルでFalseが返されることを確認。"""
-        # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            service = LocalStorageService(temp_dir)
-            container = "test-container"
-            path = "nonexistent-file.txt"
-
-            # Act
-            result = await service.exists(container, path)
-
-            # Assert
-            assert result is False
+            assert result is expected
 
 
 class TestLocalStorageServiceListBlobs:
@@ -379,29 +355,23 @@ class TestLocalStorageServiceListBlobs:
             assert all("data/" in f for f in result)
 
     @pytest.mark.asyncio
-    async def test_list_blobs_empty_container(self):
-        """[test_local-021] 空のコンテナで空リストが返されることを確認。"""
+    @pytest.mark.parametrize(
+        "container,create_container",
+        [
+            ("empty-container", True),
+            ("nonexistent-container", False),
+        ],
+        ids=["empty_container", "nonexistent_container"],
+    )
+    async def test_list_blobs_returns_empty(self, container, create_container):
+        """[test_local-021] 空コンテナまたは存在しないコンテナで空リストが返されることを確認。"""
         # Arrange
         with tempfile.TemporaryDirectory() as temp_dir:
             service = LocalStorageService(temp_dir)
-            container = "empty-container"
 
-            # コンテナディレクトリを作成（ファイルなし）
-            (Path(temp_dir) / container).mkdir(parents=True, exist_ok=True)
-
-            # Act
-            result = await service.list_blobs(container)
-
-            # Assert
-            assert result == []
-
-    @pytest.mark.asyncio
-    async def test_list_blobs_nonexistent_container(self):
-        """[test_local-022] 存在しないコンテナで空リストが返されることを確認。"""
-        # Arrange
-        with tempfile.TemporaryDirectory() as temp_dir:
-            service = LocalStorageService(temp_dir)
-            container = "nonexistent-container"
+            # コンテナディレクトリを作成（必要な場合のみ）
+            if create_container:
+                (Path(temp_dir) / container).mkdir(parents=True, exist_ok=True)
 
             # Act
             result = await service.list_blobs(container)

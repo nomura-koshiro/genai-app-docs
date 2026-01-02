@@ -20,6 +20,8 @@
 
 # 依存性注入
 from app.api.core.dependencies import (
+    # システム管理サービス
+    ActivityTrackingServiceDep,
     # Admin管理サービス
     AdminCategoryServiceDep,
     AdminDummyChartServiceDep,
@@ -27,27 +29,22 @@ from app.api.core.dependencies import (
     AdminGraphAxisServiceDep,
     AdminIssueServiceDep,
     AdminValidationServiceDep,
-    # システム管理サービス
-    ActivityTrackingServiceDep,
-    AuditLogServiceDep,
-    BulkOperationServiceDep,
-    DataManagementServiceDep,
-    NotificationServiceDep,
-    RequireSystemAdminDep,
-    SessionManagementServiceDep,
-    StatisticsServiceDep,
-    SupportToolsServiceDep,
-    SystemSettingServiceDep,
     # 分析サービス
     AnalysisSessionServiceDep,
     AnalysisTemplateServiceDep,
+    AuditLogServiceDep,
+    BulkOperationServiceDep,
     CurrentUserAccountDep,
     CurrentUserAccountOptionalDep,
     DatabaseDep,
+    DataManagementServiceDep,
     # ドライバーツリーサービス
     DriverTreeFileServiceDep,
     DriverTreeNodeServiceDep,
     DriverTreeServiceDep,
+    # 検索サービス
+    GlobalSearchServiceDep,
+    NotificationServiceDep,
     ProjectFileServiceDep,
     # 認可依存性（プロジェクトメンバーシップ・ロールチェック）
     ProjectManagerDep,
@@ -55,16 +52,19 @@ from app.api.core.dependencies import (
     ProjectMemberServiceDep,
     ProjectModeratorDep,
     ProjectServiceDep,
+    RequireSystemAdminDep,
     # ロール履歴サービス
     RoleHistoryServiceDep,
+    SessionManagementServiceDep,
+    StatisticsServiceDep,
     SuperuserAccountDep,
-    UserServiceDep,
+    SupportToolsServiceDep,
+    SystemSettingServiceDep,
     # 共通サービス
     UserContextServiceDep,
     # 通知サービス
     UserNotificationServiceDep,
-    # 検索サービス
-    GlobalSearchServiceDep,
+    UserServiceDep,
     # ユーザー設定サービス
     UserSettingsServiceDep,
     get_activity_tracking_service,

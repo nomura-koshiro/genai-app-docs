@@ -9,71 +9,39 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_response_headers_health_endpoint_include_process_time(client: AsyncClient):
-    """[test_logging-001] X-Process-Timeヘッダーが追加されることを確認。"""
+@pytest.mark.parametrize(
+    "method,endpoint,expected_status",
+    [
+        ("GET", "/health", 200),
+        ("GET", "/", 200),
+        ("POST", "/health", 405),
+        ("GET", "/nonexistent", 404),
+    ],
+    ids=["health_get", "root_get", "health_post_not_allowed", "not_found"],
+)
+async def test_response_includes_process_time_header(
+    client: AsyncClient, method: str, endpoint: str, expected_status: int
+):
+    """[test_logging-001] 各リクエストにX-Process-Timeヘッダーが追加されること。
+
+    正常なレスポンス、エラーレスポンス、異なるHTTPメソッドなど、
+    あらゆるケースでX-Process-Timeヘッダーが正しく追加されることを確認します。
+    """
     # Act
-    response = await client.get("/health")
+    response = await client.request(method, endpoint)
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == expected_status
     assert "X-Process-Time" in response.headers
-    # 処理時間は数値文字列（秒単位）
+    # 処理時間は数値文字列（秒単位）で、0以上の値であること
     process_time = float(response.headers["X-Process-Time"])
     assert process_time >= 0
     assert process_time < 10  # 10秒以内に完了しているはず
 
 
 @pytest.mark.asyncio
-async def test_response_headers_api_endpoint_include_process_time(client: AsyncClient):
-    """[test_logging-002] APIエンドポイントでもX-Process-Timeが追加されることを確認。"""
-    # Act
-    response = await client.get("/")
-
-    # Assert
-    assert response.status_code == 200
-    assert "X-Process-Time" in response.headers
-    process_time = float(response.headers["X-Process-Time"])
-    assert process_time >= 0
-
-
-@pytest.mark.asyncio
-async def test_logging_successful_request_adds_header(client: AsyncClient):
-    """[test_logging-003] 正常なリクエストでログが記録されることを確認（ヘッダーで間接的に検証）。"""
-    # Act
-    response = await client.get("/")
-
-    # Assert
-    # ログミドルウェアが動作していれば、X-Process-Timeが追加される
-    assert "X-Process-Time" in response.headers
-
-
-@pytest.mark.asyncio
-async def test_logging_post_request_adds_header(client: AsyncClient):
-    """[test_logging-004] POSTリクエストでもログとヘッダーが正しく処理されることを確認。"""
-    # Act
-    # エラーになるPOSTリクエスト（Method Not Allowed）
-    response = await client.post("/health")
-
-    # Assert
-    # 成功または失敗に関わらず、X-Process-Timeは追加される
-    assert "X-Process-Time" in response.headers
-
-
-@pytest.mark.asyncio
-async def test_logging_error_response_adds_header(client: AsyncClient):
-    """[test_logging-005] エラーレスポンスでもX-Process-Timeが追加されることを確認。"""
-    # Act
-    response = await client.get("/nonexistent")
-
-    # Assert
-    assert response.status_code == 404
-    # エラーの場合でもログミドルウェアは動作する
-    assert "X-Process-Time" in response.headers
-
-
-@pytest.mark.asyncio
 async def test_process_time_complex_request_returns_positive_value(client: AsyncClient):
-    """[test_logging-006] 複雑な処理ほど処理時間が増加することを確認（相対的な比較）。"""
+    """[test_logging-002] 複雑な処理ほど処理時間が増加することを確認（相対的な比較）。"""
     # Act
     # シンプルなヘルスチェック
     health_response = await client.get("/health")

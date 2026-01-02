@@ -15,7 +15,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query, status
 
 from app.api.core import CurrentUserAccountDep, UserNotificationServiceDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.schemas.notification import (

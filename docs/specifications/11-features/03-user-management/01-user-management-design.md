@@ -29,7 +29,7 @@
 | レイヤー | 項目数 |
 |---------|--------|
 | データベーステーブル | 3テーブル（user_account, role_history, user_settings） |
-| APIエンドポイント | 11エンドポイント |
+| APIエンドポイント | 12エンドポイント |
 | Pydanticスキーマ | 14スキーマ |
 | サービス | 3サービス |
 | フロントエンド画面 | 4画面 |
@@ -61,6 +61,7 @@
 | GET | `/api/v1/user_account` | ユーザー一覧取得 | system_admin | U-007 |
 | GET | `/api/v1/user_account/me` | 現在のユーザー情報取得 | 認証済 | U-008, U-006 |
 | GET | `/api/v1/user_account/{user_id}` | 特定ユーザー情報取得 | system_admin | U-008 |
+| POST | `/api/v1/user_account/logout` | ログアウト | 認証済 | - |
 | PATCH | `/api/v1/user_account/me` | 現在のユーザー情報更新 | 認証済 | U-003 |
 | PATCH | `/api/v1/user_account/{user_id}/activate` | ユーザー有効化 | system_admin | U-005 |
 | PATCH | `/api/v1/user_account/{user_id}/deactivate` | ユーザー無効化 | system_admin | U-004 |
@@ -106,6 +107,24 @@
   "limit": 100
 }
 ```
+
+#### POST /api/v1/user_account/logout（ログアウト）
+
+クライアント側のセッション終了を記録します（Azure ADトークンの無効化はクライアント側で行う）。
+
+**レスポンス (200 OK)**:
+
+```json
+{
+  "message": "ログアウトしました"
+}
+```
+
+**備考**:
+- サーバー側ではログアウトイベントを記録
+- 実際のトークン無効化はAzure AD/フロントエンドで処理
+
+---
 
 #### PUT /api/v1/user_account/{user_id}/role（ロール更新）
 

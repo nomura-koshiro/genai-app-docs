@@ -11,7 +11,7 @@ Note:
 import pytest
 from fastapi import HTTPException
 
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.exceptions import (
     ValidationError,
 )

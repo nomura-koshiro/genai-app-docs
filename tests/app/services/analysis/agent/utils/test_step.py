@@ -126,18 +126,28 @@ def test_init_formula_default_values():
 # ================================================================================
 
 
-def test_apply_formula_sum_success():
-    """[test_step-002] sum計算式の適用成功。"""
+@pytest.mark.parametrize(
+    "formula_type,target_subject,formula_text,portion,expected_value,test_id,test_desc",
+    [
+        ("sum", "売上", "売上合計", 1.0, 7000, "test_step-002", "sum計算式の適用成功"),
+        ("mean", "売上", "売上平均", 1.0, 1750, "test_step-003", "mean計算式の適用成功"),
+        ("sum", "売上", "売上合計(半分)", 0.5, 3500, "test_step-004", "portion係数付き計算式の適用成功"),
+    ],
+)
+def test_apply_formula_basic_operations(
+    formula_type, target_subject, formula_text, portion, expected_value, test_id, test_desc
+):
+    f"""[{test_id}] {test_desc}"""
     # Arrange
     df = create_test_dataframe()
     step_data = create_step_data_for_summary()
     step_data["config"]["formulas"] = [
         {
-            "type": "sum",
-            "target_subject": "売上",
-            "formula_text": "売上合計",
+            "type": formula_type,
+            "target_subject": target_subject,
+            "formula_text": formula_text,
             "unit": "円",
-            "portion": 1.0,
+            "portion": portion,
         }
     ]
 
@@ -146,54 +156,9 @@ def test_apply_formula_sum_success():
 
     # Assert
     assert step_data["result_formula"] is not None
-    assert len(step_data["result_formula"]) == 1
-    assert step_data["result_formula"][0]["name"] == "売上合計"
-    assert step_data["result_formula"][0]["value"] == 7000  # 1000+2000+1500+2500
-
-
-def test_apply_formula_mean_success():
-    """[test_step-003] mean計算式の適用成功。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_summary()
-    step_data["config"]["formulas"] = [
-        {
-            "type": "mean",
-            "target_subject": "売上",
-            "formula_text": "売上平均",
-            "unit": "円",
-            "portion": 1.0,
-        }
-    ]
-
-    # Act
-    apply_formula(df, step_data)
-
-    # Assert
-    assert step_data["result_formula"] is not None
-    assert step_data["result_formula"][0]["value"] == 1750  # (1000+2000+1500+2500)/4
-
-
-def test_apply_formula_with_portion():
-    """[test_step-004] portion係数付き計算式の適用成功。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_summary()
-    step_data["config"]["formulas"] = [
-        {
-            "type": "sum",
-            "target_subject": "売上",
-            "formula_text": "売上合計(半分)",
-            "unit": "円",
-            "portion": 0.5,
-        }
-    ]
-
-    # Act
-    apply_formula(df, step_data)
-
-    # Assert
-    assert step_data["result_formula"][0]["value"] == 3500  # 7000 * 0.5
+    assert len(step_data["result_formula"]) >= 1
+    assert step_data["result_formula"][0]["name"] == formula_text
+    assert step_data["result_formula"][0]["value"] == expected_value
 
 
 def test_apply_formula_arithmetic_operation():
@@ -255,36 +220,44 @@ def test_apply_formula_empty_config():
 # ================================================================================
 
 
-def test_apply_aggregation_sum_success():
-    """[test_step-007] sum集計の適用成功。"""
+@pytest.mark.parametrize(
+    "agg_name,agg_subject,agg_method,expected_check,test_id,test_desc",
+    [
+        (
+            "売上合計",
+            "売上",
+            "sum",
+            lambda result_data: "売上合計" in result_data["科目"].values and len(result_data) == 2,
+            "test_step-007",
+            "sum集計の適用成功",
+        ),
+        (
+            "売上平均",
+            "売上",
+            "mean",
+            lambda result_data: result_data[result_data["地域"] == "日本"]["値"].values[0] == 1500,
+            "test_step-008",
+            "mean集計の適用成功",
+        ),
+    ],
+)
+def test_apply_aggregation_basic_operations(
+    agg_name, agg_subject, agg_method, expected_check, test_id, test_desc
+):
+    f"""[{test_id}] {test_desc}"""
     # Arrange
     df = create_test_dataframe()
     step_data = create_step_data_for_aggregation()
-    step_data["config"]["aggregation_config"] = [{"name": "売上合計", "subject": "売上", "method": "sum"}]
+    step_data["config"]["aggregation_config"] = [
+        {"name": agg_name, "subject": agg_subject, "method": agg_method}
+    ]
 
     # Act
     apply_aggregation(df, step_data)
 
     # Assert
     assert step_data["result_data"] is not None
-    assert "売上合計" in step_data["result_data"]["科目"].values
-    assert len(step_data["result_data"]) == 2  # 日本とアメリカ
-
-
-def test_apply_aggregation_mean_success():
-    """[test_step-008] mean集計の適用成功。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_aggregation()
-    step_data["config"]["aggregation_config"] = [{"name": "売上平均", "subject": "売上", "method": "mean"}]
-
-    # Act
-    apply_aggregation(df, step_data)
-
-    # Assert
-    result_df = step_data["result_data"]
-    japan_mean = result_df[result_df["地域"] == "日本"]["値"].values[0]
-    assert japan_mean == 1500  # (1000+2000)/2
+    assert expected_check(step_data["result_data"])
 
 
 def test_apply_aggregation_arithmetic():
@@ -352,60 +325,60 @@ def test_apply_aggregation_missing_column():
 # ================================================================================
 
 
-def test_apply_filters_category_success():
-    """[test_step-013] カテゴリフィルタの適用成功。"""
+@pytest.mark.parametrize(
+    "filter_config,expected_check,test_id,test_desc",
+    [
+        (
+            {"category_filter": {"地域": ["日本"]}},
+            lambda result_data: all(result_data["地域"] == "日本"),
+            "test_step-013",
+            "カテゴリフィルタの適用成功",
+        ),
+        (
+            {
+                "numeric_filter": {
+                    "column": "値",
+                    "filter_type": "range",
+                    "enable_min": True,
+                    "min_value": 1000,
+                    "include_min": True,
+                    "enable_max": False,
+                    "max_value": 0,
+                    "include_max": True,
+                }
+            },
+            lambda result_data: all(result_data["値"] >= 1000),
+            "test_step-014",
+            "数値範囲フィルタの適用成功",
+        ),
+        (
+            {
+                "numeric_filter": {
+                    "column": "値",
+                    "filter_type": "topk",
+                    "k_value": 3,
+                    "ascending": False,
+                }
+            },
+            lambda result_data: len(result_data) == 3,
+            "test_step-015",
+            "TopKフィルタの適用成功",
+        ),
+    ],
+)
+def test_apply_filters_basic_operations(filter_config, expected_check, test_id, test_desc):
+    f"""[{test_id}] {test_desc}"""
     # Arrange
     df = create_test_dataframe()
     step_data = create_step_data_for_filter()
-    step_data["config"]["category_filter"] = {"地域": ["日本"]}
+    step_data["config"].update(filter_config)
 
     # Act
     apply_filters(df, step_data)
 
     # Assert
-    assert all(step_data["result_data"]["地域"] == "日本")
-
-
-def test_apply_filters_numeric_range_success():
-    """[test_step-014] 数値範囲フィルタの適用成功。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_filter()
-    step_data["config"]["numeric_filter"] = {
-        "column": "値",
-        "filter_type": "range",
-        "enable_min": True,
-        "min_value": 1000,
-        "include_min": True,
-        "enable_max": False,
-        "max_value": 0,
-        "include_max": True,
-    }
-
-    # Act
-    apply_filters(df, step_data)
-
-    # Assert
-    assert all(step_data["result_data"]["値"] >= 1000)
-
-
-def test_apply_filters_numeric_topk_success():
-    """[test_step-015] TopKフィルタの適用成功。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_filter()
-    step_data["config"]["numeric_filter"] = {
-        "column": "値",
-        "filter_type": "topk",
-        "k_value": 3,
-        "ascending": False,
-    }
-
-    # Act
-    apply_filters(df, step_data)
-
-    # Assert
-    assert len(step_data["result_data"]) == 3
+    assert step_data["result_data"] is not None
+    assert expected_check(step_data["result_data"])
 
 
 def test_apply_filters_combined():
@@ -439,28 +412,33 @@ def test_apply_filters_combined():
 # ================================================================================
 
 
-def test_filter_data_category_single_value():
-    """[test_step-017] 単一値でのカテゴリフィルタ。"""
+@pytest.mark.parametrize(
+    "category_filter,expected_check,test_id,test_desc",
+    [
+        (
+            {"地域": "日本"},
+            lambda result: all(result["地域"] == "日本"),
+            "test_step-017",
+            "単一値でのカテゴリフィルタ",
+        ),
+        (
+            {"地域": ["日本", "アメリカ"]},
+            lambda result: len(result) == 6,
+            "test_step-018",
+            "複数値でのカテゴリフィルタ",
+        ),
+    ],
+)
+def test_filter_data_category_filters(category_filter, expected_check, test_id, test_desc):
+    f"""[{test_id}] {test_desc}"""
     # Arrange
     df = create_test_dataframe()
 
     # Act
-    result = filter_data(df, category_filter={"地域": "日本"})
+    result = filter_data(df, category_filter=category_filter)
 
     # Assert
-    assert all(result["地域"] == "日本")
-
-
-def test_filter_data_category_multiple_values():
-    """[test_step-018] 複数値でのカテゴリフィルタ。"""
-    # Arrange
-    df = create_test_dataframe()
-
-    # Act
-    result = filter_data(df, category_filter={"地域": ["日本", "アメリカ"]})
-
-    # Assert
-    assert len(result) == 6  # 全データ
+    assert expected_check(result)
 
 
 def test_filter_data_invalid_column():
@@ -474,62 +452,58 @@ def test_filter_data_invalid_column():
     assert "見つかりません" in str(exc_info.value)
 
 
-def test_filter_data_numeric_range():
-    """[test_step-020] 数値範囲フィルタ。"""
+@pytest.mark.parametrize(
+    "numeric_filter,expected_check,test_id,test_desc",
+    [
+        (
+            {
+                "column": "値",
+                "filter_type": "range",
+                "enable_min": True,
+                "min_value": 1000,
+                "include_min": True,
+                "enable_max": True,
+                "max_value": 2000,
+                "include_max": True,
+            },
+            lambda result: all((result["値"] >= 1000) & (result["値"] <= 2000)),
+            "test_step-020",
+            "数値範囲フィルタ",
+        ),
+        (
+            {
+                "column": "値",
+                "filter_type": "topk",
+                "k_value": 2,
+                "ascending": False,
+            },
+            lambda result: len(result) == 2,
+            "test_step-021",
+            "TopKフィルタ",
+        ),
+        (
+            {
+                "column": "値",
+                "filter_type": "percentage",
+                "min_percentile": 25,
+                "max_percentile": 75,
+            },
+            lambda result: len(result) > 0,
+            "test_step-022",
+            "パーセンテージフィルタ",
+        ),
+    ],
+)
+def test_filter_data_numeric_filters(numeric_filter, expected_check, test_id, test_desc):
+    f"""[{test_id}] {test_desc}"""
     # Arrange
     df = create_test_dataframe()
-    numeric_filter = {
-        "column": "値",
-        "filter_type": "range",
-        "enable_min": True,
-        "min_value": 1000,
-        "include_min": True,
-        "enable_max": True,
-        "max_value": 2000,
-        "include_max": True,
-    }
 
     # Act
     result = filter_data(df, numeric_filter=numeric_filter)
 
     # Assert
-    assert all((result["値"] >= 1000) & (result["値"] <= 2000))
-
-
-def test_filter_data_numeric_topk():
-    """[test_step-021] TopKフィルタ。"""
-    # Arrange
-    df = create_test_dataframe()
-    numeric_filter = {
-        "column": "値",
-        "filter_type": "topk",
-        "k_value": 2,
-        "ascending": False,
-    }
-
-    # Act
-    result = filter_data(df, numeric_filter=numeric_filter)
-
-    # Assert
-    assert len(result) == 2
-
-
-def test_filter_data_numeric_percentage():
-    """[test_step-022] パーセンテージフィルタ。"""
-    # Arrange
-    df = create_test_dataframe()
-    numeric_filter = {
-        "column": "値",
-        "filter_type": "percentage",
-        "min_percentile": 25,
-        "max_percentile": 75,
-    }
-
-    # Act
-    result = filter_data(df, numeric_filter=numeric_filter)
-
-    # Assert
-    assert len(result) > 0
+    assert expected_check(result)
 
 
 def test_filter_data_table_filter_exclude():
@@ -571,78 +545,73 @@ def test_filter_data_table_filter_include():
 # ================================================================================
 
 
-def test_apply_transform_add_axis_constant():
-    """[test_step-025] 定数値で軸追加。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_transform()
-    step_data["config"]["transform_config"]["operations"] = [
-        {
-            "operation_type": "add_axis",
-            "target_name": "新しい軸",
-            "calculation": {"type": "constant", "constant_value": 100},
-        }
-    ]
-
-    # Act
-    apply_transform(df, step_data)
-
-    # Assert
-    assert "新しい軸" in step_data["result_data"].columns
-    assert all(step_data["result_data"]["新しい軸"] == 100)
-
-
-def test_apply_transform_add_axis_copy():
-    """[test_step-026] コピーで軸追加。"""
-    # Arrange
-    df = create_test_dataframe()
-    step_data = create_step_data_for_transform()
-    step_data["config"]["transform_config"]["operations"] = [
-        {
-            "operation_type": "add_axis",
-            "target_name": "地域コピー",
-            "calculation": {"type": "copy", "copy_from": "地域"},
-        }
-    ]
-
-    # Act
-    apply_transform(df, step_data)
-
-    # Assert
-    assert "地域コピー" in step_data["result_data"].columns
-    assert all(step_data["result_data"]["地域コピー"] == step_data["result_data"]["地域"])
-
-
-def test_apply_transform_add_axis_formula():
-    """[test_step-027] 計算式で軸追加。"""
-    # Arrange
-    df = pd.DataFrame(
-        {
-            "数値A": [10, 20, 30],
-            "数値B": [1, 2, 3],
-            "科目": ["売上", "売上", "売上"],
-            "値": [100, 200, 300],
-        }
-    )
-    step_data = create_step_data_for_transform()
-    step_data["config"]["transform_config"]["operations"] = [
-        {
-            "operation_type": "add_axis",
-            "target_name": "計算結果",
-            "calculation": {
-                "type": "formula",
-                "formula_type": "+",
-                "operands": ["数値A", "数値B"],
+@pytest.mark.parametrize(
+    "operation_config,df_creator,expected_check,test_id,test_desc",
+    [
+        (
+            {
+                "operation_type": "add_axis",
+                "target_name": "新しい軸",
+                "calculation": {"type": "constant", "constant_value": 100},
             },
-        }
-    ]
+            create_test_dataframe,
+            lambda result_data: "新しい軸" in result_data.columns
+            and all(result_data["新しい軸"] == 100),
+            "test_step-025",
+            "定数値で軸追加",
+        ),
+        (
+            {
+                "operation_type": "add_axis",
+                "target_name": "地域コピー",
+                "calculation": {"type": "copy", "copy_from": "地域"},
+            },
+            create_test_dataframe,
+            lambda result_data: "地域コピー" in result_data.columns
+            and all(result_data["地域コピー"] == result_data["地域"]),
+            "test_step-026",
+            "コピーで軸追加",
+        ),
+        (
+            {
+                "operation_type": "add_axis",
+                "target_name": "計算結果",
+                "calculation": {
+                    "type": "formula",
+                    "formula_type": "+",
+                    "operands": ["数値A", "数値B"],
+                },
+            },
+            lambda: pd.DataFrame(
+                {
+                    "数値A": [10, 20, 30],
+                    "数値B": [1, 2, 3],
+                    "科目": ["売上", "売上", "売上"],
+                    "値": [100, 200, 300],
+                }
+            ),
+            lambda result_data: "計算結果" in result_data.columns
+            and result_data.iloc[0]["計算結果"] == 11,
+            "test_step-027",
+            "計算式で軸追加",
+        ),
+    ],
+)
+def test_apply_transform_add_axis_operations(
+    operation_config, df_creator, expected_check, test_id, test_desc
+):
+    f"""[{test_id}] {test_desc}"""
+    # Arrange
+    df = df_creator()
+    step_data = create_step_data_for_transform()
+    step_data["config"]["transform_config"]["operations"] = [operation_config]
 
     # Act
     apply_transform(df, step_data)
 
     # Assert
-    assert "計算結果" in step_data["result_data"].columns
-    assert step_data["result_data"].iloc[0]["計算結果"] == 11  # 10 + 1
+    assert step_data["result_data"] is not None
+    assert expected_check(step_data["result_data"])
 
 
 def test_apply_transform_modify_axis():

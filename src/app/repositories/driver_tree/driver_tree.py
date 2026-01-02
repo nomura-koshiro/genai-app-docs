@@ -3,6 +3,7 @@
 このモジュールは、DriverTreeモデルに特化したデータベース操作を提供します。
 """
 
+import asyncio
 import uuid
 
 from sqlalchemy import func, select
@@ -136,8 +137,8 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
         if not tree_ids:
             return {}
 
-        # ノード数を一括取得
-        node_counts_result = await self.db.execute(
+        # ノード数クエリ
+        node_query = (
             select(
                 DriverTreeNode.driver_tree_id,
                 func.count(DriverTreeNode.id).label("node_count"),
@@ -145,10 +146,9 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
             .where(DriverTreeNode.driver_tree_id.in_(tree_ids))
             .group_by(DriverTreeNode.driver_tree_id)
         )
-        node_counts = {row[0]: row[1] for row in node_counts_result.all()}
 
-        # 施策数を一括取得
-        policy_counts_result = await self.db.execute(
+        # 施策数クエリ
+        policy_query = (
             select(
                 DriverTreeNode.driver_tree_id,
                 func.count(DriverTreePolicy.id).label("policy_count"),
@@ -157,6 +157,14 @@ class DriverTreeRepository(BaseRepository[DriverTree, uuid.UUID]):
             .where(DriverTreeNode.driver_tree_id.in_(tree_ids))
             .group_by(DriverTreeNode.driver_tree_id)
         )
+
+        # 2つのクエリを並行実行（パフォーマンス最適化）
+        node_counts_result, policy_counts_result = await asyncio.gather(
+            self.db.execute(node_query),
+            self.db.execute(policy_query),
+        )
+
+        node_counts = {row[0]: row[1] for row in node_counts_result.all()}
         policy_counts = {row[0]: row[1] for row in policy_counts_result.all()}
 
         # 結果をマージ

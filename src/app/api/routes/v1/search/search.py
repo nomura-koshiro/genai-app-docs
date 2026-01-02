@@ -11,7 +11,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 
 from app.api.core import CurrentUserAccountDep, GlobalSearchServiceDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.search import SearchQuery, SearchResponse, SearchTypeEnum
 

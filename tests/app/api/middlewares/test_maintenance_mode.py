@@ -12,53 +12,56 @@ import pytest
 class TestMaintenanceModeMiddleware:
     """メンテナンスモードミドルウェアのユニットテスト。"""
 
-    def test_allowed_paths_health_endpoints_included(self):
-        """[test_maintenance_mode-001] ヘルスチェックパスは常にアクセス可能であること。"""
+    @pytest.mark.parametrize(
+        "path",
+        [
+            # ヘルスチェック
+            "/health",
+            "/healthz",
+            "/ready",
+            # ドキュメント
+            "/docs",
+            "/openapi.json",
+            "/redoc",
+        ],
+        ids=["health", "healthz", "ready", "docs", "openapi", "redoc"],
+    )
+    def test_allowed_paths_included(self, path: str):
+        """[test_maintenance_mode-001] 常にアクセス可能なパスが設定されていること。"""
         # Arrange
         from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
 
         middleware = MaintenanceModeMiddleware(app=MagicMock())
 
         # Act & Assert
-        assert "/health" in middleware.ALWAYS_ALLOWED_PATHS
-        assert "/healthz" in middleware.ALWAYS_ALLOWED_PATHS
-        assert "/ready" in middleware.ALWAYS_ALLOWED_PATHS
+        assert path in middleware.ALWAYS_ALLOWED_PATHS
 
-    def test_allowed_paths_docs_endpoints_included(self):
-        """[test_maintenance_mode-002] ドキュメントパスは常にアクセス可能であること。"""
+    @pytest.mark.parametrize(
+        "path,should_match",
+        [
+            # 管理者パス（マッチする）
+            ("/api/v1/admin/settings", True),
+            ("/api/v1/admin/statistics", True),
+            ("/api/v1/admin/audit-logs", True),
+            # 非管理者パス（マッチしない）
+            ("/api/v1/projects", False),
+            ("/api/v1/user_accounts", False),
+            ("/health", False),
+        ],
+        ids=["admin_settings", "admin_stats", "admin_audit", "projects", "users", "health"],
+    )
+    def test_admin_path_pattern_match(self, path: str, should_match: bool):
+        """[test_maintenance_mode-003] 管理者パスパターンが正しく判定されること。"""
         # Arrange
         from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
 
         middleware = MaintenanceModeMiddleware(app=MagicMock())
 
         # Act & Assert
-        assert "/docs" in middleware.ALWAYS_ALLOWED_PATHS
-        assert "/openapi.json" in middleware.ALWAYS_ALLOWED_PATHS
-        assert "/redoc" in middleware.ALWAYS_ALLOWED_PATHS
-
-    def test_admin_path_pattern_admin_paths_match(self):
-        """[test_maintenance_mode-003] 管理者パスパターンが正しく一致すること。"""
-        # Arrange
-        from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
-
-        middleware = MaintenanceModeMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware.ADMIN_PATH_PATTERN.match("/api/v1/admin/settings")
-        assert middleware.ADMIN_PATH_PATTERN.match("/api/v1/admin/statistics")
-        assert middleware.ADMIN_PATH_PATTERN.match("/api/v1/admin/audit-logs")
-
-    def test_admin_path_pattern_non_admin_paths_not_match(self):
-        """[test_maintenance_mode-004] 非管理者パスはパターンに一致しないこと。"""
-        # Arrange
-        from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
-
-        middleware = MaintenanceModeMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert not middleware.ADMIN_PATH_PATTERN.match("/api/v1/projects")
-        assert not middleware.ADMIN_PATH_PATTERN.match("/api/v1/user_accounts")
-        assert not middleware.ADMIN_PATH_PATTERN.match("/health")
+        if should_match:
+            assert middleware.ADMIN_PATH_PATTERN.match(path)
+        else:
+            assert not middleware.ADMIN_PATH_PATTERN.match(path)
 
     def test_cache_clear_operation_resets_cache(self):
         """[test_maintenance_mode-005] キャッシュクリアが正しく動作すること。"""
@@ -66,13 +69,10 @@ class TestMaintenanceModeMiddleware:
         from app.api.middlewares.maintenance_mode import MaintenanceModeMiddleware
 
         middleware = MaintenanceModeMiddleware(app=MagicMock())
-
-        # キャッシュを設定
         middleware._maintenance_cache = {"enabled": True}
         middleware._cache_ttl = 9999999999
 
         # Act
-        # キャッシュをクリア
         middleware.clear_cache()
 
         # Assert
@@ -81,21 +81,21 @@ class TestMaintenanceModeMiddleware:
 
 
 @pytest.mark.asyncio
-async def test_maintenance_mode_health_endpoint_returns_success(client):
-    """[test_maintenance_mode-006] メンテナンスモードでもヘルスチェックはアクセス可能であること。"""
+@pytest.mark.parametrize(
+    "endpoint,expected_status",
+    [
+        ("/health", 200),
+        ("/docs", [200, 307]),  # リダイレクトまたは200
+    ],
+    ids=["health", "docs"],
+)
+async def test_maintenance_mode_allowed_endpoints(client, endpoint: str, expected_status):
+    """[test_maintenance_mode-006] メンテナンスモードでも許可エンドポイントはアクセス可能。"""
     # Act
-    response = await client.get("/health")
+    response = await client.get(endpoint)
 
     # Assert
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_maintenance_mode_docs_endpoint_returns_success(client):
-    """[test_maintenance_mode-007] メンテナンスモードでもドキュメントはアクセス可能であること。"""
-    # Act
-    response = await client.get("/docs")
-
-    # Assert
-    # docsへのリダイレクトまたは200を期待
-    assert response.status_code in [200, 307]
+    if isinstance(expected_status, list):
+        assert response.status_code in expected_status
+    else:
+        assert response.status_code == expected_status

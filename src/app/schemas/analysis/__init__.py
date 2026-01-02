@@ -142,15 +142,15 @@ from app.schemas.analysis.analysis_template import (
     AnalysisIssueCreate,
     AnalysisIssueDetailResponse,
     AnalysisIssueUpdate,
+    # 分析テンプレート（ユーザー作成）
+    AnalysisTemplateCreateRequest,
+    AnalysisTemplateCreateResponse,
+    AnalysisTemplateDeleteResponse,
     # 分析施策
     AnalysisValidationBase,
     AnalysisValidationCreate,
     AnalysisValidationResponse,
     AnalysisValidationUpdate,
-    # 分析テンプレート（ユーザー作成）
-    AnalysisTemplateCreateRequest,
-    AnalysisTemplateCreateResponse,
-    AnalysisTemplateDeleteResponse,
 )
 
 __all__ = [

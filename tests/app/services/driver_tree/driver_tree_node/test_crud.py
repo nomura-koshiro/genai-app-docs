@@ -28,8 +28,17 @@ from app.services.driver_tree import DriverTreeNodeService
 
 
 @pytest.mark.asyncio
-async def test_create_node_success(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-001] ノード作成の成功ケース。"""
+@pytest.mark.parametrize(
+    "label,node_type",
+    [
+        ("新規ノード", "入力"),
+        ("計算ノード", "計算"),
+        ("100", "定数"),
+    ],
+    ids=["input", "calculation", "constant"],
+)
+async def test_create_node_types(db_session: AsyncSession, test_data_seeder, label, node_type):
+    """[test_driver_tree_node-001~003] 各種ノードタイプの作成。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -42,8 +51,8 @@ async def test_create_node_success(db_session: AsyncSession, test_data_seeder):
     result = await service.create_node(
         project_id=project.id,
         tree_id=tree.id,
-        label="新規ノード",
-        node_type="入力",
+        label=label,
+        node_type=node_type,
         position_x=300,
         position_y=200,
         user_id=owner.id,
@@ -53,60 +62,6 @@ async def test_create_node_success(db_session: AsyncSession, test_data_seeder):
     # Assert
     assert "tree" in result
     assert "created_node_id" in result
-    assert result["created_node_id"] is not None
-
-
-@pytest.mark.asyncio
-async def test_create_node_calculation_type(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-002] 計算ノードの作成。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    tree = data["tree"]
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act
-    result = await service.create_node(
-        project_id=project.id,
-        tree_id=tree.id,
-        label="計算ノード",
-        node_type="計算",
-        position_x=300,
-        position_y=200,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
-    assert result["created_node_id"] is not None
-
-
-@pytest.mark.asyncio
-async def test_create_node_constant_type(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-003] 定数ノードの作成。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    tree = data["tree"]
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act
-    result = await service.create_node(
-        project_id=project.id,
-        tree_id=tree.id,
-        label="100",
-        node_type="定数",
-        position_x=300,
-        position_y=200,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
     assert result["created_node_id"] is not None
 
 
@@ -128,28 +83,6 @@ async def test_create_node_invalid_type(db_session: AsyncSession, test_data_seed
             tree_id=tree.id,
             label="不正ノード",
             node_type="不正なタイプ",
-            position_x=300,
-            position_y=200,
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_create_node_tree_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-005] 存在しないツリーへのノード作成でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.create_node(
-            project_id=project.id,
-            tree_id=uuid.uuid4(),
-            label="新規ノード",
-            node_type="入力",
             position_x=300,
             position_y=200,
             user_id=owner.id,
@@ -205,26 +138,19 @@ async def test_get_node_with_relationship(db_session: AsyncSession, test_data_se
 
 
 @pytest.mark.asyncio
-async def test_get_node_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-008] 存在しないノードの取得でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_node(
-            project_id=project.id,
-            node_id=uuid.uuid4(),
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_update_node_label(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-009] ノードラベルの更新。"""
+@pytest.mark.parametrize(
+    "update_field,update_kwargs",
+    [
+        ("label", {"label": "更新されたラベル"}),
+        ("position", {"position_x": 500, "position_y": 300}),
+        ("node_type", {"node_type": "定数"}),
+    ],
+    ids=["label", "position", "node_type"],
+)
+async def test_update_node_fields(
+    db_session: AsyncSession, test_data_seeder, update_field, update_kwargs
+):
+    """[test_driver_tree_node-009~011] ノードの各フィールド更新。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -233,76 +159,22 @@ async def test_update_node_label(db_session: AsyncSession, test_data_seeder):
 
     service = DriverTreeNodeService(db_session)
 
-    # Act
-    result = await service.update_node(
-        project_id=project.id,
-        node_id=child_node.id,
-        label="更新されたラベル",
-        node_type=None,
-        position_x=None,
-        position_y=None,
-        operator=None,
-        children_id_list=None,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
-    assert "tree" in result
-
-
-@pytest.mark.asyncio
-async def test_update_node_position(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-010] ノード位置の更新。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    child_node = data["child_nodes"][0]
-
-    service = DriverTreeNodeService(db_session)
+    # Prepare update parameters with defaults
+    update_params = {
+        "project_id": project.id,
+        "node_id": child_node.id,
+        "label": None,
+        "node_type": None,
+        "position_x": None,
+        "position_y": None,
+        "operator": None,
+        "children_id_list": None,
+        "user_id": owner.id,
+    }
+    update_params.update(update_kwargs)
 
     # Act
-    result = await service.update_node(
-        project_id=project.id,
-        node_id=child_node.id,
-        label=None,
-        node_type=None,
-        position_x=500,
-        position_y=300,
-        operator=None,
-        children_id_list=None,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
-    assert "tree" in result
-
-
-@pytest.mark.asyncio
-async def test_update_node_type(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-011] ノードタイプの更新。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    child_node = data["child_nodes"][0]
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act
-    result = await service.update_node(
-        project_id=project.id,
-        node_id=child_node.id,
-        label=None,
-        node_type="定数",
-        position_x=None,
-        position_y=None,
-        operator=None,
-        children_id_list=None,
-        user_id=owner.id,
-    )
+    result = await service.update_node(**update_params)
     await db_session.commit()
 
     # Assert
@@ -327,30 +199,6 @@ async def test_update_node_invalid_type(db_session: AsyncSession, test_data_seed
             node_id=child_node.id,
             label=None,
             node_type="不正なタイプ",
-            position_x=None,
-            position_y=None,
-            operator=None,
-            children_id_list=None,
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
-async def test_update_node_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-013] 存在しないノードの更新でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.update_node(
-            project_id=project.id,
-            node_id=uuid.uuid4(),
-            label="更新ラベル",
-            node_type=None,
             position_x=None,
             position_y=None,
             operator=None,
@@ -412,24 +260,6 @@ async def test_delete_root_node_error(db_session: AsyncSession, test_data_seeder
 
 
 @pytest.mark.asyncio
-async def test_delete_node_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-016] 存在しないノードの削除でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.delete_node(
-            project_id=project.id,
-            node_id=uuid.uuid4(),
-            user_id=owner.id,
-        )
-
-
-@pytest.mark.asyncio
 async def test_download_node_preview_success(db_session: AsyncSession, test_data_seeder):
     """[test_driver_tree_node-017] ノードプレビューダウンロードの成功ケース。"""
     # Arrange
@@ -452,20 +282,39 @@ async def test_download_node_preview_success(db_session: AsyncSession, test_data
 
 
 @pytest.mark.asyncio
-async def test_download_node_preview_not_found(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-018] 存在しないノードのプレビューでNotFoundError。"""
+@pytest.mark.parametrize(
+    "operation,method_name,extra_args",
+    [
+        ("create_node", "create_node", {"tree_id": "fake_uuid", "label": "新規ノード", "node_type": "入力", "position_x": 300, "position_y": 200}),
+        ("get_node", "get_node", {"node_id": "fake_uuid"}),
+        ("update_node", "update_node", {"node_id": "fake_uuid", "label": "更新ラベル", "node_type": None, "position_x": None, "position_y": None, "operator": None, "children_id_list": None}),
+        ("delete_node", "delete_node", {"node_id": "fake_uuid"}),
+        ("download_preview", "download_node_preview", {"node_id": "fake_uuid"}),
+    ],
+    ids=["create_node", "get_node", "update_node", "delete_node", "download_preview"],
+)
+async def test_node_operations_not_found(
+    db_session: AsyncSession, test_data_seeder, operation, method_name, extra_args
+):
+    """[test_driver_tree_node-005,008,013,016,018] ノード操作でNotFoundError。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
     await test_data_seeder.db.commit()
 
     service = DriverTreeNodeService(db_session)
 
+    # Replace fake_uuid placeholders with actual UUIDs
+    for key, value in extra_args.items():
+        if value == "fake_uuid":
+            extra_args[key] = uuid.uuid4()
+
     # Act & Assert
     with pytest.raises(NotFoundError):
-        await service.download_node_preview(
+        method = getattr(service, method_name)
+        await method(
             project_id=project.id,
-            node_id=uuid.uuid4(),
             user_id=owner.id,
+            **extra_args
         )
 
 
@@ -587,8 +436,18 @@ async def test_list_policies_node_not_found(db_session: AsyncSession, test_data_
 
 
 @pytest.mark.asyncio
-async def test_update_policy_name(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-024] 施策名の更新。"""
+@pytest.mark.parametrize(
+    "update_field,update_kwargs,expected_check",
+    [
+        ("name", {"name": "更新された施策", "value": None}, lambda p: p["name"] == "更新された施策"),
+        ("value", {"name": None, "value": 99.9}, lambda p: p["value"] == 99.9),
+    ],
+    ids=["name", "value"],
+)
+async def test_update_policy_fields(
+    db_session: AsyncSession, test_data_seeder, update_field, update_kwargs, expected_check
+):
+    """[test_driver_tree_node-024~025] 施策の各フィールド更新。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -603,43 +462,14 @@ async def test_update_policy_name(db_session: AsyncSession, test_data_seeder):
         project_id=project.id,
         node_id=child_node.id,
         policy_id=policy.id,
-        name="更新された施策",
-        value=None,
         user_id=owner.id,
+        **update_kwargs
     )
     await db_session.commit()
 
     # Assert
     assert result["node_id"] == child_node.id
-    assert any(p["name"] == "更新された施策" for p in result["policies"])
-
-
-@pytest.mark.asyncio
-async def test_update_policy_value(db_session: AsyncSession, test_data_seeder):
-    """[test_driver_tree_node-025] 施策値の更新。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    child_node = data["child_nodes"][0]
-    policy = data["policy"]
-
-    service = DriverTreeNodeService(db_session)
-
-    # Act
-    result = await service.update_policy(
-        project_id=project.id,
-        node_id=child_node.id,
-        policy_id=policy.id,
-        name=None,
-        value=99.9,
-        user_id=owner.id,
-    )
-    await db_session.commit()
-
-    # Assert
-    assert result["node_id"] == child_node.id
-    assert any(p["value"] == 99.9 for p in result["policies"])
+    assert any(expected_check(p) for p in result["policies"])
 
 
 @pytest.mark.asyncio

@@ -209,12 +209,33 @@ async def test_delete_file_calls_storage(db_session: AsyncSession, test_data_see
     mock_storage_service.delete.assert_called_once()
 
 
+@pytest.mark.parametrize(
+    "error_type",
+    ["file_not_found", "wrong_project"],
+    ids=["file_not_found", "wrong_project"],
+)
 @pytest.mark.asyncio
-async def test_delete_file_not_found(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_file_operations-007] 存在しないファイル削除でNotFoundError。"""
+async def test_delete_file_not_found_errors(
+    db_session: AsyncSession, test_data_seeder, mock_storage_service, error_type: str
+):
+    """[test_file_operations-007] delete_fileのNotFoundErrorケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
+
+    if error_type == "file_not_found":
+        await test_data_seeder.db.commit()
+        file_id = uuid.uuid4()  # 存在しないファイル
+        project_id = project.id
+    else:  # wrong_project
+        other_project, _ = await test_data_seeder.create_project_with_owner()
+        project_file = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test.xlsx",
+            uploaded_by=owner.id,
+        )
+        await test_data_seeder.db.commit()
+        file_id = project_file.id
+        project_id = other_project.id  # 異なるプロジェクト
 
     with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
         service = DriverTreeFileService(db_session)
@@ -222,34 +243,8 @@ async def test_delete_file_not_found(db_session: AsyncSession, test_data_seeder,
         # Act & Assert
         with pytest.raises(NotFoundError):
             await service.delete_file(
-                project_id=project.id,
-                file_id=uuid.uuid4(),
-                user_id=owner.id,
-            )
-
-
-@pytest.mark.asyncio
-async def test_delete_file_wrong_project(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_file_operations-008] 異なるプロジェクトのファイル削除でNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    other_project, _ = await test_data_seeder.create_project_with_owner()
-
-    project_file = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test.xlsx",
-        uploaded_by=owner.id,
-    )
-    await test_data_seeder.db.commit()
-
-    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-        service = DriverTreeFileService(db_session)
-
-        # Act & Assert
-        with pytest.raises(NotFoundError):
-            await service.delete_file(
-                project_id=other_project.id,  # 異なるプロジェクト
-                file_id=project_file.id,
+                project_id=project_id,
+                file_id=file_id,
                 user_id=owner.id,
             )
 

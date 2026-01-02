@@ -43,33 +43,27 @@ async def test_import_users_success(client: AsyncClient, override_auth, admin_us
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "params",
+    [
+        {},
+        {"is_active": True},
+    ],
+    ids=["basic", "with_filter"],
+)
 @pytest.mark.asyncio
-async def test_export_users_success(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-002] ユーザー一括エクスポートの成功ケース。"""
+async def test_export_users_success(client: AsyncClient, override_auth, admin_user, params):
+    """[test_bulk_operations-002-003] ユーザー一括エクスポートの成功ケース（基本/フィルタ付き）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/bulk/users/export")
+    response = await client.get("/api/v1/admin/bulk/users/export", params=params)
 
     # Assert
     assert response.status_code == 200
     assert response.headers["content-type"] == "text/csv; charset=utf-8"
     assert "attachment" in response.headers["content-disposition"]
-
-
-@pytest.mark.asyncio
-async def test_export_users_with_filter(client: AsyncClient, override_auth, admin_user):
-    """[test_bulk_operations-003] フィルタ付きユーザーエクスポート。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get("/api/v1/admin/bulk/users/export", params={"is_active": True})
-
-    # Assert
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "text/csv; charset=utf-8"
 
 
 # ================================================================================

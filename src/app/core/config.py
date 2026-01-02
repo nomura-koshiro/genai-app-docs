@@ -336,6 +336,17 @@ class Settings(BaseSettings):
         description="ファイルアップロードの最大サイズ（MB）",
     )
 
+    # プロキシ信頼設定
+    TRUSTED_PROXIES: list[str] = Field(
+        default=[
+            "10.0.0.0/8",  # プライベートネットワーク（クラスA）
+            "172.16.0.0/12",  # プライベートネットワーク（クラスB）
+            "192.168.0.0/16",  # プライベートネットワーク（クラスC）
+            "127.0.0.1/32",  # ローカルホスト
+        ],
+        description="信頼できるプロキシのCIDR（X-Forwarded-Forヘッダーを信頼）",
+    )
+
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
         """ファイルアップロードの最大サイズ（バイト）を取得します。

@@ -16,7 +16,6 @@ Happy Pathとビジネスルールエラーのみをテストします。
     - DELETE /api/v1/project/{project_id}/member/me - プロジェクト退出
 """
 
-import uuid
 
 import pytest
 from httpx import AsyncClient
@@ -30,42 +29,41 @@ from app.models import ProjectMember
 
 
 @pytest.mark.asyncio
-async def test_get_project_members_success(client: AsyncClient, override_auth, project_with_members):
-    """[test_project_members-001] メンバー一覧取得の成功ケース。"""
+@pytest.mark.parametrize(
+    "query_params,expected_member_count,expected_total",
+    [
+        ({}, 4, 4),
+        ({"skip": 0, "limit": 2}, 2, 4),
+    ],
+    ids=["no_pagination", "with_pagination"],
+)
+async def test_get_project_members(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    query_params,
+    expected_member_count,
+    expected_total,
+):
+    """[test_project_members-001,002] メンバー一覧取得（基本・ページネーション）。"""
     # Arrange
     data = project_with_members
     override_auth(data["owner"])
 
     # Act
-    response = await client.get(f"/api/v1/project/{data['project'].id}/member")
+    response = await client.get(f"/api/v1/project/{data['project'].id}/member", params=query_params)
 
     # Assert
     assert response.status_code == 200
     result = response.json()
     assert "members" in result
     assert "total" in result
-    assert result["total"] == 4  # owner + moderator + member + viewer
+    assert len(result["members"]) == expected_member_count
+    assert result["total"] == expected_total
     for member in result["members"]:
         assert "id" in member
         assert "userId" in member
         assert "role" in member
-
-
-@pytest.mark.asyncio
-async def test_get_project_members_with_pagination(client: AsyncClient, override_auth, project_with_members):
-    """[test_project_members-002] ページネーション付きメンバー一覧取得。"""
-    # Arrange
-    data = project_with_members
-    override_auth(data["owner"])
-
-    # Act
-    response = await client.get(f"/api/v1/project/{data['project'].id}/member?skip=0&limit=2")
-
-    # Assert
-    assert response.status_code == 200
-    result = response.json()
-    assert len(result["members"]) == 2
-    assert result["total"] == 4
 
 
 # ================================================================================
@@ -214,57 +212,57 @@ async def test_add_members_bulk_empty_list(client: AsyncClient, override_auth, p
 
 
 @pytest.mark.asyncio
-async def test_update_member_role_success(client: AsyncClient, override_auth, project_with_members, db_session):
-    """[test_project_members-009] メンバーロール更新の成功ケース。"""
+@pytest.mark.parametrize(
+    "use_project_type,target_user_key,new_role,expected_status",
+    [
+        ("with_members", "member", "project_moderator", 200),
+        ("with_owner", "owner", "member", 422),
+    ],
+    ids=["success", "last_manager_error"],
+)
+async def test_update_member_role(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    project_with_owner,
+    db_session,
+    use_project_type,
+    target_user_key,
+    new_role,
+    expected_status,
+):
+    """[test_project_members-009,010] メンバーロール更新（成功・最後のマネージャーエラー）。"""
     # Arrange
-    data = project_with_members
-    override_auth(data["owner"])
+    if use_project_type == "with_members":
+        data = project_with_members
+        project = data["project"]
+        target_user = data[target_user_key]
+        override_auth(data["owner"])
+    else:  # with_owner
+        project, owner = project_with_owner
+        target_user = owner
+        override_auth(owner)
 
-    # memberのmember_idを取得
+    # member_idを取得
     result = await db_session.execute(
         select(ProjectMember).where(
-            ProjectMember.project_id == data["project"].id,
-            ProjectMember.user_id == data["member"].id,
+            ProjectMember.project_id == project.id,
+            ProjectMember.user_id == target_user.id,
         )
     )
     member_record = result.scalar_one()
 
     # Act
     response = await client.patch(
-        f"/api/v1/project/{data['project'].id}/member/{member_record.id}",
-        json={"role": "project_moderator"},
+        f"/api/v1/project/{project.id}/member/{member_record.id}",
+        json={"role": new_role},
     )
 
     # Assert
-    assert response.status_code == 200
-    result_data = response.json()
-    assert result_data["role"] == "project_moderator"
-
-
-@pytest.mark.asyncio
-async def test_update_last_manager_role(client: AsyncClient, override_auth, project_with_owner, db_session):
-    """[test_project_members-010] 最後のPROJECT_MANAGERのロール変更（422エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # ownerのmember_idを取得
-    result = await db_session.execute(
-        select(ProjectMember).where(
-            ProjectMember.project_id == project.id,
-            ProjectMember.user_id == owner.id,
-        )
-    )
-    owner_member = result.scalar_one()
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/member/{owner_member.id}",
-        json={"role": "member"},
-    )
-
-    # Assert
-    assert response.status_code == 422
+    assert response.status_code == expected_status
+    if expected_status == 200:
+        result_data = response.json()
+        assert result_data["role"] == new_role
 
 
 # ================================================================================
@@ -273,48 +271,50 @@ async def test_update_last_manager_role(client: AsyncClient, override_auth, proj
 
 
 @pytest.mark.asyncio
-async def test_remove_member_success(client: AsyncClient, override_auth, project_with_members, db_session):
-    """[test_project_members-011] メンバー削除の成功ケース。"""
+@pytest.mark.parametrize(
+    "use_project_type,target_user_key,expected_status",
+    [
+        ("with_members", "viewer", 204),
+        ("with_owner", "owner", 422),
+    ],
+    ids=["success", "self_deletion_error"],
+)
+async def test_remove_member(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    project_with_owner,
+    db_session,
+    use_project_type,
+    target_user_key,
+    expected_status,
+):
+    """[test_project_members-011,012] メンバー削除（成功・自分自身削除エラー）。"""
     # Arrange
-    data = project_with_members
-    override_auth(data["owner"])
+    if use_project_type == "with_members":
+        data = project_with_members
+        project = data["project"]
+        target_user = data[target_user_key]
+        override_auth(data["owner"])
+    else:  # with_owner
+        project, owner = project_with_owner
+        target_user = owner
+        override_auth(owner)
 
-    # viewerのmember_idを取得
-    result = await db_session.execute(
-        select(ProjectMember).where(
-            ProjectMember.project_id == data["project"].id,
-            ProjectMember.user_id == data["viewer"].id,
-        )
-    )
-    viewer_member = result.scalar_one()
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{data['project'].id}/member/{viewer_member.id}")
-
-    # Assert
-    assert response.status_code == 204
-
-
-@pytest.mark.asyncio
-async def test_remove_self_not_allowed(client: AsyncClient, override_auth, project_with_owner, db_session):
-    """[test_project_members-012] 自分自身の削除（422エラー、退出を使用すべき）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
+    # member_idを取得
     result = await db_session.execute(
         select(ProjectMember).where(
             ProjectMember.project_id == project.id,
-            ProjectMember.user_id == owner.id,
+            ProjectMember.user_id == target_user.id,
         )
     )
-    owner_member = result.scalar_one()
+    member_record = result.scalar_one()
 
     # Act
-    response = await client.delete(f"/api/v1/project/{project.id}/member/{owner_member.id}")
+    response = await client.delete(f"/api/v1/project/{project.id}/member/{member_record.id}")
 
     # Assert
-    assert response.status_code == 422
+    assert response.status_code == expected_status
 
 
 # ================================================================================
@@ -323,28 +323,35 @@ async def test_remove_self_not_allowed(client: AsyncClient, override_auth, proje
 
 
 @pytest.mark.asyncio
-async def test_leave_project_success(client: AsyncClient, override_auth, project_with_members):
-    """[test_project_members-013] プロジェクト退出の成功ケース。"""
+@pytest.mark.parametrize(
+    "use_project_type,auth_user_key,expected_status",
+    [
+        ("with_members", "member", 204),
+        ("with_owner", "owner", 422),
+    ],
+    ids=["success", "last_manager_error"],
+)
+async def test_leave_project(
+    client: AsyncClient,
+    override_auth,
+    project_with_members,
+    project_with_owner,
+    use_project_type,
+    auth_user_key,
+    expected_status,
+):
+    """[test_project_members-013,014] プロジェクト退出（成功・最後のマネージャーエラー）。"""
     # Arrange
-    data = project_with_members
-    override_auth(data["member"])
-
-    # Act
-    response = await client.delete(f"/api/v1/project/{data['project'].id}/member/me")
-
-    # Assert
-    assert response.status_code == 204
-
-
-@pytest.mark.asyncio
-async def test_leave_project_last_manager(client: AsyncClient, override_auth, project_with_owner):
-    """[test_project_members-014] 最後のPROJECT_MANAGERのプロジェクト退出（422エラー）。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
+    if use_project_type == "with_members":
+        data = project_with_members
+        project = data["project"]
+        override_auth(data[auth_user_key])
+    else:  # with_owner
+        project, owner = project_with_owner
+        override_auth(owner)
 
     # Act
     response = await client.delete(f"/api/v1/project/{project.id}/member/me")
 
     # Assert
-    assert response.status_code == 422
+    assert response.status_code == expected_status

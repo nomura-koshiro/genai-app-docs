@@ -74,69 +74,53 @@ async def test_create_project_duplicate_code(client: AsyncClient, override_auth,
 
 
 @pytest.mark.asyncio
-async def test_list_projects_success(client: AsyncClient, override_auth, regular_user):
-    """[test_projects-003] プロジェクト一覧取得の成功ケース。"""
+@pytest.mark.parametrize(
+    "setup_count,query_params,expected_checks",
+    [
+        (2, {}, {"min_projects": 2, "has_total": True}),
+        (5, {"skip": 0, "limit": 3}, {"check_pagination": True, "skip": 0, "limit": 3}),
+        (1, {"is_active": "true"}, {"check_active_filter": True}),
+    ],
+    ids=["no_params", "pagination", "active_filter"],
+)
+async def test_list_projects(
+    client: AsyncClient,
+    override_auth,
+    regular_user,
+    setup_count,
+    query_params,
+    expected_checks,
+):
+    """[test_projects-003,004,005] プロジェクト一覧取得（基本・ページネーション・フィルタ）。"""
     # Arrange
     override_auth(regular_user)
 
-    # プロジェクトを作成（作成者は自動的にメンバーになる）
-    for i in range(2):
+    # プロジェクトを作成
+    for i in range(setup_count):
         await client.post(
             "/api/v1/project",
-            json={"name": f"List Project {i}", "code": f"LIST{i}-{uuid.uuid4().hex[:6]}"},
+            json={"name": f"Test Project {i}", "code": f"TEST{i}-{uuid.uuid4().hex[:6]}"},
         )
 
     # Act
-    response = await client.get("/api/v1/project")
+    response = await client.get("/api/v1/project", params=query_params)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
     assert "projects" in data
     assert "total" in data
-    assert len(data["projects"]) >= 2
 
+    if "min_projects" in expected_checks:
+        assert len(data["projects"]) >= expected_checks["min_projects"]
 
-@pytest.mark.asyncio
-async def test_list_projects_with_pagination(client: AsyncClient, override_auth, regular_user):
-    """[test_projects-004] ページネーション付きプロジェクト一覧取得。"""
-    # Arrange
-    override_auth(regular_user)
+    if "check_pagination" in expected_checks:
+        assert data["skip"] == expected_checks["skip"]
+        assert data["limit"] == expected_checks["limit"]
 
-    for i in range(5):
-        await client.post(
-            "/api/v1/project",
-            json={"name": f"Page Project {i}", "code": f"PAGE{i}-{uuid.uuid4().hex[:6]}"},
-        )
-
-    # Act
-    response = await client.get("/api/v1/project?skip=0&limit=3")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["skip"] == 0
-    assert data["limit"] == 3
-
-
-@pytest.mark.asyncio
-async def test_list_projects_with_active_filter(client: AsyncClient, override_auth, regular_user):
-    """[test_projects-005] アクティブフィルタ付きプロジェクト一覧取得。"""
-    # Arrange
-    override_auth(regular_user)
-    await client.post(
-        "/api/v1/project",
-        json={"name": "Active Project", "code": f"ACTIVE-{uuid.uuid4().hex[:6]}"},
-    )
-
-    # Act
-    response = await client.get("/api/v1/project?is_active=true")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    for project in data["projects"]:
-        assert project["isActive"] is True
+    if "check_active_filter" in expected_checks:
+        for project in data["projects"]:
+            assert project["isActive"] is True
 
 
 # ================================================================================

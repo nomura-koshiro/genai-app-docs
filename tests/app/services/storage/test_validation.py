@@ -22,31 +22,36 @@ from app.services.storage.validation import (
 class TestValidateExcelFile:
     """validate_excel_file関数のテスト。"""
 
-    def test_validate_excel_file_success_xlsx(self):
-        """[test_validation-001] 有効なXLSXファイルの検証が成功することを確認。"""
+    @pytest.mark.parametrize(
+        "filename,content_type",
+        [
+            ("test.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            ("test.xls", "application/vnd.ms-excel"),
+            ("test.XLSX", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            ("test.XlSx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        ],
+        ids=["xlsx", "xls", "uppercase_xlsx", "mixed_case_xlsx"],
+    )
+    def test_validate_excel_file_success(self, filename: str, content_type: str):
+        """[test_validation-001] 有効なExcelファイルの検証が成功することを確認。"""
         # Arrange
         mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = "test.xlsx"
-        mock_file.content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        mock_file.filename = filename
+        mock_file.content_type = content_type
 
         # Act & Assert (例外が発生しないことを確認)
         validate_excel_file(mock_file)
 
-    def test_validate_excel_file_success_xls(self):
-        """[test_validation-002] 有効なXLSファイルの検証が成功することを確認。"""
+    @pytest.mark.parametrize(
+        "filename",
+        ["", None],
+        ids=["empty_filename", "none_filename"],
+    )
+    def test_validate_excel_file_invalid_filename_raises_validation_error(self, filename: str | None):
+        """[test_validation-003] 空/Noneのファイル名でValidationErrorが発生することを確認。"""
         # Arrange
         mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = "test.xls"
-        mock_file.content_type = "application/vnd.ms-excel"
-
-        # Act & Assert (例外が発生しないことを確認)
-        validate_excel_file(mock_file)
-
-    def test_validate_excel_file_empty_filename_raises_validation_error(self):
-        """[test_validation-003] 空のファイル名でValidationErrorが発生することを確認。"""
-        # Arrange
-        mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = ""
+        mock_file.filename = filename
         mock_file.content_type = "application/vnd.ms-excel"
 
         # Act & Assert
@@ -55,42 +60,30 @@ class TestValidateExcelFile:
 
         assert "ファイル名の指定が必要です" in str(exc_info.value.message)
 
-    def test_validate_excel_file_none_filename_raises_validation_error(self):
-        """[test_validation-004] Noneのファイル名でValidationErrorが発生することを確認。"""
-        # Arrange
-        mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = None
-        mock_file.content_type = "application/vnd.ms-excel"
-
-        # Act & Assert
-        with pytest.raises(ValidationError) as exc_info:
-            validate_excel_file(mock_file)
-
-        assert "ファイル名の指定が必要です" in str(exc_info.value.message)
-
-    def test_validate_excel_file_invalid_extension_raises_unsupported_media_type_error(self):
+    @pytest.mark.parametrize(
+        "filename,content_type,expected_ext",
+        [
+            ("test.txt", "text/plain", ".txt"),
+            ("document.pdf", "application/pdf", ".pdf"),
+            ("image.png", "image/png", ".png"),
+            ("data.csv", "text/csv", ".csv"),
+        ],
+        ids=["txt", "pdf", "png", "csv"],
+    )
+    def test_validate_excel_file_invalid_extension_raises_unsupported_media_type_error(
+        self, filename: str, content_type: str, expected_ext: str
+    ):
         """[test_validation-005] 不正な拡張子でUnsupportedMediaTypeErrorが発生することを確認。"""
         # Arrange
         mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = "test.txt"
-        mock_file.content_type = "text/plain"
+        mock_file.filename = filename
+        mock_file.content_type = content_type
 
         # Act & Assert
         with pytest.raises(UnsupportedMediaTypeError) as exc_info:
             validate_excel_file(mock_file)
 
-        assert ".txt は許可されていません" in str(exc_info.value.message)
-
-    def test_validate_excel_file_invalid_extension_pdf(self):
-        """[test_validation-006] PDF拡張子でエラーが発生することを確認。"""
-        # Arrange
-        mock_file = MagicMock(spec=UploadFile)
-        mock_file.filename = "document.pdf"
-        mock_file.content_type = "application/pdf"
-
-        # Act & Assert
-        with pytest.raises(UnsupportedMediaTypeError):
-            validate_excel_file(mock_file)
+        assert f"{expected_ext} は許可されていません" in str(exc_info.value.message)
 
     def test_validate_excel_file_invalid_mime_type_raises_validation_error(self):
         """[test_validation-007] 不正なMIMEタイプでValidationErrorが発生することを確認。"""

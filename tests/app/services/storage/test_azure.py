@@ -104,8 +104,29 @@ class TestAzureStorageServiceUpload:
             mock_blob_client_instance.upload_blob.assert_called_once_with(data, overwrite=True)
 
     @pytest.mark.asyncio
-    async def test_upload_raises_validation_error_on_failure(self):
-        """[test_azure-005] アップロード失敗時にValidationErrorが発生することを確認。"""
+    @pytest.mark.parametrize(
+        "operation,setup_mock,error_message",
+        [
+            (
+                "upload",
+                lambda mock_container: setattr(mock_container, "create_container", AsyncMock(side_effect=Exception("Upload failed"))),
+                "Failed to upload file",
+            ),
+            (
+                "download",
+                lambda mock_container: None,  # download用のセットアップは別途必要
+                "Failed to download file",
+            ),
+            (
+                "delete",
+                lambda mock_container: None,  # delete用のセットアップは別途必要
+                "Failed to delete file",
+            ),
+        ],
+        ids=["upload_error", "download_error", "delete_error"],
+    )
+    async def test_file_operation_raises_validation_error(self, operation, setup_mock, error_message):
+        """[test_azure-005] ファイル操作失敗時にValidationErrorが発生することを確認。"""
         # Arrange
         connection_string = "test_connection_string"
         container = "test-container"
@@ -115,8 +136,18 @@ class TestAzureStorageServiceUpload:
         with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
             mock_client_instance = MagicMock()
             mock_container_client = MagicMock()
+            mock_blob_client_instance = MagicMock()
 
-            mock_container_client.create_container = AsyncMock(side_effect=Exception("Upload failed"))
+            if operation == "upload":
+                mock_container_client.create_container = AsyncMock(side_effect=Exception("Upload failed"))
+            elif operation == "download":
+                mock_blob_client_instance.exists = AsyncMock(return_value=True)
+                mock_blob_client_instance.download_blob = AsyncMock(side_effect=Exception("Download failed"))
+                mock_container_client.get_blob_client.return_value = mock_blob_client_instance
+            elif operation == "delete":
+                mock_blob_client_instance.exists = AsyncMock(return_value=True)
+                mock_blob_client_instance.delete_blob = AsyncMock(side_effect=Exception("Delete failed"))
+                mock_container_client.get_blob_client.return_value = mock_blob_client_instance
 
             mock_client_instance.get_container_client.return_value = mock_container_client
             mock_blob_client.from_connection_string.return_value = mock_client_instance
@@ -125,9 +156,14 @@ class TestAzureStorageServiceUpload:
 
             # Act & Assert
             with pytest.raises(ValidationError) as exc_info:
-                await service.upload(container, path, data)
+                if operation == "upload":
+                    await service.upload(container, path, data)
+                elif operation == "download":
+                    await service.download(container, path)
+                elif operation == "delete":
+                    await service.delete(container, path)
 
-            assert "Failed to upload file" in str(exc_info.value.message)
+            assert error_message in str(exc_info.value.message)
 
 
 class TestAzureStorageServiceDownload:
@@ -165,19 +201,29 @@ class TestAzureStorageServiceDownload:
             assert result == expected_data
 
     @pytest.mark.asyncio
-    async def test_download_not_found_error_when_blob_not_exists(self):
-        """[test_azure-007] Blobが存在しない場合NotFoundErrorが発生することを確認。"""
+    @pytest.mark.parametrize(
+        "container,path,exists_behavior,expected_error",
+        [
+            ("test-container", "nonexistent-file.txt", ("return", False), "File not found"),
+            ("nonexistent-container", "test-file.txt", ("raise", ResourceNotFoundError("Container not found")), "Container not found"),
+        ],
+        ids=["blob_not_exists", "container_not_exists"],
+    )
+    async def test_download_not_found_error(self, container, path, exists_behavior, expected_error):
+        """[test_azure-007] Blobまたはコンテナが存在しない場合NotFoundErrorが発生することを確認。"""
         # Arrange
         connection_string = "test_connection_string"
-        container = "test-container"
-        path = "nonexistent-file.txt"
 
         with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
             mock_client_instance = MagicMock()
             mock_container_client = MagicMock()
             mock_blob_client_instance = MagicMock()
 
-            mock_blob_client_instance.exists = AsyncMock(return_value=False)
+            behavior_type, behavior_value = exists_behavior
+            if behavior_type == "return":
+                mock_blob_client_instance.exists = AsyncMock(return_value=behavior_value)
+            else:  # raise
+                mock_blob_client_instance.exists = AsyncMock(side_effect=behavior_value)
 
             mock_container_client.get_blob_client.return_value = mock_blob_client_instance
             mock_client_instance.get_container_client.return_value = mock_container_client
@@ -189,62 +235,7 @@ class TestAzureStorageServiceDownload:
             with pytest.raises(NotFoundError) as exc_info:
                 await service.download(container, path)
 
-            assert "File not found" in str(exc_info.value.message)
-
-    @pytest.mark.asyncio
-    async def test_download_not_found_error_when_container_not_exists(self):
-        """[test_azure-008] コンテナが存在しない場合NotFoundErrorが発生することを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "nonexistent-container"
-        path = "test-file.txt"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-            mock_blob_client_instance = MagicMock()
-
-            mock_blob_client_instance.exists = AsyncMock(side_effect=ResourceNotFoundError("Container not found"))
-
-            mock_container_client.get_blob_client.return_value = mock_blob_client_instance
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act & Assert
-            with pytest.raises(NotFoundError) as exc_info:
-                await service.download(container, path)
-
-            assert "Container not found" in str(exc_info.value.message)
-
-    @pytest.mark.asyncio
-    async def test_download_raises_validation_error_on_failure(self):
-        """[test_azure-009] ダウンロード失敗時にValidationErrorが発生することを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "test-container"
-        path = "test-file.txt"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-            mock_blob_client_instance = MagicMock()
-
-            mock_blob_client_instance.exists = AsyncMock(return_value=True)
-            mock_blob_client_instance.download_blob = AsyncMock(side_effect=Exception("Download failed"))
-
-            mock_container_client.get_blob_client.return_value = mock_blob_client_instance
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act & Assert
-            with pytest.raises(ValidationError) as exc_info:
-                await service.download(container, path)
-
-            assert "Failed to download file" in str(exc_info.value.message)
+            assert expected_error in str(exc_info.value.message)
 
 
 class TestAzureStorageServiceDelete:
@@ -306,52 +297,35 @@ class TestAzureStorageServiceDelete:
 
             assert "File not found" in str(exc_info.value.message)
 
-    @pytest.mark.asyncio
-    async def test_delete_raises_validation_error_on_failure(self):
-        """[test_azure-012] 削除失敗時にValidationErrorが発生することを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "test-container"
-        path = "test-file.txt"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-            mock_blob_client_instance = MagicMock()
-
-            mock_blob_client_instance.exists = AsyncMock(return_value=True)
-            mock_blob_client_instance.delete_blob = AsyncMock(side_effect=Exception("Delete failed"))
-
-            mock_container_client.get_blob_client.return_value = mock_blob_client_instance
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act & Assert
-            with pytest.raises(ValidationError) as exc_info:
-                await service.delete(container, path)
-
-            assert "Failed to delete file" in str(exc_info.value.message)
-
 
 class TestAzureStorageServiceExists:
     """AzureStorageService.existsメソッドのテスト。"""
 
     @pytest.mark.asyncio
-    async def test_exists_returns_true_for_existing_blob(self):
-        """[test_azure-013] 存在するBlobでTrueが返されることを確認。"""
+    @pytest.mark.parametrize(
+        "path,exists_return,expected",
+        [
+            ("test-file.txt", True, True),
+            ("nonexistent-file.txt", False, False),
+            ("error-file.txt", Exception("Error"), False),
+        ],
+        ids=["existing_blob", "nonexistent_blob", "exception"],
+    )
+    async def test_exists(self, path, exists_return, expected):
+        """[test_azure-013] existsメソッドの各種ケースをテスト。"""
         # Arrange
         connection_string = "test_connection_string"
         container = "test-container"
-        path = "test-file.txt"
 
         with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
             mock_client_instance = MagicMock()
             mock_container_client = MagicMock()
             mock_blob_client_instance = MagicMock()
 
-            mock_blob_client_instance.exists = AsyncMock(return_value=True)
+            if isinstance(exists_return, Exception):
+                mock_blob_client_instance.exists = AsyncMock(side_effect=exists_return)
+            else:
+                mock_blob_client_instance.exists = AsyncMock(return_value=exists_return)
 
             mock_container_client.get_blob_client.return_value = mock_blob_client_instance
             mock_client_instance.get_container_client.return_value = mock_container_client
@@ -363,61 +337,7 @@ class TestAzureStorageServiceExists:
             result = await service.exists(container, path)
 
             # Assert
-            assert result is True
-
-    @pytest.mark.asyncio
-    async def test_exists_returns_false_for_nonexistent_blob(self):
-        """[test_azure-014] 存在しないBlobでFalseが返されることを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "test-container"
-        path = "nonexistent-file.txt"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-            mock_blob_client_instance = MagicMock()
-
-            mock_blob_client_instance.exists = AsyncMock(return_value=False)
-
-            mock_container_client.get_blob_client.return_value = mock_blob_client_instance
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act
-            result = await service.exists(container, path)
-
-            # Assert
-            assert result is False
-
-    @pytest.mark.asyncio
-    async def test_exists_returns_false_on_exception(self):
-        """[test_azure-015] 例外発生時にFalseが返されることを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "test-container"
-        path = "test-file.txt"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-            mock_blob_client_instance = MagicMock()
-
-            mock_blob_client_instance.exists = AsyncMock(side_effect=Exception("Error"))
-
-            mock_container_client.get_blob_client.return_value = mock_blob_client_instance
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act
-            result = await service.exists(container, path)
-
-            # Assert
-            assert result is False
+            assert result is expected
 
 
 class TestAzureStorageServiceListBlobs:
@@ -495,41 +415,24 @@ class TestAzureStorageServiceListBlobs:
             assert result == expected_blobs
 
     @pytest.mark.asyncio
-    async def test_list_blobs_returns_empty_for_nonexistent_container(self):
-        """[test_azure-018] 存在しないコンテナで空リストが返されることを確認。"""
+    @pytest.mark.parametrize(
+        "container,exception",
+        [
+            ("nonexistent-container", ResourceNotFoundError("Container not found")),
+            ("test-container", Exception("Error")),
+        ],
+        ids=["nonexistent_container", "exception"],
+    )
+    async def test_list_blobs_returns_empty_on_error(self, container, exception):
+        """[test_azure-018] エラー時に空リストが返されることを確認。"""
         # Arrange
         connection_string = "test_connection_string"
-        container = "nonexistent-container"
 
         with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
             mock_client_instance = MagicMock()
             mock_container_client = MagicMock()
 
-            mock_container_client.get_container_properties = AsyncMock(side_effect=ResourceNotFoundError("Container not found"))
-
-            mock_client_instance.get_container_client.return_value = mock_container_client
-            mock_blob_client.from_connection_string.return_value = mock_client_instance
-
-            service = AzureStorageService(connection_string)
-
-            # Act
-            result = await service.list_blobs(container)
-
-            # Assert
-            assert result == []
-
-    @pytest.mark.asyncio
-    async def test_list_blobs_returns_empty_on_exception(self):
-        """[test_azure-019] 例外発生時に空リストが返されることを確認。"""
-        # Arrange
-        connection_string = "test_connection_string"
-        container = "test-container"
-
-        with patch("app.services.storage.azure.BlobServiceClient") as mock_blob_client:
-            mock_client_instance = MagicMock()
-            mock_container_client = MagicMock()
-
-            mock_container_client.get_container_properties = AsyncMock(side_effect=Exception("Error"))
+            mock_container_client.get_container_properties = AsyncMock(side_effect=exception)
 
             mock_client_instance.get_container_client.return_value = mock_container_client
             mock_blob_client.from_connection_string.return_value = mock_client_instance

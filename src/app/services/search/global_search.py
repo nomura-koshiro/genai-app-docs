@@ -3,6 +3,7 @@
 共通UI設計書（UI-004〜UI-005）に基づくグローバル検索機能を提供します。
 """
 
+import asyncio
 import re
 import uuid
 
@@ -37,7 +38,9 @@ class GlobalSearchService:
         query: SearchQuery,
         user_id: uuid.UUID,
     ) -> SearchResponse:
-        """グローバル検索を実行します。
+        """グローバル検索を並行処理で高速実行します。
+
+        asyncio.gatherにより複数の検索タイプを同時実行し、レスポンス時間を短縮します。
 
         Args:
             query: 検索クエリ
@@ -51,30 +54,32 @@ class GlobalSearchService:
         project_id = query.project_id
         limit = query.limit
 
-        # 各タイプごとに検索を実行
-        all_results: list[SearchResultInfo] = []
+        # 実行する検索タスクを構築
+        search_tasks = []
 
         if SearchTypeEnum.PROJECT in types:
-            project_results = await self._search_projects(search_text, user_id, limit)
-            all_results.extend(project_results)
+            search_tasks.append(self._search_projects(search_text, user_id, limit))
 
         if SearchTypeEnum.SESSION in types:
-            session_results = await self._search_sessions(
-                search_text, user_id, project_id, limit
+            search_tasks.append(
+                self._search_sessions(search_text, user_id, project_id, limit)
             )
-            all_results.extend(session_results)
 
         if SearchTypeEnum.FILE in types:
-            file_results = await self._search_files(
-                search_text, user_id, project_id, limit
-            )
-            all_results.extend(file_results)
+            search_tasks.append(self._search_files(search_text, user_id, project_id, limit))
 
         if SearchTypeEnum.TREE in types:
-            tree_results = await self._search_trees(
-                search_text, user_id, project_id, limit
-            )
-            all_results.extend(tree_results)
+            search_tasks.append(self._search_trees(search_text, user_id, project_id, limit))
+
+        # 全ての検索を並行実行
+        if search_tasks:
+            results_list = await asyncio.gather(*search_tasks)
+            # 結果をフラットに統合
+            all_results: list[SearchResultInfo] = []
+            for results in results_list:
+                all_results.extend(results)
+        else:
+            all_results = []
 
         # 結果をマージして制限を適用
         merged_results = self._merge_results(all_results, limit)

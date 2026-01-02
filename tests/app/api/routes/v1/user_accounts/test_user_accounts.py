@@ -10,11 +10,11 @@ Happy Pathとビジネスルールエラーのみをテストします。
     - GET /api/v1/user_account - ユーザー一覧取得
     - GET /api/v1/user_account/me - 現在のユーザー情報取得
     - GET /api/v1/user_account/{user_id} - ユーザー情報取得
+    - POST /api/v1/user_account/logout - ユーザーログアウト
     - PATCH /api/v1/user_account/me - 現在のユーザー情報更新
     - DELETE /api/v1/user_account/{user_id} - ユーザー削除
 """
 
-import uuid
 
 import pytest
 from httpx import AsyncClient
@@ -61,14 +61,25 @@ async def test_list_users_with_pagination(client: AsyncClient, override_auth, ad
     assert len(data["users"]) <= 10
 
 
+@pytest.mark.parametrize(
+    "skip,limit,min_users",
+    [
+        (0, 5, 5),
+        (5, 5, 0),
+    ],
+    ids=["first_page", "second_page"],
+)
 @pytest.mark.asyncio
-async def test_list_users_total_count_accuracy(
+async def test_list_users_pagination_pages(
     client: AsyncClient,
     override_auth,
     admin_user,
     test_data_seeder,
+    skip: int,
+    limit: int,
+    min_users: int,
 ):
-    """[test_user_accounts-003] ユーザー一覧のtotal件数の正確性確認。"""
+    """[test_user_accounts-003/004] ユーザー一覧のページネーション検証。"""
     # Arrange - 追加で10人のユーザーを作成
     for i in range(10):
         await test_data_seeder.create_user(display_name=f"Pagination User {i}")
@@ -76,43 +87,18 @@ async def test_list_users_total_count_accuracy(
 
     override_auth(admin_user)
 
-    # Act - 最初の5件を取得
-    response = await client.get("/api/v1/user_account?skip=0&limit=5")
+    # Act
+    response = await client.get(f"/api/v1/user_account?skip={skip}&limit={limit}")
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert data["skip"] == 0
-    assert data["limit"] == 5
-    assert len(data["users"]) == 5
+    assert data["skip"] == skip
+    assert data["limit"] == limit
+    assert len(data["users"]) <= limit
+    if min_users > 0:
+        assert len(data["users"]) >= min_users
     assert data["total"] >= 11  # 最低でも11件（admin_user + 10人）
-
-
-@pytest.mark.asyncio
-async def test_list_users_pagination_second_page(
-    client: AsyncClient,
-    override_auth,
-    admin_user,
-    test_data_seeder,
-):
-    """[test_user_accounts-004] ユーザー一覧のページネーション（2ページ目）。"""
-    # Arrange - 追加で10人のユーザーを作成
-    for i in range(10):
-        await test_data_seeder.create_user(display_name=f"Pagination2 User {i}")
-    await test_data_seeder.db.commit()
-
-    override_auth(admin_user)
-
-    # Act - 2ページ目を取得
-    response = await client.get("/api/v1/user_account?skip=5&limit=5")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["skip"] == 5
-    assert data["limit"] == 5
-    assert len(data["users"]) <= 5
-    assert data["total"] >= 11
 
 
 # ================================================================================
@@ -175,6 +161,37 @@ async def test_get_user_by_id_success(client: AsyncClient, override_auth, admin_
     assert response.status_code == 200
     data = response.json()
     assert data["id"] == user_id
+
+
+# ================================================================================
+# POST /api/v1/user_account/logout - ユーザーログアウト
+# ================================================================================
+
+
+@pytest.mark.asyncio
+async def test_logout_success(client: AsyncClient, override_auth, regular_user):
+    """[test_user_accounts-020] ログアウトの成功ケース。"""
+    # Arrange
+    override_auth(regular_user)
+
+    # Act
+    response = await client.post("/api/v1/user_account/logout")
+
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
+    assert "message" in data
+    assert data["message"] == "ログアウトしました"
+
+
+@pytest.mark.asyncio
+async def test_logout_unauthenticated_returns_401(unauthenticated_client: AsyncClient):
+    """[test_user_accounts-021] 未認証でのログアウトは401エラー。"""
+    # Act
+    response = await unauthenticated_client.post("/api/v1/user_account/logout")
+
+    # Assert
+    assert response.status_code == 401
 
 
 # ================================================================================

@@ -376,7 +376,7 @@ class ProjectRole(str, Enum):
 | id | UUID | PK | 主キー |
 | name | String(255) | NOT NULL, DEFAULT '' | セッション名 |
 | issue_id | UUID | FK, NOT NULL | 課題マスタID |
-| creator_id | UUID | FK, NOT NULL | 作成者ID |
+| creator_id | UUID | FK, NULLABLE | 作成者ID（ユーザー削除時にNULLになる） |
 | project_id | UUID | FK, NOT NULL | プロジェクトID |
 | input_file_id | UUID | FK, NULLABLE | 入力ファイルID |
 | current_snapshot_id | UUID | FK, NULLABLE | 現在のスナップショットID |

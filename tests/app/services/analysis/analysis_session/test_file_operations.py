@@ -49,43 +49,36 @@ async def test_list_session_files_success(db_session: AsyncSession):
         assert result == []
 
 
+@pytest.mark.parametrize(
+    "scenario,session_return",
+    [
+        ("session_not_found", None),
+        ("project_mismatch", "mismatch"),
+    ],
+    ids=["session_not_found", "project_mismatch"],
+)
 @pytest.mark.asyncio
-async def test_list_session_files_session_not_found(db_session: AsyncSession):
-    """[test_file_operations-002] セッションが見つからない場合のエラー。"""
+async def test_list_session_files_errors(
+    db_session: AsyncSession, scenario: str, session_return
+):
+    """[test_file_operations-002/003] ファイル一覧取得時のエラーケース。"""
     # Arrange
     service = AnalysisSessionFileService(db_session)
     project_id = uuid.uuid4()
     session_id = uuid.uuid4()
 
-    with patch.object(
-        service.session_repository,
-        "get",
-        new_callable=AsyncMock,
-        return_value=None,
-    ):
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.list_session_files(project_id, session_id)
-
-        assert "Session not found" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_list_session_files_project_mismatch(db_session: AsyncSession):
-    """[test_file_operations-003] プロジェクトIDが一致しない場合のエラー。"""
-    # Arrange
-    service = AnalysisSessionFileService(db_session)
-    project_id = uuid.uuid4()
-    session_id = uuid.uuid4()
-
-    mock_session = MagicMock()
-    mock_session.project_id = uuid.uuid4()  # 異なるプロジェクトID
+    if session_return == "mismatch":
+        mock_session = MagicMock()
+        mock_session.project_id = uuid.uuid4()  # 異なるプロジェクトID
+        session_return_value = mock_session
+    else:
+        session_return_value = None
 
     with patch.object(
         service.session_repository,
         "get",
         new_callable=AsyncMock,
-        return_value=mock_session,
+        return_value=session_return_value,
     ):
         # Act & Assert
         with pytest.raises(NotFoundError) as exc_info:

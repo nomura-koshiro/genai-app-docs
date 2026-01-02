@@ -11,102 +11,130 @@ import pytest
 class TestActivityTrackingMiddleware:
     """操作履歴記録ミドルウェアのユニットテスト。"""
 
-    def test_skip_path_health_endpoint_returns_true(self):
-        """[test_activity_tracking-001] ヘルスチェックエンドポイントは除外されること。"""
+    @pytest.mark.parametrize(
+        "path,should_skip",
+        [
+            # 除外パス（固定）
+            ("/health", True),
+            ("/healthz", True),
+            ("/ready", True),
+            ("/docs", True),
+            ("/openapi.json", True),
+            # 除外パス（パターン）
+            ("/static/css/style.css", True),
+            ("/assets/images/logo.png", True),
+            ("/_next/static/chunks/main.js", True),
+            # 記録対象パス
+            ("/api/v1/projects", False),
+            ("/api/v1/admin/settings", False),
+            ("/api/v1/user_accounts", False),
+        ],
+        ids=[
+            "health", "healthz", "ready", "docs", "openapi",
+            "static_css", "assets_img", "next_static",
+            "api_projects", "api_admin", "api_users",
+        ],
+    )
+    def test_should_skip_path(self, path: str, should_skip: bool):
+        """[test_activity_tracking-001] パスの除外判定が正しいこと。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
 
         # Act & Assert
-        assert middleware._should_skip("/health") is True
-        assert middleware._should_skip("/healthz") is True
-        assert middleware._should_skip("/ready") is True
-        assert middleware._should_skip("/docs") is True
-        assert middleware._should_skip("/openapi.json") is True
+        assert middleware._should_skip(path) is should_skip
 
-    def test_skip_path_api_endpoint_returns_false(self):
-        """[test_activity_tracking-002] APIエンドポイントは記録されること。"""
+    @pytest.mark.parametrize(
+        "method,status_code,expected_action",
+        [
+            ("GET", 200, "READ"),
+            ("POST", 201, "CREATE"),
+            ("PUT", 200, "UPDATE"),
+            ("PATCH", 200, "UPDATE"),
+            ("DELETE", 204, "DELETE"),
+            # エラーステータス
+            ("GET", 404, "ERROR"),
+            ("POST", 400, "ERROR"),
+            ("GET", 500, "ERROR"),
+        ],
+        ids=["get_read", "post_create", "put_update", "patch_update", "delete",
+             "error_404", "error_400", "error_500"],
+    )
+    def test_infer_action_type(self, method: str, status_code: int, expected_action: str):
+        """[test_activity_tracking-012] HTTPメソッドとステータスからアクション種別が推定されること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
 
         # Act & Assert
-        assert middleware._should_skip("/api/v1/projects") is False
-        assert middleware._should_skip("/api/v1/admin/settings") is False
-        assert middleware._should_skip("/api/v1/user_accounts") is False
+        assert middleware._infer_action_type(method, status_code) == expected_action
 
-    def test_skip_path_static_pattern_returns_true(self):
-        """[test_activity_tracking-003] 静的リソースパターンは除外されること。"""
+    @pytest.mark.parametrize(
+        "path,expected_type,expected_id",
+        [
+            ("/api/v1/projects/550e8400-e29b-41d4-a716-446655440000", "PROJECT", "550e8400-e29b-41d4-a716-446655440000"),
+            ("/api/v1/user_accounts/12345678-1234-1234-1234-123456789012", "USER", "12345678-1234-1234-1234-123456789012"),
+            ("/api/v1/unknown/path", None, None),
+        ],
+        ids=["project", "user", "unknown"],
+    )
+    def test_extract_resource_info(self, path: str, expected_type: str | None, expected_id: str | None):
+        """[test_activity_tracking-009] パスからリソース情報が抽出されること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
 
-        # Act & Assert
-        assert middleware._should_skip("/static/css/style.css") is True
-        assert middleware._should_skip("/assets/images/logo.png") is True
-        assert middleware._should_skip("/_next/static/chunks/main.js") is True
+        # Act
+        resource_type, resource_id = middleware._extract_resource_info(path)
 
-    def test_mask_data_password_field_returns_masked(self):
-        """[test_activity_tracking-004] パスワードがマスクされること。"""
+        # Assert
+        assert resource_type == expected_type
+        if expected_id:
+            assert str(resource_id) == expected_id
+        else:
+            assert resource_id is None
+
+
+class TestMaskSensitiveData:
+    """機密情報マスキングのテスト。"""
+
+    @pytest.mark.parametrize(
+        "data,expected_masked_keys",
+        [
+            # パスワード
+            ({"email": "test@example.com", "password": "secret123"}, ["password"]),
+            # トークン類
+            ({"access_token": "jwt...", "refresh_token": "ref...", "api_key": "sk-..."}, ["access_token", "refresh_token", "api_key"]),
+        ],
+        ids=["password", "tokens"],
+    )
+    def test_mask_sensitive_fields(self, data: dict, expected_masked_keys: list[str]):
+        """[test_activity_tracking-004] 機密フィールドがマスクされること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        data = {
-            "email": "test@example.com",
-            "password": "secret123",
-            "username": "testuser",
-        }
 
         # Act
         masked = middleware._mask_sensitive_data(data)
 
         # Assert
-        assert masked["email"] == "test@example.com"
-        assert masked["password"] == "***MASKED***"
-        assert masked["username"] == "testuser"
+        for key in expected_masked_keys:
+            assert masked[key] == "***MASKED***"
 
-    def test_mask_data_token_fields_return_masked(self):
-        """[test_activity_tracking-005] トークン類がマスクされること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        data = {
-            "access_token": "eyJhbGciOiJIUzI1NiIs...",
-            "refresh_token": "refresh_abc123",
-            "api_key": "sk-1234567890",
-            "name": "Test User",
-        }
-
-        # Act
-        masked = middleware._mask_sensitive_data(data)
-
-        # Assert
-        assert masked["access_token"] == "***MASKED***"
-        assert masked["refresh_token"] == "***MASKED***"
-        assert masked["api_key"] == "***MASKED***"
-        assert masked["name"] == "Test User"
-
-    def test_mask_data_nested_fields_return_masked(self):
+    def test_mask_nested_sensitive_data(self):
         """[test_activity_tracking-006] ネストされた機密情報もマスクされること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
-
         data = {
             "user": {
                 "email": "test@example.com",
-                "credentials": {
-                    "password": "secret123",
-                    "token": "jwt_token",
-                },
+                "credentials": {"password": "secret123", "token": "jwt_token"},
             },
         }
 
@@ -118,13 +146,12 @@ class TestActivityTrackingMiddleware:
         assert masked["user"]["credentials"]["password"] == "***MASKED***"
         assert masked["user"]["credentials"]["token"] == "***MASKED***"
 
-    def test_mask_data_list_items_return_masked(self):
+    def test_mask_list_items(self):
         """[test_activity_tracking-007] リスト内の機密情報もマスクされること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
-
         data = [
             {"password": "secret1", "name": "User1"},
             {"password": "secret2", "name": "User2"},
@@ -134,19 +161,16 @@ class TestActivityTrackingMiddleware:
         masked = middleware._mask_sensitive_data(data)
 
         # Assert
-        assert masked[0]["password"] == "***MASKED***"
-        assert masked[0]["name"] == "User1"
-        assert masked[1]["password"] == "***MASKED***"
-        assert masked[1]["name"] == "User2"
+        for i, item in enumerate(masked):
+            assert item["password"] == "***MASKED***"
+            assert item["name"] == f"User{i + 1}"
 
-    def test_mask_data_deep_nested_returns_truncated(self):
+    def test_mask_deep_nested_truncated(self):
         """[test_activity_tracking-008] 深くネストされたデータは打ち切られること。"""
         # Arrange
         from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
 
         middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # 15レベルのネストを作成
         data: dict = {"level": 0}
         current = data
         for i in range(15):
@@ -157,120 +181,19 @@ class TestActivityTrackingMiddleware:
         masked = middleware._mask_sensitive_data(data)
 
         # Assert
-        # 10レベル以上は打ち切られる
         assert "***NESTED***" in str(masked)
 
-    def test_extract_resource_project_path_returns_type_and_id(self):
-        """[test_activity_tracking-009] プロジェクトリソース情報が抽出されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act
-        resource_type, resource_id = middleware._extract_resource_info("/api/v1/projects/550e8400-e29b-41d4-a716-446655440000")
-
-        # Assert
-        assert resource_type == "PROJECT"
-        assert str(resource_id) == "550e8400-e29b-41d4-a716-446655440000"
-
-    def test_extract_resource_user_path_returns_type_and_id(self):
-        """[test_activity_tracking-010] ユーザーリソース情報が抽出されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act
-        resource_type, resource_id = middleware._extract_resource_info("/api/v1/user_accounts/12345678-1234-1234-1234-123456789012")
-
-        # Assert
-        assert resource_type == "USER"
-        assert str(resource_id) == "12345678-1234-1234-1234-123456789012"
-
-    def test_extract_resource_unknown_path_returns_none(self):
-        """[test_activity_tracking-011] パターンに一致しないパスではNoneが返ること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act
-        resource_type, resource_id = middleware._extract_resource_info("/api/v1/unknown/path")
-
-        # Assert
-        assert resource_type is None
-        assert resource_id is None
-
-    def test_infer_action_get_method_returns_read(self):
-        """[test_activity_tracking-012] GETリクエストはREADと推定されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware._infer_action_type("GET", 200) == "READ"
-
-    def test_infer_action_post_method_returns_create(self):
-        """[test_activity_tracking-013] POSTリクエストはCREATEと推定されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware._infer_action_type("POST", 201) == "CREATE"
-
-    def test_infer_action_patch_method_returns_update(self):
-        """[test_activity_tracking-014] PATCHリクエストはUPDATEと推定されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware._infer_action_type("PATCH", 200) == "UPDATE"
-        assert middleware._infer_action_type("PUT", 200) == "UPDATE"
-
-    def test_infer_action_delete_method_returns_delete(self):
-        """[test_activity_tracking-015] DELETEリクエストはDELETEと推定されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware._infer_action_type("DELETE", 204) == "DELETE"
-
-    def test_infer_action_error_status_returns_error(self):
-        """[test_activity_tracking-016] 4xx/5xxエラーはERRORと推定されること。"""
-        # Arrange
-        from app.api.middlewares.activity_tracking import ActivityTrackingMiddleware
-
-        middleware = ActivityTrackingMiddleware(app=MagicMock())
-
-        # Act & Assert
-        assert middleware._infer_action_type("GET", 404) == "ERROR"
-        assert middleware._infer_action_type("POST", 400) == "ERROR"
-        assert middleware._infer_action_type("GET", 500) == "ERROR"
-
 
 @pytest.mark.asyncio
-async def test_activity_tracking_health_endpoint_returns_success(client):
+@pytest.mark.parametrize(
+    "endpoint",
+    ["/health", "/"],
+    ids=["health", "root"],
+)
+async def test_activity_tracking_endpoint_success(client, endpoint: str):
     """[test_activity_tracking-017] リクエストが正常に処理されること。"""
     # Act
-    response = await client.get("/health")
-
-    # Assert
-    assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_activity_tracking_api_endpoint_returns_success(client):
-    """[test_activity_tracking-018] APIエンドポイントでも正常に動作すること。"""
-    # Act
-    response = await client.get("/")
+    response = await client.get(endpoint)
 
     # Assert
     assert response.status_code == 200

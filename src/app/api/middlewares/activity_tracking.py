@@ -3,6 +3,7 @@
 全APIリクエストを自動的に記録し、操作履歴として保存します。
 """
 
+import asyncio
 import json
 import re
 import time
@@ -17,6 +18,8 @@ from starlette.types import ASGIApp
 from app.core.database import get_async_session_context
 from app.core.logging import get_logger
 from app.models import ActionType, UserActivity
+from app.utils import RequestHelper
+from app.utils.sensitive_data import mask_sensitive_data
 
 logger = get_logger(__name__)
 
@@ -52,20 +55,6 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
         re.compile(r"^/assets/"),
         re.compile(r"^/_next/"),
     ]
-
-    # マスク対象の機密情報キー
-    SENSITIVE_KEYS: set[str] = {
-        "password",
-        "token",
-        "secret",
-        "api_key",
-        "apikey",
-        "credential",
-        "authorization",
-        "access_token",
-        "refresh_token",
-        "session_token",
-    }
 
     # リソース情報抽出用パターン
     RESOURCE_PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -141,14 +130,16 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
             # 処理時間計算
             duration_ms = int((time.perf_counter() - start_time) * 1000)
 
-            # 操作履歴を非同期で記録
-            await self._record_activity(
-                request=request,
-                request_body=request_body,
-                response_status=response_status,
-                error_message=error_message,
-                error_code=error_code,
-                duration_ms=duration_ms,
+            # 操作履歴をバックグラウンドタスクで記録（レスポンスをブロックしない）
+            asyncio.create_task(
+                self._record_activity(
+                    request=request,
+                    request_body=request_body,
+                    response_status=response_status,
+                    error_message=error_message,
+                    error_code=error_code,
+                    duration_ms=duration_ms,
+                )
             )
 
     def _should_skip(self, path: str) -> bool:
@@ -193,32 +184,9 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
 
             # JSONとしてパース
             body = json.loads(body_bytes)
-            return self._mask_sensitive_data(body)
+            return mask_sensitive_data(body)
         except Exception:
             return None
-
-    def _mask_sensitive_data(self, data: Any, depth: int = 0) -> Any:
-        """機密情報をマスクします。
-
-        Args:
-            data: マスク対象データ
-            depth: ネスト深度（無限ループ防止）
-
-        Returns:
-            Any: マスク済みデータ
-        """
-        if depth > 10:  # 深すぎるネストは打ち切り
-            return "***NESTED***"
-
-        if isinstance(data, dict):
-            return {
-                key: ("***MASKED***" if key.lower() in self.SENSITIVE_KEYS else self._mask_sensitive_data(value, depth + 1))
-                for key, value in data.items()
-            }
-        elif isinstance(data, list):
-            return [self._mask_sensitive_data(item, depth + 1) for item in data]
-        else:
-            return data
 
     async def _extract_error_info(
         self,
@@ -292,29 +260,6 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
 
         return mapping.get(method, ActionType.READ.value)
 
-    def _get_client_ip(self, request: Request) -> str | None:
-        """クライアントIPアドレスを取得します。
-
-        X-Forwarded-Forヘッダーを優先し、なければ直接接続元を使用。
-
-        Args:
-            request: HTTPリクエスト
-
-        Returns:
-            str | None: クライアントIPアドレス
-        """
-        # プロキシ経由の場合
-        forwarded_for = request.headers.get("x-forwarded-for")
-        if forwarded_for:
-            # 最初のIPがオリジナルクライアント
-            return forwarded_for.split(",")[0].strip()
-
-        # 直接接続の場合
-        if request.client:
-            return request.client.host
-
-        return None
-
     async def _record_activity(
         self,
         request: Request,
@@ -358,7 +303,7 @@ class ActivityTrackingMiddleware(BaseHTTPMiddleware):
                 response_status=response_status,
                 error_message=error_message,
                 error_code=error_code,
-                ip_address=self._get_client_ip(request),
+                ip_address=RequestHelper.get_client_ip(request),
                 user_agent=request.headers.get("user-agent", "")[:500],
                 duration_ms=duration_ms,
             )

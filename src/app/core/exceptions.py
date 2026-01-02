@@ -14,8 +14,10 @@
     ├── PayloadTooLargeError (413) - ペイロードサイズ超過
     ├── UnsupportedMediaTypeError (415) - 非対応ファイルタイプ
     ├── ValidationError (422) - バリデーションエラー
+    ├── RateLimitExceededError (429) - レート制限超過
     ├── DatabaseError (500) - データベース操作エラー
-    └── ExternalServiceError (502) - 外部サービスエラー
+    ├── ExternalServiceError (502) - 外部サービスエラー
+    └── ServiceUnavailableError (503) - サービス一時停止
 
 使用方法:
     >>> from app.core.exceptions import NotFoundError
@@ -410,3 +412,85 @@ class ExternalServiceError(AppException):
 
     def __init__(self, message: str = "External service error", details: dict[str, Any] | None = None):
         super().__init__(message, status_code=502, details=details)
+
+
+class RateLimitExceededError(AppException):
+    """レート制限を超過した場合に発生する例外（HTTPステータス: 429）。
+
+    この例外は、APIリクエストのレート制限を超過した場合に発生させます。
+    クライアントは指定された時間後にリトライすることが推奨されます。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Rate limit exceeded"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: retry_after（秒）、limit、period、current_countを含める
+
+    Example:
+        >>> # レート制限超過
+        >>> raise RateLimitExceededError(
+        ...     "Rate limit exceeded",
+        ...     details={
+        ...         "limit": 100,
+        ...         "period": 60,
+        ...         "current_count": 105,
+        ...         "retry_after": 45,
+        ...     }
+        ... )
+
+    Note:
+        - クライアントに429レスポンスが返されます
+        - Retry-Afterヘッダーも設定することを推奨
+        - detailsにリトライまでの時間を含めてください
+    """
+
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(message, status_code=429, details=details)
+
+
+class ServiceUnavailableError(AppException):
+    """サービスが一時的に利用不可の場合に発生する例外（HTTPステータス: 503）。
+
+    この例外は、メンテナンス中、過負荷、または一時的なサービス停止時に発生させます。
+    クライアントは指定された時間後にリトライすることが推奨されます。
+
+    Args:
+        message (str): エラーメッセージ（デフォルト: "Service temporarily unavailable"）
+        details (dict[str, Any] | None): 追加の詳細情報
+            推奨: retry_after（秒）、reason（maintenance, overload等）を含める
+
+    Example:
+        >>> # メンテナンス中
+        >>> raise ServiceUnavailableError(
+        ...     "システムはメンテナンス中です",
+        ...     details={
+        ...         "reason": "scheduled_maintenance",
+        ...         "retry_after": 3600,
+        ...         "estimated_recovery": "2024-01-01T15:00:00Z",
+        ...     }
+        ... )
+        >>>
+        >>> # 過負荷
+        >>> raise ServiceUnavailableError(
+        ...     "サーバーが過負荷状態です",
+        ...     details={
+        ...         "reason": "overload",
+        ...         "retry_after": 60,
+        ...     }
+        ... )
+
+    Note:
+        - クライアントに503レスポンスが返されます
+        - Retry-Afterヘッダーも設定することを推奨
+        - 一時的なエラーであり、リトライで解決する可能性があります
+    """
+
+    def __init__(
+        self,
+        message: str = "Service temporarily unavailable",
+        details: dict[str, Any] | None = None,
+    ):
+        super().__init__(message, status_code=503, details=details)

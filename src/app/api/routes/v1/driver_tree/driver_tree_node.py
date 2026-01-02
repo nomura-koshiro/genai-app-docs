@@ -20,7 +20,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import StreamingResponse
 
 from app.api.core import DriverTreeNodeServiceDep, ProjectMemberDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.driver_tree import (
     DriverTreeCreateNodeRequest,

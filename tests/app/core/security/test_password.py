@@ -1,5 +1,7 @@
 """パスワードハッシュ化と検証のテスト。"""
 
+import pytest
+
 from app.core.security.password import (
     hash_password,
     validate_password_strength,
@@ -10,11 +12,17 @@ from app.core.security.password import (
 class TestPasswordHashing:
     """パスワードハッシュ化のテストクラス。"""
 
-    def test_hash_password_success(self):
-        """[test_password-001] パスワードのハッシュ化が成功すること。"""
-        # Arrange
-        password = "SecurePass123!"
-
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "SecurePass123!",
+            "パスワード123!Abc",
+            "A" * 100,  # 72バイトを超える長いパスワード
+        ],
+        ids=["normal", "multibyte", "long_password"],
+    )
+    def test_hash_password_success(self, password: str):
+        """[test_password-001] 各種パスワードのハッシュ化が成功すること。"""
         # Act
         hashed = hash_password(password)
 
@@ -35,38 +43,21 @@ class TestPasswordHashing:
         # Assert
         assert hash1 != hash2  # saltが異なるため
 
-    def test_hash_password_with_multibyte_characters(self):
-        """[test_password-003] マルチバイト文字（日本語）を含むパスワードのハッシュ化。"""
-        # Arrange
-        password = "パスワード123!Abc"
-
-        # Act
-        hashed = hash_password(password)
-
-        # Assert
-        assert hashed is not None
-        assert hashed.startswith("$2b$")
-
-    def test_hash_password_long_password(self):
-        """[test_password-004] 72バイトを超える長いパスワードのハッシュ化。"""
-        # Arrange
-        password = "A" * 100  # 100文字の長いパスワード
-
-        # Act
-        hashed = hash_password(password)
-
-        # Assert
-        assert hashed is not None
-        assert hashed.startswith("$2b$")
-
 
 class TestPasswordVerification:
     """パスワード検証のテストクラス。"""
 
-    def test_verify_password_success(self):
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "SecurePass123!",
+            "パスワード123!Abc",
+        ],
+        ids=["normal", "multibyte"],
+    )
+    def test_verify_password_success(self, password: str):
         """[test_password-005] 正しいパスワードの検証が成功すること。"""
         # Arrange
-        password = "SecurePass123!"
         hashed = hash_password(password)
 
         # Act
@@ -75,11 +66,17 @@ class TestPasswordVerification:
         # Assert
         assert result is True
 
-    def test_verify_password_failure(self):
+    @pytest.mark.parametrize(
+        "correct_password,wrong_password",
+        [
+            ("SecurePass123!", "WrongPassword456!"),
+            ("SecurePass123!", "securepass123!"),  # 大文字小文字違い
+        ],
+        ids=["different_password", "case_sensitive"],
+    )
+    def test_verify_password_failure(self, correct_password: str, wrong_password: str):
         """[test_password-006] 誤ったパスワードの検証が失敗すること。"""
         # Arrange
-        correct_password = "SecurePass123!"
-        wrong_password = "WrongPassword456!"
         hashed = hash_password(correct_password)
 
         # Act
@@ -88,39 +85,21 @@ class TestPasswordVerification:
         # Assert
         assert result is False
 
-    def test_verify_password_case_sensitive(self):
-        """[test_password-007] パスワード検証が大文字小文字を区別すること。"""
-        # Arrange
-        password = "SecurePass123!"
-        hashed = hash_password(password)
-
-        # Act
-        result = verify_password("securepass123!", hashed)
-
-        # Assert
-        assert result is False
-
-    def test_verify_password_with_multibyte(self):
-        """[test_password-008] マルチバイト文字を含むパスワードの検証。"""
-        # Arrange
-        password = "パスワード123!Abc"
-        hashed = hash_password(password)
-
-        # Act
-        result = verify_password(password, hashed)
-
-        # Assert
-        assert result is True
-
 
 class TestPasswordStrengthValidation:
     """パスワード強度検証のテストクラス。"""
 
-    def test_validate_strong_password(self):
+    @pytest.mark.parametrize(
+        "password",
+        [
+            "SecurePass123!",
+            "SecurePass123",  # 特殊文字なし（推奨だが必須ではない）
+            "Password1",  # 最低要件
+        ],
+        ids=["strong", "no_special_char", "minimum_requirements"],
+    )
+    def test_validate_strong_password(self, password: str):
         """[test_password-009] 強いパスワードの検証が成功すること。"""
-        # Arrange
-        password = "SecurePass123!"
-
         # Act
         is_valid, error = validate_password_strength(password)
 
@@ -128,74 +107,21 @@ class TestPasswordStrengthValidation:
         assert is_valid is True
         assert error == ""
 
-    def test_validate_password_too_short(self):
-        """[test_password-010] 8文字未満のパスワードが拒否されること。"""
-        # Arrange
-        password = "Pass1!"
-
+    @pytest.mark.parametrize(
+        "password,expected_error",
+        [
+            ("Pass1!", "8文字以上"),  # 短すぎる
+            ("password123!", "大文字"),  # 大文字なし
+            ("PASSWORD123!", "小文字"),  # 小文字なし
+            ("SecurePass!", "数字"),  # 数字なし
+        ],
+        ids=["too_short", "no_uppercase", "no_lowercase", "no_digit"],
+    )
+    def test_validate_weak_password(self, password: str, expected_error: str):
+        """[test_password-010] 弱いパスワードが拒否されること。"""
         # Act
         is_valid, error = validate_password_strength(password)
 
         # Assert
         assert is_valid is False
-        assert "8文字以上" in error
-
-    def test_validate_password_no_uppercase(self):
-        """[test_password-011] 大文字がないパスワードが拒否されること。"""
-        # Arrange
-        password = "password123!"
-
-        # Act
-        is_valid, error = validate_password_strength(password)
-
-        # Assert
-        assert is_valid is False
-        assert "大文字" in error
-
-    def test_validate_password_no_lowercase(self):
-        """[test_password-012] 小文字がないパスワードが拒否されること。"""
-        # Arrange
-        password = "PASSWORD123!"
-
-        # Act
-        is_valid, error = validate_password_strength(password)
-
-        # Assert
-        assert is_valid is False
-        assert "小文字" in error
-
-    def test_validate_password_no_digit(self):
-        """[test_password-013] 数字がないパスワードが拒否されること。"""
-        # Arrange
-        password = "SecurePass!"
-
-        # Act
-        is_valid, error = validate_password_strength(password)
-
-        # Assert
-        assert is_valid is False
-        assert "数字" in error
-
-    def test_validate_password_no_special_char(self):
-        """[test_password-014] 特殊文字がなくても検証が成功すること（推奨だが必須ではない）。"""
-        # Arrange
-        password = "SecurePass123"
-
-        # Act
-        is_valid, error = validate_password_strength(password)
-
-        # Assert
-        assert is_valid is True  # 特殊文字は推奨だが必須ではない
-        assert error == ""
-
-    def test_validate_password_minimum_requirements(self):
-        """[test_password-015] 最低要件を満たすパスワードの検証。"""
-        # Arrange
-        password = "Password1"  # 8文字、大文字、小文字、数字
-
-        # Act
-        is_valid, error = validate_password_strength(password)
-
-        # Assert
-        assert is_valid is True
-        assert error == ""
+        assert expected_error in error

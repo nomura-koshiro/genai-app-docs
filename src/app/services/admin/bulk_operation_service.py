@@ -13,7 +13,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance, transactional
+from app.core.decorators import measure_performance, transactional
 from app.core.logging import get_logger
 from app.models import Project, UserAccount
 from app.models.audit.user_activity import UserActivity
@@ -126,6 +126,14 @@ class BulkOperationService:
             rows = list(reader)
             ctx.target_count = len(rows)
 
+            # 事前に全メールアドレスを抽出してバッチで重複チェック（N+1防止）
+            all_emails = [row.get("email", "").strip() for row in rows if row.get("email", "").strip()]
+            existing_emails: set[str] = set()
+            if all_emails:
+                existing_query = select(UserAccount.email).where(UserAccount.email.in_(all_emails))
+                existing_result = await self.db.execute(existing_query)
+                existing_emails = set(existing_result.scalars().all())
+
             for row_num, row in enumerate(rows, start=2):  # ヘッダーを考慮して2から開始
                 try:
                     # バリデーション
@@ -137,9 +145,8 @@ class BulkOperationService:
                     if not display_name:
                         raise ValueError("表示名は必須です")
 
-                    # 重複チェック
-                    existing = await self.db.execute(select(UserAccount).where(UserAccount.email == email))
-                    if existing.scalar_one_or_none():
+                    # 重複チェック（メモリ上で確認）
+                    if email in existing_emails:
                         raise ValueError(f"メールアドレス '{email}' は既に登録されています")
 
                     # ユーザー作成

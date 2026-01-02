@@ -15,7 +15,7 @@ import uuid
 from fastapi import APIRouter, Path, status
 
 from app.api.core import AnalysisTemplateServiceDep, CurrentUserAccountDep, ProjectMemberDep
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.analysis import (
     AnalysisIssueCatalogListResponse,

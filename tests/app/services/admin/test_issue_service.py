@@ -135,18 +135,33 @@ async def test_get_issue_success(db_session: AsyncSession, test_validation):
     assert result.validation_id == test_validation.id
 
 
+@pytest.mark.parametrize(
+    "operation,error_msg",
+    [
+        ("get", "課題マスタが見つかりません"),
+        ("update", "課題マスタが見つかりません"),
+        ("delete", "課題マスタが見つかりません"),
+    ],
+    ids=["get_not_found", "update_not_found", "delete_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_issue_not_found(db_session: AsyncSession):
-    """[test_issue_service-005] 存在しない課題取得時のNotFoundError。"""
+async def test_issue_not_found_errors(db_session: AsyncSession, operation: str, error_msg: str):
+    """[test_issue_service-005-010-012] 課題操作でのNotFoundError。"""
     # Arrange
     service = AdminIssueService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert
     with pytest.raises(NotFoundError) as exc_info:
-        await service.get_issue(non_existent_id)
+        if operation == "get":
+            await service.get_issue(non_existent_id)
+        elif operation == "update":
+            issue_update = AnalysisIssueUpdate(name="更新")
+            await service.update_issue(non_existent_id, issue_update)
+        elif operation == "delete":
+            await service.delete_issue(non_existent_id)
 
-    assert "課題マスタが見つかりません" in str(exc_info.value)
+    assert error_msg in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -259,21 +274,6 @@ async def test_update_issue_partial(db_session: AsyncSession, test_validation):
 
 
 @pytest.mark.asyncio
-async def test_update_issue_not_found(db_session: AsyncSession):
-    """[test_issue_service-010] 存在しない課題更新時のNotFoundError。"""
-    # Arrange
-    service = AdminIssueService(db_session)
-    non_existent_id = uuid.uuid4()
-    issue_update = AnalysisIssueUpdate(name="更新")
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.update_issue(non_existent_id, issue_update)
-
-    assert "課題マスタが見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_delete_issue_success(db_session: AsyncSession, test_validation):
     """[test_issue_service-011] 課題削除の成功ケース。"""
     # Arrange
@@ -295,20 +295,6 @@ async def test_delete_issue_success(db_session: AsyncSession, test_validation):
     # Assert - 削除後に取得するとNotFoundError
     with pytest.raises(NotFoundError):
         await service.get_issue(issue_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_issue_not_found(db_session: AsyncSession):
-    """[test_issue_service-012] 存在しない課題削除時のNotFoundError。"""
-    # Arrange
-    service = AdminIssueService(db_session)
-    non_existent_id = uuid.uuid4()
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.delete_issue(non_existent_id)
-
-    assert "課題マスタが見つかりません" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

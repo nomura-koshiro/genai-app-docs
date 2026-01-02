@@ -147,18 +147,33 @@ async def test_get_formula_success(db_session: AsyncSession, test_issue):
     assert result.issue_id == test_issue.id
 
 
+@pytest.mark.parametrize(
+    "operation,error_msg",
+    [
+        ("get", "ダミー数式マスタが見つかりません"),
+        ("update", "ダミー数式マスタが見つかりません"),
+        ("delete", "ダミー数式マスタが見つかりません"),
+    ],
+    ids=["get_not_found", "update_not_found", "delete_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_formula_not_found(db_session: AsyncSession):
-    """[test_dummy_formula_service-005] 存在しないダミー数式取得時のNotFoundError。"""
+async def test_formula_not_found_errors(db_session: AsyncSession, operation: str, error_msg: str):
+    """[test_dummy_formula_service-005-009-011] ダミー数式操作でのNotFoundError。"""
     # Arrange
     service = AdminDummyFormulaService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert
     with pytest.raises(NotFoundError) as exc_info:
-        await service.get_formula(non_existent_id)
+        if operation == "get":
+            await service.get_formula(non_existent_id)
+        elif operation == "update":
+            formula_update = AnalysisDummyFormulaUpdate(name="更新")
+            await service.update_formula(non_existent_id, formula_update)
+        elif operation == "delete":
+            await service.delete_formula(non_existent_id)
 
-    assert "ダミー数式マスタが見つかりません" in str(exc_info.value)
+    assert error_msg in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -245,21 +260,6 @@ async def test_update_formula_partial(db_session: AsyncSession, test_issue):
 
 
 @pytest.mark.asyncio
-async def test_update_formula_not_found(db_session: AsyncSession):
-    """[test_dummy_formula_service-009] 存在しないダミー数式更新時のNotFoundError。"""
-    # Arrange
-    service = AdminDummyFormulaService(db_session)
-    non_existent_id = uuid.uuid4()
-    formula_update = AnalysisDummyFormulaUpdate(name="更新")
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.update_formula(non_existent_id, formula_update)
-
-    assert "ダミー数式マスタが見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_delete_formula_success(db_session: AsyncSession, test_issue):
     """[test_dummy_formula_service-010] ダミー数式削除の成功ケース。"""
     # Arrange
@@ -282,17 +282,3 @@ async def test_delete_formula_success(db_session: AsyncSession, test_issue):
     # Assert - 削除後に取得するとNotFoundError
     with pytest.raises(NotFoundError):
         await service.get_formula(formula_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_formula_not_found(db_session: AsyncSession):
-    """[test_dummy_formula_service-011] 存在しないダミー数式削除時のNotFoundError。"""
-    # Arrange
-    service = AdminDummyFormulaService(db_session)
-    non_existent_id = uuid.uuid4()
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.delete_formula(non_existent_id)
-
-    assert "ダミー数式マスタが見つかりません" in str(exc_info.value)

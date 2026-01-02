@@ -15,7 +15,6 @@ Happy Pathとビジネスルールエラーのみをテストします。
     - PATCH /api/v1/project/{project_id}/analysis/session/{session_id}/file/{file_id} - ファイル設定更新
 """
 
-import uuid
 
 import pytest
 from httpx import AsyncClient
@@ -337,8 +336,36 @@ async def test_upload_session_file_no_valid_sheets(client: AsyncClient, override
 
 
 @pytest.mark.asyncio
-async def test_update_file_config_success(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-012] ファイル設定更新の成功ケース。
+@pytest.mark.parametrize(
+    "request_body,expected_status,check_fields",
+    [
+        (
+            {"sheet_name": "Sheet1", "axis_config": {"axis1": "年度"}},
+            200,
+            {"sheetName": "Sheet1", "axisConfig": {"axis1": "年度"}},
+        ),
+        (
+            {"sheet_name": "NonExistentSheet", "axis_config": {"axis1": "年度"}},
+            422,
+            {"available_sheets": True},
+        ),
+        (
+            {"sheet_name": "Sheet1", "axis_config": {"axis1": "存在しない軸"}},
+            422,
+            {"invalid_axis": True, "available_axis": True},
+        ),
+    ],
+    ids=["success", "invalid_sheet_name", "invalid_axis_config"],
+)
+async def test_update_file_config(
+    client: AsyncClient,
+    override_auth,
+    test_data_seeder,
+    request_body,
+    expected_status,
+    check_fields,
+):
+    """[test_analysis_sessions-012-014] ファイル設定更新のテストケース。
 
     モックExcelファイルには "Sheet1", "Sheet2" が存在し、
     軸として "年度", "部門" が利用可能。
@@ -354,12 +381,6 @@ async def test_update_file_config_success(client: AsyncClient, override_auth, te
     await test_data_seeder.db.commit()
     override_auth(owner)
 
-    # モックExcelに存在するシート名と軸名を使用
-    request_body = {
-        "sheet_name": "Sheet1",
-        "axis_config": {"axis1": "年度"},
-    }
-
     # Act
     response = await client.patch(
         f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
@@ -367,81 +388,13 @@ async def test_update_file_config_success(client: AsyncClient, override_auth, te
     )
 
     # Assert
-    assert response.status_code == 200
+    assert response.status_code == expected_status
     result = response.json()
-    assert result["sheetName"] == "Sheet1"
-    assert result["axisConfig"] == {"axis1": "年度"}
-
-
-@pytest.mark.asyncio
-async def test_update_file_config_invalid_sheet_name(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-013] 存在しないシート名でファイル設定更新を試みるとエラー。
-
-    モックExcelファイルには "Sheet1", "Sheet2" が存在するため、
-    "NonExistentSheet" を指定するとValidationError(422)になる。
-    """
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    session = data["session"]
-
-    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
-    analysis_file = await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
-    await test_data_seeder.db.commit()
-    override_auth(owner)
-
-    request_body = {
-        "sheet_name": "NonExistentSheet",  # 存在しないシート名
-        "axis_config": {"axis1": "年度"},
-    }
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
-        json=request_body,
-    )
-
-    # Assert
-    assert response.status_code == 422
-    result = response.json()
-    assert "available_sheets" in result
-
-
-@pytest.mark.asyncio
-async def test_update_file_config_invalid_axis_config(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-014] 存在しない軸名でファイル設定更新を試みるとエラー。
-
-    モックExcelファイルには "年度", "部門" の軸のみ存在するため、
-    存在しない軸を指定するとValidationError(422)になる。
-    """
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    session = data["session"]
-
-    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
-    analysis_file = await test_data_seeder.create_analysis_file(session=session, project_file=project_file)
-    await test_data_seeder.db.commit()
-    override_auth(owner)
-
-    request_body = {
-        "sheet_name": "Sheet1",  # 存在するシート名
-        "axis_config": {"axis1": "存在しない軸"},  # 存在しない軸名
-    }
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/analysis/session/{session.id}/file/{analysis_file.id}",
-        json=request_body,
-    )
-
-    # Assert
-    assert response.status_code == 422
-    result = response.json()
-    assert "invalid_axis" in result
-    assert "available_axis" in result
+    for field, value in check_fields.items():
+        if value is True:
+            assert field in result
+        else:
+            assert result[field] == value
 
 
 # ================================================================================
@@ -638,19 +591,46 @@ async def test_execute_chat_success(client: AsyncClient, override_auth, test_dat
 
 
 @pytest.mark.asyncio
-async def test_execute_chat_input_file_not_selected(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-019] 入力ファイル未選択でのチャット実行で404。"""
+@pytest.mark.parametrize(
+    "setup_input_file,message,expected_status",
+    [
+        (False, "売上データを分析してください", 404),
+        (True, "", [400, 422]),
+    ],
+    ids=["input_file_not_selected", "empty_message"],
+)
+async def test_execute_chat_error_cases(
+    client: AsyncClient,
+    override_auth,
+    test_data_seeder,
+    setup_input_file,
+    message,
+    expected_status,
+):
+    """[test_analysis_sessions-019-020] チャット実行のエラーケース。"""
     # Arrange
     data = await test_data_seeder.seed_analysis_session_dataset()
     project = data["project"]
     owner = data["owner"]
     session = data["session"]
-    # 入力ファイルを設定しない（input_file_id = None）
-    session.input_file_id = None
+
+    if setup_input_file:
+        # 入力ファイルを設定
+        project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
+        analysis_file = await test_data_seeder.create_analysis_file(
+            session=session,
+            project_file=project_file,
+            data=[{"年度": "2024", "部門": "営業", "科目": "売上", "値": 100}],
+        )
+        session.input_file_id = analysis_file.id
+    else:
+        # 入力ファイルを設定しない（input_file_id = None）
+        session.input_file_id = None
+
     await test_data_seeder.db.commit()
     override_auth(owner)
 
-    request_body = {"role": "user", "message": "売上データを分析してください"}
+    request_body = {"role": "user", "message": message}
 
     # Act
     response = await client.post(
@@ -659,39 +639,10 @@ async def test_execute_chat_input_file_not_selected(client: AsyncClient, overrid
     )
 
     # Assert
-    assert response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_execute_chat_empty_message(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-020] 空メッセージでのチャット実行でエラー。"""
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    session = data["session"]
-
-    # 入力ファイルを設定
-    project_file = await test_data_seeder.create_project_file(project=project, uploader=owner)
-    analysis_file = await test_data_seeder.create_analysis_file(
-        session=session,
-        project_file=project_file,
-        data=[{"年度": "2024", "部門": "営業", "科目": "売上", "値": 100}],
-    )
-    session.input_file_id = analysis_file.id
-    await test_data_seeder.db.commit()
-    override_auth(owner)
-
-    request_body = {"role": "user", "message": ""}
-
-    # Act
-    response = await client.post(
-        f"/api/v1/project/{project.id}/analysis/session/{session.id}/chat",
-        json=request_body,
-    )
-
-    # Assert
-    assert response.status_code in [400, 422]
+    if isinstance(expected_status, list):
+        assert response.status_code in expected_status
+    else:
+        assert response.status_code == expected_status
 
 
 # ================================================================================
@@ -700,42 +651,24 @@ async def test_execute_chat_empty_message(client: AsyncClient, override_auth, te
 
 
 @pytest.mark.asyncio
-async def test_list_sessions_with_validation_info(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-021] ValidationInfo を含むセッション一覧取得。
+@pytest.mark.parametrize(
+    "endpoint_type,response_key",
+    [
+        ("list", "sessions"),
+        ("detail", None),
+    ],
+    ids=["list_sessions", "session_detail"],
+)
+async def test_session_with_validation_info(
+    client: AsyncClient,
+    override_auth,
+    test_data_seeder,
+    endpoint_type,
+    response_key,
+):
+    """[test_analysis_sessions-021-022] ValidationInfo を含むセッションレスポンス。
 
     07-api-extensions.md の実装により、セッションレスポンスに validation フィールドが追加されたことを確認。
-    """
-    # Arrange
-    data = await test_data_seeder.seed_analysis_session_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    validation = data.get("validation")
-    override_auth(owner)
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
-
-    # Assert
-    assert response.status_code == 200
-    result = response.json()
-    assert "sessions" in result
-    assert len(result["sessions"]) > 0
-
-    # ValidationInfoフィールドの存在を確認
-    session_data = result["sessions"][0]
-    if validation:
-        assert "validation" in session_data
-        assert session_data["validation"] is not None
-        assert "id" in session_data["validation"]
-        assert "name" in session_data["validation"]
-        assert session_data["validation"]["id"] == str(validation.id)
-
-
-@pytest.mark.asyncio
-async def test_get_session_detail_with_validation_info(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_analysis_sessions-022] ValidationInfo を含むセッション詳細取得。
-
-    セッション詳細レスポンスに validation フィールドが含まれることを確認。
     """
     # Arrange
     data = await test_data_seeder.seed_analysis_session_dataset()
@@ -746,16 +679,30 @@ async def test_get_session_detail_with_validation_info(client: AsyncClient, over
     override_auth(owner)
 
     # Act
-    response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}")
+    if endpoint_type == "list":
+        response = await client.get(f"/api/v1/project/{project.id}/analysis/session")
+    else:  # detail
+        response = await client.get(f"/api/v1/project/{project.id}/analysis/session/{session.id}")
 
     # Assert
     assert response.status_code == 200
     result = response.json()
-    assert result["id"] == str(session.id)
+
+    # データ取得
+    if endpoint_type == "list":
+        assert response_key in result
+        assert len(result[response_key]) > 0
+        session_data = result[response_key][0]
+    else:
+        assert result["id"] == str(session.id)
+        session_data = result
 
     # ValidationInfoフィールドの存在を確認
     if validation:
-        assert "validation" in result
-        assert result["validation"] is not None
-        assert result["validation"]["id"] == str(validation.id)
-        assert result["validation"]["name"] == validation.name
+        assert "validation" in session_data
+        assert session_data["validation"] is not None
+        assert "id" in session_data["validation"]
+        assert "name" in session_data["validation"]
+        assert session_data["validation"]["id"] == str(validation.id)
+        if endpoint_type == "detail":
+            assert session_data["validation"]["name"] == validation.name

@@ -143,232 +143,179 @@ async def test_update_column_config_multiple_columns(db_session: AsyncSession, t
     assert len(result["columns"]) == 2
 
 
+@pytest.mark.parametrize(
+    "error_type",
+    ["file_not_found", "sheet_not_found", "wrong_project"],
+    ids=["file_not_found", "sheet_not_found", "wrong_project"],
+)
 @pytest.mark.asyncio
-async def test_update_column_config_file_not_found(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_column_config-003] 存在しないファイルでNotFoundError。"""
+async def test_update_column_config_not_found_errors(
+    db_session: AsyncSession, test_data_seeder, mock_storage_service, error_type: str
+):
+    """[test_column_config-003] update_column_configのNotFoundErrorケース。"""
     # Arrange
     project, owner = await test_data_seeder.create_project_with_owner()
-    await test_data_seeder.db.commit()
+    columns = [
+        DriverTreeColumnSetupItem(
+            column_id=uuid.uuid4(),
+            role=DriverTreeColumnRoleEnum.TRANSITION,
+        )
+    ]
 
-    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-        service = DriverTreeFileService(db_session)
-
-        columns = [
-            DriverTreeColumnSetupItem(
-                column_id=uuid.uuid4(),
-                role=DriverTreeColumnRoleEnum.TRANSITION,
-            )
-        ]
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.update_column_config(
-                project_id=project.id,
-                file_id=uuid.uuid4(),  # 存在しないファイルID
-                sheet_id=uuid.uuid4(),
-                columns=columns,
-                user_id=owner.id,
-            )
-
-        assert "ファイル" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_sheet_not_found(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_column_config-004] 存在しないシートでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    project_file = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test.xlsx",
-        uploaded_by=owner.id,
-    )
-
-    await test_data_seeder.db.commit()
-
-    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-        service = DriverTreeFileService(db_session)
-
-        columns = [
-            DriverTreeColumnSetupItem(
-                column_id=uuid.uuid4(),
-                role=DriverTreeColumnRoleEnum.TRANSITION,
-            )
-        ]
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.update_column_config(
-                project_id=project.id,
-                file_id=project_file.id,
-                sheet_id=uuid.uuid4(),  # 存在しないシートID
-                columns=columns,
-                user_id=owner.id,
-            )
-
-        assert "シート" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_wrong_project(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_column_config-005] 異なるプロジェクトのファイルでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-    other_project, _ = await test_data_seeder.create_project_with_owner()
-
-    project_file = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test.xlsx",
-        uploaded_by=owner.id,
-    )
-
-    column_id = str(uuid.uuid4())
-    axis_config = {
-        column_id: {
-            "column_name": "年度",
-            "role": "利用しない",
-            "items": ["2023"],
+    if error_type == "file_not_found":
+        await test_data_seeder.db.commit()
+        file_id = uuid.uuid4()  # 存在しないファイル
+        sheet_id = uuid.uuid4()
+        expected_message = "ファイル"
+    elif error_type == "sheet_not_found":
+        project_file = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test.xlsx",
+            uploaded_by=owner.id,
+        )
+        await test_data_seeder.db.commit()
+        file_id = project_file.id
+        sheet_id = uuid.uuid4()  # 存在しないシート
+        expected_message = "シート"
+    else:  # wrong_project
+        other_project, _ = await test_data_seeder.create_project_with_owner()
+        project_file = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test.xlsx",
+            uploaded_by=owner.id,
+        )
+        column_id = str(uuid.uuid4())
+        axis_config = {
+            column_id: {
+                "column_name": "年度",
+                "role": "利用しない",
+                "items": ["2023"],
+            }
         }
-    }
-
-    driver_tree_file = await test_data_seeder.create_driver_tree_file(
-        project_file=project_file,
-        sheet_name="Sheet1",
-        axis_config=axis_config,
-    )
-
-    await test_data_seeder.db.commit()
-
-    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-        service = DriverTreeFileService(db_session)
-
+        driver_tree_file = await test_data_seeder.create_driver_tree_file(
+            project_file=project_file,
+            sheet_name="Sheet1",
+            axis_config=axis_config,
+        )
+        await test_data_seeder.db.commit()
+        project = other_project  # 異なるプロジェクト
+        file_id = project_file.id
+        sheet_id = driver_tree_file.id
         columns = [
             DriverTreeColumnSetupItem(
                 column_id=uuid.UUID(column_id),
                 role=DriverTreeColumnRoleEnum.TRANSITION,
             )
         ]
-
-        # Act & Assert
-        with pytest.raises(NotFoundError):
-            await service.update_column_config(
-                project_id=other_project.id,  # 異なるプロジェクト
-                file_id=project_file.id,
-                sheet_id=driver_tree_file.id,
-                columns=columns,
-                user_id=owner.id,
-            )
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_column_not_found(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_column_config-006] 存在しないカラムIDでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    project_file = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test.xlsx",
-        uploaded_by=owner.id,
-    )
-
-    existing_column_id = str(uuid.uuid4())
-    axis_config = {
-        existing_column_id: {
-            "column_name": "年度",
-            "role": "利用しない",
-            "items": ["2023"],
-        }
-    }
-
-    driver_tree_file = await test_data_seeder.create_driver_tree_file(
-        project_file=project_file,
-        sheet_name="Sheet1",
-        axis_config=axis_config,
-    )
-
-    await test_data_seeder.db.commit()
+        expected_message = None
 
     with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
         service = DriverTreeFileService(db_session)
 
-        # 存在しないカラムIDを指定
+        # Act & Assert
+        with pytest.raises(NotFoundError) as exc_info:
+            await service.update_column_config(
+                project_id=project.id,
+                file_id=file_id,
+                sheet_id=sheet_id,
+                columns=columns,
+                user_id=owner.id,
+            )
+
+        if expected_message:
+            assert expected_message in str(exc_info.value)
+
+
+@pytest.mark.parametrize(
+    "error_type",
+    ["column_not_found", "sheet_wrong_file"],
+    ids=["column_not_found", "sheet_wrong_file"],
+)
+@pytest.mark.asyncio
+async def test_update_column_config_column_sheet_errors(
+    db_session: AsyncSession, test_data_seeder, mock_storage_service, error_type: str
+):
+    """[test_column_config-004] カラム/シートのNotFoundErrorケース。"""
+    # Arrange
+    project, owner = await test_data_seeder.create_project_with_owner()
+
+    if error_type == "column_not_found":
+        project_file = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test.xlsx",
+            uploaded_by=owner.id,
+        )
+        existing_column_id = str(uuid.uuid4())
+        axis_config = {
+            existing_column_id: {
+                "column_name": "年度",
+                "role": "利用しない",
+                "items": ["2023"],
+            }
+        }
+        driver_tree_file = await test_data_seeder.create_driver_tree_file(
+            project_file=project_file,
+            sheet_name="Sheet1",
+            axis_config=axis_config,
+        )
+        await test_data_seeder.db.commit()
+
+        file_id = project_file.id
+        sheet_id = driver_tree_file.id
         columns = [
             DriverTreeColumnSetupItem(
                 column_id=uuid.uuid4(),  # 存在しないカラムID
                 role=DriverTreeColumnRoleEnum.TRANSITION,
             )
         ]
-
-        # Act & Assert
-        with pytest.raises(NotFoundError) as exc_info:
-            await service.update_column_config(
-                project_id=project.id,
-                file_id=project_file.id,
-                sheet_id=driver_tree_file.id,
-                columns=columns,
-                user_id=owner.id,
-            )
-
-        assert "カラム" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
-async def test_update_column_config_sheet_wrong_file(db_session: AsyncSession, test_data_seeder, mock_storage_service):
-    """[test_column_config-007] 異なるファイルのシートでNotFoundError。"""
-    # Arrange
-    project, owner = await test_data_seeder.create_project_with_owner()
-
-    # 2つのファイルを作成
-    project_file1 = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test1.xlsx",
-        uploaded_by=owner.id,
-    )
-
-    project_file2 = await test_data_seeder.create_project_file(
-        project=project,
-        filename="test2.xlsx",
-        uploaded_by=owner.id,
-    )
-
-    column_id = str(uuid.uuid4())
-    axis_config = {
-        column_id: {
-            "column_name": "年度",
-            "role": "利用しない",
-            "items": ["2023"],
+        expected_message = "カラム"
+    else:  # sheet_wrong_file
+        project_file1 = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test1.xlsx",
+            uploaded_by=owner.id,
+        )
+        project_file2 = await test_data_seeder.create_project_file(
+            project=project,
+            filename="test2.xlsx",
+            uploaded_by=owner.id,
+        )
+        column_id = str(uuid.uuid4())
+        axis_config = {
+            column_id: {
+                "column_name": "年度",
+                "role": "利用しない",
+                "items": ["2023"],
+            }
         }
-    }
+        driver_tree_file = await test_data_seeder.create_driver_tree_file(
+            project_file=project_file1,
+            sheet_name="Sheet1",
+            axis_config=axis_config,
+        )
+        await test_data_seeder.db.commit()
 
-    # シートはfile1に紐づけ
-    driver_tree_file = await test_data_seeder.create_driver_tree_file(
-        project_file=project_file1,
-        sheet_name="Sheet1",
-        axis_config=axis_config,
-    )
-
-    await test_data_seeder.db.commit()
-
-    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-        service = DriverTreeFileService(db_session)
-
+        file_id = project_file2.id  # 異なるファイル
+        sheet_id = driver_tree_file.id
         columns = [
             DriverTreeColumnSetupItem(
                 column_id=uuid.UUID(column_id),
                 role=DriverTreeColumnRoleEnum.TRANSITION,
             )
         ]
+        expected_message = "シート"
 
-        # Act & Assert: file2を指定してエラー
+    with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
+        service = DriverTreeFileService(db_session)
+
+        # Act & Assert
         with pytest.raises(NotFoundError) as exc_info:
             await service.update_column_config(
                 project_id=project.id,
-                file_id=project_file2.id,  # 異なるファイル
-                sheet_id=driver_tree_file.id,
+                file_id=file_id,
+                sheet_id=sheet_id,
                 columns=columns,
                 user_id=owner.id,
             )
 
-        assert "シート" in str(exc_info.value)
+        assert expected_message in str(exc_info.value)

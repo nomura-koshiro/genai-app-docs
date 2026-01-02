@@ -14,8 +14,57 @@ from app.services.admin.audit_log_service import AuditLogService
 
 
 @pytest.mark.asyncio
-async def test_record_data_change_success(db_session: AsyncSession):
-    """[test_audit_log_service-001] データ変更記録の成功ケース。"""
+@pytest.mark.parametrize(
+    "service_method,event_type,action,extra_kwargs,assertions",
+    [
+        (
+            "record_data_change",
+            AuditEventType.DATA_CHANGE,
+            "UPDATE",
+            {
+                "resource_type": "Project",
+                "old_value": {"name": "Old Name"},
+                "new_value": {"name": "New Name"},
+                "changed_fields": ["name"],
+                "ip_address": "127.0.0.1",
+                "severity": AuditSeverity.INFO.value,
+            },
+            {"changed_fields": ["name"]},
+        ),
+        (
+            "record_access",
+            AuditEventType.ACCESS,
+            "LOGIN_SUCCESS",
+            {
+                "resource_type": "Auth",
+                "ip_address": "127.0.0.1",
+                "metadata": {"method": "password"},
+            },
+            {},
+        ),
+        (
+            "record_security_event",
+            AuditEventType.SECURITY,
+            "SUSPICIOUS_ACTIVITY",
+            {
+                "resource_type": "Auth",
+                "severity": AuditSeverity.WARNING.value,
+                "metadata": {"reason": "Multiple failed login attempts"},
+            },
+            {"severity": AuditSeverity.WARNING.value},
+        ),
+    ],
+    ids=["data_change", "access", "security"],
+)
+async def test_record_event_success(
+    db_session: AsyncSession,
+    service_method: str,
+    event_type: AuditEventType,
+    action: str,
+    extra_kwargs: dict,
+    assertions: dict,
+):
+    """[test_audit_log_service-001~003] 監査イベント記録の成功ケース (parametrized)。"""
     # Arrange
     service = AuditLogService(db_session)
     user_id = uuid.uuid4()
@@ -30,102 +79,30 @@ async def test_record_data_change_success(db_session: AsyncSession):
     db_session.add(user)
     await db_session.commit()
 
-    # Act
-    await service.record_data_change(
-        user_id=user_id,
-        action="UPDATE",
-        resource_type="Project",
-        resource_id=uuid.uuid4(),
-        old_value={"name": "Old Name"},
-        new_value={"name": "New Name"},
-        changed_fields=["name"],
-        ip_address="127.0.0.1",
-        severity=AuditSeverity.INFO.value,
-    )
-
-    # Assert
-    result = await db_session.execute(select(AuditLog).where(AuditLog.user_id == user_id))
-    log = result.scalar_one_or_none()
-    assert log is not None
-    assert log.event_type == AuditEventType.DATA_CHANGE.value
-    assert log.action == "UPDATE"
-    assert log.changed_fields == ["name"]
-
-
-@pytest.mark.asyncio
-async def test_record_access_success(db_session: AsyncSession):
-    """[test_audit_log_service-002] アクセス記録の成功ケース。"""
-    # Arrange
-    service = AuditLogService(db_session)
-    user_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=user_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"test-{uuid.uuid4()}@example.com",
-        display_name="Test User",
-    )
-    db_session.add(user)
-    await db_session.commit()
+    # resource_idが必要な場合は追加
+    kwargs = extra_kwargs.copy()
+    if service_method == "record_data_change":
+        kwargs["resource_id"] = uuid.uuid4()
 
     # Act
-    await service.record_access(
-        user_id=user_id,
-        action="LOGIN_SUCCESS",
-        resource_type="Auth",
-        ip_address="127.0.0.1",
-        metadata={"method": "password"},
-    )
-
-    # Assert
-    result = await db_session.execute(
-        select(AuditLog).where(
-            AuditLog.user_id == user_id,
-            AuditLog.event_type == AuditEventType.ACCESS.value,
-        )
-    )
-    log = result.scalar_one_or_none()
-    assert log is not None
-    assert log.action == "LOGIN_SUCCESS"
-
-
-@pytest.mark.asyncio
-async def test_record_security_event_success(db_session: AsyncSession):
-    """[test_audit_log_service-003] セキュリティイベント記録の成功ケース。"""
-    # Arrange
-    service = AuditLogService(db_session)
-    user_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=user_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"test-{uuid.uuid4()}@example.com",
-        display_name="Test User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # Act
-    await service.record_security_event(
-        user_id=user_id,
-        action="SUSPICIOUS_ACTIVITY",
-        resource_type="Auth",
-        severity=AuditSeverity.WARNING.value,
-        metadata={"reason": "Multiple failed login attempts"},
-    )
+    method = getattr(service, service_method)
+    await method(user_id=user_id, action=action, **kwargs)
 
     # Assert
     result = await db_session.execute(
         select(AuditLog).where(
             AuditLog.user_id == user_id,
-            AuditLog.event_type == AuditEventType.SECURITY.value,
+            AuditLog.event_type == event_type.value,
         )
     )
     log = result.scalar_one_or_none()
     assert log is not None
-    assert log.severity == AuditSeverity.WARNING.value
+    assert log.event_type == event_type.value
+    assert log.action == action
+
+    # 追加のアサーション
+    for key, value in assertions.items():
+        assert getattr(log, key) == value
 
 
 @pytest.mark.asyncio
@@ -211,8 +188,20 @@ async def test_list_by_event_type_success(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_export_csv_success(db_session: AsyncSession):
-    """[test_audit_log_service-006] CSV エクスポートの成功ケース。"""
+@pytest.mark.parametrize(
+    "format,expected_content",
+    [
+        ("csv", ["ID", "イベント種別"]),
+        ("json", ["["]),  # JSON配列形式
+    ],
+    ids=["csv", "json"],
+)
+async def test_export_audit_logs(
+    db_session: AsyncSession,
+    format: str,
+    expected_content: list[str],
+):
+    """[test_audit_log_service-006~007] 監査ログエクスポートの成功ケース (parametrized)。"""
     # Arrange
     service = AuditLogService(db_session)
     user_id = uuid.uuid4()
@@ -239,47 +228,10 @@ async def test_export_csv_success(db_session: AsyncSession):
     )
 
     # Act
-    filter_params = AuditLogExportFilter(format="csv")
-    csv_data = await service.export(filter_params)
+    filter_params = AuditLogExportFilter(format=format)
+    export_data = await service.export(filter_params)
 
     # Assert
-    assert csv_data is not None
-    assert "ID" in csv_data
-    assert "イベント種別" in csv_data
-
-
-@pytest.mark.asyncio
-async def test_export_json_success(db_session: AsyncSession):
-    """[test_audit_log_service-007] JSON エクスポートの成功ケース。"""
-    # Arrange
-    service = AuditLogService(db_session)
-    user_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=user_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"test-{uuid.uuid4()}@example.com",
-        display_name="Test User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # 監査ログを作成
-    await service.record_data_change(
-        user_id=user_id,
-        action="CREATE",
-        resource_type="Project",
-        resource_id=uuid.uuid4(),
-        old_value=None,
-        new_value={"name": "Test"},
-        changed_fields=["name"],
-    )
-
-    # Act
-    filter_params = AuditLogExportFilter(format="json")
-    json_data = await service.export(filter_params)
-
-    # Assert
-    assert json_data is not None
-    assert "[" in json_data  # JSON 配列形式
+    assert export_data is not None
+    for content in expected_content:
+        assert content in export_data

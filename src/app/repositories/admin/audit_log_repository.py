@@ -34,6 +34,50 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         """リポジトリを初期化します。"""
         super().__init__(AuditLog, db)
 
+    def _build_filter_conditions(
+        self,
+        *,
+        event_type: str | None = None,
+        user_id: uuid.UUID | None = None,
+        resource_type: str | None = None,
+        resource_id: uuid.UUID | None = None,
+        severity: str | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
+    ) -> list:
+        """フィルタ条件を構築します（DRY原則適用）。
+
+        Args:
+            event_type: イベント種別
+            user_id: ユーザーID
+            resource_type: リソース種別
+            resource_id: リソースID
+            severity: 重要度
+            start_date: 開始日時
+            end_date: 終了日時
+
+        Returns:
+            list: SQLAlchemy条件式のリスト
+        """
+        conditions = []
+
+        if event_type:
+            conditions.append(AuditLog.event_type == event_type)
+        if user_id:
+            conditions.append(AuditLog.user_id == user_id)
+        if resource_type:
+            conditions.append(AuditLog.resource_type == resource_type)
+        if resource_id:
+            conditions.append(AuditLog.resource_id == resource_id)
+        if severity:
+            conditions.append(AuditLog.severity == severity)
+        if start_date:
+            conditions.append(AuditLog.created_at >= start_date)
+        if end_date:
+            conditions.append(AuditLog.created_at <= end_date)
+
+        return conditions
+
     async def get_with_user(self, id: uuid.UUID) -> AuditLog | None:
         """ユーザー情報付きで監査ログを取得します。
 
@@ -78,22 +122,16 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         """
         query = select(AuditLog).options(selectinload(AuditLog.user))
 
-        conditions = []
-
-        if event_type:
-            conditions.append(AuditLog.event_type == event_type)
-        if user_id:
-            conditions.append(AuditLog.user_id == user_id)
-        if resource_type:
-            conditions.append(AuditLog.resource_type == resource_type)
-        if resource_id:
-            conditions.append(AuditLog.resource_id == resource_id)
-        if severity:
-            conditions.append(AuditLog.severity == severity)
-        if start_date:
-            conditions.append(AuditLog.created_at >= start_date)
-        if end_date:
-            conditions.append(AuditLog.created_at <= end_date)
+        # 共通メソッドでフィルタ条件を構築（DRY原則）
+        conditions = self._build_filter_conditions(
+            event_type=event_type,
+            user_id=user_id,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            severity=severity,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
         if conditions:
             query = query.where(and_(*conditions))
@@ -185,22 +223,16 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         """
         query = select(func.count()).select_from(AuditLog)
 
-        conditions = []
-
-        if event_type:
-            conditions.append(AuditLog.event_type == event_type)
-        if user_id:
-            conditions.append(AuditLog.user_id == user_id)
-        if resource_type:
-            conditions.append(AuditLog.resource_type == resource_type)
-        if resource_id:
-            conditions.append(AuditLog.resource_id == resource_id)
-        if severity:
-            conditions.append(AuditLog.severity == severity)
-        if start_date:
-            conditions.append(AuditLog.created_at >= start_date)
-        if end_date:
-            conditions.append(AuditLog.created_at <= end_date)
+        # 共通メソッドでフィルタ条件を構築（DRY原則）
+        conditions = self._build_filter_conditions(
+            event_type=event_type,
+            user_id=user_id,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            severity=severity,
+            start_date=start_date,
+            end_date=end_date,
+        )
 
         if conditions:
             query = query.where(and_(*conditions))
@@ -221,25 +253,17 @@ class AuditLogRepository(BaseRepository[AuditLog, uuid.UUID]):
         Returns:
             tuple[datetime | None, datetime | None]: (最古日時, 最新日時)
         """
-        conditions = []
+        # MIN/MAXを単一クエリで取得（パフォーマンス最適化）
+        query = select(
+            func.min(AuditLog.created_at).label("oldest"),
+            func.max(AuditLog.created_at).label("newest"),
+        )
         if end_date:
-            conditions.append(AuditLog.created_at <= end_date)
+            query = query.where(AuditLog.created_at <= end_date)
 
-        # 最古レコード
-        oldest_query = select(func.min(AuditLog.created_at))
-        if conditions:
-            oldest_query = oldest_query.where(and_(*conditions))
-        oldest_result = await self.db.execute(oldest_query)
-        oldest = oldest_result.scalar_one_or_none()
-
-        # 最新レコード
-        newest_query = select(func.max(AuditLog.created_at))
-        if conditions:
-            newest_query = newest_query.where(and_(*conditions))
-        newest_result = await self.db.execute(newest_query)
-        newest = newest_result.scalar_one_or_none()
-
-        return (oldest, newest)
+        result = await self.db.execute(query)
+        row = result.one()
+        return (row.oldest, row.newest)
 
     async def delete_old_records(self, before_date: datetime) -> int:
         """古いレコードを削除します。

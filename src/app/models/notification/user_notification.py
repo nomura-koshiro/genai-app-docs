@@ -16,7 +16,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
-from app.models.enums import NotificationTypeEnum, ReferenceTypeEnum
 
 
 class UserNotification(Base, TimestampMixin):

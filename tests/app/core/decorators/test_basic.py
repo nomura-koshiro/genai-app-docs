@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from app.api.decorators import async_timeout, log_execution, measure_performance
+from app.core.decorators import async_timeout, log_execution, measure_performance
 from app.core.exceptions import ValidationError
 
 # データベース不要のユニットテストとしてマーク

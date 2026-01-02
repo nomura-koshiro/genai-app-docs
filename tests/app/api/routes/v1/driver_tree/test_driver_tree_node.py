@@ -84,8 +84,16 @@ async def test_get_node_success(client: AsyncClient, override_auth, test_data_se
 
 
 @pytest.mark.asyncio
-async def test_update_node_success(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree_node-003] ノード更新の成功ケース。"""
+@pytest.mark.parametrize(
+    "update_data,test_id",
+    [
+        ({"label": "更新されたノード名", "position_x": 500, "position_y": 300}, "full_update"),
+        ({"label": "ラベルのみ更新"}, "partial_update"),
+    ],
+    ids=["full_update", "partial_update"],
+)
+async def test_update_node(client: AsyncClient, override_auth, test_data_seeder, update_data, test_id):
+    """[test_driver_tree_node-003,004] ノード更新の成功ケース（完全更新・部分更新）。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -93,40 +101,10 @@ async def test_update_node_success(client: AsyncClient, override_auth, test_data
     root_node = data["root_node"]
     override_auth(owner)
 
-    request_body = {
-        "label": "更新されたノード名",
-        "position_x": 500,
-        "position_y": 300,
-    }
-
     # Act
     response = await client.patch(
         f"/api/v1/project/{project.id}/driver-tree/node/{root_node.id}",
-        json=request_body,
-    )
-
-    # Assert
-    assert response.status_code == 200
-    result = response.json()
-    assert "tree" in result
-
-
-@pytest.mark.asyncio
-async def test_update_node_partial(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree_node-004] ノード部分更新の成功ケース。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    root_node = data["root_node"]
-    override_auth(owner)
-
-    request_body = {"label": "ラベルのみ更新"}
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/driver-tree/node/{root_node.id}",
-        json=request_body,
+        json=update_data,
     )
 
     # Assert
@@ -259,8 +237,16 @@ async def test_list_policies_success(client: AsyncClient, override_auth, test_da
 
 
 @pytest.mark.asyncio
-async def test_update_policy_success(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree_node-009] 施策更新の成功ケース。"""
+@pytest.mark.parametrize(
+    "update_data,test_id",
+    [
+        ({"name": "更新された施策名", "value": 30.0}, "full_update"),
+        ({"value": 50.0}, "partial_update"),
+    ],
+    ids=["full_update", "partial_update"],
+)
+async def test_update_policy(client: AsyncClient, override_auth, test_data_seeder, update_data, test_id):
+    """[test_driver_tree_node-009,010] 施策更新の成功ケース（完全更新・部分更新）。"""
     # Arrange
     data = await test_data_seeder.seed_driver_tree_dataset()
     project = data["project"]
@@ -270,42 +256,11 @@ async def test_update_policy_success(client: AsyncClient, override_auth, test_da
     override_auth(owner)
 
     node_with_policy = child_nodes[0]
-    request_body = {
-        "name": "更新された施策名",
-        "value": 30.0,
-    }
 
     # Act
     response = await client.patch(
         f"/api/v1/project/{project.id}/driver-tree/node/{node_with_policy.id}/policy/{policy.id}",
-        json=request_body,
-    )
-
-    # Assert
-    assert response.status_code == 200
-    result = response.json()
-    assert "nodeId" in result
-    assert "policies" in result
-
-
-@pytest.mark.asyncio
-async def test_update_policy_partial(client: AsyncClient, override_auth, test_data_seeder):
-    """[test_driver_tree_node-010] 施策部分更新の成功ケース。"""
-    # Arrange
-    data = await test_data_seeder.seed_driver_tree_dataset()
-    project = data["project"]
-    owner = data["owner"]
-    child_nodes = data["child_nodes"]
-    policy = data["policy"]
-    override_auth(owner)
-
-    node_with_policy = child_nodes[0]
-    request_body = {"value": 50.0}  # 値のみ更新
-
-    # Act
-    response = await client.patch(
-        f"/api/v1/project/{project.id}/driver-tree/node/{node_with_policy.id}/policy/{policy.id}",
-        json=request_body,
+        json=update_data,
     )
 
     # Assert

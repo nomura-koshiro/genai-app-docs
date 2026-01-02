@@ -10,7 +10,6 @@ from pydantic import Field
 
 from app.schemas.base import BaseCamelCaseModel, BaseCamelCaseORMModel
 
-
 # ================================================================================
 # フィルタ・クエリスキーマ
 # ================================================================================

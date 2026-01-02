@@ -87,46 +87,42 @@ async def test_update_setting_success(client: AsyncClient, override_auth, admin_
 
 
 # ================================================================================
-# POST /api/v1/admin/settings/maintenance/enable - メンテナンスモード有効化
+# POST /api/v1/admin/settings/maintenance - メンテナンスモード有効化/無効化
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "endpoint,request_data,expected_keys",
+    [
+        (
+            "/api/v1/admin/settings/maintenance/enable",
+            {"enabled": True, "message": "システムメンテナンス中です", "allowAdminAccess": True},
+            ["enabled", "message"],
+        ),
+        (
+            "/api/v1/admin/settings/maintenance/disable",
+            None,
+            ["enabled"],
+        ),
+    ],
+    ids=["enable", "disable"],
+)
 @pytest.mark.asyncio
-async def test_enable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
-    """[test_settings-004] メンテナンスモード有効化の成功ケース。"""
-    # Arrange
-    override_auth(admin_user)
-    request_data = {
-        "enabled": True,
-        "message": "システムメンテナンス中です",
-        "allowAdminAccess": True,
-    }
-
-    # Act
-    response = await client.post("/api/v1/admin/settings/maintenance/enable", json=request_data)
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "enabled" in data
-    assert "message" in data
-
-
-# ================================================================================
-# POST /api/v1/admin/settings/maintenance/disable - メンテナンスモード無効化
-# ================================================================================
-
-
-@pytest.mark.asyncio
-async def test_disable_maintenance_mode_success(client: AsyncClient, override_auth, admin_user, seeded_settings):
-    """[test_settings-005] メンテナンスモード無効化の成功ケース。"""
+async def test_maintenance_mode_toggle_success(
+    client: AsyncClient, override_auth, admin_user, seeded_settings, endpoint, request_data, expected_keys
+):
+    """[test_settings-004-005] メンテナンスモード切り替えの成功ケース（有効化/無効化）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.post("/api/v1/admin/settings/maintenance/disable")
+    if request_data:
+        response = await client.post(endpoint, json=request_data)
+    else:
+        response = await client.post(endpoint)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "enabled" in data
+    for key in expected_keys:
+        assert key in data

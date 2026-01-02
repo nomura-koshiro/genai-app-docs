@@ -84,96 +84,94 @@ async def test_create_project_duplicate_code(db_session: AsyncSession):
     assert "既に使用されています" in str(exc_info.value.message)
 
 
+@pytest.mark.parametrize(
+    "project_exists",
+    [True, False],
+    ids=["project_found", "project_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_project_success(db_session: AsyncSession):
-    """[test_project-003] プロジェクト取得の成功ケース。"""
+async def test_get_project(db_session: AsyncSession, project_exists):
+    """[test_project-003] プロジェクト取得のテスト。"""
     # Arrange
     service = ProjectService(db_session)
-    creator_id = uuid.uuid4()
 
-    # ユーザーを作成
-    user = UserAccount(
-        id=creator_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"creator-{uuid.uuid4()}@example.com",
-        display_name="Creator User",
-    )
-    db_session.add(user)
-    await db_session.commit()
+    if project_exists:
+        creator_id = uuid.uuid4()
+        # ユーザーを作成
+        user = UserAccount(
+            id=creator_id,
+            azure_oid=f"azure-oid-{uuid.uuid4()}",
+            email=f"creator-{uuid.uuid4()}@example.com",
+            display_name="Creator User",
+        )
+        db_session.add(user)
+        await db_session.commit()
 
-    project_data = ProjectCreate(
-        name="Get Test",
-        code=f"GET-{uuid.uuid4().hex[:6]}",
-        description="Get test",
-    )
-    created_project = await service.create_project(project_data, creator_id)
-    await db_session.commit()
+        project_data = ProjectCreate(
+            name="Get Test",
+            code=f"GET-{uuid.uuid4().hex[:6]}",
+            description="Get test",
+        )
+        created_project = await service.create_project(project_data, creator_id)
+        await db_session.commit()
+        project_id = created_project.id
+    else:
+        project_id = uuid.uuid4()
 
     # Act
-    result = await service.get_project(created_project.id)
+    result = await service.get_project(project_id)
 
     # Assert
-    assert result is not None
-    assert result.id == created_project.id
-    assert result.name == "Get Test"
+    if project_exists:
+        assert result is not None
+        assert result.id == project_id
+        assert result.name == "Get Test"
+    else:
+        assert result is None
 
 
+@pytest.mark.parametrize(
+    "code_exists",
+    [True, False],
+    ids=["code_found", "code_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_project_not_found(db_session: AsyncSession):
-    """[test_project-004] 存在しないプロジェクトの取得。"""
+async def test_get_project_by_code(db_session: AsyncSession, code_exists):
+    """[test_project-005] コードによるプロジェクト取得のテスト。"""
     # Arrange
     service = ProjectService(db_session)
-    nonexistent_id = uuid.uuid4()
 
-    # Act
-    result = await service.get_project(nonexistent_id)
+    if code_exists:
+        creator_id = uuid.uuid4()
+        # ユーザーを作成
+        user = UserAccount(
+            id=creator_id,
+            azure_oid=f"azure-oid-{uuid.uuid4()}",
+            email=f"creator-{uuid.uuid4()}@example.com",
+            display_name="Creator User",
+        )
+        db_session.add(user)
+        await db_session.commit()
 
-    # Assert
-    assert result is None
-
-
-@pytest.mark.asyncio
-async def test_get_project_by_code_success(db_session: AsyncSession):
-    """[test_project-005] コードによるプロジェクト取得の成功ケース。"""
-    # Arrange
-    service = ProjectService(db_session)
-    creator_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=creator_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"creator-{uuid.uuid4()}@example.com",
-        display_name="Creator User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    project_data = ProjectCreate(
-        name="Code Test",
-        code=f"CODE-{uuid.uuid4().hex[:6]}",
-        description="Code test",
-    )
-    created_project = await service.create_project(project_data, creator_id)
-    await db_session.commit()
-
-    # Act
-    result = await service.get_project_by_code(created_project.code)
-
-    # Assert
-    assert result is not None
-    assert result.code == created_project.code
-
-
-@pytest.mark.asyncio
-async def test_get_project_by_code_not_found(db_session: AsyncSession):
-    """[test_project-006] 存在しないコードでのプロジェクト取得。"""
-    # Arrange
-    service = ProjectService(db_session)
+        project_data = ProjectCreate(
+            name="Code Test",
+            code=f"CODE-{uuid.uuid4().hex[:6]}",
+            description="Code test",
+        )
+        created_project = await service.create_project(project_data, creator_id)
+        await db_session.commit()
+        project_code = created_project.code
+    else:
+        project_code = "NONEXISTENT"
 
     # Act & Assert
-    with pytest.raises(NotFoundError):
-        await service.get_project_by_code("NONEXISTENT")
+    if code_exists:
+        result = await service.get_project_by_code(project_code)
+        assert result is not None
+        assert result.code == project_code
+    else:
+        with pytest.raises(NotFoundError):
+            await service.get_project_by_code(project_code)
 
 
 @pytest.mark.asyncio
@@ -478,9 +476,17 @@ async def test_delete_project_without_files(db_session: AsyncSession):
     assert deleted_project is None
 
 
+@pytest.mark.parametrize(
+    "num_projects,limit,expected_result",
+    [
+        (3, 10, lambda x: x >= 3),  # 通常の一覧取得
+        (5, 2, lambda x: x == 2),   # ページネーション
+    ],
+    ids=["list_all", "pagination"],
+)
 @pytest.mark.asyncio
-async def test_list_projects(db_session: AsyncSession):
-    """[test_project-014] プロジェクト一覧取得（管理者用）。"""
+async def test_list_projects(db_session: AsyncSession, num_projects, limit, expected_result):
+    """[test_project-014] プロジェクト一覧取得とページネーションのテスト。"""
     # Arrange
     service = ProjectService(db_session)
     creator_id = uuid.uuid4()
@@ -495,8 +501,8 @@ async def test_list_projects(db_session: AsyncSession):
     db_session.add(user)
     await db_session.commit()
 
-    # プロジェクトを複数作成
-    for i in range(3):
+    # プロジェクトを作成
+    for i in range(num_projects):
         project_data = ProjectCreate(
             name=f"List Project {i}",
             code=f"LIST-{uuid.uuid4().hex[:6]}",
@@ -506,41 +512,7 @@ async def test_list_projects(db_session: AsyncSession):
     await db_session.commit()
 
     # Act
-    result = await service.list_projects(skip=0, limit=10)
+    result = await service.list_projects(skip=0, limit=limit)
 
     # Assert
-    assert len(result) >= 3
-
-
-@pytest.mark.asyncio
-async def test_list_projects_with_pagination(db_session: AsyncSession):
-    """[test_project-015] プロジェクト一覧取得のページネーション。"""
-    # Arrange
-    service = ProjectService(db_session)
-    creator_id = uuid.uuid4()
-
-    # ユーザーを作成
-    user = UserAccount(
-        id=creator_id,
-        azure_oid=f"azure-oid-{uuid.uuid4()}",
-        email=f"creator-{uuid.uuid4()}@example.com",
-        display_name="Creator User",
-    )
-    db_session.add(user)
-    await db_session.commit()
-
-    # プロジェクトを5つ作成
-    for i in range(5):
-        project_data = ProjectCreate(
-            name=f"Pagination Project {i}",
-            code=f"PAGE-{uuid.uuid4().hex[:6]}",
-            description=f"Pagination project {i}",
-        )
-        await service.create_project(project_data, creator_id)
-    await db_session.commit()
-
-    # Act - limit=2で取得
-    result = await service.list_projects(skip=0, limit=2)
-
-    # Assert
-    assert len(result) == 2
+    assert expected_result(len(result))

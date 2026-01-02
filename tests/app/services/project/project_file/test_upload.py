@@ -65,18 +65,27 @@ class TestProjectFileUploadService:
         assert result.project_id == project.id
         mock_storage_service.upload.assert_called_once()
 
+    @pytest.mark.parametrize(
+        "role,is_member,can_upload,expected_error",
+        [
+            (ProjectRole.PROJECT_MANAGER, True, True, None),
+            (ProjectRole.VIEWER, True, False, "Insufficient permissions"),
+            (None, False, False, "not a member"),
+        ],
+        ids=["project_manager_success", "viewer_denied", "non_member_denied"],
+    )
     @pytest.mark.asyncio
-    async def test_upload_file_as_project_manager(self, db_session, mock_storage_service):
-        """[test_upload-002] PROJECT_MANAGERロールでのアップロード成功テスト。"""
+    async def test_upload_file_permissions(self, db_session, mock_storage_service, role, is_member, can_upload, expected_error):
+        """[test_upload-002] 異なるロールによるアップロード権限テスト。"""
         # Arrange
         user = UserAccount(
-            azure_oid="upload-manager-oid",
-            email="uploadmanager@company.com",
-            display_name="Upload Manager",
+            azure_oid="upload-perm-oid",
+            email="uploadperm@company.com",
+            display_name="Upload Permission Test",
         )
         project = Project(
-            name="Upload Manager Project",
-            code="UPLOAD-002",
+            name="Upload Permission Project",
+            code="UPLOAD-PERM",
         )
         db_session.add(user)
         db_session.add(project)
@@ -84,105 +93,37 @@ class TestProjectFileUploadService:
         await db_session.refresh(user)
         await db_session.refresh(project)
 
-        # PROJECT_MANAGERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.PROJECT_MANAGER,
-        )
-        db_session.add(member)
-        await db_session.commit()
+        # メンバーとして追加（is_memberがTrueの場合のみ）
+        if is_member:
+            member = ProjectMember(
+                project_id=project.id,
+                user_id=user.id,
+                role=role,
+            )
+            db_session.add(member)
+            await db_session.commit()
 
-        file_content = b"Manager upload content"
+        file_content = b"Test upload content"
         file = MagicMock(spec=UploadFile)
-        file.filename = "manager_upload.pdf"
+        file.filename = "test_upload.pdf"
         file.content_type = "application/pdf"
         file.read = AsyncMock(return_value=file_content)
         file.seek = AsyncMock(return_value=None)
 
         mock_storage_service.upload.return_value = True
 
-        # Act
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileUploadService(db_session)
-            result = await service.upload_file(project.id, file, user.id)
-
-        # Assert
-        assert result.filename == "manager_upload.pdf"
-        assert result.uploaded_by == user.id
-
-    @pytest.mark.asyncio
-    async def test_upload_file_viewer_no_permission(self, db_session, mock_storage_service):
-        """[test_upload-003] VIEWERロールでのアップロード失敗テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="upload-viewer-oid",
-            email="uploadviewer@company.com",
-            display_name="Upload Viewer",
-        )
-        project = Project(
-            name="Upload Viewer Project",
-            code="UPLOAD-003",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # VIEWERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.VIEWER,
-        )
-        db_session.add(member)
-        await db_session.commit()
-
-        file = MagicMock(spec=UploadFile)
-        file.filename = "viewer_upload.pdf"
-        file.content_type = "application/pdf"
-
         # Act & Assert
         with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
             service = ProjectFileUploadService(db_session)
-            with pytest.raises(AuthorizationError) as exc_info:
-                await service.upload_file(project.id, file, user.id)
 
-        assert "Insufficient permissions" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_upload_file_not_member(self, db_session, mock_storage_service):
-        """[test_upload-004] 非メンバーによるアップロード失敗テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="upload-nonmember-oid",
-            email="uploadnonmember@company.com",
-            display_name="Upload Non Member",
-        )
-        project = Project(
-            name="Upload Non Member Project",
-            code="UPLOAD-004",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # メンバーとして追加しない
-
-        file = MagicMock(spec=UploadFile)
-        file.filename = "nonmember_upload.pdf"
-        file.content_type = "application/pdf"
-
-        # Act & Assert
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileUploadService(db_session)
-            with pytest.raises(AuthorizationError) as exc_info:
-                await service.upload_file(project.id, file, user.id)
-
-        assert "not a member" in str(exc_info.value).lower()
+            if can_upload:
+                result = await service.upload_file(project.id, file, user.id)
+                assert result.filename == "test_upload.pdf"
+                assert result.uploaded_by == user.id
+            else:
+                with pytest.raises(AuthorizationError) as exc_info:
+                    await service.upload_file(project.id, file, user.id)
+                assert expected_error in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
     async def test_upload_file_no_filename(self, db_session, mock_storage_service):
@@ -435,115 +376,28 @@ class TestProjectFileUploadServiceNewVersion:
         await db_session.refresh(parent_file)
         assert parent_file.is_latest is False
 
+    @pytest.mark.parametrize(
+        "error_type,setup_data,expected_error,expected_message",
+        [
+            ("not_found", {"has_parent": False, "role": ProjectRole.MEMBER}, NotFoundError, "親ファイルが見つかりません"),
+            ("viewer_denied", {"has_parent": True, "role": ProjectRole.VIEWER}, AuthorizationError, "Insufficient permissions"),
+            ("invalid_mime", {"has_parent": True, "role": ProjectRole.MEMBER, "invalid_mime": True}, ValidationError, "許可されていないファイル形式です"),
+            ("no_filename", {"has_parent": True, "role": ProjectRole.MEMBER, "no_filename": True}, ValidationError, "ファイル名が必要です"),
+        ],
+        ids=["parent_not_found", "viewer_no_permission", "invalid_mime_type", "no_filename"],
+    )
     @pytest.mark.asyncio
-    async def test_upload_new_version_parent_not_found(self, db_session, mock_storage_service):
-        """[test_upload-010] 親ファイルが存在しない場合の新バージョンアップロード失敗テスト。"""
+    async def test_upload_new_version_error_cases(self, db_session, mock_storage_service, error_type, setup_data, expected_error, expected_message):
+        """[test_upload-010] 新バージョンアップロードのエラーケーステスト。"""
         # Arrange
         user = UserAccount(
-            azure_oid="version-notfound-oid",
-            email="versionnotfound@company.com",
-            display_name="Version Not Found User",
-        )
-        db_session.add(user)
-        await db_session.commit()
-        await db_session.refresh(user)
-
-        non_existent_parent_id = uuid.uuid4()
-
-        file = MagicMock(spec=UploadFile)
-        file.filename = "new_version.pdf"
-        file.content_type = "application/pdf"
-
-        # Act & Assert
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileUploadService(db_session)
-            with pytest.raises(NotFoundError) as exc_info:
-                await service.upload_new_version(non_existent_parent_id, file, user.id)
-
-        assert "親ファイルが見つかりません" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_upload_new_version_viewer_no_permission(self, db_session, mock_storage_service):
-        """[test_upload-011] VIEWERロールでの新バージョンアップロード失敗テスト。"""
-        # Arrange
-        uploader = UserAccount(
-            azure_oid="version-uploader-oid",
-            email="versionuploader@company.com",
-            display_name="Version Uploader",
-        )
-        viewer = UserAccount(
-            azure_oid="version-viewer-oid",
-            email="versionviewer@company.com",
-            display_name="Version Viewer",
+            azure_oid="version-error-oid",
+            email="versionerror@company.com",
+            display_name="Version Error Test",
         )
         project = Project(
-            name="Version Viewer Project",
-            code="VERSION-002",
-        )
-        db_session.add(uploader)
-        db_session.add(viewer)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(uploader)
-        await db_session.refresh(viewer)
-        await db_session.refresh(project)
-
-        # uploaderをMEMBER、viewerをVIEWERとして追加
-        uploader_member = ProjectMember(
-            project_id=project.id,
-            user_id=uploader.id,
-            role=ProjectRole.MEMBER,
-        )
-        viewer_member = ProjectMember(
-            project_id=project.id,
-            user_id=viewer.id,
-            role=ProjectRole.VIEWER,
-        )
-        db_session.add(uploader_member)
-        db_session.add(viewer_member)
-        await db_session.commit()
-
-        # 親ファイルを作成
-        parent_file_id = uuid.uuid4()
-        parent_file = ProjectFile(
-            id=parent_file_id,
-            project_id=project.id,
-            filename="parent.pdf",
-            original_filename="parent.pdf",
-            file_path=f"projects/{project.id}/{parent_file_id}_parent.pdf",
-            file_size=1024,
-            mime_type="application/pdf",
-            uploaded_by=uploader.id,
-            version=1,
-            is_latest=True,
-        )
-        db_session.add(parent_file)
-        await db_session.commit()
-
-        file = MagicMock(spec=UploadFile)
-        file.filename = "new_version.pdf"
-        file.content_type = "application/pdf"
-
-        # Act & Assert
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileUploadService(db_session)
-            with pytest.raises(AuthorizationError) as exc_info:
-                await service.upload_new_version(parent_file_id, file, viewer.id)
-
-        assert "Insufficient permissions" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_upload_new_version_invalid_mime_type(self, db_session, mock_storage_service):
-        """[test_upload-012] 無効なMIMEタイプでの新バージョンアップロード失敗テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="version-invalidmime-oid",
-            email="versioninvalidmime@company.com",
-            display_name="Version Invalid MIME",
-        )
-        project = Project(
-            name="Version Invalid MIME Project",
-            code="VERSION-003",
+            name="Version Error Project",
+            code="VERSION-ERR",
         )
         db_session.add(user)
         db_session.add(project)
@@ -551,100 +405,56 @@ class TestProjectFileUploadServiceNewVersion:
         await db_session.refresh(user)
         await db_session.refresh(project)
 
-        # MEMBERとして追加
+        # メンバーとして追加
         member = ProjectMember(
             project_id=project.id,
             user_id=user.id,
-            role=ProjectRole.MEMBER,
+            role=setup_data["role"],
         )
         db_session.add(member)
         await db_session.commit()
 
-        # 親ファイルを作成
-        parent_file_id = uuid.uuid4()
-        parent_file = ProjectFile(
-            id=parent_file_id,
-            project_id=project.id,
-            filename="valid.pdf",
-            original_filename="valid.pdf",
-            file_path=f"projects/{project.id}/{parent_file_id}_valid.pdf",
-            file_size=1024,
-            mime_type="application/pdf",
-            uploaded_by=user.id,
-            version=1,
-            is_latest=True,
-        )
-        db_session.add(parent_file)
-        await db_session.commit()
+        # 親ファイルを作成（has_parentがTrueの場合のみ）
+        if setup_data.get("has_parent", False):
+            parent_file_id = uuid.uuid4()
+            parent_file = ProjectFile(
+                id=parent_file_id,
+                project_id=project.id,
+                filename="parent.pdf",
+                original_filename="parent.pdf",
+                file_path=f"projects/{project.id}/{parent_file_id}_parent.pdf",
+                file_size=1024,
+                mime_type="application/pdf",
+                uploaded_by=user.id,
+                version=1,
+                is_latest=True,
+            )
+            db_session.add(parent_file)
+            await db_session.commit()
+        else:
+            parent_file_id = uuid.uuid4()
 
+        # ファイルを準備
         file = MagicMock(spec=UploadFile)
-        file.filename = "malicious.exe"
-        file.content_type = "application/x-msdownload"
+        if setup_data.get("no_filename"):
+            file.filename = None
+        elif setup_data.get("invalid_mime"):
+            file.filename = "malicious.exe"
+        else:
+            file.filename = "new_version.pdf"
+
+        if setup_data.get("invalid_mime"):
+            file.content_type = "application/x-msdownload"
+        else:
+            file.content_type = "application/pdf"
 
         # Act & Assert
         with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
             service = ProjectFileUploadService(db_session)
-            with pytest.raises(ValidationError) as exc_info:
+            with pytest.raises(expected_error) as exc_info:
                 await service.upload_new_version(parent_file_id, file, user.id)
 
-        assert "許可されていないファイル形式です" in str(exc_info.value)
-
-    @pytest.mark.asyncio
-    async def test_upload_new_version_no_filename(self, db_session, mock_storage_service):
-        """[test_upload-013] ファイル名なしでの新バージョンアップロード失敗テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="version-noname-oid",
-            email="versionnoname@company.com",
-            display_name="Version No Name",
-        )
-        project = Project(
-            name="Version No Name Project",
-            code="VERSION-004",
-        )
-        db_session.add(user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        # MEMBERとして追加
-        member = ProjectMember(
-            project_id=project.id,
-            user_id=user.id,
-            role=ProjectRole.MEMBER,
-        )
-        db_session.add(member)
-        await db_session.commit()
-
-        # 親ファイルを作成
-        parent_file_id = uuid.uuid4()
-        parent_file = ProjectFile(
-            id=parent_file_id,
-            project_id=project.id,
-            filename="parent.pdf",
-            original_filename="parent.pdf",
-            file_path=f"projects/{project.id}/{parent_file_id}_parent.pdf",
-            file_size=1024,
-            mime_type="application/pdf",
-            uploaded_by=user.id,
-            version=1,
-            is_latest=True,
-        )
-        db_session.add(parent_file)
-        await db_session.commit()
-
-        file = MagicMock(spec=UploadFile)
-        file.filename = None
-        file.content_type = "application/pdf"
-
-        # Act & Assert
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = ProjectFileUploadService(db_session)
-            with pytest.raises(ValidationError) as exc_info:
-                await service.upload_new_version(parent_file_id, file, user.id)
-
-        assert "ファイル名が必要です" in str(exc_info.value)
+        assert expected_message in str(exc_info.value)
 
 
 class TestAllowedMimeTypes:

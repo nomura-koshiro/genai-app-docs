@@ -4,7 +4,6 @@
 """
 
 import uuid
-from datetime import UTC, datetime
 
 from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,7 +11,6 @@ from sqlalchemy.orm import selectinload
 
 from app.core.logging import get_logger
 from app.models.analysis.analysis_template import AnalysisTemplate
-from app.models.user_account.user_account import UserAccount
 
 logger = get_logger(__name__)
 

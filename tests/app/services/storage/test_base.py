@@ -24,47 +24,24 @@ class TestStorageServiceInterface:
         with pytest.raises(TypeError):
             StorageService()  # type: ignore[abstract]
 
-    def test_storage_service_has_upload_method(self):
-        """[test_base-003] uploadメソッドが定義されていることを確認。"""
+    @pytest.mark.parametrize(
+        "method_name",
+        [
+            "upload",
+            "download",
+            "delete",
+            "exists",
+            "list_blobs",
+            "get_file_path",
+            "download_to_temp_file",
+        ],
+        ids=["upload", "download", "delete", "exists", "list_blobs", "get_file_path", "download_to_temp_file"],
+    )
+    def test_storage_service_has_required_methods(self, method_name):
+        """[test_base-003] 必須メソッドが定義されていることを確認。"""
         # Arrange & Act & Assert
-        assert hasattr(StorageService, "upload")
-        assert callable(getattr(StorageService, "upload", None))
-
-    def test_storage_service_has_download_method(self):
-        """[test_base-004] downloadメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "download")
-        assert callable(getattr(StorageService, "download", None))
-
-    def test_storage_service_has_delete_method(self):
-        """[test_base-005] deleteメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "delete")
-        assert callable(getattr(StorageService, "delete", None))
-
-    def test_storage_service_has_exists_method(self):
-        """[test_base-006] existsメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "exists")
-        assert callable(getattr(StorageService, "exists", None))
-
-    def test_storage_service_has_list_blobs_method(self):
-        """[test_base-007] list_blobsメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "list_blobs")
-        assert callable(getattr(StorageService, "list_blobs", None))
-
-    def test_storage_service_has_get_file_path_method(self):
-        """[test_base-008] get_file_pathメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "get_file_path")
-        assert callable(getattr(StorageService, "get_file_path", None))
-
-    def test_storage_service_has_download_to_temp_file_method(self):
-        """[test_base-009] download_to_temp_fileメソッドが定義されていることを確認。"""
-        # Arrange & Act & Assert
-        assert hasattr(StorageService, "download_to_temp_file")
-        assert callable(getattr(StorageService, "download_to_temp_file", None))
+        assert hasattr(StorageService, method_name)
+        assert callable(getattr(StorageService, method_name, None))
 
 
 class TestConcreteImplementation:

@@ -21,7 +21,7 @@ from app.api.core.dependencies.system_admin import (
     RequireSystemAdminDep,
     SessionManagementServiceDep,
 )
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.admin.session_management import (
     SessionFilter,

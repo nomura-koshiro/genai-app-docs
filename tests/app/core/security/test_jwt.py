@@ -2,6 +2,8 @@
 
 from datetime import timedelta
 
+import pytest
+
 from app.core.security.jwt import (
     create_access_token,
     create_refresh_token,
@@ -74,40 +76,30 @@ class TestAccessToken:
         assert "iat" in payload
         assert payload["type"] == "access"
 
-    def test_decode_access_token_invalid_signature(self):
-        """[test_jwt-005] 署名が不正なトークンのデコードが失敗すること。"""
+    @pytest.mark.parametrize(
+        "token_generator,description",
+        [
+            (
+                lambda: (
+                    lambda t=create_access_token({"sub": "1"}): f"{t.split('.')[0]}.{t.split('.')[1]}.invalid_sig"
+                )(),
+                "invalid_signature",
+            ),
+            (
+                lambda: create_access_token({"sub": "1"}, expires_delta=timedelta(seconds=-1)),
+                "expired",
+            ),
+            (
+                lambda: "not.a.valid.jwt.token",
+                "malformed",
+            ),
+        ],
+        ids=["invalid_signature", "expired", "malformed"],
+    )
+    def test_decode_access_token_failure(self, token_generator, description: str):
+        """[test_jwt-005] 無効なトークンのデコードが失敗すること。"""
         # Arrange
-        # 正しいトークンを生成して、署名部分を別の文字列に置き換える
-        token = create_access_token({"sub": "1"})
-        # JWTは header.payload.signature 形式
-        parts = token.split(".")
-        # 署名部分を明確に無効な文字列に置き換える
-        invalid_signature = "invalid_signature_12345"
-        invalid_token = f"{parts[0]}.{parts[1]}.{invalid_signature}"
-
-        # Act
-        payload = decode_access_token(invalid_token)
-
-        # Assert
-        assert payload is None
-
-    def test_decode_access_token_expired(self):
-        """[test_jwt-006] 有効期限切れトークンのデコードが失敗すること。"""
-        # Arrange
-        data = {"sub": "1"}
-        # 有効期限を過去に設定（-1秒）
-        token = create_access_token(data, expires_delta=timedelta(seconds=-1))
-
-        # Act
-        payload = decode_access_token(token)
-
-        # Assert
-        assert payload is None
-
-    def test_decode_access_token_malformed(self):
-        """[test_jwt-007] 不正な形式のトークンのデコードが失敗すること。"""
-        # Arrange
-        invalid_token = "not.a.valid.jwt.token"
+        invalid_token = token_generator()
 
         # Act
         payload = decode_access_token(invalid_token)
@@ -118,7 +110,6 @@ class TestAccessToken:
     def test_decode_access_token_missing_sub(self):
         """[test_jwt-008] subフィールドがないトークンのデコードが失敗すること。"""
         # Arrange
-        # subフィールドなしでトークン生成は可能だが、デコード時に検証される
         from datetime import UTC, datetime
 
         from jose import jwt
@@ -170,24 +161,24 @@ class TestRefreshToken:
         assert payload["sub"] == "1"
         assert payload["type"] == "refresh"
 
-    def test_decode_refresh_token_wrong_type(self):
-        """[test_jwt-011] アクセストークンをリフレッシュトークンとしてデコードすると失敗すること。"""
+    @pytest.mark.parametrize(
+        "token_type,description",
+        [
+            ("wrong_type", "wrong_type"),
+            ("invalid", "invalid"),
+        ],
+        ids=["wrong_type", "invalid"],
+    )
+    def test_decode_refresh_token_errors(self, token_type: str, description: str):
+        """[test_jwt-011/012] リフレッシュトークンのデコード失敗ケース。"""
         # Arrange
-        token = create_access_token({"sub": "1"})
+        if token_type == "wrong_type":
+            token = create_access_token({"sub": "1"})
+        else:  # invalid
+            token = "invalid.refresh.token"
 
         # Act
         payload = decode_refresh_token(token)
-
-        # Assert
-        assert payload is None  # typeが"access"なので失敗
-
-    def test_decode_refresh_token_invalid(self):
-        """[test_jwt-012] 不正なリフレッシュトークンのデコードが失敗すること。"""
-        # Arrange
-        invalid_token = "invalid.refresh.token"
-
-        # Act
-        payload = decode_refresh_token(invalid_token)
 
         # Assert
         assert payload is None

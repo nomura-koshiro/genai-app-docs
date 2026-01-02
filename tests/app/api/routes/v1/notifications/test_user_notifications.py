@@ -16,7 +16,6 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
-
 # ================================================================================
 # GET /api/v1/notifications - 通知一覧取得
 # ================================================================================
@@ -121,17 +120,36 @@ async def test_get_notification_success(
     assert data["message"] == "詳細取得テストメッセージ"
 
 
+@pytest.mark.parametrize(
+    "endpoint_template,http_method",
+    [
+        ("/api/v1/notifications/{notification_id}", "GET"),
+        ("/api/v1/notifications/{notification_id}/read", "PATCH"),
+        ("/api/v1/notifications/{notification_id}", "DELETE"),
+    ],
+    ids=["get_notification", "mark_as_read", "delete_notification"],
+)
 @pytest.mark.asyncio
-async def test_get_notification_not_found(
-    client: AsyncClient, override_auth, regular_user
+async def test_notification_not_found_errors(
+    client: AsyncClient,
+    override_auth,
+    regular_user,
+    endpoint_template: str,
+    http_method: str,
 ):
-    """[test_user_notifications-005] 通知詳細取得の404ケース。"""
+    """[test_user_notifications-005/008/012] 通知が見つからない場合の404エラー。"""
     # Arrange
     override_auth(regular_user)
     non_existent_id = uuid.uuid4()
+    endpoint = endpoint_template.format(notification_id=non_existent_id)
 
     # Act
-    response = await client.get(f"/api/v1/notifications/{non_existent_id}")
+    if http_method == "GET":
+        response = await client.get(endpoint)
+    elif http_method == "PATCH":
+        response = await client.patch(endpoint)
+    elif http_method == "DELETE":
+        response = await client.delete(endpoint)
 
     # Assert
     assert response.status_code == 404
@@ -184,22 +202,6 @@ async def test_mark_notification_as_read_success(
     assert data["id"] == str(notification.id)
     assert data["isRead"] is True
     assert data["readAt"] is not None
-
-
-@pytest.mark.asyncio
-async def test_mark_notification_as_read_not_found(
-    client: AsyncClient, override_auth, regular_user
-):
-    """[test_user_notifications-008] 通知既読化の404ケース。"""
-    # Arrange
-    override_auth(regular_user)
-    non_existent_id = uuid.uuid4()
-
-    # Act
-    response = await client.patch(f"/api/v1/notifications/{non_existent_id}/read")
-
-    # Assert
-    assert response.status_code == 404
 
 
 # ================================================================================
@@ -270,22 +272,6 @@ async def test_delete_notification_success(
     # 削除確認
     get_response = await client.get(f"/api/v1/notifications/{notification.id}")
     assert get_response.status_code == 404
-
-
-@pytest.mark.asyncio
-async def test_delete_notification_not_found(
-    client: AsyncClient, override_auth, regular_user
-):
-    """[test_user_notifications-012] 通知削除の404ケース。"""
-    # Arrange
-    override_auth(regular_user)
-    non_existent_id = uuid.uuid4()
-
-    # Act
-    response = await client.delete(f"/api/v1/notifications/{non_existent_id}")
-
-    # Assert
-    assert response.status_code == 404
 
 
 @pytest.mark.asyncio

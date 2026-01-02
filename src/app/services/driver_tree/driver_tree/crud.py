@@ -9,7 +9,7 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import transactional
+from app.core.decorators import transactional
 from app.core.exceptions import ValidationError
 from app.core.logging import get_logger
 from app.models.driver_tree import (

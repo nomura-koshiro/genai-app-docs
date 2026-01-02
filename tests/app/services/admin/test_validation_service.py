@@ -103,18 +103,33 @@ async def test_get_validation_success(db_session: AsyncSession):
     assert result.validation_order == 1
 
 
+@pytest.mark.parametrize(
+    "operation,error_msg",
+    [
+        ("get", "検証マスタが見つかりません"),
+        ("update", "検証マスタが見つかりません"),
+        ("delete", "検証マスタが見つかりません"),
+    ],
+    ids=["get_not_found", "update_not_found", "delete_not_found"],
+)
 @pytest.mark.asyncio
-async def test_get_validation_not_found(db_session: AsyncSession):
-    """[test_validation_service-005] 存在しない検証取得時のNotFoundError。"""
+async def test_validation_not_found_errors(db_session: AsyncSession, operation: str, error_msg: str):
+    """[test_validation_service-005-011-013] 検証操作でのNotFoundError。"""
     # Arrange
     service = AdminValidationService(db_session)
     non_existent_id = uuid.uuid4()
 
     # Act & Assert
     with pytest.raises(NotFoundError) as exc_info:
-        await service.get_validation(non_existent_id)
+        if operation == "get":
+            await service.get_validation(non_existent_id)
+        elif operation == "update":
+            validation_update = AnalysisValidationUpdate(name="更新")
+            await service.update_validation(non_existent_id, validation_update)
+        elif operation == "delete":
+            await service.delete_validation(non_existent_id)
 
-    assert "検証マスタが見つかりません" in str(exc_info.value)
+    assert error_msg in str(exc_info.value)
 
 
 @pytest.mark.asyncio
@@ -242,21 +257,6 @@ async def test_update_validation_partial_order(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
-async def test_update_validation_not_found(db_session: AsyncSession):
-    """[test_validation_service-011] 存在しない検証更新時のNotFoundError。"""
-    # Arrange
-    service = AdminValidationService(db_session)
-    non_existent_id = uuid.uuid4()
-    validation_update = AnalysisValidationUpdate(name="更新")
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.update_validation(non_existent_id, validation_update)
-
-    assert "検証マスタが見つかりません" in str(exc_info.value)
-
-
-@pytest.mark.asyncio
 async def test_delete_validation_success(db_session: AsyncSession):
     """[test_validation_service-012] 検証削除の成功ケース。"""
     # Arrange
@@ -277,20 +277,6 @@ async def test_delete_validation_success(db_session: AsyncSession):
     # Assert - 削除後に取得するとNotFoundError
     with pytest.raises(NotFoundError):
         await service.get_validation(validation_id)
-
-
-@pytest.mark.asyncio
-async def test_delete_validation_not_found(db_session: AsyncSession):
-    """[test_validation_service-013] 存在しない検証削除時のNotFoundError。"""
-    # Arrange
-    service = AdminValidationService(db_session)
-    non_existent_id = uuid.uuid4()
-
-    # Act & Assert
-    with pytest.raises(NotFoundError) as exc_info:
-        await service.delete_validation(non_existent_id)
-
-    assert "検証マスタが見つかりません" in str(exc_info.value)
 
 
 @pytest.mark.asyncio

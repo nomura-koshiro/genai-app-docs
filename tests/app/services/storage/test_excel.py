@@ -22,59 +22,44 @@ from app.services.storage.excel import (
 class TestGetExcelSheetNames:
     """get_excel_sheet_names関数のテスト。"""
 
-    def test_get_sheet_names_from_file_path(self):
-        """[test_excel-001] ファイルパスからシート名一覧を取得できることを確認。"""
+    @pytest.mark.parametrize(
+        "input_type,sheet_names,expected_sheets",
+        [
+            ("file_path", ["Sheet1", "Sheet2", "Sheet3"], ["Sheet1", "Sheet2", "Sheet3"]),
+            ("string_path", ["TestSheet"], ["TestSheet"]),
+            ("bytes_io", ["BytesSheet"], ["BytesSheet"]),
+        ],
+        ids=["file_path", "string_path", "bytes_io"],
+    )
+    def test_get_sheet_names_from_various_inputs(self, input_type, sheet_names, expected_sheets):
+        """[test_excel-001] 各種入力タイプからシート名一覧を取得できることを確認。"""
         # Arrange
-        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
-            tmp_path = Path(tmp.name)
-            # DataFrameを作成して複数シートで保存
-            df = pd.DataFrame({"A": [1, 2, 3]})
-            with pd.ExcelWriter(tmp_path, engine="openpyxl") as writer:
-                df.to_excel(writer, sheet_name="Sheet1", index=False)
-                df.to_excel(writer, sheet_name="Sheet2", index=False)
-                df.to_excel(writer, sheet_name="Sheet3", index=False)
-
-            # Act
-            result = get_excel_sheet_names(tmp_path)
-
-            # Assert
-            assert result == ["Sheet1", "Sheet2", "Sheet3"]
-
-            # Cleanup
-            tmp_path.unlink()
-
-    def test_get_sheet_names_from_string_path(self):
-        """[test_excel-002] 文字列パスからシート名一覧を取得できることを確認。"""
-        # Arrange
-        with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
-            tmp_path = tmp.name
-            df = pd.DataFrame({"A": [1, 2, 3]})
-            with pd.ExcelWriter(tmp_path, engine="openpyxl") as writer:
-                df.to_excel(writer, sheet_name="TestSheet", index=False)
-
-            # Act
-            result = get_excel_sheet_names(tmp_path)
-
-            # Assert
-            assert "TestSheet" in result
-
-            # Cleanup
-            Path(tmp_path).unlink()
-
-    def test_get_sheet_names_from_bytes_io(self):
-        """[test_excel-003] BytesIOからシート名一覧を取得できることを確認。"""
-        # Arrange
-        buffer = BytesIO()
         df = pd.DataFrame({"A": [1, 2, 3]})
-        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df.to_excel(writer, sheet_name="BytesSheet", index=False)
-        buffer.seek(0)
 
-        # Act
-        result = get_excel_sheet_names(buffer)
+        if input_type == "bytes_io":
+            buffer = BytesIO()
+            with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+                for sheet_name in sheet_names:
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+            buffer.seek(0)
+            # Act
+            result = get_excel_sheet_names(buffer)
+        else:
+            with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+                tmp_path = Path(tmp.name) if input_type == "file_path" else tmp.name
+                with pd.ExcelWriter(tmp.name, engine="openpyxl") as writer:
+                    for sheet_name in sheet_names:
+                        df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+                # Act
+                result = get_excel_sheet_names(tmp_path)
+
+                # Cleanup
+                Path(tmp.name).unlink()
 
         # Assert
-        assert "BytesSheet" in result
+        for expected in expected_sheets:
+            assert expected in result
 
     def test_get_sheet_names_raises_validation_error_for_invalid_file(self):
         """[test_excel-004] 不正なファイルでValidationErrorが発生することを確認。"""
@@ -198,53 +183,34 @@ class TestReadExcelSheet:
 class TestFindSeparatorRow:
     """find_separator_row関数のテスト。"""
 
-    def test_find_separator_row_returns_correct_index(self):
+    @pytest.mark.parametrize(
+        "data,expected_index",
+        [
+            (
+                {0: ["Header1", "Header2", None, "Data1", "Data2"], 1: ["Value1", "Value2", None, "Data3", "Data4"]},
+                2,
+            ),
+            (
+                {0: [None, "Data1", "Data2"], 1: [None, "Data3", "Data4"]},
+                0,
+            ),
+            (
+                {0: ["Data1", "Data2", None], 1: ["Data3", "Data4", None]},
+                2,
+            ),
+        ],
+        ids=["middle_row", "first_row", "last_row"],
+    )
+    def test_find_separator_row_returns_correct_index(self, data, expected_index):
         """[test_excel-011] 空行のインデックスが正しく返されることを確認。"""
         # Arrange
-        df = pd.DataFrame(
-            {
-                0: ["Header1", "Header2", None, "Data1", "Data2"],
-                1: ["Value1", "Value2", None, "Data3", "Data4"],
-            }
-        )
+        df = pd.DataFrame(data)
 
         # Act
         result = find_separator_row(df)
 
         # Assert
-        assert result == 2
-
-    def test_find_separator_row_first_row_is_empty(self):
-        """[test_excel-012] 最初の行が空行の場合0が返されることを確認。"""
-        # Arrange
-        df = pd.DataFrame(
-            {
-                0: [None, "Data1", "Data2"],
-                1: [None, "Data3", "Data4"],
-            }
-        )
-
-        # Act
-        result = find_separator_row(df)
-
-        # Assert
-        assert result == 0
-
-    def test_find_separator_row_last_row_is_empty(self):
-        """[test_excel-013] 最後の行が空行の場合でも検出されることを確認。"""
-        # Arrange
-        df = pd.DataFrame(
-            {
-                0: ["Data1", "Data2", None],
-                1: ["Data3", "Data4", None],
-            }
-        )
-
-        # Act
-        result = find_separator_row(df)
-
-        # Assert
-        assert result == 2
+        assert result == expected_index
 
     def test_find_separator_row_raises_validation_error_when_no_empty_row(self):
         """[test_excel-014] 空行がない場合ValidationErrorが発生することを確認。"""

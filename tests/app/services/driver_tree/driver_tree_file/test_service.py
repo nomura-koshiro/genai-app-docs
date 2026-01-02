@@ -66,48 +66,28 @@ class TestDriverTreeFileServiceInit:
 class TestDriverTreeFileServiceMixins:
     """DriverTreeFileServiceのMixin統合テスト。"""
 
+    @pytest.mark.parametrize(
+        "mixin_type,methods",
+        [
+            ("file_operations", ["upload_file", "delete_file", "list_uploaded_files"]),
+            ("sheet_operations", ["select_sheet", "delete_sheet", "list_selected_sheets", "refresh_sheet", "get_sheet_detail"]),
+            ("column_config", ["update_column_config"]),
+        ],
+        ids=["file_operations", "sheet_operations", "column_config"],
+    )
     @pytest.mark.asyncio
-    async def test_has_file_operations_methods(self, db_session: AsyncSession, mock_storage_service):
-        """[test_service-004] FileOperationsMixinのメソッドが使用可能。"""
+    async def test_has_mixin_methods(
+        self, db_session: AsyncSession, mock_storage_service, mixin_type: str, methods: list
+    ):
+        """[test_service-004] 各Mixinのメソッドが使用可能。"""
         # Arrange
         with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
             service = DriverTreeFileService(db_session)
 
         # Assert
-        assert hasattr(service, "upload_file")
-        assert hasattr(service, "delete_file")
-        assert hasattr(service, "list_uploaded_files")
-        assert callable(service.upload_file)
-        assert callable(service.delete_file)
-        assert callable(service.list_uploaded_files)
-
-    @pytest.mark.asyncio
-    async def test_has_sheet_operations_methods(self, db_session: AsyncSession, mock_storage_service):
-        """[test_service-005] SheetOperationsMixinのメソッドが使用可能。"""
-        # Arrange
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = DriverTreeFileService(db_session)
-
-        # Assert
-        assert hasattr(service, "select_sheet")
-        assert hasattr(service, "delete_sheet")
-        assert hasattr(service, "list_selected_sheets")
-        assert hasattr(service, "refresh_sheet")
-        assert hasattr(service, "get_sheet_detail")
-        assert callable(service.select_sheet)
-        assert callable(service.delete_sheet)
-        assert callable(service.list_selected_sheets)
-
-    @pytest.mark.asyncio
-    async def test_has_column_config_methods(self, db_session: AsyncSession, mock_storage_service):
-        """[test_service-006] ColumnConfigMixinのメソッドが使用可能。"""
-        # Arrange
-        with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
-            service = DriverTreeFileService(db_session)
-
-        # Assert
-        assert hasattr(service, "update_column_config")
-        assert callable(service.update_column_config)
+        for method in methods:
+            assert hasattr(service, method)
+            assert callable(getattr(service, method))
 
 
 # ================================================================================
@@ -119,18 +99,13 @@ class TestDriverTreeFileServiceContainer:
     """DriverTreeFileServiceのコンテナ名テスト。"""
 
     @pytest.mark.asyncio
-    async def test_container_name(self, db_session: AsyncSession, mock_storage_service):
-        """[test_service-007] コンテナ名が正しい。"""
+    async def test_container_name_and_attribute(self, db_session: AsyncSession, mock_storage_service):
+        """[test_service-005] コンテナ名が正しくクラス属性として定義されている。"""
         # Arrange & Act
         with patch("app.services.storage.get_storage_service", return_value=mock_storage_service):
             service = DriverTreeFileService(db_session)
 
         # Assert
         assert service.container == "driver_tree"
-
-    @pytest.mark.asyncio
-    async def test_container_is_class_attribute(self, db_session: AsyncSession, mock_storage_service):
-        """[test_service-008] コンテナ名がクラス属性である。"""
-        # Assert
         assert hasattr(DriverTreeFileService, "container")
         assert DriverTreeFileService.container == "driver_tree"

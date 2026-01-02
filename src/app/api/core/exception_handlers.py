@@ -132,10 +132,18 @@ async def app_exception_handler(request: Request, exc: Exception) -> JSONRespons
     if exc.details:
         problem_details.update(exc.details)
 
+    # レスポンスヘッダーの構築
+    headers: dict[str, str] = {}
+
+    # 429 (Rate Limit) または 503 (Service Unavailable) の場合、Retry-Afterヘッダーを追加
+    if exc.status_code in (429, 503) and "retry_after" in exc.details:
+        headers["Retry-After"] = str(exc.details["retry_after"])
+
     return JSONResponse(
         status_code=exc.status_code,
         content=problem_details,
         media_type="application/problem+json",  # RFC 9457準拠のContent-Type
+        headers=headers if headers else None,
     )
 
 

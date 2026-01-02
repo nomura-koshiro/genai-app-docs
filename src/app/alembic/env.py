@@ -17,35 +17,35 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import settings
+from app.models.analysis import (  # noqa: F401
+    AnalysisChat,
+    AnalysisDummyChartMaster,
+    AnalysisDummyFormulaMaster,
+    AnalysisFile,
+    AnalysisGraphAxisMaster,
+    AnalysisIssueMaster,
+    AnalysisSession,
+    AnalysisSnapshot,
+    AnalysisStep,
+    AnalysisValidationMaster,
+)
 from app.models.base import Base
+from app.models.driver_tree import (  # noqa: F401
+    DriverTree,
+    DriverTreeCategory,
+    DriverTreeDataFrame,
+    DriverTreeFile,
+    DriverTreeFormula,
+    DriverTreeNode,
+    DriverTreePolicy,
+    DriverTreeRelationship,
+    DriverTreeRelationshipChild,
+)
+from app.models.project import Project, ProjectFile, ProjectMember  # noqa: F401
 
 # すべてのモデルをインポートしてメタデータに登録
 # これらのインポートは autogenerate 機能に必要
 from app.models.user_account import UserAccount  # noqa: F401
-from app.models.project import Project, ProjectMember, ProjectFile  # noqa: F401
-from app.models.analysis import (  # noqa: F401
-    AnalysisSession,
-    AnalysisFile,
-    AnalysisSnapshot,
-    AnalysisChat,
-    AnalysisStep,
-    AnalysisValidationMaster,
-    AnalysisIssueMaster,
-    AnalysisGraphAxisMaster,
-    AnalysisDummyFormulaMaster,
-    AnalysisDummyChartMaster,
-)
-from app.models.driver_tree import (  # noqa: F401
-    DriverTree,
-    DriverTreeNode,
-    DriverTreeRelationship,
-    DriverTreeRelationshipChild,
-    DriverTreePolicy,
-    DriverTreeFile,
-    DriverTreeDataFrame,
-    DriverTreeCategory,
-    DriverTreeFormula,
-)
 
 # Alembic Config オブジェクト（alembic.ini の値にアクセス可能）
 config = context.config

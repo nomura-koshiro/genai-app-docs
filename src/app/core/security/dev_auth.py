@@ -20,6 +20,8 @@
     ...     return {"email": dev_user.email, "oid": dev_user.oid}
 """
 
+import secrets
+
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -114,8 +116,8 @@ async def get_current_dev_user(credentials: HTTPAuthorizationCredentials = Secur
     """
     token = credentials.credentials
 
-    # モックトークンと一致するかチェック
-    if token != settings.DEV_MOCK_TOKEN:
+    # モックトークンと一致するかチェック（定時間比較でタイミング攻撃を防止）
+    if not secrets.compare_digest(token, settings.DEV_MOCK_TOKEN):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid development token",

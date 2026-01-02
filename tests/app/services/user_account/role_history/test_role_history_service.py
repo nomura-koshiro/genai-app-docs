@@ -19,22 +19,33 @@ from app.services.user_account.role_history import RoleHistoryService
 class TestRecordSystemRoleChange:
     """システムロール変更履歴記録のテスト。"""
 
+    @pytest.mark.parametrize(
+        "action,old_roles,new_roles,reason,test_id",
+        [
+            ("grant", [], ["User"], "Initial role assignment", "001"),
+            ("revoke", ["User", "ProjectManager"], [], "Revoke all roles", "002"),
+            ("update", ["User"], ["User", "SystemAdmin"], "Promote to admin", "003"),
+        ],
+        ids=["grant", "revoke", "update"],
+    )
     @pytest.mark.asyncio
-    async def test_record_system_role_grant(self, db_session):
-        """[test_role_history-001] システムロール付与の履歴記録テスト。"""
+    async def test_record_system_role_changes(
+        self, db_session, action, old_roles, new_roles, reason, test_id
+    ):
+        """[test_role_history-001-003] システムロール変更履歴記録テスト（grant/revoke/update）。"""
         # Arrange
         user = UserAccount(
-            azure_oid="role-history-user-001",
-            email="role-history-user-001@example.com",
-            display_name="Role History User 001",
+            azure_oid=f"role-history-user-{test_id}",
+            email=f"role-history-user-{test_id}@example.com",
+            display_name=f"Role History User {test_id}",
             roles=["User"],
         )
         db_session.add(user)
 
         admin = UserAccount(
-            azure_oid="role-history-admin-001",
-            email="role-history-admin-001@example.com",
-            display_name="Role History Admin 001",
+            azure_oid=f"role-history-admin-{test_id}",
+            email=f"role-history-admin-{test_id}@example.com",
+            display_name=f"Role History Admin {test_id}",
             roles=["SystemAdmin"],
         )
         db_session.add(admin)
@@ -47,10 +58,10 @@ class TestRecordSystemRoleChange:
         # Act
         history = await service.record_system_role_change(
             user_id=user.id,
-            old_roles=[],
-            new_roles=["User"],
+            old_roles=old_roles,
+            new_roles=new_roles,
             changed_by_id=admin.id,
-            reason="Initial role assignment",
+            reason=reason,
         )
         await db_session.commit()
 
@@ -59,96 +70,12 @@ class TestRecordSystemRoleChange:
         assert history.id is not None
         assert history.user_id == user.id
         assert history.changed_by_id == admin.id
-        assert history.action == "grant"
+        assert history.action == action
         assert history.role_type == "system"
-        assert history.old_roles == []
-        assert history.new_roles == ["User"]
-        assert history.reason == "Initial role assignment"
+        assert history.old_roles == old_roles
+        assert history.new_roles == new_roles
+        assert history.reason == reason
         assert history.project_id is None
-
-    @pytest.mark.asyncio
-    async def test_record_system_role_revoke(self, db_session):
-        """[test_role_history-002] システムロール削除の履歴記録テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="role-history-user-002",
-            email="role-history-user-002@example.com",
-            display_name="Role History User 002",
-            roles=["User"],
-        )
-        db_session.add(user)
-
-        admin = UserAccount(
-            azure_oid="role-history-admin-002",
-            email="role-history-admin-002@example.com",
-            display_name="Role History Admin 002",
-            roles=["SystemAdmin"],
-        )
-        db_session.add(admin)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(admin)
-
-        service = RoleHistoryService(db_session)
-
-        # Act
-        history = await service.record_system_role_change(
-            user_id=user.id,
-            old_roles=["User", "ProjectManager"],
-            new_roles=[],
-            changed_by_id=admin.id,
-            reason="Revoke all roles",
-        )
-        await db_session.commit()
-
-        # Assert
-        assert history is not None
-        assert history.action == "revoke"
-        assert history.role_type == "system"
-        assert history.old_roles == ["User", "ProjectManager"]
-        assert history.new_roles == []
-
-    @pytest.mark.asyncio
-    async def test_record_system_role_update(self, db_session):
-        """[test_role_history-003] システムロール更新の履歴記録テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="role-history-user-003",
-            email="role-history-user-003@example.com",
-            display_name="Role History User 003",
-            roles=["User"],
-        )
-        db_session.add(user)
-
-        admin = UserAccount(
-            azure_oid="role-history-admin-003",
-            email="role-history-admin-003@example.com",
-            display_name="Role History Admin 003",
-            roles=["SystemAdmin"],
-        )
-        db_session.add(admin)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(admin)
-
-        service = RoleHistoryService(db_session)
-
-        # Act
-        history = await service.record_system_role_change(
-            user_id=user.id,
-            old_roles=["User"],
-            new_roles=["User", "SystemAdmin"],
-            changed_by_id=admin.id,
-            reason="Promote to admin",
-        )
-        await db_session.commit()
-
-        # Assert
-        assert history is not None
-        assert history.action == "update"
-        assert history.role_type == "system"
-        assert history.old_roles == ["User"]
-        assert history.new_roles == ["User", "SystemAdmin"]
 
     @pytest.mark.asyncio
     async def test_record_system_role_change_without_changed_by(self, db_session):
@@ -185,35 +112,51 @@ class TestRecordSystemRoleChange:
 class TestRecordProjectRoleChange:
     """プロジェクトロール変更履歴記録のテスト。"""
 
+    @pytest.mark.parametrize(
+        "action,old_roles,new_roles,reason,test_id,include_admin",
+        [
+            ("grant", [], ["Member"], "Add to project", "005", True),
+            ("revoke", ["Member"], [], "Remove from project", "006", False),
+            ("update", ["Member"], ["ProjectManager"], "Promote to project manager", "007", True),
+        ],
+        ids=["grant", "revoke", "update"],
+    )
     @pytest.mark.asyncio
-    async def test_record_project_role_grant(self, db_session):
-        """[test_role_history-005] プロジェクトロール付与の履歴記録テスト。"""
+    async def test_record_project_role_changes(
+        self, db_session, action, old_roles, new_roles, reason, test_id, include_admin
+    ):
+        """[test_role_history-005-007] プロジェクトロール変更履歴記録テスト（grant/revoke/update）。"""
         # Arrange
         user = UserAccount(
-            azure_oid="role-history-user-005",
-            email="role-history-user-005@example.com",
-            display_name="Role History User 005",
+            azure_oid=f"role-history-user-{test_id}",
+            email=f"role-history-user-{test_id}@example.com",
+            display_name=f"Role History User {test_id}",
             roles=["User"],
         )
         db_session.add(user)
 
-        admin = UserAccount(
-            azure_oid="role-history-admin-005",
-            email="role-history-admin-005@example.com",
-            display_name="Role History Admin 005",
-            roles=["SystemAdmin"],
-        )
-        db_session.add(admin)
+        admin = None
+        changed_by_id = None
+        if include_admin:
+            admin = UserAccount(
+                azure_oid=f"role-history-admin-{test_id}",
+                email=f"role-history-admin-{test_id}@example.com",
+                display_name=f"Role History Admin {test_id}",
+                roles=["SystemAdmin"],
+            )
+            db_session.add(admin)
 
         project = Project(
-            name="Test Project 005",
-            code="TP-005",
+            name=f"Test Project {test_id}",
+            code=f"TP-{test_id}",
             description="Test project for role history",
         )
         db_session.add(project)
         await db_session.commit()
         await db_session.refresh(user)
-        await db_session.refresh(admin)
+        if admin:
+            await db_session.refresh(admin)
+            changed_by_id = admin.id
         await db_session.refresh(project)
 
         service = RoleHistoryService(db_session)
@@ -222,10 +165,10 @@ class TestRecordProjectRoleChange:
         history = await service.record_project_role_change(
             user_id=user.id,
             project_id=project.id,
-            old_roles=[],
-            new_roles=["Member"],
-            changed_by_id=admin.id,
-            reason="Add to project",
+            old_roles=old_roles,
+            new_roles=new_roles,
+            changed_by_id=changed_by_id,
+            reason=reason,
         )
         await db_session.commit()
 
@@ -234,104 +177,12 @@ class TestRecordProjectRoleChange:
         assert history.id is not None
         assert history.user_id == user.id
         assert history.project_id == project.id
-        assert history.changed_by_id == admin.id
-        assert history.action == "grant"
+        assert history.changed_by_id == changed_by_id
+        assert history.action == action
         assert history.role_type == "project"
-        assert history.old_roles == []
-        assert history.new_roles == ["Member"]
-        assert history.reason == "Add to project"
-
-    @pytest.mark.asyncio
-    async def test_record_project_role_revoke(self, db_session):
-        """[test_role_history-006] プロジェクトロール削除の履歴記録テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="role-history-user-006",
-            email="role-history-user-006@example.com",
-            display_name="Role History User 006",
-            roles=["User"],
-        )
-        db_session.add(user)
-
-        project = Project(
-            name="Test Project 006",
-            code="TP-006",
-            description="Test project for role history",
-        )
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(project)
-
-        service = RoleHistoryService(db_session)
-
-        # Act
-        history = await service.record_project_role_change(
-            user_id=user.id,
-            project_id=project.id,
-            old_roles=["Member"],
-            new_roles=[],
-            changed_by_id=None,
-            reason="Remove from project",
-        )
-        await db_session.commit()
-
-        # Assert
-        assert history is not None
-        assert history.action == "revoke"
-        assert history.role_type == "project"
-        assert history.project_id == project.id
-
-    @pytest.mark.asyncio
-    async def test_record_project_role_update(self, db_session):
-        """[test_role_history-007] プロジェクトロール更新の履歴記録テスト。"""
-        # Arrange
-        user = UserAccount(
-            azure_oid="role-history-user-007",
-            email="role-history-user-007@example.com",
-            display_name="Role History User 007",
-            roles=["User"],
-        )
-        db_session.add(user)
-
-        admin = UserAccount(
-            azure_oid="role-history-admin-007",
-            email="role-history-admin-007@example.com",
-            display_name="Role History Admin 007",
-            roles=["SystemAdmin"],
-        )
-        db_session.add(admin)
-
-        project = Project(
-            name="Test Project 007",
-            code="TP-007",
-            description="Test project for role history",
-        )
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(user)
-        await db_session.refresh(admin)
-        await db_session.refresh(project)
-
-        service = RoleHistoryService(db_session)
-
-        # Act
-        history = await service.record_project_role_change(
-            user_id=user.id,
-            project_id=project.id,
-            old_roles=["Member"],
-            new_roles=["ProjectManager"],
-            changed_by_id=admin.id,
-            reason="Promote to project manager",
-        )
-        await db_session.commit()
-
-        # Assert
-        assert history is not None
-        assert history.action == "update"
-        assert history.role_type == "project"
-        assert history.old_roles == ["Member"]
-        assert history.new_roles == ["ProjectManager"]
+        assert history.old_roles == old_roles
+        assert history.new_roles == new_roles
+        assert history.reason == reason
 
 
 class TestGetUserRoleHistory:
@@ -575,65 +426,30 @@ class TestGetProjectRoleHistory:
 class TestDetermineAction:
     """アクション決定ロジックのテスト。"""
 
+    @pytest.mark.parametrize(
+        "old_roles,new_roles,expected_action,test_id,description",
+        [
+            ([], ["User"], "grant", "014", "empty to roles"),
+            (["User"], [], "revoke", "015", "roles to empty"),
+            (["User"], ["Admin"], "update", "016", "role change"),
+            (["User"], ["User", "Admin"], "update", "017", "add role"),
+            (["User", "Admin"], ["User"], "update", "018", "remove role"),
+        ],
+        ids=["grant", "revoke", "update", "update_add_role", "update_remove_role"],
+    )
     @pytest.mark.asyncio
-    async def test_determine_action_grant(self, db_session):
-        """[test_role_history-014] grant アクションの決定テスト。"""
+    async def test_determine_action(
+        self, db_session, old_roles, new_roles, expected_action, test_id, description
+    ):
+        """[test_role_history-014-018] アクション決定ロジックテスト（grant/revoke/update）。"""
         # Arrange
         service = RoleHistoryService(db_session)
 
         # Act
-        action = service._determine_action(old_roles=[], new_roles=["User"])
+        action = service._determine_action(old_roles=old_roles, new_roles=new_roles)
 
         # Assert
-        assert action == "grant"
-
-    @pytest.mark.asyncio
-    async def test_determine_action_revoke(self, db_session):
-        """[test_role_history-015] revoke アクションの決定テスト。"""
-        # Arrange
-        service = RoleHistoryService(db_session)
-
-        # Act
-        action = service._determine_action(old_roles=["User"], new_roles=[])
-
-        # Assert
-        assert action == "revoke"
-
-    @pytest.mark.asyncio
-    async def test_determine_action_update(self, db_session):
-        """[test_role_history-016] update アクションの決定テスト。"""
-        # Arrange
-        service = RoleHistoryService(db_session)
-
-        # Act
-        action = service._determine_action(old_roles=["User"], new_roles=["Admin"])
-
-        # Assert
-        assert action == "update"
-
-    @pytest.mark.asyncio
-    async def test_determine_action_update_add_role(self, db_session):
-        """[test_role_history-017] ロール追加時の update アクション決定テスト。"""
-        # Arrange
-        service = RoleHistoryService(db_session)
-
-        # Act
-        action = service._determine_action(old_roles=["User"], new_roles=["User", "Admin"])
-
-        # Assert
-        assert action == "update"
-
-    @pytest.mark.asyncio
-    async def test_determine_action_update_remove_role(self, db_session):
-        """[test_role_history-018] ロール削除時の update アクション決定テスト。"""
-        # Arrange
-        service = RoleHistoryService(db_session)
-
-        # Act
-        action = service._determine_action(old_roles=["User", "Admin"], new_roles=["User"])
-
-        # Assert
-        assert action == "update"
+        assert action == expected_action, f"Failed for case: {description}"
 
 
 class TestToResponse:

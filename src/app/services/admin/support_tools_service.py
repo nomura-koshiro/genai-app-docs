@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.decorators import measure_performance, transactional
+from app.core.decorators import measure_performance, transactional
 from app.core.exceptions import NotFoundError
 from app.core.logging import get_logger
 from app.repositories.admin.system_setting_repository import SystemSettingRepository

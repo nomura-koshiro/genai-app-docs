@@ -82,6 +82,8 @@ dev = [
     "pre-commit>=3.5.0",
     # Debugging
     "debugpy>=1.8.17",
+    # Security
+    "pip-audit>=2.7.0",
 ]
 
 # =============================================================================
@@ -101,6 +103,8 @@ generate-docs = "python scripts/generate_openapi_docs.py"
 # Git hooks設定
 install-hooks = "pre-commit install"
 run-hooks = "pre-commit run --all-files"
+# セキュリティスキャン
+security-scan = "pip-audit --strict --desc on"
 # コミット前の一括実行
 pre-commit = [
     "ruff check src/",
@@ -154,3 +158,42 @@ exclude = ["back", ".venv"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = ["skip_db: データベース不要のユニットテスト"]
+addopts = [
+    "--cov=src/app",
+    "--cov-report=term-missing",
+    "--cov-report=html:coverage_html",
+    "--cov-report=xml:coverage.xml",
+    "--cov-fail-under=80",
+]
+
+# =============================================================================
+# Coverage
+# =============================================================================
+
+[tool.coverage.run]
+source = ["src/app"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/.venv/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "@abstractmethod",
+]
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "coverage_html"
+
+[tool.coverage.xml]
+output = "coverage.xml"

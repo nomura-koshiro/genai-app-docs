@@ -19,41 +19,30 @@ from httpx import AsyncClient
 # ================================================================================
 
 
+@pytest.mark.parametrize(
+    "params,expected_keys",
+    [
+        ({}, ["categories", "total"]),
+        ({"skip": 0, "limit": 10}, ["categories"]),
+    ],
+    ids=["basic", "with_pagination"],
+)
 @pytest.mark.asyncio
-async def test_list_categories_success(client: AsyncClient, override_auth, admin_user):
-    """[test_category-001] カテゴリマスタ一覧取得の成功ケース。"""
+async def test_list_categories_success(
+    client: AsyncClient, override_auth, admin_user, params, expected_keys
+):
+    """[test_category-001-002] カテゴリマスタ一覧取得の成功ケース（基本/ページネーション付き）。"""
     # Arrange
     override_auth(admin_user)
 
     # Act
-    response = await client.get("/api/v1/admin/category")
+    response = await client.get("/api/v1/admin/category", params=params)
 
     # Assert
     assert response.status_code == 200
     data = response.json()
-    assert "categories" in data
-    assert "total" in data
-
-
-@pytest.mark.asyncio
-async def test_list_categories_with_pagination(client: AsyncClient, override_auth, admin_user):
-    """[test_category-002] ページネーション付きカテゴリマスタ一覧取得。"""
-    # Arrange
-    override_auth(admin_user)
-
-    # Act
-    response = await client.get(
-        "/api/v1/admin/category",
-        params={
-            "skip": 0,
-            "limit": 10,
-        },
-    )
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert "categories" in data
+    for key in expected_keys:
+        assert key in data
 
 
 # ================================================================================

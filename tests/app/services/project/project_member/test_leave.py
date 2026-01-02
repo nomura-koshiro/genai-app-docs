@@ -13,30 +13,39 @@ from app.services.project.project_member.leave import ProjectMemberLeaveService
 class TestProjectMemberLeaveService:
     """ProjectMemberLeaveServiceのテストクラス。"""
 
+    @pytest.mark.parametrize(
+        "leaving_role",
+        [
+            ProjectRole.MEMBER,
+            ProjectRole.VIEWER,
+            ProjectRole.PROJECT_MODERATOR,
+        ],
+        ids=["member_leave", "viewer_leave", "moderator_leave"],
+    )
     @pytest.mark.asyncio
-    async def test_leave_project_success_as_member(self, db_session):
-        """[test_leave-001] MEMBERロールでのプロジェクト退出成功テスト。"""
+    async def test_leave_project_success_by_role(self, db_session, leaving_role):
+        """[test_leave-001] 異なるロールでのプロジェクト退出成功テスト。"""
         # Arrange
         owner = UserAccount(
             azure_oid="leave-owner-oid",
             email="leaveowner@company.com",
             display_name="Leave Owner",
         )
-        member_user = UserAccount(
-            azure_oid="leave-member-oid",
-            email="leavemember@company.com",
-            display_name="Leave Member",
+        leaving_user = UserAccount(
+            azure_oid="leave-user-oid",
+            email="leaveuser@company.com",
+            display_name="Leave User",
         )
         project = Project(
             name="Leave Project",
-            code="LEAVE-001",
+            code="LEAVE-TEST",
         )
         db_session.add(owner)
-        db_session.add(member_user)
+        db_session.add(leaving_user)
         db_session.add(project)
         await db_session.commit()
         await db_session.refresh(owner)
-        await db_session.refresh(member_user)
+        await db_session.refresh(leaving_user)
         await db_session.refresh(project)
 
         # ownerをPROJECT_MANAGERとして追加
@@ -45,132 +54,26 @@ class TestProjectMemberLeaveService:
             user_id=owner.id,
             role=ProjectRole.PROJECT_MANAGER,
         )
-        # member_userをMEMBERとして追加
-        member = ProjectMember(
+        # leaving_userを指定されたロールとして追加
+        leaving_member = ProjectMember(
             project_id=project.id,
-            user_id=member_user.id,
-            role=ProjectRole.MEMBER,
+            user_id=leaving_user.id,
+            role=leaving_role,
         )
         db_session.add(owner_member)
-        db_session.add(member)
+        db_session.add(leaving_member)
         await db_session.commit()
 
         service = ProjectMemberLeaveService(db_session)
 
         # Act
-        await service.leave_project(project.id, member_user.id)
+        await service.leave_project(project.id, leaving_user.id)
         await db_session.commit()
 
         # Assert
         repository = ProjectMemberRepository(db_session)
-        left_member = await repository.get_by_project_and_user(project.id, member_user.id)
+        left_member = await repository.get_by_project_and_user(project.id, leaving_user.id)
         assert left_member is None
-
-    @pytest.mark.asyncio
-    async def test_leave_project_success_as_viewer(self, db_session):
-        """[test_leave-002] VIEWERロールでのプロジェクト退出成功テスト。"""
-        # Arrange
-        owner = UserAccount(
-            azure_oid="leave-owner2-oid",
-            email="leaveowner2@company.com",
-            display_name="Leave Owner 2",
-        )
-        viewer_user = UserAccount(
-            azure_oid="leave-viewer-oid",
-            email="leaveviewer@company.com",
-            display_name="Leave Viewer",
-        )
-        project = Project(
-            name="Leave Viewer Project",
-            code="LEAVE-002",
-        )
-        db_session.add(owner)
-        db_session.add(viewer_user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(owner)
-        await db_session.refresh(viewer_user)
-        await db_session.refresh(project)
-
-        # ownerをPROJECT_MANAGERとして追加
-        owner_member = ProjectMember(
-            project_id=project.id,
-            user_id=owner.id,
-            role=ProjectRole.PROJECT_MANAGER,
-        )
-        # viewer_userをVIEWERとして追加
-        viewer_member = ProjectMember(
-            project_id=project.id,
-            user_id=viewer_user.id,
-            role=ProjectRole.VIEWER,
-        )
-        db_session.add(owner_member)
-        db_session.add(viewer_member)
-        await db_session.commit()
-
-        service = ProjectMemberLeaveService(db_session)
-
-        # Act
-        await service.leave_project(project.id, viewer_user.id)
-        await db_session.commit()
-
-        # Assert
-        repository = ProjectMemberRepository(db_session)
-        left_viewer = await repository.get_by_project_and_user(project.id, viewer_user.id)
-        assert left_viewer is None
-
-    @pytest.mark.asyncio
-    async def test_leave_project_success_as_project_moderator(self, db_session):
-        """[test_leave-003] PROJECT_MODERATORロールでのプロジェクト退出成功テスト。"""
-        # Arrange
-        owner = UserAccount(
-            azure_oid="leave-owner3-oid",
-            email="leaveowner3@company.com",
-            display_name="Leave Owner 3",
-        )
-        moderator_user = UserAccount(
-            azure_oid="leave-moderator-oid",
-            email="leavemoderator@company.com",
-            display_name="Leave Moderator",
-        )
-        project = Project(
-            name="Leave Moderator Project",
-            code="LEAVE-003",
-        )
-        db_session.add(owner)
-        db_session.add(moderator_user)
-        db_session.add(project)
-        await db_session.commit()
-        await db_session.refresh(owner)
-        await db_session.refresh(moderator_user)
-        await db_session.refresh(project)
-
-        # ownerをPROJECT_MANAGERとして追加
-        owner_member = ProjectMember(
-            project_id=project.id,
-            user_id=owner.id,
-            role=ProjectRole.PROJECT_MANAGER,
-        )
-        # moderator_userをPROJECT_MODERATORとして追加
-        moderator_member = ProjectMember(
-            project_id=project.id,
-            user_id=moderator_user.id,
-            role=ProjectRole.PROJECT_MODERATOR,
-        )
-        db_session.add(owner_member)
-        db_session.add(moderator_member)
-        await db_session.commit()
-
-        service = ProjectMemberLeaveService(db_session)
-
-        # Act
-        await service.leave_project(project.id, moderator_user.id)
-        await db_session.commit()
-
-        # Assert
-        repository = ProjectMemberRepository(db_session)
-        left_moderator = await repository.get_by_project_and_user(project.id, moderator_user.id)
-        assert left_moderator is None
 
     @pytest.mark.asyncio
     async def test_leave_project_not_member(self, db_session):

@@ -25,7 +25,7 @@ from app.api.core.dependencies.system_admin import (
     AuditLogServiceDep,
     RequireSystemAdminDep,
 )
-from app.api.decorators import handle_service_errors
+from app.core.decorators import handle_service_errors
 from app.core.logging import get_logger
 from app.schemas.admin.audit_log import (
     AuditLogExportFilter,

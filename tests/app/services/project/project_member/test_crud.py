@@ -103,115 +103,93 @@ async def test_add_member_duplicate(db_session, test_project_with_owner, test_us
     assert "既にプロジェクトのメンバー" in str(exc_info.value.message)
 
 
+@pytest.mark.parametrize(
+    "requester_role,target_role,expected_error",
+    [
+        (ProjectRole.VIEWER, ProjectRole.MEMBER, "権限がありません"),
+        (ProjectRole.PROJECT_MODERATOR, ProjectRole.PROJECT_MANAGER, "PROJECT_MANAGER"),
+    ],
+    ids=["viewer_cannot_add_member", "moderator_cannot_add_manager"],
+)
 @pytest.mark.asyncio
-async def test_add_member_insufficient_permission(db_session, test_project_with_owner, test_users):
+async def test_add_member_permission_denied(db_session, test_project_with_owner, test_users, requester_role, target_role, expected_error):
     """[test_project_member-005] 権限不足でのメンバー追加テスト（AuthorizationError）。"""
     # Arrange
     service = ProjectMemberService(db_session)
     project = test_project_with_owner
 
-    # test_users[1]をVIEWERとして追加
-    viewer_member = ProjectMember(
+    # test_users[1]を指定されたロールとして追加
+    requester_member = ProjectMember(
         project_id=project.id,
         user_id=test_users[1].id,
-        role=ProjectRole.VIEWER,
+        role=requester_role,
         added_by=test_users[0].id,
     )
-    db_session.add(viewer_member)
+    db_session.add(requester_member)
     await db_session.commit()
 
     member_data = ProjectMemberCreate(
         user_id=test_users[2].id,
-        role=ProjectRole.MEMBER,
+        role=target_role,
     )
 
-    # Act & Assert - VIEWERはメンバー追加不可
+    # Act & Assert
     with pytest.raises(AuthorizationError) as exc_info:
         await service.add_member(project.id, member_data, test_users[1].id)
 
-    assert "権限がありません" in str(exc_info.value.message)
+    assert expected_error in str(exc_info.value.message)
 
 
+@pytest.mark.parametrize(
+    "initial_role,new_role,should_succeed,expected_error",
+    [
+        (ProjectRole.MEMBER, ProjectRole.PROJECT_MANAGER, True, None),
+        (ProjectRole.PROJECT_MANAGER, ProjectRole.MEMBER, False, "最低1人のPROJECT_MANAGER"),
+    ],
+    ids=["member_to_manager_success", "last_manager_downgrade_fails"],
+)
 @pytest.mark.asyncio
-async def test_add_owner_by_non_owner(db_session, test_project_with_owner, test_users):
-    """[test_project_member-006] PROJECT_MODERATORによるPROJECT_MANAGER追加テスト（AuthorizationError）。"""
-    # Arrange
-    service = ProjectMemberService(db_session)
-    project = test_project_with_owner
-
-    # test_users[1]をPROJECT_MODERATORとして追加
-    moderator_member = ProjectMember(
-        project_id=project.id,
-        user_id=test_users[1].id,
-        role=ProjectRole.PROJECT_MODERATOR,
-        added_by=test_users[0].id,
-    )
-    db_session.add(moderator_member)
-    await db_session.commit()
-
-    member_data = ProjectMemberCreate(
-        user_id=test_users[2].id,
-        role=ProjectRole.PROJECT_MANAGER,  # PROJECT_MANAGER追加
-    )
-
-    # Act & Assert - PROJECT_MODERATORはPROJECT_MANAGER追加不可
-    with pytest.raises(AuthorizationError) as exc_info:
-        await service.add_member(project.id, member_data, test_users[1].id)
-
-    assert "PROJECT_MANAGER" in str(exc_info.value.message)
-
-
-@pytest.mark.asyncio
-async def test_update_member_role_success(db_session, test_project_with_owner, test_users):
-    """[test_project_member-007] ロール更新成功のテスト。"""
-    # Arrange
-    service = ProjectMemberService(db_session)
-    project = test_project_with_owner
-
-    # test_users[1]をMEMBERとして追加
-    member = ProjectMember(
-        project_id=project.id,
-        user_id=test_users[1].id,
-        role=ProjectRole.MEMBER,
-        added_by=test_users[0].id,
-    )
-    db_session.add(member)
-    await db_session.commit()
-    member_id = member.id
-
-    # Act - MEMBERをADMINに昇格
-    updated = await service.update_member_role(
-        member_id=member_id,
-        new_role=ProjectRole.PROJECT_MANAGER,
-        requester_id=test_users[0].id,  # OWNER
-    )
-    await db_session.commit()
-
-    # Assert
-    assert updated.role == ProjectRole.PROJECT_MANAGER
-
-
-@pytest.mark.asyncio
-async def test_update_last_owner_role(db_session, test_project_with_owner, test_users):
-    """[test_project_member-008] 最後のPROJECT_MANAGER降格テスト（ValidationError）。"""
+async def test_update_member_role(db_session, test_project_with_owner, test_users, initial_role, new_role, should_succeed, expected_error):
+    """[test_project_member-007] メンバーロール更新のテスト。"""
     # Arrange
     service = ProjectMemberService(db_session)
     repository = ProjectMemberRepository(db_session)
     project = test_project_with_owner
 
-    # 現在のPROJECT_MANAGERはtest_users[0]のみ
-    manager_member = await repository.get_by_project_and_user(project.id, test_users[0].id)
-    assert manager_member is not None
+    if initial_role == ProjectRole.PROJECT_MANAGER:
+        # 現在のPROJECT_MANAGERを取得
+        member = await repository.get_by_project_and_user(project.id, test_users[0].id)
+        assert member is not None
+    else:
+        # test_users[1]を指定されたロールとして追加
+        member = ProjectMember(
+            project_id=project.id,
+            user_id=test_users[1].id,
+            role=initial_role,
+            added_by=test_users[0].id,
+        )
+        db_session.add(member)
+        await db_session.commit()
 
-    # Act & Assert - 最後のPROJECT_MANAGERを降格しようとするとエラー
-    with pytest.raises(ValidationError) as exc_info:
-        await service.update_member_role(
-            member_id=manager_member.id,
-            new_role=ProjectRole.MEMBER,  # MEMBERに降格
+    member_id = member.id
+
+    # Act & Assert
+    if should_succeed:
+        updated = await service.update_member_role(
+            member_id=member_id,
+            new_role=new_role,
             requester_id=test_users[0].id,
         )
-
-    assert "最低1人のPROJECT_MANAGER" in str(exc_info.value.message)
+        await db_session.commit()
+        assert updated.role == new_role
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            await service.update_member_role(
+                member_id=member_id,
+                new_role=new_role,
+                requester_id=test_users[0].id,
+            )
+        assert expected_error in str(exc_info.value.message)
 
 
 @pytest.mark.asyncio

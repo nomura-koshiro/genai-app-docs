@@ -9,10 +9,10 @@ Note:
     FastAPI Dependency方式で提供されています。
 """
 
-from app.api.decorators.basic import async_timeout, log_execution, measure_performance
-from app.api.decorators.data_access import cache_result, transactional
-from app.api.decorators.error_handling import handle_service_errors
-from app.api.decorators.reliability import retry_on_error
+from app.core.decorators.basic import async_timeout, log_execution, measure_performance
+from app.core.decorators.data_access import cache_result, transactional
+from app.core.decorators.error_handling import handle_service_errors
+from app.core.decorators.reliability import retry_on_error
 
 __all__ = [
     # Basic - 基本機能

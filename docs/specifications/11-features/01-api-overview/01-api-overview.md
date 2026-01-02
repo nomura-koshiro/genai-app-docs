@@ -189,9 +189,10 @@ Authorization: Bearer mock-access-token-dev-12345
 | **413** | Payload Too Large | ファイルサイズ超過 | `PayloadTooLargeError` |
 | **415** | Unsupported Media Type | 非対応ファイル形式 | `UnsupportedMediaTypeError` |
 | **422** | Unprocessable Entity | バリデーションエラー | `ValidationError` |
-| **429** | Too Many Requests | レート制限超過 | ミドルウェア処理 |
+| **429** | Too Many Requests | レート制限超過 | `RateLimitExceededError` |
 | **500** | Internal Server Error | サーバーエラー | `DatabaseError` |
 | **502** | Bad Gateway | 外部サービスエラー | `ExternalServiceError` |
+| **503** | Service Unavailable | サービス一時停止 | `ServiceUnavailableError` |
 
 ### 4.3 Exception階層
 
@@ -205,8 +206,10 @@ AppException（基底クラス）
 ├── PayloadTooLargeError (413) - ペイロードサイズ超過
 ├── UnsupportedMediaTypeError (415) - 非対応ファイルタイプ
 ├── ValidationError (422) - バリデーションエラー
+├── RateLimitExceededError (429) - レート制限超過
 ├── DatabaseError (500) - データベース操作エラー
-└── ExternalServiceError (502) - 外部サービスエラー
+├── ExternalServiceError (502) - 外部サービスエラー
+└── ServiceUnavailableError (503) - サービス一時停止
 ```
 
 **実装**: `src/app/core/exceptions.py`

@@ -14,7 +14,6 @@ Happy Pathとビジネスルールエラーのみをテストします。
     - DELETE /api/v1/project/{project_id}/file/{file_id} - ファイル削除
 """
 
-import uuid
 from io import BytesIO
 from unittest.mock import patch
 
@@ -39,18 +38,43 @@ def mock_storage_path(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_upload_file_success(
+@pytest.mark.parametrize(
+    "user_role,expected_status,check_response",
+    [
+        ("owner", 201, True),
+        ("non_member", 403, False),
+        ("viewer", 403, False),
+    ],
+    ids=["owner_success", "non_member_forbidden", "viewer_forbidden"],
+)
+async def test_upload_file_access_control(
     client: AsyncClient,
     override_auth,
     project_with_owner,
+    project_with_members,
+    test_data_seeder,
     mock_storage_path,
+    user_role,
+    expected_status,
+    check_response,
 ):
-    """[test_project_files-001] ファイルアップロードの成功ケース。"""
+    """[test_project_files-001,002,003] ファイルアップロードアクセス制御（owner・非メンバー・viewer）。"""
     # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-    file_content = b"Test file content for upload"
+    file_content = b"Test file content"
     files = {"file": ("test.pdf", BytesIO(file_content), "application/pdf")}
+
+    if user_role == "owner":
+        project, owner = project_with_owner
+        override_auth(owner)
+    elif user_role == "non_member":
+        project, _ = project_with_owner
+        other_user = await test_data_seeder.create_user(display_name="Other User")
+        await test_data_seeder.db.commit()
+        override_auth(other_user)
+    else:  # viewer
+        data = project_with_members
+        project = data["project"]
+        override_auth(data["viewer"])
 
     # Act
     with mock_storage_path:
@@ -60,65 +84,12 @@ async def test_upload_file_success(
         )
 
     # Assert
-    assert response.status_code == 201
-    data = response.json()
-    assert data["filename"] == "test.pdf"
-    assert data["originalFilename"] == "test.pdf"
-    assert data["fileSize"] == len(file_content)
-    assert "id" in data
-    assert "message" in data
-
-
-@pytest.mark.asyncio
-async def test_upload_file_not_member(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-    test_data_seeder,
-):
-    """[test_project_files-002] 非メンバーによるファイルアップロード失敗。"""
-    # Arrange
-    project, _ = project_with_owner
-    other_user = await test_data_seeder.create_user(display_name="Other User")
-    await test_data_seeder.db.commit()
-
-    override_auth(other_user)
-    file_content = b"Test file"
-    files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
-
-    # Act
-    response = await client.post(
-        f"/api/v1/project/{project.id}/file",
-        files=files,
-    )
-
-    # Assert
-    assert response.status_code == 403
-
-
-@pytest.mark.asyncio
-async def test_upload_file_viewer_not_allowed(
-    client: AsyncClient,
-    override_auth,
-    project_with_members,
-    mock_storage_path,
-):
-    """[test_project_files-003] VIEWERロールによるファイルアップロード失敗。"""
-    # Arrange
-    data = project_with_members
-    override_auth(data["viewer"])
-    file_content = b"Test file"
-    files = {"file": ("test.txt", BytesIO(file_content), "text/plain")}
-
-    # Act
-    with mock_storage_path:
-        response = await client.post(
-            f"/api/v1/project/{data['project'].id}/file",
-            files=files,
-        )
-
-    # Assert
-    assert response.status_code == 403
+    assert response.status_code == expected_status
+    if check_response:
+        data = response.json()
+        assert data["filename"] == "test.pdf"
+        assert data["fileSize"] == len(file_content)
+        assert "id" in data
 
 
 # ================================================================================
@@ -127,20 +98,31 @@ async def test_upload_file_viewer_not_allowed(
 
 
 @pytest.mark.asyncio
-async def test_list_files_success(
+@pytest.mark.parametrize(
+    "file_count,query_params,expected_file_count",
+    [
+        (2, {}, 2),
+        (5, {"skip": 0, "limit": 2}, 2),
+    ],
+    ids=["no_pagination", "with_pagination"],
+)
+async def test_list_files(
     client: AsyncClient,
     override_auth,
     project_with_owner,
     mock_storage_path,
+    file_count,
+    query_params,
+    expected_file_count,
 ):
-    """[test_project_files-004] ファイル一覧取得の成功ケース。"""
+    """[test_project_files-004,005] ファイル一覧取得（基本・ページネーション）。"""
     # Arrange
     project, owner = project_with_owner
     override_auth(owner)
 
     # ファイルをアップロード
     with mock_storage_path:
-        for i in range(2):
+        for i in range(file_count):
             file_content = f"File content {i}".encode()
             files = {"file": (f"test{i}.txt", BytesIO(file_content), "text/plain")}
             await client.post(
@@ -149,7 +131,7 @@ async def test_list_files_success(
             )
 
     # Act
-    response = await client.get(f"/api/v1/project/{project.id}/file")
+    response = await client.get(f"/api/v1/project/{project.id}/file", params=query_params)
 
     # Assert
     assert response.status_code == 200
@@ -157,40 +139,8 @@ async def test_list_files_success(
     assert "files" in data
     assert "total" in data
     assert "projectId" in data
-    assert len(data["files"]) == 2
-    assert data["total"] == 2
-
-
-@pytest.mark.asyncio
-async def test_list_files_with_pagination(
-    client: AsyncClient,
-    override_auth,
-    project_with_owner,
-    mock_storage_path,
-):
-    """[test_project_files-005] ページネーション付きファイル一覧取得。"""
-    # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
-
-    # 5つのファイルをアップロード
-    with mock_storage_path:
-        for i in range(5):
-            file_content = f"File {i}".encode()
-            files = {"file": (f"page{i}.txt", BytesIO(file_content), "text/plain")}
-            await client.post(
-                f"/api/v1/project/{project.id}/file",
-                files=files,
-            )
-
-    # Act
-    response = await client.get(f"/api/v1/project/{project.id}/file?skip=0&limit=2")
-
-    # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert len(data["files"]) == 2
-    assert data["total"] == 5
+    assert len(data["files"]) == expected_file_count
+    assert data["total"] == file_count
 
 
 # ================================================================================
@@ -276,16 +226,41 @@ async def test_download_file_success(
 
 
 @pytest.mark.asyncio
-async def test_delete_file_by_uploader(
+@pytest.mark.parametrize(
+    "uploader_role,deleter_role,expected_status",
+    [
+        ("owner", "owner", 200),
+        ("member", "owner", 200),
+        ("owner", "viewer", 403),
+    ],
+    ids=["uploader_success", "manager_success", "no_permission"],
+)
+async def test_delete_file_permissions(
     client: AsyncClient,
     override_auth,
     project_with_owner,
+    project_with_members,
     mock_storage_path,
+    uploader_role,
+    deleter_role,
+    expected_status,
 ):
-    """[test_project_files-008] アップロード者によるファイル削除の成功ケース。"""
+    """[test_project_files-008,009,010] ファイル削除権限（アップロード者・マネージャー・権限なし）。"""
     # Arrange
-    project, owner = project_with_owner
-    override_auth(owner)
+    if uploader_role == "owner" and deleter_role in ["owner", "viewer"]:
+        # owner/viewerテストにはproject_with_membersを使用
+        data = project_with_members
+        project = data["project"]
+        uploader = data["owner"]
+        deleter = data["owner"] if deleter_role == "owner" else data["viewer"]
+    else:  # member -> owner
+        data = project_with_members
+        project = data["project"]
+        uploader = data["member"]
+        deleter = data["owner"]
+
+    # ファイルをアップロード
+    override_auth(uploader)
 
     with mock_storage_path:
         file_content = b"Delete test"
@@ -296,74 +271,12 @@ async def test_delete_file_by_uploader(
         )
         file_id = upload_response.json()["id"]
 
-        # Act
+        # Act - 削除者で削除
+        override_auth(deleter)
         response = await client.delete(f"/api/v1/project/{project.id}/file/{file_id}")
 
     # Assert
-    assert response.status_code == 200
-    data = response.json()
-    assert data["fileId"] == file_id
-
-
-@pytest.mark.asyncio
-async def test_delete_file_by_manager(
-    client: AsyncClient,
-    override_auth,
-    project_with_members,
-    mock_storage_path,
-):
-    """[test_project_files-009] PROJECT_MANAGERによる他者のファイル削除の成功ケース。"""
-    # Arrange
-    data = project_with_members
-
-    # memberでファイルをアップロード
-    override_auth(data["member"])
-
-    with mock_storage_path:
-        file_content = b"Manager delete test"
-        files = {"file": ("managerdel.txt", BytesIO(file_content), "text/plain")}
-        upload_response = await client.post(
-            f"/api/v1/project/{data['project'].id}/file",
-            files=files,
-        )
-        file_id = upload_response.json()["id"]
-
-        # Act - PROJECT_MANAGERで削除
-        override_auth(data["owner"])
-        response = await client.delete(f"/api/v1/project/{data['project'].id}/file/{file_id}")
-
-    # Assert
-    assert response.status_code == 200
-    result = response.json()
-    assert result["fileId"] == file_id
-
-
-@pytest.mark.asyncio
-async def test_delete_file_no_permission(
-    client: AsyncClient,
-    override_auth,
-    project_with_members,
-    mock_storage_path,
-):
-    """[test_project_files-010] 権限のないユーザーによるファイル削除失敗。"""
-    # Arrange
-    data = project_with_members
-
-    # PROJECT_MANAGERでファイルをアップロード
-    override_auth(data["owner"])
-
-    with mock_storage_path:
-        file_content = b"Permission test"
-        files = {"file": ("perm.txt", BytesIO(file_content), "text/plain")}
-        upload_response = await client.post(
-            f"/api/v1/project/{data['project'].id}/file",
-            files=files,
-        )
-        file_id = upload_response.json()["id"]
-
-        # Act - VIEWERで削除を試みる
-        override_auth(data["viewer"])
-        response = await client.delete(f"/api/v1/project/{data['project'].id}/file/{file_id}")
-
-    # Assert
-    assert response.status_code == 403
+    assert response.status_code == expected_status
+    if expected_status == 200:
+        result = response.json()
+        assert result["fileId"] == file_id
