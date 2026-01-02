@@ -139,8 +139,10 @@ from app.api.core.dependencies.project import (
 from app.api.core.dependencies.user_account import (
     RoleHistoryServiceDep,
     UserServiceDep,
+    UserSettingsServiceDep,
     get_role_history_service,
     get_user_service,
+    get_user_settings_service,
 )
 
 __all__ = [
@@ -186,8 +188,10 @@ __all__ = [
     # UserAccountサービス依存性
     "UserServiceDep",
     "RoleHistoryServiceDep",
+    "UserSettingsServiceDep",
     "get_user_service",
     "get_role_history_service",
+    "get_user_settings_service",
     # Projectサービス依存性
     "ProjectServiceDep",
     "ProjectFileServiceDep",

@@ -36,12 +36,12 @@ import uuid
 
 from fastapi import APIRouter, Query, Request, status
 
-from app.api.core import CurrentUserAccountDep, RoleHistoryServiceDep, UserServiceDep
+from app.api.core import CurrentUserAccountDep, RoleHistoryServiceDep, UserServiceDep, UserSettingsServiceDep
 from app.api.decorators import handle_service_errors
 from app.core.exceptions import AuthorizationError, NotFoundError, ValidationError
 from app.core.logging import get_logger
 from app.schemas import UserAccountListResponse, UserAccountResponse, UserAccountRoleUpdate, UserAccountUpdate
-from app.schemas.user_account import RoleHistoryListResponse
+from app.schemas.user_account import RoleHistoryListResponse, UserSettingsResponse, UserSettingsUpdate
 
 logger = get_logger(__name__)
 
@@ -712,3 +712,101 @@ async def get_user_role_history(
     )
 
     return response
+
+
+# ================================================================================
+# ユーザー設定 Endpoints
+# ================================================================================
+
+
+@user_accounts_router.get(
+    "/user_account/me/settings",
+    response_model=UserSettingsResponse,
+    summary="ユーザー設定取得",
+    description="""
+    現在の認証済みユーザーの設定を取得します。
+
+    **認証が必要です。**
+
+    レスポンス:
+        - UserSettingsResponse: ユーザー設定
+            - theme (str): テーマ設定（light/dark/system）
+            - language (str): 言語設定（ja/en）
+            - timezone (str): タイムゾーン設定
+            - notifications: 通知設定
+            - display: 表示設定
+
+    ステータスコード:
+        - 200: 成功
+        - 401: 認証されていない
+    """,
+)
+@handle_service_errors
+async def get_user_settings(
+    current_user: CurrentUserAccountDep,
+    settings_service: UserSettingsServiceDep,
+) -> UserSettingsResponse:
+    """現在のユーザーの設定を取得します。"""
+    logger.info(
+        "ユーザー設定取得",
+        user_id=str(current_user.id),
+        action="get_user_settings",
+    )
+
+    settings = await settings_service.get_user_settings(current_user.id)
+
+    logger.info(
+        "ユーザー設定を取得しました",
+        user_id=str(current_user.id),
+    )
+
+    return settings
+
+
+@user_accounts_router.patch(
+    "/user_account/me/settings",
+    response_model=UserSettingsResponse,
+    summary="ユーザー設定更新",
+    description="""
+    現在の認証済みユーザーの設定を更新します。
+
+    **認証が必要です。**
+
+    リクエストボディ:
+        - UserSettingsUpdate: ユーザー設定更新データ
+            - theme (str | None): テーマ設定（light/dark/system）
+            - language (str | None): 言語設定（ja/en）
+            - timezone (str | None): タイムゾーン設定
+            - notifications: 通知設定（オプション）
+            - display: 表示設定（オプション）
+
+    レスポンス:
+        - UserSettingsResponse: 更新後のユーザー設定
+
+    ステータスコード:
+        - 200: 更新成功
+        - 401: 認証されていない
+    """,
+)
+@handle_service_errors
+async def update_user_settings(
+    update_data: UserSettingsUpdate,
+    current_user: CurrentUserAccountDep,
+    settings_service: UserSettingsServiceDep,
+) -> UserSettingsResponse:
+    """現在のユーザーの設定を更新します。"""
+    logger.info(
+        "ユーザー設定更新",
+        user_id=str(current_user.id),
+        update_fields=update_data.model_dump(exclude_unset=True),
+        action="update_user_settings",
+    )
+
+    settings = await settings_service.update_user_settings(current_user.id, update_data)
+
+    logger.info(
+        "ユーザー設定を更新しました",
+        user_id=str(current_user.id),
+    )
+
+    return settings

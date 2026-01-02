@@ -7,6 +7,7 @@
     - SystemUserRole: システムロール（admin, user）
     - RoleHistory: ロール変更履歴モデル
     - RoleChangeActionEnum: ロール変更アクション種別
+    - UserSettings: ユーザー設定モデル
 
 使用例:
     >>> from app.models.user_account import UserAccount, SystemUserRole
@@ -20,11 +21,21 @@
 from app.models.user_account.role_history import RoleChangeActionEnum, RoleHistory
 from app.models.user_account.user_account import SystemUserRole, UserAccount
 from app.models.user_account.user_session import UserSession
+from app.models.user_account.user_settings import (
+    LanguageEnum,
+    ProjectViewEnum,
+    ThemeEnum,
+    UserSettings,
+)
 
 __all__ = [
+    "LanguageEnum",
+    "ProjectViewEnum",
     "RoleChangeActionEnum",
     "RoleHistory",
     "SystemUserRole",
+    "ThemeEnum",
     "UserAccount",
     "UserSession",
+    "UserSettings",
 ]
