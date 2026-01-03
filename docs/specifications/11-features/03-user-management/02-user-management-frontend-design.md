@@ -10,15 +10,80 @@
 | user-detail | ユーザー詳細 | `/admin/users/{id}` | ユーザー詳細表示・編集 |
 | roles | ロール管理 | `/admin/roles` | システムロール・プロジェクトロール一覧 |
 
-### 1.2 コンポーネント構成
+### 1.2 共通UIコンポーネント参照
+
+本機能で使用する共通UIコンポーネント（`components/ui/`）:
+
+| コンポーネント | 用途 | 参照元 |
+|--------------|------|-------|
+| `DataTable` | ユーザー一覧テーブル | [02-shared-ui-components.md](../01-frontend-common/02-shared-ui-components.md) |
+| `Pagination` | ページネーション | 同上 |
+| `Badge` | ロールバッジ、ステータスバッジ | 同上 |
+| `Button` | 詳細ボタン、有効化/無効化ボタン | 同上 |
+| `Input` | 検索入力 | 同上 |
+| `Select` | ロールフィルタ、ステータスフィルタ | 同上 |
+| `Card` | ユーザー詳細カード、統計カード | 同上 |
+| `Modal` | ロール変更確認ダイアログ | 同上 |
+| `Alert` | 操作完了/エラー通知 | 同上 |
+| `Tabs` | ユーザー詳細タブ | 同上 |
+| `Avatar` | ユーザーアイコン | 同上 |
+
+### 1.3 コンポーネント構成
 
 ```text
-pages/admin/
+features/user-management/
+├── api/
+│   ├── get-users.ts                 # GET /api/v1/user_account
+│   ├── get-user.ts                  # GET /api/v1/user_account/{id}
+│   ├── update-user.ts               # PATCH /api/v1/user_account/me
+│   ├── update-user-role.ts          # PUT /api/v1/user_account/{id}/role
+│   ├── activate-user.ts             # PATCH /api/v1/user_account/{id}/activate
+│   ├── deactivate-user.ts           # PATCH /api/v1/user_account/{id}/deactivate
+│   ├── delete-user.ts               # DELETE /api/v1/user_account/{id}
+│   └── index.ts
+├── components/
+│   ├── user-table/
+│   │   ├── user-table.tsx           # ユーザー一覧テーブル（DataTable使用）
+│   │   └── index.ts
+│   ├── user-search-bar/
+│   │   ├── user-search-bar.tsx      # 検索バー（Input, Select使用）
+│   │   └── index.ts
+│   ├── user-detail-card/
+│   │   ├── user-detail-card.tsx     # ユーザー詳細カード（Card使用）
+│   │   └── index.ts
+│   ├── user-stats-grid/
+│   │   ├── user-stats-grid.tsx      # 統計グリッド
+│   │   └── index.ts
+│   ├── role-change-modal/
+│   │   ├── role-change-modal.tsx    # ロール変更モーダル（Modal使用）
+│   │   └── index.ts
+│   └── index.ts
+├── routes/
+│   ├── user-list/
+│   │   ├── user-list.tsx            # ユーザー一覧コンテナ
+│   │   ├── user-list.hook.ts        # ユーザー一覧用hook
+│   │   └── index.ts
+│   ├── user-detail/
+│   │   ├── user-detail.tsx          # ユーザー詳細コンテナ
+│   │   ├── user-detail.hook.ts      # ユーザー詳細用hook
+│   │   └── index.ts
+│   └── roles/
+│       ├── roles.tsx                # ロール管理コンテナ
+│       ├── roles.hook.ts            # ロール管理用hook
+│       └── index.ts
+├── types/
+│   ├── api.ts                       # API入出力の型
+│   ├── domain.ts                    # ドメインモデル（User, Role等）
+│   └── index.ts
+└── index.ts
+
+app/admin/
 ├── users/
-│   ├── index.tsx          # ユーザー一覧
-│   └── [id].tsx           # ユーザー詳細
+│   ├── page.tsx             # ユーザー一覧ページ → UserList
+│   └── [id]/
+│       └── page.tsx         # ユーザー詳細ページ → UserDetail
 └── roles/
-    └── index.tsx          # ロール管理
+    └── page.tsx             # ロール管理ページ → Roles
 ```
 
 ---
@@ -201,7 +266,204 @@ pages/admin/
 
 ---
 
-## 8. 関連ドキュメント
+## 8. Storybook対応
+
+### 8.1 ストーリー一覧
+
+| コンポーネント | ストーリー名 | 説明 | 状態バリエーション |
+|--------------|-------------|------|-------------------|
+| UserTable | Default | ユーザー一覧テーブル表示 | 通常表示、ローディング、空状態、エラー |
+| UserSearchBar | Default | ユーザー検索バー | 通常、フィルタ適用済み |
+| UserDetailCard | Default | ユーザー詳細カード | 通常、編集可能、ローディング |
+| UserStatsGrid | Default | ユーザー統計グリッド | 通常、ローディング |
+| RoleChangeModal | Open | ロール変更モーダル | 開いた状態、送信中 |
+
+### 8.2 ストーリー実装例
+
+```tsx
+// user-table/user-table.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { UserTable } from "./user-table";
+import { mockUsers } from "@/test/mocks/users";
+
+const meta = {
+  title: "features/user-management/components/user-table",
+  component: UserTable,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: "ユーザー一覧テーブルコンポーネント。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onEdit: fn(),
+    onDeactivate: fn(),
+  },
+} satisfies Meta<typeof UserTable>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    users: mockUsers,
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    isLoading: true,
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    users: [],
+  },
+};
+```
+
+---
+
+## 9. テスト戦略
+
+### 9.1 テスト対象・カバレッジ目標
+
+| レイヤー | テスト種別 | カバレッジ目標 | 主な検証内容 |
+|---------|----------|---------------|-------------|
+| コンポーネント | ユニットテスト | 80%以上 | テーブル表示、フィルタ動作、モーダル操作 |
+| ユーティリティ | ユニットテスト | 90%以上 | hooks, utils, バリデーション |
+| API連携 | 統合テスト | 70%以上 | API呼び出し、状態管理、エラーハンドリング |
+| E2E | E2Eテスト | 主要フロー100% | ユーザー検索、ロール変更、詳細表示 |
+
+### 9.2 ユニットテスト例
+
+```typescript
+// hooks/use-user-list.test.ts
+import { renderHook, waitFor } from "@testing-library/react";
+import { describe, it, expect } from "vitest";
+
+import { useUserList } from "./use-user-list";
+import { QueryClientProvider } from "@tanstack/react-query";
+
+describe("useUserList", () => {
+  it("ユーザー一覧を取得できる", async () => {
+    const { result } = renderHook(() => useUserList(), {
+      wrapper: QueryClientProvider,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data).toHaveLength(10);
+  });
+
+  it("フィルタ条件でユーザーを絞り込める", async () => {
+    const { result } = renderHook(() => useUserList({ role: "admin" }), {
+      wrapper: QueryClientProvider,
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.every(u => u.role === "admin")).toBe(true);
+  });
+});
+```
+
+### 9.3 コンポーネントテスト例
+
+```tsx
+// components/user-table/user-table.test.tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { UserTable } from "./user-table";
+import { mockUsers } from "@/test/mocks/users";
+
+describe("UserTable", () => {
+  it("ユーザー一覧を表示する", () => {
+    render(<UserTable users={mockUsers} />);
+
+    expect(screen.getByText(mockUsers[0].displayName)).toBeInTheDocument();
+    expect(screen.getByText(mockUsers[0].email)).toBeInTheDocument();
+  });
+
+  it("詳細ボタンクリックでonEditが呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    render(<UserTable users={mockUsers} onEdit={onEdit} />);
+
+    await user.click(screen.getAllByRole("button", { name: "詳細" })[0]);
+    expect(onEdit).toHaveBeenCalledWith(mockUsers[0].id);
+  });
+
+  it("ローディング中はスケルトンを表示する", () => {
+    render(<UserTable isLoading />);
+
+    expect(screen.getByTestId("user-table-skeleton")).toBeInTheDocument();
+  });
+});
+```
+
+### 9.4 E2Eテスト例
+
+```typescript
+// e2e/user-management.spec.ts
+import { test, expect } from "@playwright/test";
+
+test.describe("ユーザー管理", () => {
+  test("UC-007: ユーザー一覧を取得・表示できる", async ({ page }) => {
+    await page.goto("/admin/users");
+
+    await expect(page.getByRole("table")).toBeVisible();
+    await expect(page.getByRole("row")).toHaveCount.greaterThan(1);
+  });
+
+  test("UC-008: ユーザー詳細を表示できる", async ({ page }) => {
+    await page.goto("/admin/users");
+    await page.getByRole("button", { name: "詳細" }).first().click();
+
+    await expect(page).toHaveURL(/\/admin\/users\/[a-z0-9-]+/);
+    await expect(page.getByTestId("user-detail-card")).toBeVisible();
+  });
+
+  test("UC-004: ユーザーを無効化できる", async ({ page }) => {
+    await page.goto("/admin/users");
+    await page.getByRole("button", { name: "無効化" }).first().click();
+    await page.getByRole("button", { name: "確認" }).click();
+
+    await expect(page.getByText("ユーザーを無効化しました")).toBeVisible();
+  });
+});
+```
+
+### 9.5 モックデータ
+
+```typescript
+// test/mocks/users.ts
+export const mockUsers: User[] = [
+  {
+    id: "user-001",
+    azureId: "azure-001",
+    email: "admin@example.com",
+    displayName: "管理者ユーザー",
+    roles: ["system_admin"],
+    isActive: true,
+    lastLogin: "2026-01-01T10:00:00Z",
+    loginCount: 50,
+    createdAt: "2025-01-01T00:00:00Z",
+    updatedAt: "2026-01-01T10:00:00Z",
+  },
+  // ... 追加のモックデータ
+];
+```
+
+---
+
+## 10. 関連ドキュメント
 
 - **バックエンド設計書**: [01-user-management-design.md](./01-user-management-design.md)
 - **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
@@ -209,12 +471,11 @@ pages/admin/
 
 ---
 
-## 9. ドキュメント管理情報
+## 11. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | UM-FRONTEND-001 |
 | 対象ユースケース | U-003〜U-011 |
 | 最終更新日 | 2026-01-01 |
-| 対象フロントエンド | `pages/admin/users/` |
-|  | `pages/admin/roles/` |
+| 対象フロントエンド | `app/admin/users/` |

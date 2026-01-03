@@ -13,17 +13,107 @@
 | files | ファイル管理 | `/projects/{id}/files` | ファイル一覧・アップロード |
 | upload | ファイルアップロード | `/projects/{id}/upload` | ファイルアップロード画面 |
 
-### 1.2 コンポーネント構成
+### 1.2 共通UIコンポーネント参照
+
+本機能で使用する共通UIコンポーネント（`components/ui/`）:
+
+| コンポーネント | 用途 | 参照元 |
+|--------------|------|-------|
+| `Card` | プロジェクトカード | [02-shared-ui-components.md](../01-frontend-common/02-shared-ui-components.md) |
+| `DataTable` | メンバー一覧、ファイル一覧 | 同上 |
+| `Pagination` | ページネーション | 同上 |
+| `Badge` | ステータスバッジ、ロールバッジ | 同上 |
+| `Button` | 操作ボタン | 同上 |
+| `Input` | 検索・フォーム入力 | 同上 |
+| `Textarea` | 説明入力 | 同上 |
+| `Select` | フィルタ、ロール選択 | 同上 |
+| `Modal` | 編集モーダル、確認ダイアログ | 同上 |
+| `Alert` | 操作完了/エラー通知 | 同上 |
+| `Tabs` | プロジェクト詳細タブ | 同上 |
+| `DatePicker` | 開始日・終了日入力 | 同上 |
+| `FileUpload` | ファイルアップロード | 同上 |
+| `EmptyState` | データなし表示 | 同上 |
+
+### 1.3 コンポーネント構成
 
 ```text
-pages/projects/
-├── index.tsx              # プロジェクト一覧
-├── new.tsx                # プロジェクト作成
+features/project-management/
+├── api/
+│   ├── get-projects.ts              # GET /api/v1/project
+│   ├── get-project.ts               # GET /api/v1/project/{id}
+│   ├── create-project.ts            # POST /api/v1/project
+│   ├── update-project.ts            # PATCH /api/v1/project/{id}
+│   ├── get-members.ts               # GET /api/v1/project/{id}/member
+│   ├── create-member.ts             # POST /api/v1/project/{id}/member
+│   ├── update-member.ts             # PATCH /api/v1/project/{id}/member/{memberId}
+│   ├── delete-member.ts             # DELETE /api/v1/project/{id}/member/{memberId}
+│   ├── get-files.ts                 # GET /api/v1/project/{id}/file
+│   ├── upload-file.ts               # POST /api/v1/project/{id}/file
+│   ├── delete-file.ts               # DELETE /api/v1/project/{id}/file/{fileId}
+│   └── index.ts
+├── components/
+│   ├── project-card/
+│   │   ├── project-card.tsx         # プロジェクトカード（Card使用）
+│   │   └── index.ts
+│   ├── project-filters/
+│   │   ├── project-filters.tsx      # フィルター（Select使用）
+│   │   └── index.ts
+│   ├── project-form/
+│   │   ├── project-form.tsx         # 作成・編集フォーム
+│   │   └── index.ts
+│   ├── project-stats/
+│   │   ├── project-stats.tsx        # 統計情報
+│   │   └── index.ts
+│   ├── member-table/
+│   │   ├── member-table.tsx         # メンバー一覧（DataTable使用）
+│   │   └── index.ts
+│   ├── member-invite-modal/
+│   │   ├── member-invite-modal.tsx  # メンバー招待モーダル
+│   │   └── index.ts
+│   ├── file-list/
+│   │   ├── file-list.tsx            # ファイル一覧（DataTable使用）
+│   │   └── index.ts
+│   ├── file-upload-area/
+│   │   ├── file-upload-area.tsx     # アップロードエリア（FileUpload使用）
+│   │   └── index.ts
+│   └── index.ts
+├── routes/
+│   ├── project-list/
+│   │   ├── project-list.tsx         # プロジェクト一覧コンテナ
+│   │   ├── project-list.hook.ts     # プロジェクト一覧用hook
+│   │   └── index.ts
+│   ├── project-new/
+│   │   ├── project-new.tsx          # プロジェクト作成コンテナ
+│   │   ├── project-new.hook.ts      # プロジェクト作成用hook
+│   │   └── index.ts
+│   ├── project-detail/
+│   │   ├── project-detail.tsx       # プロジェクト詳細コンテナ
+│   │   ├── project-detail.hook.ts   # プロジェクト詳細用hook
+│   │   └── index.ts
+│   ├── members/
+│   │   ├── members.tsx              # メンバー管理コンテナ
+│   │   ├── members.hook.ts          # メンバー管理用hook
+│   │   └── index.ts
+│   └── files/
+│       ├── files.tsx                # ファイル管理コンテナ
+│       ├── files.hook.ts            # ファイル管理用hook
+│       └── index.ts
+├── types/
+│   ├── api.ts                       # API入出力の型
+│   ├── domain.ts                    # ドメインモデル（Project, Member, File等）
+│   └── index.ts
+└── index.ts
+
+app/projects/
+├── page.tsx               # プロジェクト一覧ページ → ProjectList
+├── new/
+│   └── page.tsx           # プロジェクト作成ページ → ProjectNew
 └── [id]/
-    ├── index.tsx          # プロジェクト詳細
-    ├── members.tsx        # メンバー管理
-    ├── files.tsx          # ファイル管理
-    └── upload.tsx         # ファイルアップロード
+    ├── page.tsx           # プロジェクト詳細ページ → ProjectDetail
+    ├── members/
+    │   └── page.tsx       # メンバー管理ページ → Members
+    └── files/
+        └── page.tsx       # ファイル管理ページ → Files
 ```
 
 ---
@@ -114,6 +204,7 @@ pages/projects/
 | 詳細ボタン | ボタン | - | - | セッション詳細画面へ遷移 |
 
 **API連携**:
+
 - プロジェクト詳細取得時に `stats.sessionCount` で件数を表示
 - セッション一覧は別途 `GET /api/v1/project/{project_id}/session` で取得
 - 初期表示は最新5件、「すべて表示」でセッション一覧画面へ
@@ -129,6 +220,7 @@ pages/projects/
 | 詳細ボタン | ボタン | - | - | ツリー詳細画面へ遷移 |
 
 **API連携**:
+
 - プロジェクト詳細取得時に `stats.treeCount` で件数を表示
 - ツリー一覧は別途 `GET /api/v1/project/{project_id}/tree` で取得
 - 初期表示は最新5件、「すべて表示」でツリー一覧画面へ
@@ -146,6 +238,7 @@ pages/projects/
 | キャンセルボタン | ボタン | - | - | - | モーダル閉じる |
 
 **モーダル動作**:
+
 - 編集ボタンクリックで現在の値を設定して表示
 - 保存時は `PATCH /api/v1/project/{id}` で更新
 - 成功時はモーダルを閉じて詳細画面を再読み込み
@@ -201,10 +294,12 @@ pages/projects/
 | ステータス | バッジ | 同上 | `history[].status` | active/removed |
 
 **ステータス表示**:
+
 - `active`: "現在のメンバー"（success）
 - `removed`: "削除済み"（secondary）
 
 **API連携**:
+
 - メンバー追加履歴は `GET /api/v1/project/{project_id}/member/history` で取得
 - 削除されたメンバーも履歴に含む
 - 追加日時の降順でソート
@@ -324,7 +419,376 @@ pages/projects/
 
 ---
 
-## 8. 関連ドキュメント
+## 8. Storybook対応
+
+### 8.1 ストーリー一覧
+
+| コンポーネント | ストーリー名 | 説明 | 状態バリエーション |
+|--------------|-------------|------|-------------------|
+| ProjectCard | Default | プロジェクトカード表示 | 通常、アクティブ、アーカイブ済み、ローディング |
+| ProjectFilters | Default | プロジェクトフィルタ | 通常、フィルタ適用済み |
+| ProjectForm | Create | プロジェクト作成フォーム | 作成、編集、送信中、エラー |
+| ProjectStats | Default | プロジェクト統計表示 | 通常、ローディング、空 |
+| MemberTable | Default | メンバーテーブル表示 | 通常、空、ローディング、ロール変更 |
+| MemberInviteModal | Open | メンバー招待モーダル | 開いた状態、送信中、エラー |
+| FileList | Default | ファイル一覧表示 | 通常、空、ローディング |
+| FileUploadArea | Default | ファイルアップロードエリア | 通常、アップロード中、成功、エラー |
+
+### 8.2 ストーリー実装例
+
+```tsx
+// features/project-management/components/project-card/project-card.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { ProjectCard } from "./project-card";
+import type { Project } from "../../types";
+
+const baseProject: Project = {
+  id: "1",
+  name: "サンプルプロジェクト",
+  description: "プロジェクトの説明文です",
+  isActive: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  stats: {
+    memberCount: 5,
+    sessionCount: 3,
+    treeCount: 2,
+    fileCount: 10,
+  },
+};
+
+const meta = {
+  title: "features/project-management/components/project-card",
+  component: ProjectCard,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: "プロジェクトカードコンポーネント。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onEdit: fn(),
+    onArchive: fn(),
+    onRestore: fn(),
+  },
+} satisfies Meta<typeof ProjectCard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    project: baseProject,
+  },
+};
+
+export const Active: Story = {
+  args: {
+    project: { ...baseProject, isActive: true },
+  },
+};
+
+export const Archived: Story = {
+  args: {
+    project: { ...baseProject, isActive: false },
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    project: baseProject,
+    isLoading: true,
+  },
+};
+```
+
+```tsx
+// features/project-management/components/member-table/member-table.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { MemberTable } from "./member-table";
+import type { Member } from "../../types";
+
+const mockMembers: Member[] = [
+  {
+    id: "1",
+    user: { displayName: "山田太郎", email: "yamada@example.com" },
+    role: "project_manager",
+    joinedAt: "2024-01-01T00:00:00Z",
+  },
+  {
+    id: "2",
+    user: { displayName: "鈴木花子", email: "suzuki@example.com" },
+    role: "member",
+    joinedAt: "2024-01-15T00:00:00Z",
+  },
+];
+
+const meta = {
+  title: "features/project-management/components/member-table",
+  component: MemberTable,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: "プロジェクトメンバー一覧テーブルコンポーネント。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onRoleChange: fn(),
+    onRemove: fn(),
+  },
+} satisfies Meta<typeof MemberTable>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    members: mockMembers,
+    currentUserId: "1",
+    onRoleChange: () => {},
+    onRemove: () => {},
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    members: [],
+    currentUserId: "1",
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    members: [],
+    isLoading: true,
+  },
+};
+```
+
+---
+
+## 9. テスト戦略
+
+### 9.1 テスト対象・カバレッジ目標
+
+| レイヤー | テスト種別 | カバレッジ目標 | 主な検証内容 |
+|---------|----------|---------------|-------------|
+| コンポーネント | ユニットテスト | 80%以上 | カード表示、フォーム操作、モーダル動作 |
+| ユーティリティ | ユニットテスト | 90%以上 | hooks, utils, バリデーション |
+| API連携 | 統合テスト | 70%以上 | API呼び出し、状態管理、エラーハンドリング |
+| E2E | E2Eテスト | 主要フロー100% | プロジェクト作成、メンバー管理、ファイルアップロード |
+
+### 9.2 ユニットテスト例
+
+```typescript
+// features/project-management/hooks/__tests__/use-project-form.test.ts
+import { renderHook, act } from "@testing-library/react";
+import { useProjectForm } from "../use-project-form";
+
+describe("useProjectForm", () => {
+  it("プロジェクト名のバリデーション", () => {
+    const { result } = renderHook(() => useProjectForm());
+
+    act(() => {
+      result.current.setValue("name", "");
+      result.current.trigger("name");
+    });
+
+    expect(result.current.errors.name?.message).toBe(
+      "プロジェクト名は必須です"
+    );
+  });
+
+  it("終了日が開始日より前の場合エラー", () => {
+    const { result } = renderHook(() => useProjectForm());
+
+    act(() => {
+      result.current.setValue("startDate", "2024-12-01");
+      result.current.setValue("endDate", "2024-01-01");
+      result.current.trigger("endDate");
+    });
+
+    expect(result.current.errors.endDate?.message).toBe(
+      "終了日は開始日以降を指定してください"
+    );
+  });
+});
+```
+
+### 9.3 コンポーネントテスト例
+
+```tsx
+// features/project-management/components/project-card/__tests__/project-card.test.tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { ProjectCard } from "../project-card";
+import type { Project } from "../../../types";
+
+const mockProject: Project = {
+  id: "1",
+  name: "テストプロジェクト",
+  description: "説明文",
+  isActive: true,
+  createdAt: "2024-01-01T00:00:00Z",
+  stats: { memberCount: 3, sessionCount: 2, treeCount: 1, fileCount: 5 },
+};
+
+describe("ProjectCard", () => {
+  it("プロジェクト情報を正しく表示する", () => {
+    render(<ProjectCard project={mockProject} />);
+
+    expect(screen.getByText("テストプロジェクト")).toBeInTheDocument();
+    expect(screen.getByText("説明文")).toBeInTheDocument();
+    expect(screen.getByText("3")).toBeInTheDocument(); // メンバー数
+  });
+
+  it("編集ボタンクリックでonEditが呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    render(<ProjectCard project={mockProject} onEdit={onEdit} />);
+
+    await user.click(screen.getByRole("button", { name: /編集/i }));
+    expect(onEdit).toHaveBeenCalledWith(mockProject.id);
+  });
+
+  it("アクティブ状態でアーカイブボタンを表示", () => {
+    render(<ProjectCard project={mockProject} />);
+
+    expect(
+      screen.getByRole("button", { name: /アーカイブ/i })
+    ).toBeInTheDocument();
+  });
+
+  it("アーカイブ状態で復元ボタンを表示", () => {
+    render(<ProjectCard project={{ ...mockProject, isActive: false }} />);
+
+    expect(screen.getByRole("button", { name: /復元/i })).toBeInTheDocument();
+  });
+});
+```
+
+### 9.4 E2Eテスト例
+
+```typescript
+// e2e/project-management.spec.ts
+import { test, expect } from "@playwright/test";
+
+test.describe("プロジェクト管理", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/projects");
+  });
+
+  test("プロジェクト一覧が表示される", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "プロジェクト" })).toBeVisible();
+    await expect(page.getByTestId("project-list")).toBeVisible();
+  });
+
+  test("新規プロジェクトを作成できる", async ({ page }) => {
+    await page.getByRole("button", { name: "新規作成" }).click();
+    await page.getByLabel("プロジェクト名").fill("E2Eテストプロジェクト");
+    await page.getByLabel("説明").fill("E2Eテスト用のプロジェクトです");
+    await page.getByRole("button", { name: "作成" }).click();
+
+    await expect(page.getByText("プロジェクトを作成しました")).toBeVisible();
+    await expect(page.getByText("E2Eテストプロジェクト")).toBeVisible();
+  });
+
+  test("メンバーを追加できる", async ({ page }) => {
+    await page.getByTestId("project-card").first().click();
+    await page.getByRole("link", { name: "メンバー管理" }).click();
+    await page.getByRole("button", { name: "メンバー追加" }).click();
+
+    await page.getByLabel("ユーザー").click();
+    await page.getByRole("option", { name: "鈴木花子" }).click();
+    await page.getByLabel("ロール").selectOption("member");
+    await page.getByRole("button", { name: "追加" }).click();
+
+    await expect(page.getByText("メンバーを追加しました")).toBeVisible();
+  });
+
+  test("ファイルをアップロードできる", async ({ page }) => {
+    await page.getByTestId("project-card").first().click();
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles("./fixtures/test-file.xlsx");
+
+    await expect(page.getByText("アップロード完了")).toBeVisible();
+    await expect(page.getByText("test-file.xlsx")).toBeVisible();
+  });
+});
+```
+
+### 9.5 モックデータ
+
+```typescript
+// features/project-management/__mocks__/handlers.ts
+import { http, HttpResponse } from "msw";
+
+export const projectHandlers = [
+  http.get("/api/v1/project", () => {
+    return HttpResponse.json({
+      projects: [
+        {
+          id: "1",
+          name: "モックプロジェクト1",
+          description: "テスト用プロジェクト",
+          isActive: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          stats: { memberCount: 5, sessionCount: 3, treeCount: 2, fileCount: 10 },
+        },
+        {
+          id: "2",
+          name: "モックプロジェクト2",
+          description: "アーカイブ済みプロジェクト",
+          isActive: false,
+          createdAt: "2023-06-01T00:00:00Z",
+          stats: { memberCount: 3, sessionCount: 1, treeCount: 1, fileCount: 5 },
+        },
+      ],
+      total: 2,
+    });
+  }),
+
+  http.post("/api/v1/project", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: "new-id",
+      ...body,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      stats: { memberCount: 1, sessionCount: 0, treeCount: 0, fileCount: 0 },
+    });
+  }),
+
+  http.get("/api/v1/project/:id/member", () => {
+    return HttpResponse.json({
+      members: [
+        {
+          id: "m1",
+          user: { displayName: "山田太郎", email: "yamada@example.com" },
+          role: "project_manager",
+          joinedAt: "2024-01-01T00:00:00Z",
+        },
+      ],
+    });
+  }),
+];
+```
+
+---
+
+## 10. 関連ドキュメント
 
 - **バックエンド設計書**: [01-project-management-design.md](./01-project-management-design.md)
 - **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
@@ -332,11 +796,11 @@ pages/projects/
 
 ---
 
-## 9. ドキュメント管理情報
+## 11. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | PM-FRONTEND-001 |
 | 対象ユースケース | P-001〜P-006, PM-001〜PM-006, PF-001〜PF-006 |
 | 最終更新日 | 2026-01-01 |
-| 対象フロントエンド | `pages/projects/` |
+| 対象フロントエンド | `app/projects/` |

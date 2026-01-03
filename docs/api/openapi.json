@@ -187,6 +187,33 @@
         ]
       }
     },
+    "/api/v1/user_account/me/context": {
+      "get": {
+        "tags": [
+          "user_account"
+        ],
+        "summary": "ユーザーコンテキスト取得",
+        "description": "現在の認証済みユーザーのコンテキスト情報を取得します。\n\n    ログイン直後およびページリロード時に呼び出され、\n    UIの動的表示に必要な情報をまとめて返却します。\n\n    **認証が必要です。**\n\n    レスポンス:\n        - UserContextResponse: ユーザーコンテキスト情報\n            - user: ユーザー基本情報\n            - permissions: 権限情報\n            - navigation: ナビゲーション情報\n            - notifications: 通知バッジ情報\n            - sidebar: サイドバー表示情報\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
+        "operationId": "get_user_context_api_v1_user_account_me_context_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserContextResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/user_account/{user_id}": {
       "get": {
         "tags": [
@@ -274,6 +301,37 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/user_account/logout": {
+      "post": {
+        "tags": [
+          "user_account"
+        ],
+        "summary": "ユーザーログアウト",
+        "description": "現在の認証済みユーザーをログアウトします。\n\n    **認証が必要です。**\n\n    このエンドポイントは以下の処理を行います:\n        - サーバーサイドでログアウトイベントを記録\n        - クライアントはこのレスポンスを受け取った後、\n          ローカルに保存されたトークンをクリアする必要があります\n\n    Note:\n        Azure AD認証の場合、実際のトークン無効化は\n        Azure AD側で行われます。このエンドポイントは\n        アプリケーション側のログアウト記録用です。\n\n    レスポンス:\n        - message: str - ログアウト成功メッセージ\n\n    ステータスコード:\n        - 200: ログアウト成功\n        - 401: 認証されていない",
+        "operationId": "logout_api_v1_user_account_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Logout Api V1 User Account Logout Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/user_account/{user_id}/activate": {
@@ -507,6 +565,78 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/user_account/me/settings": {
+      "get": {
+        "tags": [
+          "user_account"
+        ],
+        "summary": "ユーザー設定取得",
+        "description": "現在の認証済みユーザーの設定を取得します。\n\n    **認証が必要です。**\n\n    レスポンス:\n        - UserSettingsResponse: ユーザー設定\n            - theme (str): テーマ設定（light/dark/system）\n            - language (str): 言語設定（ja/en）\n            - timezone (str): タイムゾーン設定\n            - notifications: 通知設定\n            - display: 表示設定\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
+        "operationId": "get_user_settings_api_v1_user_account_me_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "user_account"
+        ],
+        "summary": "ユーザー設定更新",
+        "description": "現在の認証済みユーザーの設定を更新します。\n\n    **認証が必要です。**\n\n    リクエストボディ:\n        - UserSettingsUpdate: ユーザー設定更新データ\n            - theme (str | None): テーマ設定（light/dark/system）\n            - language (str | None): 言語設定（ja/en）\n            - timezone (str | None): タイムゾーン設定\n            - notifications: 通知設定（オプション）\n            - display: 表示設定（オプション）\n\n    レスポンス:\n        - UserSettingsResponse: 更新後のユーザー設定\n\n    ステータスコード:\n        - 200: 更新成功\n        - 401: 認証されていない",
+        "operationId": "update_user_settings_api_v1_user_account_me_settings_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSettingsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/admin/category": {
@@ -1873,7 +2003,7 @@
           "admin-role"
         ],
         "summary": "ロール一覧取得",
-        "description": "システムロールおよびプロジェクトロールの一覧を取得します。\n\n    **認証不要です。**\n\n    レスポンス:\n        - AllRolesResponse: 全ロール一覧\n            - system_roles (list): システムロール一覧\n                - value (str): ロール値\n                - label (str): 表示名\n                - description (str): ロールの説明\n            - project_roles (list): プロジェクトロール一覧\n                - value (str): ロール値\n                - label (str): 表示名\n                - description (str): ロールの説明\n\n    ステータスコード:\n        - 200: 成功",
+        "description": "システムロールおよびプロジェクトロールの一覧を取得します。\n\n    **認証が必要です。**\n\n    レスポンス:\n        - AllRolesResponse: 全ロール一覧\n            - system_roles (list): システムロール一覧\n                - value (str): ロール値\n                - label (str): 表示名\n                - description (str): ロールの説明\n            - project_roles (list): プロジェクトロール一覧\n                - value (str): ロール値\n                - label (str): 表示名\n                - description (str): ロールの説明\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
         "operationId": "get_roles_api_v1_admin_role_get",
         "responses": {
           "200": {
@@ -1886,7 +2016,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/admin/validation": {
@@ -2612,6 +2747,375 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ActivityLogDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects": {
+      "get": {
+        "tags": [
+          "system-admin-projects",
+          "Admin Projects"
+        ],
+        "summary": "全プロジェクト一覧取得",
+        "description": "全プロジェクト一覧を取得します（管理者専用）。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - status: ステータスフィルタ（active/archived）\n        - owner_id: オーナーIDフィルタ\n        - inactive_days: 非アクティブ日数フィルタ\n        - search: プロジェクト名検索\n        - sort_by: ソート項目（storage/last_activity/created_at）\n        - sort_order: ソート順（asc/desc）\n        - page: ページ番号\n        - limit: 取得件数",
+        "operationId": "get_all_projects_api_v1_admin_projects_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ステータスフィルタ",
+              "title": "Status"
+            },
+            "description": "ステータスフィルタ"
+          },
+          {
+            "name": "owner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "オーナーIDフィルタ",
+              "title": "Owner Id"
+            },
+            "description": "オーナーIDフィルタ"
+          },
+          {
+            "name": "inactive_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "非アクティブ日数",
+              "title": "Inactive Days"
+            },
+            "description": "非アクティブ日数"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "検索キーワード",
+              "title": "Search"
+            },
+            "description": "検索キーワード"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ソート項目",
+              "title": "Sort By"
+            },
+            "description": "ソート項目"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "ソート順",
+              "default": "desc",
+              "title": "Sort Order"
+            },
+            "description": "ソート順"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProjectListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects/storage": {
+      "get": {
+        "tags": [
+          "system-admin-projects",
+          "Admin Projects"
+        ],
+        "summary": "プロジェクト別ストレージ使用量取得",
+        "description": "プロジェクト別ストレージ使用量を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - sort_by: ソート項目（storage/file_count）\n        - limit: 取得件数",
+        "operationId": "get_storage_usage_api_v1_admin_projects_storage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "ソート項目",
+              "default": "storage",
+              "title": "Sort By"
+            },
+            "description": "ソート項目"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectStorageListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects/inactive": {
+      "get": {
+        "tags": [
+          "system-admin-projects",
+          "Admin Projects"
+        ],
+        "summary": "非アクティブプロジェクト一覧取得",
+        "description": "非アクティブプロジェクト一覧を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - inactive_days: 非アクティブ判定日数（デフォルト: 30日）\n        - page: ページ番号\n        - limit: 取得件数",
+        "operationId": "get_inactive_projects_api_v1_admin_projects_inactive_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inactive_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "非アクティブ日数",
+              "default": 30,
+              "title": "Inactive Days"
+            },
+            "description": "非アクティブ日数"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "ページ番号",
+              "default": 1,
+              "title": "Page"
+            },
+            "description": "ページ番号"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 50,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProjectListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/projects/{project_id}": {
+      "get": {
+        "tags": [
+          "system-admin-projects",
+          "Admin Projects"
+        ],
+        "summary": "プロジェクト詳細取得（管理者ビュー）",
+        "description": "プロジェクト詳細を取得します（管理者ビュー）。\n\n    **権限**: システム管理者",
+        "operationId": "get_project_detail_api_v1_admin_projects__project_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "プロジェクトID",
+              "title": "Project Id"
+            },
+            "description": "プロジェクトID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProjectDetailResponse"
                 }
               }
             }
@@ -3774,6 +4278,168 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserStatisticsDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/statistics/storage": {
+      "get": {
+        "tags": [
+          "system-admin-statistics",
+          "Statistics"
+        ],
+        "summary": "ストレージ使用量推移取得",
+        "description": "ストレージ使用量推移を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - days: 取得日数",
+        "operationId": "get_storage_statistics_api_v1_admin_statistics_storage_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "取得日数",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "取得日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StorageStatisticsDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/statistics/api-requests": {
+      "get": {
+        "tags": [
+          "system-admin-statistics",
+          "Statistics"
+        ],
+        "summary": "APIリクエスト統計取得",
+        "description": "APIリクエスト統計を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - days: 取得日数",
+        "operationId": "get_api_request_statistics_api_v1_admin_statistics_api_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "取得日数",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "取得日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiStatisticsDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/statistics/errors": {
+      "get": {
+        "tags": [
+          "system-admin-statistics",
+          "Statistics"
+        ],
+        "summary": "エラー発生率統計取得",
+        "description": "エラー発生率統計を取得します。\n\n    **権限**: システム管理者\n\n    クエリパラメータ:\n        - days: 取得日数",
+        "operationId": "get_error_statistics_api_v1_admin_statistics_errors_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "取得日数",
+              "default": 30,
+              "title": "Days"
+            },
+            "description": "取得日数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorStatisticsDetailResponse"
                 }
               }
             }
@@ -5475,7 +6141,7 @@
           "project"
         ],
         "summary": "プロジェクト一覧取得",
-        "description": "プロジェクト一覧を取得します（ユーザーが所属するプロジェクトのみ）。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - なし\n\n    クエリパラメータ:\n        - skip: int - スキップ数（デフォルト: 0）\n        - limit: int - 取得件数（デフォルト: 100）\n        - is_active: bool - アクティブフィルタ（オプション）\n\n    レスポンス:\n        - ProjectListResponse: プロジェクト一覧レスポンス\n            - projects (list[ProjectResponse]): プロジェクト情報リスト\n            - total (int): 総件数\n            - skip (int): スキップ数\n            - limit (int): 取得件数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
+        "description": "プロジェクト一覧を取得します（ユーザーが所属するプロジェクトのみ）。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - なし\n\n    クエリパラメータ:\n        - skip: int - スキップ数（デフォルト: 0）\n        - limit: int - 取得件数（デフォルト: 100）\n        - is_active: bool - アクティブフィルタ（オプション）\n\n    レスポンス:\n        - ProjectListResponse: プロジェクト一覧レスポンス\n            - projects (list[ProjectResponse]): プロジェクト情報リスト（統計情報を含む）\n                - stats (ProjectStatsResponse): プロジェクト統計情報\n                    - member_count (int): メンバー数\n                    - file_count (int): ファイル数\n                    - session_count (int): 分析セッション数\n                    - tree_count (int): ドライバーツリー数\n            - total (int): 総件数\n            - skip (int): スキップ数\n            - limit (int): 取得件数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
         "operationId": "list_projects_api_v1_project_get",
         "security": [
           {
@@ -6736,6 +7402,65 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": [
+          "analysis-template"
+        ],
+        "summary": "テンプレート作成",
+        "description": "セッションからテンプレートを作成します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n\n    リクエストボディ:\n        - AnalysisTemplateCreateRequest: テンプレート作成リクエスト\n            - name (str): テンプレート名（必須）\n            - description (str | None): 説明\n            - sourceSessionId (UUID): 元セッションID（必須）\n            - isPublic (bool): 公開フラグ（デフォルト: false）\n\n    レスポンス:\n        - AnalysisTemplateCreateResponse: 作成されたテンプレート情報\n            - templateId (UUID): テンプレートID\n            - name (str): テンプレート名\n            - description (str | None): 説明\n            - templateType (str): テンプレートタイプ\n            - templateConfig (dict): テンプレート設定\n            - createdAt (datetime): 作成日時\n\n    ステータスコード:\n        - 201: 作成成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない、または他プロジェクトのセッション）\n        - 404: 元セッションが見つからない",
+        "operationId": "create_template_api_v1_project__project_id__analysis_template_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "プロジェクトID",
+              "title": "Project Id"
+            },
+            "description": "プロジェクトID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisTemplateCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTemplateCreateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/project/{project_id}/analysis/template/{issue_id}": {
@@ -6784,6 +7509,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AnalysisIssueDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/project/{project_id}/analysis/template/{template_id}": {
+      "delete": {
+        "tags": [
+          "analysis-template"
+        ],
+        "summary": "テンプレート削除",
+        "description": "テンプレートを削除します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - template_id: uuid - テンプレートID（必須）\n\n    レスポンス:\n        - AnalysisTemplateDeleteResponse: 削除結果\n            - success (bool): 削除成功フラグ\n            - deletedAt (datetime): 削除日時\n\n    ステータスコード:\n        - 200: 削除成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない、または作成者ではない）\n        - 404: テンプレートが見つからない",
+        "operationId": "delete_template_api_v1_project__project_id__analysis_template__template_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "プロジェクトID",
+              "title": "Project Id"
+            },
+            "description": "プロジェクトID"
+          },
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisTemplateDeleteResponse"
                 }
               }
             }
@@ -7493,14 +8279,14 @@
         }
       }
     },
-    "/api/v1/project/{project_id}/analysis/session/{session_id}/snapshots": {
+    "/api/v1/project/{project_id}/analysis/session/{session_id}/snapshot": {
       "get": {
         "tags": [
           "analysis-session"
         ],
         "summary": "スナップショット一覧取得",
         "description": "セッションのスナップショット一覧を取得します。\n\n    **認証が必要です。**\n    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - session_id: uuid - セッションID（必須）\n\n    レスポンス:\n        - AnalysisSnapshotListResponse: スナップショット一覧\n            - snapshots (list[AnalysisSnapshotResponse]): スナップショットリスト\n                - id (uuid): スナップショットID\n                - snapshot_order (int): スナップショット順序番号\n                - parent_snapshot_id (uuid | None): 親スナップショットID\n                - chat_list (list[AnalysisChatResponse]): チャットリスト\n                - step_list (list[AnalysisStepResponse]): ステップリスト\n                - created_at (datetime): 作成日時\n                - updated_at (datetime): 更新日時\n            - total (int): 総件数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: セッションが見つからない",
-        "operationId": "list_snapshots_api_v1_project__project_id__analysis_session__session_id__snapshots_get",
+        "operationId": "list_snapshots_api_v1_project__project_id__analysis_session__session_id__snapshot_get",
         "security": [
           {
             "HTTPBearer": []
@@ -7561,7 +8347,7 @@
         ],
         "summary": "手動スナップショット保存",
         "description": "現在の分析状態を手動でスナップショットとして保存します。\n\n    **認証が必要です。**\n    **セッションが属するプロジェクトのメンバーのみアクセス可能です。**\n\n    パスパラメータ:\n        - project_id: uuid - プロジェクトID（必須）\n        - session_id: uuid - セッションID（必須）\n\n    リクエストボディ:\n        - name (str | None): スナップショット名（オプション）\n        - description (str | None): スナップショット説明（オプション）\n\n    レスポンス:\n        - AnalysisSnapshotResponse: 作成されたスナップショット\n            - id (uuid): スナップショットID\n            - snapshot_order (int): スナップショット順序番号\n            - parent_snapshot_id (uuid | None): 親スナップショットID\n            - chat_list (list[AnalysisChatResponse]): チャットリスト\n            - step_list (list[AnalysisStepResponse]): ステップリスト\n            - created_at (datetime): 作成日時\n            - updated_at (datetime): 更新日時\n\n    ステータスコード:\n        - 201: 作成成功\n        - 401: 認証されていない\n        - 403: 権限なし（メンバーではない）\n        - 404: セッションが見つからない",
-        "operationId": "create_snapshot_api_v1_project__project_id__analysis_session__session_id__snapshots_post",
+        "operationId": "create_snapshot_api_v1_project__project_id__analysis_session__session_id__snapshot_post",
         "security": [
           {
             "HTTPBearer": []
@@ -9990,6 +10776,358 @@
         }
       }
     },
+    "/api/v1/search": {
+      "get": {
+        "tags": [
+          "search"
+        ],
+        "summary": "グローバル検索",
+        "description": "プロジェクト・セッション・ファイル・ツリーを横断検索します。\n\n    **認証が必要です。**\n\n    クエリパラメータ:\n        - q: str - 検索クエリ（2文字以上、必須）\n        - type: str - 検索対象タイプ（project/session/file/tree）、カンマ区切りで複数指定可\n        - project_id: UUID - プロジェクトIDで絞り込み\n        - limit: int - 取得件数（デフォルト: 20、最大: 100）\n\n    レスポンス:\n        - SearchResponse: 検索結果\n            - results: list[SearchResultInfo] - 検索結果リスト\n            - total: int - 総件数\n            - query: str - 検索クエリ\n            - types: list[str] - 検索対象タイプ\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 422: バリデーションエラー",
+        "operationId": "search_api_v1_search_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "description": "検索クエリ",
+              "title": "Q"
+            },
+            "description": "検索クエリ"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "検索対象タイプ（project/session/file/tree）、カンマ区切りで複数指定可",
+              "title": "Type"
+            },
+            "description": "検索対象タイプ（project/session/file/tree）、カンマ区切りで複数指定可"
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "プロジェクトIDで絞り込み",
+              "title": "Project Id"
+            },
+            "description": "プロジェクトIDで絞り込み"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "notification"
+        ],
+        "summary": "通知一覧取得",
+        "description": "ユーザーの通知一覧を取得します。\n\n    **認証が必要です。**\n\n    クエリパラメータ:\n        - is_read: bool - 既読/未読フィルター\n        - skip: int - スキップ数（デフォルト: 0）\n        - limit: int - 取得件数（デフォルト: 20、最大: 100）\n\n    レスポンス:\n        - NotificationListResponse: 通知一覧\n            - notifications: list[NotificationInfo] - 通知リスト\n            - total: int - 総件数\n            - unread_count: int - 未読件数\n            - skip: int - スキップ数\n            - limit: int - 取得件数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
+        "operationId": "list_notifications_api_v1_notifications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "is_read",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "既読/未読フィルター",
+              "title": "Is Read"
+            },
+            "description": "既読/未読フィルター"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "スキップ数",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "スキップ数"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "取得件数",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "取得件数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{notification_id}": {
+      "get": {
+        "tags": [
+          "notification"
+        ],
+        "summary": "通知詳細取得",
+        "description": "特定の通知の詳細を取得します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - notification_id: UUID - 通知ID\n\n    レスポンス:\n        - NotificationInfo: 通知情報\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 404: 通知が見つからない",
+        "operationId": "get_notification_api_v1_notifications__notification_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notification"
+        ],
+        "summary": "通知削除",
+        "description": "特定の通知を削除します。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - notification_id: UUID - 通知ID\n\n    ステータスコード:\n        - 204: 削除成功\n        - 401: 認証されていない\n        - 404: 通知が見つからない",
+        "operationId": "delete_notification_api_v1_notifications__notification_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "patch": {
+        "tags": [
+          "notification"
+        ],
+        "summary": "通知既読化",
+        "description": "特定の通知を既読にします。\n\n    **認証が必要です。**\n\n    パスパラメータ:\n        - notification_id: UUID - 通知ID\n\n    レスポンス:\n        - NotificationInfo: 更新後の通知情報\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない\n        - 404: 通知が見つからない",
+        "operationId": "mark_notification_as_read_api_v1_notifications__notification_id__read_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationInfo"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "patch": {
+        "tags": [
+          "notification"
+        ],
+        "summary": "全通知既読化",
+        "description": "すべての未読通知を既読にします。\n\n    **認証が必要です。**\n\n    レスポンス:\n        - ReadAllResponse: 更新件数\n            - updated_count: int - 更新された通知数\n\n    ステータスコード:\n        - 200: 成功\n        - 401: 認証されていない",
+        "operationId": "mark_all_notifications_as_read_api_v1_notifications_read_all_patch",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadAllResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/": {
       "get": {
         "tags": [
@@ -10270,6 +11408,265 @@
         ],
         "title": "ActivityLogListResponse",
         "description": "操作履歴一覧レスポンススキーマ。\n\nAttributes:\n    items (list[ActivityLogResponse]): 操作履歴リスト\n    total (int): 総件数\n    page (int): ページ番号\n    limit (int): 取得件数\n    total_pages (int): 総ページ数"
+      },
+      "AdminProjectDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "プロジェクトID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "プロジェクト名"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "プロジェクト説明"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectOwnerInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "オーナー情報"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ステータス"
+          },
+          "memberCount": {
+            "type": "integer",
+            "title": "Membercount",
+            "description": "メンバー数"
+          },
+          "storageUsedBytes": {
+            "type": "integer",
+            "title": "Storageusedbytes",
+            "description": "ストレージ使用量（バイト）"
+          },
+          "storageUsedDisplay": {
+            "type": "string",
+            "title": "Storageuseddisplay",
+            "description": "ストレージ使用量（表示用）"
+          },
+          "lastActivityAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastactivityat",
+            "description": "最終アクティビティ"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat",
+            "description": "更新日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "memberCount",
+          "storageUsedBytes",
+          "storageUsedDisplay",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "AdminProjectDetailResponse",
+        "description": "管理者用プロジェクト詳細レスポンス。"
+      },
+      "AdminProjectListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminProjectResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "プロジェクトリスト"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "総件数"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page",
+            "description": "ページ番号"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "取得件数"
+          },
+          "statistics": {
+            "$ref": "#/components/schemas/AdminProjectStatistics",
+            "description": "統計情報"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit",
+          "statistics"
+        ],
+        "title": "AdminProjectListResponse",
+        "description": "管理者用プロジェクト一覧レスポンス。"
+      },
+      "AdminProjectResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "プロジェクトID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "プロジェクト名"
+          },
+          "owner": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectOwnerInfo"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "オーナー情報"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "ステータス"
+          },
+          "memberCount": {
+            "type": "integer",
+            "title": "Membercount",
+            "description": "メンバー数"
+          },
+          "storageUsedBytes": {
+            "type": "integer",
+            "title": "Storageusedbytes",
+            "description": "ストレージ使用量（バイト）"
+          },
+          "storageUsedDisplay": {
+            "type": "string",
+            "title": "Storageuseddisplay",
+            "description": "ストレージ使用量（表示用）"
+          },
+          "lastActivityAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lastactivityat",
+            "description": "最終アクティビティ"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "status",
+          "memberCount",
+          "storageUsedBytes",
+          "storageUsedDisplay",
+          "createdAt"
+        ],
+        "title": "AdminProjectResponse",
+        "description": "管理者用プロジェクトレスポンス。"
+      },
+      "AdminProjectStatistics": {
+        "properties": {
+          "totalProjects": {
+            "type": "integer",
+            "title": "Totalprojects",
+            "description": "総プロジェクト数"
+          },
+          "activeProjects": {
+            "type": "integer",
+            "title": "Activeprojects",
+            "description": "アクティブ数"
+          },
+          "archivedProjects": {
+            "type": "integer",
+            "title": "Archivedprojects",
+            "description": "アーカイブ数"
+          },
+          "deletedProjects": {
+            "type": "integer",
+            "title": "Deletedprojects",
+            "description": "削除済み数"
+          },
+          "totalStorageBytes": {
+            "type": "integer",
+            "title": "Totalstoragebytes",
+            "description": "総ストレージ使用量（バイト）"
+          },
+          "totalStorageDisplay": {
+            "type": "string",
+            "title": "Totalstoragedisplay",
+            "description": "総ストレージ使用量（表示用）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalProjects",
+          "activeProjects",
+          "archivedProjects",
+          "deletedProjects",
+          "totalStorageBytes",
+          "totalStorageDisplay"
+        ],
+        "title": "AdminProjectStatistics",
+        "description": "管理者用プロジェクト統計。"
       },
       "AllRolesResponse": {
         "properties": {
@@ -12541,6 +13938,124 @@
         "title": "AnalysisStepUpdate",
         "description": "分析ステップ更新リクエストスキーマ。\n\n既存のステップを更新する際に使用します。\nすべてのフィールドは Optional(部分更新対応)。\n\nAttributes:\n    name (str | None): ステップ名\n    type (str | None): ステップタイプ\n    input (str | None): 入力データの参照\n    config (dict[str, Any] | None): ステップ設定"
       },
+      "AnalysisTemplateCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "テンプレート名"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "説明"
+          },
+          "sourceSessionId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Sourcesessionid",
+            "description": "元セッションID"
+          },
+          "isPublic": {
+            "type": "boolean",
+            "title": "Ispublic",
+            "description": "公開フラグ",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "sourceSessionId"
+        ],
+        "title": "AnalysisTemplateCreateRequest",
+        "description": "分析テンプレート作成リクエスト。\n\nセッションからテンプレートを作成する際のリクエストスキーマです。\n\nAttributes:\n    name (str): テンプレート名\n    description (str | None): 説明\n    source_session_id (UUID): 元セッションID\n    is_public (bool): 公開フラグ\n\nExample:\n    >>> request = AnalysisTemplateCreateRequest(\n    ...     name=\"売上分析テンプレート\",\n    ...     description=\"四半期売上分析用\",\n    ...     source_session_id=uuid.UUID(\"...\"),\n    ...     is_public=False\n    ... )"
+      },
+      "AnalysisTemplateCreateResponse": {
+        "properties": {
+          "templateId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Templateid",
+            "description": "テンプレートID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "テンプレート名"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "説明"
+          },
+          "templateType": {
+            "type": "string",
+            "title": "Templatetype",
+            "description": "テンプレートタイプ"
+          },
+          "templateConfig": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Templateconfig",
+            "description": "テンプレート設定"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat",
+            "description": "作成日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "templateId",
+          "name",
+          "templateType",
+          "templateConfig",
+          "createdAt"
+        ],
+        "title": "AnalysisTemplateCreateResponse",
+        "description": "分析テンプレート作成レスポンス。\n\nAttributes:\n    template_id (UUID): テンプレートID\n    name (str): テンプレート名\n    description (str | None): 説明\n    template_type (str): テンプレートタイプ\n    template_config (dict): テンプレート設定\n    created_at (datetime): 作成日時\n\nExample:\n    >>> {\n    ...     \"templateId\": \"...\",\n    ...     \"name\": \"売上分析テンプレート\",\n    ...     \"description\": \"四半期売上分析用\",\n    ...     \"templateType\": \"session\",\n    ...     \"templateConfig\": {...},\n    ...     \"createdAt\": \"2026-01-01T00:00:00Z\"\n    ... }"
+      },
+      "AnalysisTemplateDeleteResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "description": "削除成功フラグ"
+          },
+          "deletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Deletedat",
+            "description": "削除日時"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "deletedAt"
+        ],
+        "title": "AnalysisTemplateDeleteResponse",
+        "description": "分析テンプレート削除レスポンス。\n\nAttributes:\n    success (bool): 削除成功フラグ\n    deleted_at (datetime): 削除日時\n\nExample:\n    >>> {\n    ...     \"success\": true,\n    ...     \"deletedAt\": \"2026-01-01T00:00:00Z\"\n    ... }"
+      },
       "AnalysisValidationCreate": {
         "properties": {
           "name": {
@@ -13021,6 +14536,36 @@
         ],
         "title": "ApiStatistics",
         "description": "API統計情報。"
+      },
+      "ApiStatisticsDetailResponse": {
+        "properties": {
+          "totalRequests": {
+            "type": "integer",
+            "title": "Totalrequests",
+            "description": "総リクエスト数"
+          },
+          "requestTrend": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            },
+            "type": "array",
+            "title": "Requesttrend",
+            "description": "リクエスト数推移"
+          },
+          "averageResponseMs": {
+            "type": "number",
+            "title": "Averageresponsems",
+            "description": "平均レスポンス時間"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalRequests",
+          "requestTrend",
+          "averageResponseMs"
+        ],
+        "title": "ApiStatisticsDetailResponse",
+        "description": "API統計詳細レスポンススキーマ。"
       },
       "AuditLogListResponse": {
         "properties": {
@@ -14035,9 +15580,17 @@
             "$ref": "#/components/schemas/ChartDataResponse",
             "description": "ツリー作成トレンド"
           },
+          "snapshotTrend": {
+            "$ref": "#/components/schemas/ChartDataResponse",
+            "description": "スナップショット作成トレンド"
+          },
           "projectDistribution": {
             "$ref": "#/components/schemas/ChartDataResponse",
             "description": "プロジェクト状態分布"
+          },
+          "projectProgress": {
+            "$ref": "#/components/schemas/ChartDataResponse",
+            "description": "個別プロジェクトの進捗率"
           },
           "userActivity": {
             "$ref": "#/components/schemas/ChartDataResponse",
@@ -14054,12 +15607,14 @@
         "required": [
           "sessionTrend",
           "treeTrend",
+          "snapshotTrend",
           "projectDistribution",
+          "projectProgress",
           "userActivity",
           "generatedAt"
         ],
         "title": "DashboardChartsResponse",
-        "description": "ダッシュボードチャートレスポンス。\n\nAttributes:\n    session_trend: セッション作成トレンド\n    tree_trend: ツリー作成トレンド\n    project_distribution: プロジェクト状態分布\n    user_activity: ユーザーアクティビティ\n    generated_at: 統計生成日時"
+        "description": "ダッシュボードチャートレスポンス。\n\nAttributes:\n    session_trend: セッション作成トレンド\n    tree_trend: ツリー作成トレンド\n    snapshot_trend: スナップショット作成トレンド\n    project_distribution: プロジェクト状態分布\n    project_progress: 個別プロジェクトの進捗率\n    user_activity: ユーザーアクティビティ\n    generated_at: 統計生成日時"
       },
       "DashboardStatsResponse": {
         "properties": {
@@ -14154,6 +15709,76 @@
         "title": "DeviceInfo",
         "description": "デバイス情報。"
       },
+      "DisplaySettingsInfo": {
+        "properties": {
+          "itemsPerPage": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 10.0,
+            "title": "Itemsperpage",
+            "description": "ページあたり表示件数",
+            "default": 20
+          },
+          "defaultProjectView": {
+            "$ref": "#/components/schemas/ProjectViewEnum",
+            "description": "デフォルトプロジェクト表示形式",
+            "default": "grid"
+          },
+          "showWelcomeMessage": {
+            "type": "boolean",
+            "title": "Showwelcomemessage",
+            "description": "ウェルカムメッセージ表示",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "DisplaySettingsInfo",
+        "description": "表示設定情報。\n\nAttributes:\n    items_per_page (int): ページあたり表示件数（10-100）\n    default_project_view (ProjectViewEnum): デフォルトプロジェクト表示形式\n    show_welcome_message (bool): ウェルカムメッセージ表示"
+      },
+      "DisplaySettingsUpdate": {
+        "properties": {
+          "itemsPerPage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 10.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Itemsperpage",
+            "description": "ページあたり表示件数"
+          },
+          "defaultProjectView": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectViewEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "デフォルトプロジェクト表示形式"
+          },
+          "showWelcomeMessage": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Showwelcomemessage",
+            "description": "ウェルカムメッセージ表示"
+          }
+        },
+        "type": "object",
+        "title": "DisplaySettingsUpdate",
+        "description": "表示設定更新リクエスト。\n\nAttributes:\n    items_per_page (int | None): ページあたり表示件数（10-100）\n    default_project_view (ProjectViewEnum | None): デフォルトプロジェクト表示形式\n    show_welcome_message (bool | None): ウェルカムメッセージ表示"
+      },
       "DriverTreeCalculatedDataResponse": {
         "properties": {
           "calculatedDataList": {
@@ -14175,7 +15800,8 @@
       "DriverTreeCategoryCreate": {
         "properties": {
           "categoryId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Categoryid",
             "description": "業界分類ID"
           },
@@ -14186,7 +15812,8 @@
             "description": "業界分類名"
           },
           "industryId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Industryid",
             "description": "業界名ID"
           },
@@ -14197,7 +15824,8 @@
             "description": "業界名"
           },
           "driverTypeId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Drivertypeid",
             "description": "ドライバー型ID"
           },
@@ -14223,12 +15851,14 @@
       "DriverTreeCategoryResponse": {
         "properties": {
           "id": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Id",
             "description": "ID"
           },
           "categoryId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Categoryid",
             "description": "業界分類ID"
           },
@@ -14238,7 +15868,8 @@
             "description": "業界分類名"
           },
           "industryId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Industryid",
             "description": "業界名ID"
           },
@@ -14248,7 +15879,8 @@
             "description": "業界名"
           },
           "driverTypeId": {
-            "type": "integer",
+            "type": "string",
+            "format": "uuid",
             "title": "Drivertypeid",
             "description": "ドライバー型ID"
           },
@@ -14296,7 +15928,8 @@
           "categoryId": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -14321,7 +15954,8 @@
           "industryId": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -14346,7 +15980,8 @@
           "driverTypeId": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string",
+                "format": "uuid"
               },
               {
                 "type": "null"
@@ -15898,6 +17533,45 @@
         "title": "DriverTypeInfo",
         "description": "ドライバー型情報。\n\nAttributes:\n    driver_type_id: ドライバー型ID\n    driver_type: ドライバー型"
       },
+      "ErrorStatisticsDetailResponse": {
+        "properties": {
+          "totalErrors": {
+            "type": "integer",
+            "title": "Totalerrors",
+            "description": "総エラー数"
+          },
+          "errorRate": {
+            "type": "number",
+            "title": "Errorrate",
+            "description": "エラー率"
+          },
+          "errorTrend": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            },
+            "type": "array",
+            "title": "Errortrend",
+            "description": "エラー率推移"
+          },
+          "errorByType": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Errorbytype",
+            "description": "種別ごとのエラー数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalErrors",
+          "errorRate",
+          "errorTrend",
+          "errorByType"
+        ],
+        "title": "ErrorStatisticsDetailResponse",
+        "description": "エラー統計詳細レスポンススキーマ。"
+      },
       "FileStats": {
         "properties": {
           "total": {
@@ -16241,6 +17915,15 @@
         "title": "IssueInfo",
         "description": "課題情報（リレーション展開用）。\n\nセッション一覧で課題名を表示するために使用します。\n\nAttributes:\n    id (uuid.UUID): 課題ID\n    name (str): 課題名"
       },
+      "LanguageEnum": {
+        "type": "string",
+        "enum": [
+          "ja",
+          "en"
+        ],
+        "title": "LanguageEnum",
+        "description": "言語設定。\n\nValues:\n    JA: 日本語\n    EN: 英語"
+      },
       "MaintenanceModeRequest": {
         "properties": {
           "enabled": {
@@ -16306,6 +17989,309 @@
         ],
         "title": "MaintenanceModeResponse",
         "description": "メンテナンスモードレスポンススキーマ。"
+      },
+      "NavigationInfo": {
+        "properties": {
+          "projectCount": {
+            "type": "integer",
+            "title": "Projectcount"
+          },
+          "defaultProjectId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultprojectid"
+          },
+          "defaultProjectName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Defaultprojectname"
+          },
+          "projectNavigationType": {
+            "type": "string",
+            "enum": [
+              "list",
+              "detail"
+            ],
+            "title": "Projectnavigationtype"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projectCount",
+          "projectNavigationType"
+        ],
+        "title": "NavigationInfo",
+        "description": "ナビゲーション情報スキーマ。\n\nプロジェクト数に応じた遷移先情報。"
+      },
+      "NotificationBadgeInfo": {
+        "properties": {
+          "unreadCount": {
+            "type": "integer",
+            "title": "Unreadcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unreadCount"
+        ],
+        "title": "NotificationBadgeInfo",
+        "description": "通知バッジ情報スキーマ。\n\nヘッダーの未読通知バッジ表示用。"
+      },
+      "NotificationInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "type": {
+            "$ref": "#/components/schemas/NotificationTypeEnum"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "linkUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkurl"
+          },
+          "referenceType": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReferenceTypeEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "referenceId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Referenceid"
+          },
+          "isRead": {
+            "type": "boolean",
+            "title": "Isread"
+          },
+          "readAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Readat"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "isRead",
+          "createdAt"
+        ],
+        "title": "NotificationInfo",
+        "description": "通知情報スキーマ。\n\n通知の詳細情報を表すスキーマ。\n通知一覧・詳細取得・既読更新のレスポンスで使用。"
+      },
+      "NotificationListResponse": {
+        "properties": {
+          "notifications": {
+            "items": {
+              "$ref": "#/components/schemas/NotificationInfo"
+            },
+            "type": "array",
+            "title": "Notifications"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "unreadCount": {
+            "type": "integer",
+            "title": "Unreadcount"
+          },
+          "skip": {
+            "type": "integer",
+            "title": "Skip"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notifications",
+          "total",
+          "unreadCount",
+          "skip",
+          "limit"
+        ],
+        "title": "NotificationListResponse",
+        "description": "通知一覧レスポンススキーマ。\n\nページネーション情報と未読件数を含む通知一覧。"
+      },
+      "NotificationSettingsInfo": {
+        "properties": {
+          "emailEnabled": {
+            "type": "boolean",
+            "title": "Emailenabled",
+            "description": "メール通知の有効化",
+            "default": true
+          },
+          "projectInvite": {
+            "type": "boolean",
+            "title": "Projectinvite",
+            "description": "プロジェクト招待通知",
+            "default": true
+          },
+          "sessionComplete": {
+            "type": "boolean",
+            "title": "Sessioncomplete",
+            "description": "セッション完了通知",
+            "default": true
+          },
+          "treeUpdate": {
+            "type": "boolean",
+            "title": "Treeupdate",
+            "description": "ツリー更新通知",
+            "default": true
+          },
+          "systemAnnouncement": {
+            "type": "boolean",
+            "title": "Systemannouncement",
+            "description": "システムお知らせ通知",
+            "default": true
+          }
+        },
+        "type": "object",
+        "title": "NotificationSettingsInfo",
+        "description": "通知設定情報。\n\nAttributes:\n    email_enabled (bool): メール通知の有効化\n    project_invite (bool): プロジェクト招待通知\n    session_complete (bool): セッション完了通知\n    tree_update (bool): ツリー更新通知\n    system_announcement (bool): システムお知らせ通知"
+      },
+      "NotificationSettingsUpdate": {
+        "properties": {
+          "emailEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Emailenabled",
+            "description": "メール通知の有効化"
+          },
+          "projectInvite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projectinvite",
+            "description": "プロジェクト招待通知"
+          },
+          "sessionComplete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sessioncomplete",
+            "description": "セッション完了通知"
+          },
+          "treeUpdate": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Treeupdate",
+            "description": "ツリー更新通知"
+          },
+          "systemAnnouncement": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Systemannouncement",
+            "description": "システムお知らせ通知"
+          }
+        },
+        "type": "object",
+        "title": "NotificationSettingsUpdate",
+        "description": "通知設定更新リクエスト。\n\nAttributes:\n    email_enabled (bool | None): メール通知の有効化\n    project_invite (bool | None): プロジェクト招待通知\n    session_complete (bool | None): セッション完了通知\n    tree_update (bool | None): ツリー更新通知\n    system_announcement (bool | None): システムお知らせ通知"
       },
       "NotificationTemplateListResponse": {
         "properties": {
@@ -16471,6 +18457,54 @@
         "type": "object",
         "title": "NotificationTemplateUpdate",
         "description": "通知テンプレート更新リクエストスキーマ。"
+      },
+      "NotificationTypeEnum": {
+        "type": "string",
+        "enum": [
+          "member_added",
+          "member_removed",
+          "session_complete",
+          "file_uploaded",
+          "tree_updated",
+          "project_invitation",
+          "system_announcement"
+        ],
+        "title": "NotificationTypeEnum",
+        "description": "通知タイプ。\n\nValues:\n    MEMBER_ADDED: メンバー追加\n    MEMBER_REMOVED: メンバー削除\n    SESSION_COMPLETE: セッション完了\n    FILE_UPLOADED: ファイルアップロード\n    TREE_UPDATED: ツリー更新\n    PROJECT_INVITATION: プロジェクト招待\n    SYSTEM_ANNOUNCEMENT: システムお知らせ"
+      },
+      "PermissionsInfo": {
+        "properties": {
+          "isSystemAdmin": {
+            "type": "boolean",
+            "title": "Issystemadmin"
+          },
+          "canAccessAdminPanel": {
+            "type": "boolean",
+            "title": "Canaccessadminpanel"
+          },
+          "canManageUsers": {
+            "type": "boolean",
+            "title": "Canmanageusers"
+          },
+          "canManageMasters": {
+            "type": "boolean",
+            "title": "Canmanagemasters"
+          },
+          "canViewAuditLogs": {
+            "type": "boolean",
+            "title": "Canviewauditlogs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "isSystemAdmin",
+          "canAccessAdminPanel",
+          "canManageUsers",
+          "canManageMasters",
+          "canViewAuditLogs"
+        ],
+        "title": "PermissionsInfo",
+        "description": "権限情報スキーマ。\n\nシステム権限とアクセス可能な機能の情報。"
       },
       "ProjectCreate": {
         "properties": {
@@ -16676,7 +18710,7 @@
           "updatedAt"
         ],
         "title": "ProjectDetailResponse",
-        "description": "プロジェクト詳細レスポンススキーマ。\n\nプロジェクト詳細APIで統計情報を含めて返す際に使用します。\n\nAttributes:\n    stats (ProjectStatsResponse | None): プロジェクト統計情報"
+        "description": "プロジェクト詳細レスポンススキーマ。\n\nプロジェクト詳細APIで統計情報を含めて返す際に使用します。\n現在は ProjectResponse を継承しているだけですが、将来的に詳細専用のフィールドを\n追加する可能性があるため、明示的に詳細レスポンス用のスキーマとして定義しています。\n\nNote:\n    - ProjectResponse に stats フィールドが追加されたため、\n      このクラスは現在 ProjectResponse と同じフィールドを持ちます\n    - 詳細APIでは常に stats フィールドを含めることを推奨します"
       },
       "ProjectFileDeleteResponse": {
         "properties": {
@@ -17380,6 +19414,28 @@
         "title": "ProjectMemberUpdate",
         "description": "プロジェクトメンバーロール更新リクエストスキーマ。\n\nメンバーのロールを更新する際に使用します。\n\nAttributes:\n    role (ProjectRole): 新しいプロジェクトロール\n\nExample:\n    >>> update = ProjectMemberUpdate(role=ProjectRole.MEMBER)\n\nNote:\n    - PROJECT_MANAGER 権限が必要\n    - 最後の PROJECT_MANAGER は降格できません"
       },
+      "ProjectOwnerInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id",
+            "description": "ユーザーID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "ユーザー名"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ProjectOwnerInfo",
+        "description": "プロジェクトオーナー情報。"
+      },
       "ProjectResponse": {
         "properties": {
           "id": {
@@ -17482,6 +19538,17 @@
             "format": "date-time",
             "title": "Updatedat",
             "description": "更新日時"
+          },
+          "stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProjectStatsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "プロジェクト統計情報"
           }
         },
         "type": "object",
@@ -17494,7 +19561,7 @@
           "updatedAt"
         ],
         "title": "ProjectResponse",
-        "description": "プロジェクト情報レスポンススキーマ。\n\nAPIレスポンスでプロジェクト情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): プロジェクトID（UUID）\n    name (str): プロジェクト名\n    code (str): プロジェクトコード\n    description (str | None): プロジェクト説明\n    is_active (bool): アクティブフラグ\n    created_by (uuid.UUID | None): 作成者のユーザーID\n    start_date (date | None): プロジェクト開始日\n    end_date (date | None): プロジェクト終了日\n    budget (Decimal | None): プロジェクト予算\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n\nExample:\n    >>> from datetime import UTC\n    >>> project = ProjectResponse(\n    ...     id=uuid.uuid4(),\n    ...     name=\"AI Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"AI development project\",\n    ...     is_active=True,\n    ...     created_by=uuid.uuid4(),\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31),\n    ...     budget=Decimal(\"1000000.00\"),\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC)\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です"
+        "description": "プロジェクト情報レスポンススキーマ。\n\nAPIレスポンスでプロジェクト情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): プロジェクトID（UUID）\n    name (str): プロジェクト名\n    code (str): プロジェクトコード\n    description (str | None): プロジェクト説明\n    is_active (bool): アクティブフラグ\n    created_by (uuid.UUID | None): 作成者のユーザーID\n    start_date (date | None): プロジェクト開始日\n    end_date (date | None): プロジェクト終了日\n    budget (Decimal | None): プロジェクト予算\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n    stats (ProjectStatsResponse | None): プロジェクト統計情報（オプション）\n\nExample:\n    >>> from datetime import UTC\n    >>> project = ProjectResponse(\n    ...     id=uuid.uuid4(),\n    ...     name=\"AI Project\",\n    ...     code=\"AI-001\",\n    ...     description=\"AI development project\",\n    ...     is_active=True,\n    ...     created_by=uuid.uuid4(),\n    ...     start_date=date(2024, 1, 1),\n    ...     end_date=date(2024, 12, 31),\n    ...     budget=Decimal(\"1000000.00\"),\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC),\n    ...     stats=ProjectStatsResponse(\n    ...         member_count=5,\n    ...         file_count=10,\n    ...         session_count=2,\n    ...         tree_count=1\n    ...     )\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - stats フィールドはオプションで、一覧表示や詳細表示で必要に応じて含めます"
       },
       "ProjectRole": {
         "type": "string",
@@ -17505,7 +19572,7 @@
           "viewer"
         ],
         "title": "ProjectRole",
-        "description": "プロジェクトレベルのロール定義。\n\nAttributes:\n    PROJECT_MANAGER: プロジェクトマネージャー（最高権限）\n        - プロジェクト削除\n        - プロジェクト設定変更\n        - メンバー追加・削除・ロール変更（全ロール）\n        - ファイルのアップロード・ダウンロード・削除\n    PROJECT_MODERATOR: 権限管理者（メンバー管理担当）\n        - メンバー追加・削除\n        - ロール変更（VIEWER/MEMBER/PROJECT_MODERATORのみ）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    MEMBER: 一般メンバー（編集可能）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    VIEWER: 閲覧者（閲覧のみ）\n        - ファイルの閲覧・ダウンロードのみ"
+        "description": "プロジェクトレベルのロール定義。\n\nValues:\n    PROJECT_MANAGER: プロジェクトマネージャー（最高権限）\n        - プロジェクト削除\n        - プロジェクト設定変更\n        - メンバー追加・削除・ロール変更（全ロール）\n        - ファイルのアップロード・ダウンロード・削除\n    PROJECT_MODERATOR: 権限管理者（メンバー管理担当）\n        - メンバー追加・削除\n        - ロール変更（VIEWER/MEMBER/PROJECT_MODERATORのみ）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    MEMBER: 一般メンバー（編集可能）\n        - ファイルのアップロード・ダウンロード\n        - プロジェクト内の編集\n    VIEWER: 閲覧者（閲覧のみ）\n        - ファイルの閲覧・ダウンロードのみ"
       },
       "ProjectStatistics": {
         "properties": {
@@ -17592,6 +19659,76 @@
         "title": "ProjectStatsResponse",
         "description": "プロジェクト統計情報スキーマ。\n\nプロジェクトの統計情報を定義します。\n\nAttributes:\n    member_count (int): メンバー数\n    file_count (int): ファイル数\n    session_count (int): 分析セッション数\n    tree_count (int): ドライバーツリー数"
       },
+      "ProjectStorageListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProjectStorageResponse"
+            },
+            "type": "array",
+            "title": "Items",
+            "description": "ストレージ使用量リスト"
+          },
+          "totalStorageBytes": {
+            "type": "integer",
+            "title": "Totalstoragebytes",
+            "description": "合計ストレージ使用量（バイト）"
+          },
+          "totalStorageDisplay": {
+            "type": "string",
+            "title": "Totalstoragedisplay",
+            "description": "合計ストレージ使用量（表示用）"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "totalStorageBytes",
+          "totalStorageDisplay"
+        ],
+        "title": "ProjectStorageListResponse",
+        "description": "プロジェクトストレージ一覧レスポンス。"
+      },
+      "ProjectStorageResponse": {
+        "properties": {
+          "projectId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Projectid",
+            "description": "プロジェクトID"
+          },
+          "projectName": {
+            "type": "string",
+            "title": "Projectname",
+            "description": "プロジェクト名"
+          },
+          "storageUsedBytes": {
+            "type": "integer",
+            "title": "Storageusedbytes",
+            "description": "ストレージ使用量（バイト）"
+          },
+          "storageUsedDisplay": {
+            "type": "string",
+            "title": "Storageuseddisplay",
+            "description": "ストレージ使用量（表示用）"
+          },
+          "fileCount": {
+            "type": "integer",
+            "title": "Filecount",
+            "description": "ファイル数"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projectId",
+          "projectName",
+          "storageUsedBytes",
+          "storageUsedDisplay",
+          "fileCount"
+        ],
+        "title": "ProjectStorageResponse",
+        "description": "プロジェクトストレージ使用量レスポンス。"
+      },
       "ProjectUpdate": {
         "properties": {
           "name": {
@@ -17677,6 +19814,40 @@
         "type": "object",
         "title": "ProjectUpdate",
         "description": "プロジェクト更新リクエストスキーマ。\n\nプロジェクト情報の更新時に使用します。\n\nAttributes:\n    name (str | None): プロジェクト名（オプション）\n    description (str | None): プロジェクト説明（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n    start_date (date | None): プロジェクト開始日（オプション）\n    end_date (date | None): プロジェクト終了日（オプション）\n    budget (Decimal | None): プロジェクト予算（オプション）\n\nExample:\n    >>> update = ProjectUpdate(\n    ...     name=\"Updated Project Name\",\n    ...     description=\"Updated description\",\n    ...     start_date=date(2024, 2, 1),\n    ...     end_date=date(2025, 1, 31),\n    ...     budget=Decimal(\"2000000.00\")\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - code は変更できません（一意識別子のため）"
+      },
+      "ProjectViewEnum": {
+        "type": "string",
+        "enum": [
+          "grid",
+          "list"
+        ],
+        "title": "ProjectViewEnum",
+        "description": "プロジェクト表示形式。\n\nValues:\n    GRID: グリッド表示\n    LIST: リスト表示"
+      },
+      "ReadAllResponse": {
+        "properties": {
+          "updatedCount": {
+            "type": "integer",
+            "title": "Updatedcount"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updatedCount"
+        ],
+        "title": "ReadAllResponse",
+        "description": "全件既読レスポンススキーマ。\n\nすべて既読にする操作の結果。"
+      },
+      "ReferenceTypeEnum": {
+        "type": "string",
+        "enum": [
+          "project",
+          "session",
+          "file",
+          "tree"
+        ],
+        "title": "ReferenceTypeEnum",
+        "description": "参照タイプ。\n\nValues:\n    PROJECT: プロジェクト\n    SESSION: セッション\n    FILE: ファイル\n    TREE: ツリー"
       },
       "RetentionPolicyResponse": {
         "properties": {
@@ -17778,7 +19949,7 @@
           "update"
         ],
         "title": "RoleChangeActionEnum",
-        "description": "ロール変更アクション種別。\n\nAttributes:\n    GRANT: ロール付与\n    REVOKE: ロール削除\n    UPDATE: ロール更新（複数ロールの一括変更）"
+        "description": "ロール変更アクション種別。\n\nValues:\n    GRANT: ロール付与\n    REVOKE: ロール削除\n    UPDATE: ロール更新（複数ロールの一括変更）"
       },
       "RoleHistoryListResponse": {
         "properties": {
@@ -17967,7 +20138,132 @@
           "project"
         ],
         "title": "RoleTypeEnum",
-        "description": "ロール種別。\n\nAttributes:\n    SYSTEM: システムロール\n    PROJECT: プロジェクトロール"
+        "description": "ロール種別。\n\nValues:\n    SYSTEM: システムロール\n    PROJECT: プロジェクトロール"
+      },
+      "SearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResultInfo"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "types": {
+            "items": {
+              "$ref": "#/components/schemas/SearchTypeEnum"
+            },
+            "type": "array",
+            "title": "Types"
+          }
+        },
+        "type": "object",
+        "required": [
+          "results",
+          "total",
+          "query",
+          "types"
+        ],
+        "title": "SearchResponse",
+        "description": "検索レスポンススキーマ。\n\n検索結果一覧とメタ情報。"
+      },
+      "SearchResultInfo": {
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/SearchTypeEnum"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "matchedField": {
+            "type": "string",
+            "title": "Matchedfield"
+          },
+          "highlightedText": {
+            "type": "string",
+            "title": "Highlightedtext"
+          },
+          "projectId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projectid"
+          },
+          "projectName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Projectname"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "name",
+          "matchedField",
+          "highlightedText",
+          "updatedAt",
+          "url"
+        ],
+        "title": "SearchResultInfo",
+        "description": "検索結果情報スキーマ。\n\n各検索結果アイテムの情報を表す。"
+      },
+      "SearchTypeEnum": {
+        "type": "string",
+        "enum": [
+          "project",
+          "session",
+          "file",
+          "tree"
+        ],
+        "title": "SearchTypeEnum",
+        "description": "検索対象タイプ。"
       },
       "SessionListResponse": {
         "properties": {
@@ -18280,6 +20576,31 @@
         "title": "SheetDetailResponse",
         "description": "シート詳細レスポンス。\n\nAttributes:\n    sheet_id (uuid.UUID): シートID\n    sheet_name (str): シート名\n    columns (list[ColumnInfo]): カラム情報リスト\n    row_count (int): 行数\n    sample_data (list[dict]): サンプルデータ（最初の10行）"
       },
+      "SidebarInfo": {
+        "properties": {
+          "visibleSections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Visiblesections"
+          },
+          "hiddenSections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Hiddensections"
+          }
+        },
+        "type": "object",
+        "required": [
+          "visibleSections",
+          "hiddenSections"
+        ],
+        "title": "SidebarInfo",
+        "description": "サイドバー表示情報スキーマ。\n\n権限に応じた表示/非表示セクション情報。"
+      },
       "StatisticsOverviewResponse": {
         "properties": {
           "users": {
@@ -18335,6 +20656,36 @@
         ],
         "title": "StorageStatistics",
         "description": "ストレージ統計情報。"
+      },
+      "StorageStatisticsDetailResponse": {
+        "properties": {
+          "totalBytes": {
+            "type": "integer",
+            "title": "Totalbytes",
+            "description": "総使用量（バイト）"
+          },
+          "totalDisplay": {
+            "type": "string",
+            "title": "Totaldisplay",
+            "description": "総使用量（表示用）"
+          },
+          "usageTrend": {
+            "items": {
+              "$ref": "#/components/schemas/TimeSeriesDataPoint"
+            },
+            "type": "array",
+            "title": "Usagetrend",
+            "description": "使用量推移"
+          }
+        },
+        "type": "object",
+        "required": [
+          "totalBytes",
+          "totalDisplay",
+          "usageTrend"
+        ],
+        "title": "StorageStatisticsDetailResponse",
+        "description": "ストレージ統計詳細レスポンススキーマ。"
       },
       "SystemAlertCreate": {
         "properties": {
@@ -18644,6 +20995,16 @@
         "title": "SystemSettingsByCategoryResponse",
         "description": "カテゴリ別システム設定レスポンススキーマ。"
       },
+      "ThemeEnum": {
+        "type": "string",
+        "enum": [
+          "light",
+          "dark",
+          "system"
+        ],
+        "title": "ThemeEnum",
+        "description": "テーマ設定。\n\nValues:\n    LIGHT: ライトテーマ\n    DARK: ダークテーマ\n    SYSTEM: システム設定に従う"
+      },
       "TimeSeriesDataPoint": {
         "properties": {
           "date": {
@@ -18841,7 +21202,7 @@
           "azureOid": {
             "type": "string",
             "title": "Azureoid",
-            "description": "Azure AD Object ID"
+            "description": "Azure ID (Azure AD Object ID)"
           },
           "email": {
             "type": "string",
@@ -18899,6 +21260,12 @@
             ],
             "title": "Lastlogin",
             "description": "最終ログイン日時"
+          },
+          "loginCount": {
+            "type": "integer",
+            "title": "Logincount",
+            "description": "ログイン回数",
+            "default": 0
           }
         },
         "type": "object",
@@ -18911,7 +21278,7 @@
           "updatedAt"
         ],
         "title": "UserAccountResponse",
-        "description": "ユーザー情報レスポンススキーマ。\n\nAPIレスポンスでユーザー情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID（UUID）\n    azure_oid (str): Azure AD Object ID\n    email (EmailStr): ユーザーメールアドレス\n    display_name (str | None): 表示名\n    roles (list[str]): システムレベルのロール\n    is_active (bool): アクティブフラグ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n    last_login (datetime | None): 最終ログイン日時\n\nExample:\n    >>> from datetime import UTC\n    >>> user = UserAccountResponse(\n    ...     id=uuid.uuid4(),\n    ...     azure_oid=\"azure-oid-12345\",\n    ...     email=\"john@company.com\",\n    ...     display_name=\"John Doe\",\n    ...     roles=[\"User\"],\n    ...     is_active=True,\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC),\n    ...     last_login=None\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - パスワード情報は含まれません（Azure AD認証のため）"
+        "description": "ユーザー情報レスポンススキーマ。\n\nAPIレスポンスでユーザー情報を返す際に使用します。\n\nAttributes:\n    id (uuid.UUID): ユーザーID（UUID）\n    azure_oid (str): Azure ID (Azure AD Object ID)\n    email (EmailStr): ユーザーメールアドレス\n    display_name (str | None): 表示名\n    roles (list[str]): システムレベルのロール\n    is_active (bool): アクティブフラグ\n    created_at (datetime): 作成日時\n    updated_at (datetime): 更新日時\n    last_login (datetime | None): 最終ログイン日時\n    login_count (int): ログイン回数\n\nExample:\n    >>> from datetime import UTC\n    >>> user = UserAccountResponse(\n    ...     id=uuid.uuid4(),\n    ...     azure_oid=\"azure-oid-12345\",\n    ...     email=\"john@company.com\",\n    ...     display_name=\"John Doe\",\n    ...     roles=[\"User\"],\n    ...     is_active=True,\n    ...     created_at=datetime.now(UTC),\n    ...     updated_at=datetime.now(UTC),\n    ...     last_login=None\n    ... )\n\nNote:\n    - from_attributesを有効にしているため、ORMモデルから直接変換可能です\n    - パスワード情報は含まれません（Azure AD認証のため）"
       },
       "UserAccountRoleUpdate": {
         "properties": {
@@ -18979,6 +21346,68 @@
         "title": "UserAccountUpdate",
         "description": "ユーザー情報更新リクエストスキーマ。\n\nユーザー情報の更新時に使用します。\n\nAttributes:\n    display_name (str | None): 表示名（オプション）\n    roles (list[str] | None): システムレベルのロール（オプション）\n    is_active (bool | None): アクティブフラグ（オプション）\n\nExample:\n    >>> update = UserAccountUpdate(\n    ...     display_name=\"John Smith\",\n    ...     roles=[\"SystemAdmin\", \"User\"],\n    ...     is_active=True\n    ... )\n\nNote:\n    - すべてのフィールドはオプションです\n    - 指定されたフィールドのみが更新されます\n    - email と azure_oid は更新できません"
       },
+      "UserContextInfo": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "displayName": {
+            "type": "string",
+            "title": "Displayname"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "displayName",
+          "email",
+          "roles"
+        ],
+        "title": "UserContextInfo",
+        "description": "ユーザー基本情報スキーマ。\n\nヘッダー表示用のユーザー基本情報。"
+      },
+      "UserContextResponse": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserContextInfo"
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/PermissionsInfo"
+          },
+          "navigation": {
+            "$ref": "#/components/schemas/NavigationInfo"
+          },
+          "notifications": {
+            "$ref": "#/components/schemas/NotificationBadgeInfo"
+          },
+          "sidebar": {
+            "$ref": "#/components/schemas/SidebarInfo"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user",
+          "permissions",
+          "navigation",
+          "notifications",
+          "sidebar"
+        ],
+        "title": "UserContextResponse",
+        "description": "ユーザーコンテキストレスポンススキーマ。\n\nログイン直後やページリロード時に取得する、\nUIの動的表示に必要な情報をすべてまとめたレスポンス。"
+      },
       "UserRoleResponse": {
         "properties": {
           "projectId": {
@@ -19018,6 +21447,104 @@
         ],
         "title": "UserRoleResponse",
         "description": "ユーザーのプロジェクトロールレスポンススキーマ。\n\n現在のユーザーのロール情報を返す際に使用します。\n\nAttributes:\n    project_id (uuid.UUID): プロジェクトID\n    user_id (uuid.UUID): ユーザーID\n    role (ProjectRole): プロジェクトロール\n    is_owner (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n    is_admin (bool): PROJECT_MANAGER ロールかどうか（後方互換性のため維持）\n\nExample:\n    >>> role_info = UserRoleResponse(\n    ...     project_id=uuid.uuid4(),\n    ...     user_id=uuid.uuid4(),\n    ...     role=ProjectRole.PROJECT_MANAGER,\n    ...     is_owner=True,\n    ...     is_admin=True\n    ... )\n\nNote:\n    - 権限チェックに使用されます\n    - is_owner: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）\n    - is_admin: PROJECT_MANAGER ロールの場合 True（後方互換性のため維持）"
+      },
+      "UserSettingsResponse": {
+        "properties": {
+          "theme": {
+            "$ref": "#/components/schemas/ThemeEnum",
+            "description": "テーマ設定",
+            "default": "light"
+          },
+          "language": {
+            "$ref": "#/components/schemas/LanguageEnum",
+            "description": "言語設定",
+            "default": "ja"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "description": "タイムゾーン設定",
+            "default": "Asia/Tokyo"
+          },
+          "notifications": {
+            "$ref": "#/components/schemas/NotificationSettingsInfo",
+            "description": "通知設定"
+          },
+          "display": {
+            "$ref": "#/components/schemas/DisplaySettingsInfo",
+            "description": "表示設定"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notifications",
+          "display"
+        ],
+        "title": "UserSettingsResponse",
+        "description": "ユーザー設定レスポンススキーマ。\n\nAttributes:\n    theme (ThemeEnum): テーマ設定\n    language (LanguageEnum): 言語設定\n    timezone (str): タイムゾーン設定\n    notifications (NotificationSettingsInfo): 通知設定\n    display (DisplaySettingsInfo): 表示設定"
+      },
+      "UserSettingsUpdate": {
+        "properties": {
+          "theme": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ThemeEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "テーマ設定"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LanguageEnum"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "言語設定"
+          },
+          "timezone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timezone",
+            "description": "タイムゾーン設定"
+          },
+          "notifications": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NotificationSettingsUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "通知設定"
+          },
+          "display": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DisplaySettingsUpdate"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "表示設定"
+          }
+        },
+        "type": "object",
+        "title": "UserSettingsUpdate",
+        "description": "ユーザー設定更新リクエストスキーマ。\n\nすべてのフィールドはオプションで、指定されたフィールドのみが更新されます。\n\nAttributes:\n    theme (ThemeEnum | None): テーマ設定\n    language (LanguageEnum | None): 言語設定\n    timezone (str | None): タイムゾーン設定\n    notifications (NotificationSettingsUpdate | None): 通知設定\n    display (DisplaySettingsUpdate | None): 表示設定"
       },
       "UserStatistics": {
         "properties": {

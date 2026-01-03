@@ -17,31 +17,211 @@
 | admin-data-management | データ管理 | /admin/data-management | クリーンアップ・保持ポリシー |
 | admin-support-tools | サポートツール | /admin/support-tools | 代行操作・デバッグ・ヘルスチェック |
 
-### 1.2 コンポーネント構成
+### 1.2 共通UIコンポーネント参照
+
+本機能で使用する共通UIコンポーネント（`components/ui/`）:
+
+| コンポーネント | 用途 | 参照元 |
+|--------------|------|-------|
+| `Card` | 統計カード、設定カード、ヘルスチェックカード | [02-shared-ui-components.md](../01-frontend-common/02-shared-ui-components.md) |
+| `DataTable` | ログ一覧、プロジェクト一覧、セッション一覧 | 同上 |
+| `Pagination` | 各種一覧ページネーション | 同上 |
+| `Badge` | ステータスバッジ、重要度バッジ、種別バッジ | 同上 |
+| `Button` | 各種操作ボタン | 同上 |
+| `Input` | 検索入力、設定値入力 | 同上 |
+| `Textarea` | お知らせ本文、メンテナンスメッセージ | 同上 |
+| `Select` | 各種フィルタ、設定選択 | 同上 |
+| `Modal` | 詳細モーダル、確認ダイアログ | 同上 |
+| `Alert` | 操作完了/エラー通知 | 同上 |
+| `Tabs` | カテゴリタブ、監査ログタブ | 同上 |
+| `DatePicker` | 日時範囲フィルタ | 同上 |
+| `Progress` | インポート/エクスポート進捗 | 同上 |
+| `Avatar` | ユーザーアイコン | 同上 |
+| `FileUpload` | CSVインポート | 同上 |
+| `Skeleton` | ローディング表示 | 同上 |
+
+### 1.3 コンポーネント構成
 
 ```text
-pages/admin/
+features/system-admin/
+├── api/
+│   ├── get-activity-logs.ts         # GET /admin/activity-logs
+│   ├── get-audit-logs.ts            # GET /admin/audit-logs
+│   ├── get-settings.ts              # GET /admin/settings
+│   ├── update-setting.ts            # PATCH /admin/settings/{category}/{key}
+│   ├── get-statistics.ts            # GET /admin/statistics/*
+│   ├── get-sessions.ts              # GET /admin/sessions
+│   ├── terminate-session.ts         # POST /admin/sessions/{id}/terminate
+│   ├── get-projects.ts              # GET /admin/projects
+│   ├── bulk-archive-projects.ts     # POST /admin/bulk/projects/archive
+│   ├── bulk-import-users.ts         # POST /admin/bulk/users/import
+│   ├── bulk-export-users.ts         # GET /admin/bulk/users/export
+│   ├── get-announcements.ts         # GET /admin/announcements
+│   ├── create-announcement.ts       # POST /admin/announcements
+│   ├── get-cleanup-preview.ts       # GET /admin/data/cleanup/preview
+│   ├── execute-cleanup.ts           # POST /admin/data/cleanup/execute
+│   ├── get-health-check.ts          # GET /admin/health-check/detailed
+│   ├── impersonate-user.ts          # POST /admin/impersonate/{user_id}
+│   └── index.ts
+├── components/
+│   ├── activity-log-table/
+│   │   ├── activity-log-table.tsx   # 操作履歴テーブル（DataTable使用）
+│   │   └── index.ts
+│   ├── activity-log-filters/
+│   │   ├── activity-log-filters.tsx # フィルタ（Select, DatePicker使用）
+│   │   └── index.ts
+│   ├── activity-log-detail-modal/
+│   │   ├── activity-log-detail-modal.tsx # 詳細モーダル（Modal使用）
+│   │   └── index.ts
+│   ├── admin-project-table/
+│   │   ├── admin-project-table.tsx  # プロジェクト一覧（DataTable使用）
+│   │   └── index.ts
+│   ├── project-stats-cards/
+│   │   ├── project-stats-cards.tsx  # 統計カード群（Card使用）
+│   │   └── index.ts
+│   ├── audit-log-table/
+│   │   ├── audit-log-table.tsx      # 監査ログテーブル（DataTable, Tabs使用）
+│   │   └── index.ts
+│   ├── audit-log-filters/
+│   │   ├── audit-log-filters.tsx    # フィルタ（Select, DatePicker使用）
+│   │   └── index.ts
+│   ├── audit-log-detail-panel/
+│   │   ├── audit-log-detail-panel.tsx # 詳細パネル（Card使用）
+│   │   └── index.ts
+│   ├── settings-form/
+│   │   ├── settings-form.tsx        # 設定フォーム（Input, Select使用）
+│   │   ├── settings-category-tabs.tsx # カテゴリタブ（Tabs使用）
+│   │   ├── maintenance-mode-toggle.tsx # メンテナンス切替（Modal使用）
+│   │   └── index.ts
+│   ├── stats-overview-cards/
+│   │   ├── stats-overview-cards.tsx # 統計カード群（Card使用）
+│   │   └── index.ts
+│   ├── user-trend-chart/
+│   │   ├── user-trend-chart.tsx     # ユーザー推移グラフ
+│   │   └── index.ts
+│   ├── storage-chart/
+│   │   ├── storage-chart.tsx        # ストレージグラフ
+│   │   └── index.ts
+│   ├── api-request-chart/
+│   │   ├── api-request-chart.tsx    # APIリクエストグラフ
+│   │   └── index.ts
+│   ├── user-import-form/
+│   │   ├── user-import-form.tsx     # インポート（FileUpload, Progress使用）
+│   │   └── index.ts
+│   ├── user-export-form/
+│   │   ├── user-export-form.tsx     # エクスポート（Select, Button使用）
+│   │   └── index.ts
+│   ├── bulk-deactivate-form/
+│   │   ├── bulk-deactivate-form.tsx # 一括無効化（Input, Button使用）
+│   │   └── index.ts
+│   ├── announcement-list/
+│   │   ├── announcement-list.tsx    # お知らせ一覧（DataTable使用）
+│   │   └── index.ts
+│   ├── announcement-form/
+│   │   ├── announcement-form.tsx    # お知らせ作成（Input, Textarea, Select使用）
+│   │   └── index.ts
+│   ├── alert-config-form/
+│   │   ├── alert-config-form.tsx    # アラート設定（Input, Select使用）
+│   │   └── index.ts
+│   ├── session-table/
+│   │   ├── session-table.tsx        # セッション一覧（DataTable, Avatar使用）
+│   │   └── index.ts
+│   ├── session-stats-cards/
+│   │   ├── session-stats-cards.tsx  # 統計カード（Card使用）
+│   │   └── index.ts
+│   ├── force-logout-modal/
+│   │   ├── force-logout-modal.tsx   # 強制ログアウト（Modal使用）
+│   │   └── index.ts
+│   ├── cleanup-preview/
+│   │   ├── cleanup-preview.tsx      # クリーンアップ（Card, Select使用）
+│   │   └── index.ts
+│   ├── retention-policy-form/
+│   │   ├── retention-policy-form.tsx # 保持ポリシー（Input使用）
+│   │   └── index.ts
+│   ├── impersonate-form/
+│   │   ├── impersonate-form.tsx     # 代行操作（Input, Button使用）
+│   │   └── index.ts
+│   ├── debug-mode-toggle/
+│   │   ├── debug-mode-toggle.tsx    # デバッグモード（Button使用）
+│   │   └── index.ts
+│   ├── health-check-cards/
+│   │   ├── health-check-cards.tsx   # ヘルスチェック（Card, Badge使用）
+│   │   └── index.ts
+│   └── index.ts
+├── routes/
+│   ├── activity-logs/
+│   │   ├── activity-logs.tsx        # 操作履歴コンテナ
+│   │   ├── activity-logs.hook.ts    # 操作履歴用hook
+│   │   └── index.ts
+│   ├── admin-projects/
+│   │   ├── admin-projects.tsx       # 全プロジェクト管理コンテナ
+│   │   ├── admin-projects.hook.ts   # 全プロジェクト管理用hook
+│   │   └── index.ts
+│   ├── admin-project-detail/
+│   │   ├── admin-project-detail.tsx # プロジェクト詳細コンテナ
+│   │   ├── admin-project-detail.hook.ts # プロジェクト詳細用hook
+│   │   └── index.ts
+│   ├── audit-logs/
+│   │   ├── audit-logs.tsx           # 監査ログコンテナ
+│   │   ├── audit-logs.hook.ts       # 監査ログ用hook
+│   │   └── index.ts
+│   ├── settings/
+│   │   ├── settings.tsx             # システム設定コンテナ
+│   │   ├── settings.hook.ts         # システム設定用hook
+│   │   └── index.ts
+│   ├── statistics/
+│   │   ├── statistics.tsx           # システム統計コンテナ
+│   │   ├── statistics.hook.ts       # システム統計用hook
+│   │   └── index.ts
+│   ├── bulk-operations/
+│   │   ├── bulk-operations.tsx      # 一括操作コンテナ
+│   │   ├── bulk-operations.hook.ts  # 一括操作用hook
+│   │   └── index.ts
+│   ├── notifications/
+│   │   ├── notifications.tsx        # 通知管理コンテナ
+│   │   ├── notifications.hook.ts    # 通知管理用hook
+│   │   └── index.ts
+│   ├── security/
+│   │   ├── security.tsx             # セキュリティ管理コンテナ
+│   │   ├── security.hook.ts         # セキュリティ管理用hook
+│   │   └── index.ts
+│   ├── data-management/
+│   │   ├── data-management.tsx      # データ管理コンテナ
+│   │   ├── data-management.hook.ts  # データ管理用hook
+│   │   └── index.ts
+│   └── support-tools/
+│       ├── support-tools.tsx        # サポートツールコンテナ
+│       ├── support-tools.hook.ts    # サポートツール用hook
+│       └── index.ts
+├── types/
+│   ├── api.ts                       # API入出力の型
+│   ├── domain.ts                    # ドメインモデル（ActivityLog, AuditLog, Setting等）
+│   └── index.ts
+└── index.ts
+
+app/admin/
 ├── activity-logs/
-│   └── index.tsx                    # 操作履歴画面
+│   └── page.tsx                     # 操作履歴画面 → ActivityLogs
 ├── projects/
-│   ├── index.tsx                    # 全プロジェクト管理画面
-│   └── [id].tsx                     # プロジェクト詳細（管理者ビュー）
+│   ├── page.tsx                     # 全プロジェクト管理画面 → AdminProjects
+│   └── [id]/
+│       └── page.tsx                 # プロジェクト詳細 → AdminProjectDetail
 ├── audit-logs/
-│   └── index.tsx                    # 監査ログ画面
+│   └── page.tsx                     # 監査ログ画面 → AuditLogs
 ├── settings/
-│   └── index.tsx                    # システム設定画面
+│   └── page.tsx                     # システム設定画面 → Settings
 ├── statistics/
-│   └── index.tsx                    # システム統計ダッシュボード
+│   └── page.tsx                     # システム統計ダッシュボード → Statistics
 ├── bulk-operations/
-│   └── index.tsx                    # 一括操作画面
+│   └── page.tsx                     # 一括操作画面 → BulkOperations
 ├── notifications/
-│   └── index.tsx                    # 通知管理画面
+│   └── page.tsx                     # 通知管理画面 → Notifications
 ├── security/
-│   └── index.tsx                    # セキュリティ管理画面
+│   └── page.tsx                     # セキュリティ管理画面 → Security
 ├── data-management/
-│   └── index.tsx                    # データ管理画面
+│   └── page.tsx                     # データ管理画面 → DataManagement
 └── support-tools/
-    └── index.tsx                    # サポートツール画面
+    └── page.tsx                     # サポートツール画面 → SupportTools
 ```
 
 ---
@@ -98,7 +278,7 @@ pages/admin/
 
 | 画面項目 | 操作 | APIエンドポイント | リクエストボディ | 備考 |
 |---------|-----|-----------------|----------------|------|
-| 一括アーカイブ | button | POST /api/v1/admin/projects/bulk-archive | project_ids[] | 選択項目のID配列 |
+| 一括アーカイブ | button | POST /api/v1/admin/bulk/projects/archive | project_ids[] | 選択項目のID配列 |
 
 ---
 
@@ -416,18 +596,466 @@ pages/admin/
 
 ---
 
-## 8. 関連ドキュメント
+## 8. Storybook対応
+
+### 8.1 ストーリー一覧
+
+| コンポーネント | ストーリー名 | 説明 | 状態バリエーション |
+|--------------|-------------|------|-------------------|
+| ActivityLogTable | Default | 操作履歴テーブル表示 | 通常、空、エラーログ表示 |
+| ActivityLogFilters | Default | 操作履歴フィルター | 初期状態、選択状態 |
+| ActivityLogDetailModal | Default | 操作履歴詳細モーダル | 通常、エラー情報付き |
+| AdminProjectTable | Default | 管理者プロジェクト一覧 | 通常、選択状態 |
+| ProjectStatsCards | Default | プロジェクト統計カード群 | 通常 |
+| AuditLogTable | Default | 監査ログテーブル | 通常、変更ログタブ、セキュリティログタブ |
+| AuditLogDetailPanel | Default | 監査ログ詳細パネル | 通常、JSON差分表示 |
+| SettingsForm | Default | システム設定フォーム | 通常、メンテナンス設定 |
+| MaintenanceModeToggle | Default | メンテナンスモード切替 | 有効、無効 |
+| StatsOverviewCards | Default | 統計概要カード群 | 通常 |
+| UserTrendChart | Default | ユーザー推移グラフ | 通常 |
+| StorageChart | Default | ストレージ使用量グラフ | 通常 |
+| SessionTable | Default | セッション一覧テーブル | 通常、統計付き |
+| ForceLogoutModal | Default | 強制ログアウトモーダル | 通常 |
+| CleanupPreview | Default | クリーンアッププレビュー | 通常 |
+| HealthCheckCards | Default | ヘルスチェックカード群 | 正常、異常 |
+| ImpersonateForm | Default | 代行操作フォーム | 通常、代行中 |
+
+### 8.2 ストーリー実装例
+
+```tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+
+import { HealthCheckCards } from "./health-check-cards";
+import type { HealthCheckStatus } from "../../types";
+
+const healthyChecks: HealthCheckStatus = {
+  database: { status: "healthy", responseTime: 12 },
+  cache: { status: "healthy", responseTime: 3 },
+  storage: { status: "healthy", responseTime: 45 },
+  externalApis: {
+    openai: { status: "healthy", responseTime: 150 },
+  },
+};
+
+const meta = {
+  title: "features/system-admin/components/health-check-cards",
+  component: HealthCheckCards,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: "ヘルスチェック状態を表示するカード群コンポーネント。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+} satisfies Meta<typeof HealthCheckCards>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Healthy: Story = {
+  args: {
+    status: "healthy",
+    checks: healthyChecks,
+  },
+};
+
+export const Unhealthy: Story = {
+  args: {
+    status: "unhealthy",
+    checks: {
+      ...healthyChecks,
+      cache: { status: "unhealthy", responseTime: null, error: "Connection refused" },
+      externalApis: {
+        openai: { status: "degraded", responseTime: 2500 },
+      },
+    },
+  },
+};
+```
+
+---
+
+## 9. テスト戦略
+
+### 9.1 テスト対象・カバレッジ目標
+
+| レイヤー | テスト種別 | カバレッジ目標 | 主な検証内容 |
+|---------|----------|---------------|-------------|
+| コンポーネント | ユニットテスト | 80%以上 | テーブル表示、フィルタ動作、モーダル操作 |
+| ユーティリティ | ユニットテスト | 90%以上 | 日時フォーマット、統計計算、バリデーション |
+| 統合 | コンポーネントテスト | 70%以上 | ログ検索、設定変更、セッション管理 |
+| E2E | E2Eテスト | 主要フロー | 管理操作、一括処理、ヘルスチェック |
+
+### 9.2 ユニットテスト例
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { formatRelativeTime, getSeverityColor, parseDeviceInfo } from "./admin-utils";
+
+describe("formatRelativeTime", () => {
+  it("数秒前を正しく表示する", () => {
+    const date = new Date(Date.now() - 30 * 1000);
+    expect(formatRelativeTime(date)).toBe("30秒前");
+  });
+
+  it("数分前を正しく表示する", () => {
+    const date = new Date(Date.now() - 5 * 60 * 1000);
+    expect(formatRelativeTime(date)).toBe("5分前");
+  });
+
+  it("数時間前を正しく表示する", () => {
+    const date = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    expect(formatRelativeTime(date)).toBe("3時間前");
+  });
+});
+
+describe("getSeverityColor", () => {
+  it("INFOに青色を返す", () => {
+    expect(getSeverityColor("INFO")).toBe("blue");
+  });
+
+  it("WARNINGに黄色を返す", () => {
+    expect(getSeverityColor("WARNING")).toBe("yellow");
+  });
+
+  it("CRITICALに赤色を返す", () => {
+    expect(getSeverityColor("CRITICAL")).toBe("red");
+  });
+});
+
+describe("parseDeviceInfo", () => {
+  it("ユーザーエージェントからデバイス情報を抽出する", () => {
+    const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0";
+    const result = parseDeviceInfo(ua);
+    expect(result.os).toBe("Windows 10");
+    expect(result.browser).toBe("Chrome 120");
+  });
+});
+```
+
+### 9.3 コンポーネントテスト例
+
+```tsx
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { SessionTable } from "./session-table";
+import type { Session } from "../../types";
+
+describe("SessionTable", () => {
+  const mockSessions: Session[] = [
+    {
+      id: "session-1",
+      user: { name: "山田 太郎", email: "yamada@example.com" },
+      ipAddress: "192.168.1.1",
+      deviceInfo: "Windows 10 / Chrome 120",
+      loginAt: "2026-01-01T10:00:00Z",
+      lastActivityAt: "2026-01-01T11:30:00Z",
+    },
+    {
+      id: "session-2",
+      user: { name: "鈴木 花子", email: "suzuki@example.com" },
+      ipAddress: "192.168.1.2",
+      deviceInfo: "macOS / Safari 17",
+      loginAt: "2026-01-01T09:00:00Z",
+      lastActivityAt: "2026-01-01T11:00:00Z",
+    },
+  ];
+
+  it("セッション一覧を表示する", () => {
+    render(<SessionTable sessions={mockSessions} onTerminate={vi.fn()} />);
+
+    expect(screen.getByText("山田 太郎")).toBeInTheDocument();
+    expect(screen.getByText("鈴木 花子")).toBeInTheDocument();
+    expect(screen.getByText("192.168.1.1")).toBeInTheDocument();
+  });
+
+  it("強制ログアウトボタンを表示する", () => {
+    render(<SessionTable sessions={mockSessions} onTerminate={vi.fn()} />);
+
+    const terminateButtons = screen.getAllByRole("button", { name: "強制ログアウト" });
+    expect(terminateButtons).toHaveLength(2);
+  });
+
+  it("強制ログアウトボタンクリックでonTerminateを呼び出す", async () => {
+    const user = userEvent.setup();
+    const onTerminate = vi.fn();
+    render(<SessionTable sessions={mockSessions} onTerminate={onTerminate} />);
+
+    const terminateButtons = screen.getAllByRole("button", { name: "強制ログアウト" });
+    await user.click(terminateButtons[0]);
+
+    // 確認モーダルが表示される
+    expect(screen.getByText("このセッションを強制終了しますか？")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "終了する" }));
+
+    await waitFor(() => {
+      expect(onTerminate).toHaveBeenCalledWith("session-1");
+    });
+  });
+
+  it("空の状態を表示する", () => {
+    render(<SessionTable sessions={[]} onTerminate={vi.fn()} />);
+
+    expect(screen.getByText("アクティブなセッションはありません")).toBeInTheDocument();
+  });
+});
+```
+
+### 9.4 E2Eテスト例
+
+```typescript
+import { test, expect } from "@playwright/test";
+
+test.describe("システム管理機能", () => {
+  test.beforeEach(async ({ page }) => {
+    // 管理者としてログイン
+    await page.goto("/admin/login");
+    await page.getByLabel("メールアドレス").fill("admin@example.com");
+    await page.getByLabel("パスワード").fill("admin-password");
+    await page.getByRole("button", { name: "ログイン" }).click();
+  });
+
+  test("操作履歴を検索できる", async ({ page }) => {
+    await page.goto("/admin/activity-logs");
+
+    // フィルタ適用
+    await page.getByLabel("ユーザー").selectOption("user-1");
+    await page.getByLabel("アクション").selectOption("LOGIN");
+
+    // 結果確認
+    await expect(page.getByTestId("activity-log-row")).toHaveCount(5);
+  });
+
+  test("システム設定を変更できる", async ({ page }) => {
+    await page.goto("/admin/settings");
+
+    // 一般設定タブ
+    await page.getByRole("tab", { name: "一般" }).click();
+
+    // 設定値変更
+    await page.getByLabel("セッションタイムアウト").fill("60");
+    await page.getByRole("button", { name: "保存" }).click();
+
+    // 成功メッセージ
+    await expect(page.getByText("設定を保存しました")).toBeVisible();
+  });
+
+  test("メンテナンスモードを有効化できる", async ({ page }) => {
+    await page.goto("/admin/settings");
+
+    // メンテナンス設定
+    await page.getByRole("tab", { name: "メンテナンス" }).click();
+    await page.getByRole("button", { name: "メンテナンスモード有効化" }).click();
+
+    // 確認モーダル
+    await page.getByLabel("メンテナンスメッセージ").fill("システムメンテナンス中です");
+    await page.getByRole("button", { name: "有効化" }).click();
+
+    // 成功メッセージ
+    await expect(page.getByText("メンテナンスモードを有効化しました")).toBeVisible();
+  });
+
+  test("セッションを強制終了できる", async ({ page }) => {
+    await page.goto("/admin/security");
+
+    // セッション終了
+    await page.getByTestId("session-row-1").getByRole("button", { name: "強制ログアウト" }).click();
+
+    // 確認ダイアログ
+    await page.getByLabel("理由").fill("セキュリティ上の理由");
+    await page.getByRole("button", { name: "終了する" }).click();
+
+    // 成功メッセージ
+    await expect(page.getByText("セッションを終了しました")).toBeVisible();
+  });
+
+  test("ヘルスチェックを実行できる", async ({ page }) => {
+    await page.goto("/admin/support-tools");
+
+    // ヘルスチェック実行
+    await page.getByRole("button", { name: "ヘルスチェック実行" }).click();
+
+    // 結果確認
+    await expect(page.getByTestId("health-status")).toBeVisible();
+    await expect(page.getByText("データベース")).toBeVisible();
+    await expect(page.getByText("キャッシュ")).toBeVisible();
+  });
+
+  test("データクリーンアップをプレビューできる", async ({ page }) => {
+    await page.goto("/admin/data-management");
+
+    // クリーンアップ対象選択
+    await page.getByLabel("操作履歴").check();
+    await page.getByLabel("保持期間（日）").fill("90");
+
+    // プレビュー
+    await page.getByRole("button", { name: "プレビュー" }).click();
+
+    // 結果確認
+    await expect(page.getByText("削除対象レコード数")).toBeVisible();
+  });
+});
+```
+
+### 9.5 モックデータ
+
+```typescript
+// src/testing/mocks/handlers/system-admin.ts
+import { http, HttpResponse } from "msw";
+
+export const systemAdminHandlers = [
+  http.get("/api/admin/activity-logs", ({ request }) => {
+    const url = new URL(request.url);
+    const userId = url.searchParams.get("user_id");
+    const actionType = url.searchParams.get("action_type");
+
+    const logs = [
+      {
+        id: "log-1",
+        userId: "user-1",
+        userName: "山田 太郎",
+        actionType: "LOGIN",
+        resourceType: "SESSION",
+        ipAddress: "192.168.1.1",
+        createdAt: "2026-01-01T10:00:00Z",
+        isError: false,
+      },
+      {
+        id: "log-2",
+        userId: "user-2",
+        userName: "鈴木 花子",
+        actionType: "UPDATE",
+        resourceType: "PROJECT",
+        ipAddress: "192.168.1.2",
+        createdAt: "2026-01-01T09:30:00Z",
+        isError: false,
+      },
+    ];
+
+    let filtered = logs;
+    if (userId) {
+      filtered = filtered.filter((l) => l.userId === userId);
+    }
+    if (actionType) {
+      filtered = filtered.filter((l) => l.actionType === actionType);
+    }
+
+    return HttpResponse.json({ items: filtered, total: filtered.length });
+  }),
+
+  http.get("/api/admin/sessions", () => {
+    return HttpResponse.json({
+      items: [
+        {
+          id: "session-1",
+          user: { name: "山田 太郎", email: "yamada@example.com" },
+          ipAddress: "192.168.1.1",
+          deviceInfo: "Windows 10 / Chrome 120",
+          loginAt: "2026-01-01T10:00:00Z",
+          lastActivityAt: "2026-01-01T11:30:00Z",
+        },
+      ],
+      statistics: {
+        activeSessions: 15,
+        loginsToday: 42,
+      },
+    });
+  }),
+
+  http.post("/api/admin/sessions/:id/terminate", () => {
+    return HttpResponse.json({ success: true });
+  }),
+
+  http.get("/api/admin/settings", () => {
+    return HttpResponse.json({
+      categories: {
+        GENERAL: [
+          { key: "session_timeout", value: 30, valueType: "number", description: "セッションタイムアウト（分）" },
+          { key: "max_upload_size", value: 50, valueType: "number", description: "最大アップロードサイズ（MB）" },
+        ],
+        SECURITY: [
+          { key: "password_min_length", value: 8, valueType: "number", description: "パスワード最小長" },
+        ],
+        MAINTENANCE: [
+          { key: "maintenance_mode", value: false, valueType: "boolean", description: "メンテナンスモード" },
+        ],
+      },
+    });
+  }),
+
+  http.patch("/api/admin/settings/:category/:key", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ success: true, value: body.value });
+  }),
+
+  http.get("/api/admin/health-check/detailed", () => {
+    return HttpResponse.json({
+      status: "healthy",
+      checks: {
+        database: { status: "healthy", responseTime: 12 },
+        cache: { status: "healthy", responseTime: 3 },
+        storage: { status: "healthy", responseTime: 45 },
+        externalApis: {
+          openai: { status: "healthy", responseTime: 150 },
+        },
+      },
+    });
+  }),
+
+  http.get("/api/admin/statistics/overview", () => {
+    return HttpResponse.json({
+      users: { total: 1250, activeToday: 87 },
+      projects: { total: 340, active: 280 },
+      storage: { totalDisplay: "1.2 TB", usedPercent: 45 },
+      api: { requestsToday: 125000, errorRatePercentage: 0.5 },
+    });
+  }),
+
+  http.get("/api/admin/data/cleanup/preview", ({ request }) => {
+    const url = new URL(request.url);
+    const targetTypes = url.searchParams.get("target_types");
+
+    return HttpResponse.json({
+      preview: [
+        {
+          targetType: "activity_logs",
+          targetTypeDisplay: "操作履歴",
+          recordCount: 15000,
+          estimatedSizeDisplay: "120 MB",
+        },
+      ],
+    });
+  }),
+
+  http.post("/api/admin/impersonate/:userId", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      success: true,
+      impersonatedUser: { id: "user-1", name: "山田 太郎" },
+      reason: body.reason,
+    });
+  }),
+];
+```
+
+---
+
+## 10. 関連ドキュメント
 
 - **バックエンド設計書**: [01-system-admin-design.md](./01-system-admin-design.md)
 - **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
 
 ---
 
-## 9. ドキュメント管理情報
+## 11. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | SA-FRONTEND-001 |
 | 対象ユースケース | SA-001〜SA-043 |
 | 最終更新日 | 2026-01-01 |
-| 対象フロントエンド | `pages/admin/` |
+| 対象フロントエンド | `app/admin/` |

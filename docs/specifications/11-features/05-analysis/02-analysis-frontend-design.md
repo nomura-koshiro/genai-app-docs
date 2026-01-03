@@ -15,21 +15,120 @@
 | issues | 課題マスタ管理 | `/admin/issues` | 分析課題管理（管理者） |
 | issue-edit | 課題編集 | `/admin/issues/{id}` | 課題詳細・プロンプト編集 |
 
-### 1.2 コンポーネント構成
+### 1.2 共通UIコンポーネント参照
+
+本機能で使用する共通UIコンポーネント（`components/ui/`）:
+
+| コンポーネント | 用途 | 参照元 |
+|--------------|------|-------|
+| `Card` | セッションカード、ステップカード | [02-shared-ui-components.md](../01-frontend-common/02-shared-ui-components.md) |
+| `DataTable` | セッション一覧、スナップショット一覧 | 同上 |
+| `Badge` | ステータスバッジ | 同上 |
+| `Button` | 操作ボタン | 同上 |
+| `Input` | 検索・フォーム入力 | 同上 |
+| `Select` | 課題選択、フィルタ | 同上 |
+| `Textarea` | プロンプト入力 | 同上 |
+| `Modal` | 確認ダイアログ | 同上 |
+| `Alert` | 警告・エラー表示 | 同上 |
+| `Tabs` | 結果表示タブ | 同上 |
+| `Progress` | 分析進捗表示 | 同上 |
+| `Skeleton` | 読み込み中表示 | 同上 |
+| `EmptyState` | データなし表示 | 同上 |
+
+### 1.3 コンポーネント構成
 
 ```text
-pages/projects/[id]/sessions/
-├── index.tsx              # セッション一覧
-├── new.tsx                # セッション作成ウィザード
-└── [sessionId]/
-    ├── index.tsx          # セッション詳細（結果閲覧）
-    ├── analysis.tsx       # 分析画面
-    └── snapshots.tsx      # スナップショット履歴
+features/analysis/
+├── api/
+│   ├── get-sessions.ts              # GET /project/{id}/analysis/session
+│   ├── get-session.ts               # GET /session/{id}
+│   ├── create-session.ts            # POST /project/{id}/analysis/session
+│   ├── update-session.ts            # PUT /session/{id}
+│   ├── delete-session.ts            # DELETE /session/{id}
+│   ├── get-result.ts                # GET /session/{id}/result
+│   ├── send-chat.ts                 # POST /session/{id}/chat
+│   ├── get-messages.ts              # GET /session/{id}/messages
+│   ├── get-snapshots.ts             # GET /session/{id}/snapshot
+│   ├── create-snapshot.ts           # POST /session/{id}/snapshot
+│   ├── restore-snapshot.ts          # POST /snapshot/{id}/restore
+│   ├── delete-snapshot.ts           # DELETE /snapshot/{id}
+│   ├── create-step.ts               # POST /session/{id}/step
+│   ├── update-step.ts               # PATCH /step/{id}
+│   └── index.ts
+├── components/
+│   ├── session-card/
+│   │   ├── session-card.tsx         # セッションカード（Card使用）
+│   │   └── index.ts
+│   ├── session-filters/
+│   │   ├── session-filters.tsx      # フィルター（Select使用）
+│   │   └── index.ts
+│   ├── session-wizard/
+│   │   ├── session-wizard.tsx       # 作成ウィザード
+│   │   ├── step-theme-select.tsx    # STEP1: テーマ選択
+│   │   ├── step-data-prep.tsx       # STEP2: データ準備
+│   │   ├── step-confirm.tsx         # STEP3: 確認
+│   │   └── index.ts
+│   ├── analysis-chat/
+│   │   ├── analysis-chat.tsx        # チャット形式表示
+│   │   └── index.ts
+│   ├── analysis-steps/
+│   │   ├── analysis-steps.tsx       # ステップ表示
+│   │   └── index.ts
+│   ├── analysis-results/
+│   │   ├── analysis-results.tsx     # 結果表示（Tabs使用）
+│   │   └── index.ts
+│   ├── snapshot-timeline/
+│   │   ├── snapshot-timeline.tsx    # スナップショットタイムライン
+│   │   └── index.ts
+│   ├── snapshot-card/
+│   │   ├── snapshot-card.tsx        # スナップショットカード
+│   │   └── index.ts
+│   └── index.ts
+├── routes/
+│   ├── session-list/
+│   │   ├── session-list.tsx         # セッション一覧コンテナ
+│   │   ├── session-list.hook.ts     # セッション一覧用hook
+│   │   └── index.ts
+│   ├── session-new/
+│   │   ├── session-new.tsx          # セッション作成コンテナ
+│   │   ├── session-new.hook.ts      # セッション作成用hook
+│   │   └── index.ts
+│   ├── session-detail/
+│   │   ├── session-detail.tsx       # セッション詳細コンテナ
+│   │   ├── session-detail.hook.ts   # セッション詳細用hook
+│   │   └── index.ts
+│   ├── analysis/
+│   │   ├── analysis.tsx             # 分析画面コンテナ
+│   │   ├── analysis.hook.ts         # 分析画面用hook
+│   │   └── index.ts
+│   └── snapshots/
+│       ├── snapshots.tsx            # スナップショット履歴コンテナ
+│       ├── snapshots.hook.ts        # スナップショット履歴用hook
+│       └── index.ts
+├── types/
+│   ├── api.ts                       # API入出力の型
+│   ├── domain.ts                    # ドメインモデル（Session, Snapshot, Chat, Step等）
+│   └── index.ts
+└── index.ts
 
-pages/admin/
-├── verifications.tsx      # 検証マスタ管理
-├── issues.tsx             # 課題マスタ管理
-└── issues/[id].tsx        # 課題編集
+app/projects/[id]/sessions/
+├── page.tsx               # セッション一覧ページ → SessionList
+├── new/
+│   └── page.tsx           # セッション作成ウィザードページ → SessionNew
+└── [sessionId]/
+    ├── page.tsx           # セッション詳細ページ → SessionDetail
+    ├── analysis/
+    │   └── page.tsx       # 分析画面ページ → Analysis
+    └── snapshots/
+        └── page.tsx       # スナップショット履歴ページ → Snapshots
+
+app/admin/
+├── verifications/
+│   └── page.tsx           # 検証マスタ管理ページ
+└── issues/
+    ├── page.tsx           # 課題マスタ管理ページ
+    └── [id]/
+        └── page.tsx       # 課題編集ページ
 ```
 
 ---
@@ -112,7 +211,7 @@ pages/admin/
 
 #### 右サイドバー（ファイル情報・ステップ）
 
-**ファイル情報カード**
+##### ファイル情報カード
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 備考 |
 |---------|---------|------------------|---------------------|------|
@@ -121,7 +220,7 @@ pages/admin/
 | 行数 | テキスト | 同上 | `inputFile.rows` | - |
 | 列数 | テキスト | 同上 | `inputFile.columns` | - |
 
-**ステップリスト**
+##### ステップリスト
 
 | 画面項目 | 表示形式 | APIエンドポイント | レスポンスフィールド | 備考 |
 |---------|---------|------------------|---------------------|------|
@@ -299,7 +398,392 @@ pages/admin/
 
 ---
 
-## 8. 関連ドキュメント
+## 8. Storybook対応
+
+### 8.1 ストーリー一覧
+
+| コンポーネント | ストーリー名 | 説明 | 状態バリエーション |
+|--------------|-------------|------|-------------------|
+| SessionCard | Default | 分析セッションカード表示 | 通常、進行中、完了、アーカイブ済み |
+| SessionFilters | Default | セッションフィルタ | 通常、課題フィルタ適用済み |
+| SessionWizard | Step1 | セッション作成ウィザード | Step1、Step2、Step3、送信中 |
+| AnalysisChat | Default | 分析チャット表示 | 通常、空、ローディング、メッセージあり |
+| AnalysisSteps | Default | 分析ステップ表示 | 通常、空、ドラッグ中 |
+| AnalysisResults | Default | 分析結果表示 | 通常、ローディング、インサイトあり |
+| SnapshotTimeline | Default | スナップショットタイムライン | 通常、空、現在のスナップショットあり |
+| SnapshotCard | Default | スナップショットカード表示 | 通常、現在、復元中 |
+
+### 8.2 ストーリー実装例
+
+```tsx
+// features/analysis/components/session-card/session-card.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { SessionCard } from "./session-card";
+import type { Session } from "../../types";
+
+const baseSession: Session = {
+  id: "1",
+  name: "売上分析セッション",
+  issue: { id: "i1", name: "売上トレンド分析" },
+  inputFile: { id: "f1", filename: "sales_data.xlsx" },
+  snapshotCount: 3,
+  creator: { id: "u1", displayName: "山田太郎" },
+  updatedAt: "2024-01-15T10:30:00Z",
+  status: "in_progress",
+};
+
+const meta = {
+  title: "features/analysis/components/session-card",
+  component: SessionCard,
+  parameters: {
+    layout: "centered",
+    docs: {
+      description: {
+        component: "分析セッションカードコンポーネント。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onOpen: fn(),
+    onDuplicate: fn(),
+  },
+} satisfies Meta<typeof SessionCard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    session: baseSession,
+  },
+};
+
+export const InProgress: Story = {
+  args: {
+    session: { ...baseSession, status: "in_progress" },
+  },
+};
+
+export const Completed: Story = {
+  args: {
+    session: { ...baseSession, status: "completed" },
+  },
+};
+
+export const Archived: Story = {
+  args: {
+    session: { ...baseSession, status: "archived" },
+  },
+};
+```
+
+```tsx
+// features/analysis/components/analysis-chat/analysis-chat.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { AnalysisChat } from "./analysis-chat";
+import type { ChatMessage } from "../../types";
+
+const mockMessages: ChatMessage[] = [
+  { id: "1", role: "user", content: "売上の傾向を分析してください", createdAt: "2024-01-15T10:00:00Z" },
+  {
+    id: "2",
+    role: "assistant",
+    content:
+      "データを分析した結果、以下の傾向が見られます:\n\n1. **月間成長率**: 平均5%の成長\n2. **季節変動**: Q4に売上がピーク\n3. **地域差**: 関東エリアが全体の40%を占める",
+    createdAt: "2024-01-15T10:01:00Z",
+  },
+  { id: "3", role: "user", content: "地域別の詳細を教えてください", createdAt: "2024-01-15T10:02:00Z" },
+];
+
+const meta = {
+  title: "features/analysis/components/analysis-chat",
+  component: AnalysisChat,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: "分析チャットコンポーネント。AIとの対話UIを提供。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onSendMessage: fn(),
+  },
+} satisfies Meta<typeof AnalysisChat>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    messages: mockMessages,
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    messages: [],
+  },
+};
+
+export const Loading: Story = {
+  args: {
+    messages: mockMessages,
+    isLoading: true,
+  },
+};
+```
+
+---
+
+## 9. テスト戦略
+
+### 9.1 テスト対象・カバレッジ目標
+
+| レイヤー | テスト種別 | カバレッジ目標 | 主な検証内容 |
+|---------|----------|---------------|-------------|
+| コンポーネント | ユニットテスト | 80%以上 | セッションカード、チャット、結果表示 |
+| ユーティリティ | ユニットテスト | 90%以上 | hooks, utils, バリデーション |
+| API連携 | 統合テスト | 70%以上 | API呼び出し、状態管理、エラーハンドリング |
+| E2E | E2Eテスト | 主要フロー100% | セッション作成、分析実行、スナップショット管理 |
+
+### 9.2 ユニットテスト例
+
+```typescript
+// features/analysis/hooks/__tests__/use-analysis-chat.test.ts
+import { renderHook, act } from "@testing-library/react";
+import { useAnalysisChat } from "../use-analysis-chat";
+
+describe("useAnalysisChat", () => {
+  it("メッセージ送信後に入力がクリアされる", async () => {
+    const { result } = renderHook(() =>
+      useAnalysisChat({ sessionId: "test-session" })
+    );
+
+    act(() => {
+      result.current.setMessage("テストメッセージ");
+    });
+
+    expect(result.current.message).toBe("テストメッセージ");
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(result.current.message).toBe("");
+  });
+
+  it("空メッセージは送信されない", async () => {
+    const { result } = renderHook(() =>
+      useAnalysisChat({ sessionId: "test-session" })
+    );
+
+    await act(async () => {
+      await result.current.sendMessage();
+    });
+
+    expect(result.current.error).toBe("メッセージを入力してください");
+  });
+});
+```
+
+### 9.3 コンポーネントテスト例
+
+```tsx
+// features/analysis/components/session-card/__tests__/session-card.test.tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { SessionCard } from "../session-card";
+import type { Session } from "../../../types";
+
+const mockSession: Session = {
+  id: "1",
+  name: "テストセッション",
+  issue: { id: "i1", name: "売上分析" },
+  inputFile: { id: "f1", filename: "data.xlsx" },
+  snapshotCount: 2,
+  creator: { id: "u1", displayName: "テストユーザー" },
+  updatedAt: "2024-01-01T00:00:00Z",
+  status: "in_progress",
+};
+
+describe("SessionCard", () => {
+  it("セッション情報を正しく表示する", () => {
+    render(<SessionCard session={mockSession} />);
+
+    expect(screen.getByText("テストセッション")).toBeInTheDocument();
+    expect(screen.getByText("売上分析")).toBeInTheDocument();
+    expect(screen.getByText("data.xlsx")).toBeInTheDocument();
+  });
+
+  it("開くボタンクリックでonOpenが呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    render(<SessionCard session={mockSession} onOpen={onOpen} />);
+
+    await user.click(screen.getByRole("button", { name: /開く/i }));
+    expect(onOpen).toHaveBeenCalledWith(mockSession.id);
+  });
+
+  it("完了ステータスで完了バッジを表示", () => {
+    render(
+      <SessionCard session={{ ...mockSession, status: "completed" }} />
+    );
+
+    expect(screen.getByText("完了")).toBeInTheDocument();
+  });
+});
+```
+
+### 9.4 E2Eテスト例
+
+```typescript
+// e2e/analysis.spec.ts
+import { test, expect } from "@playwright/test";
+
+test.describe("個別施策分析", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/projects/1/sessions");
+  });
+
+  test("セッション一覧が表示される", async ({ page }) => {
+    await expect(
+      page.getByRole("heading", { name: "セッション" })
+    ).toBeVisible();
+    await expect(page.getByTestId("session-list")).toBeVisible();
+  });
+
+  test("新規セッションを作成できる", async ({ page }) => {
+    await page.getByRole("button", { name: "新規作成" }).click();
+
+    // STEP1: テーマ選択
+    await page.getByTestId("category-card-sales").click();
+    await page.getByLabel("分析課題").selectOption("売上トレンド分析");
+    await page.getByRole("button", { name: "次へ" }).click();
+
+    // STEP2: データ準備
+    await page.getByLabel("入力ファイル").selectOption("sales_data.xlsx");
+    await page.getByLabel("時間軸").selectOption("date");
+    await page.getByLabel("分析対象値").selectOption("amount");
+    await page.getByRole("button", { name: "次へ" }).click();
+
+    // STEP3: 確認
+    await page.getByLabel("セッション名").fill("E2Eテストセッション");
+    await page.getByRole("button", { name: "作成" }).click();
+
+    await expect(page.getByText("セッションを作成しました")).toBeVisible();
+  });
+
+  test("チャットでAIと対話できる", async ({ page }) => {
+    await page.getByTestId("session-card").first().click();
+    await page.getByRole("link", { name: "分析開始" }).click();
+
+    await page.getByPlaceholder("メッセージを入力").fill("売上の傾向を分析してください");
+    await page.getByRole("button", { name: "送信" }).click();
+
+    await expect(page.getByText("売上の傾向を分析してください")).toBeVisible();
+    await expect(page.getByTestId("assistant-message")).toBeVisible();
+  });
+
+  test("スナップショットを保存・復元できる", async ({ page }) => {
+    await page.getByTestId("session-card").first().click();
+    await page.getByRole("link", { name: "分析開始" }).click();
+
+    // スナップショット保存
+    await page.getByRole("button", { name: "保存" }).click();
+    await expect(page.getByText("スナップショットを保存しました")).toBeVisible();
+
+    // スナップショット履歴へ移動
+    await page.getByRole("button", { name: "履歴" }).click();
+    await expect(page.getByTestId("snapshot-timeline")).toBeVisible();
+
+    // 復元
+    await page.getByTestId("snapshot-card").first().getByRole("button", { name: "復元" }).click();
+    await page.getByRole("button", { name: "確認" }).click();
+    await expect(page.getByText("スナップショットを復元しました")).toBeVisible();
+  });
+});
+```
+
+### 9.5 モックデータ
+
+```typescript
+// features/analysis/__mocks__/handlers.ts
+import { http, HttpResponse } from "msw";
+
+export const analysisHandlers = [
+  http.get("/api/v1/project/:projectId/analysis/session", () => {
+    return HttpResponse.json({
+      sessions: [
+        {
+          id: "1",
+          name: "売上分析セッション",
+          issue: { id: "i1", name: "売上トレンド分析" },
+          inputFile: { filename: "sales_data.xlsx" },
+          snapshotCount: 3,
+          creator: { displayName: "山田太郎" },
+          updatedAt: "2024-01-15T10:30:00Z",
+          status: "in_progress",
+        },
+      ],
+      total: 1,
+    });
+  }),
+
+  http.get("/api/v1/session/:id", ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: "テストセッション",
+      status: "in_progress",
+      issue: { id: "i1", name: "売上トレンド分析" },
+      inputFile: { filename: "data.xlsx", size: 1024, rows: 100, columns: 5 },
+      currentSnapshot: { snapshotOrder: 2 },
+      snapshotCount: 2,
+    });
+  }),
+
+  http.post("/api/v1/session/:id/chat", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: "new-msg",
+      role: "assistant",
+      content: `「${body.content}」について分析しました。結果は以下の通りです...`,
+      createdAt: new Date().toISOString(),
+    });
+  }),
+
+  http.get("/api/v1/session/:id/snapshot", () => {
+    return HttpResponse.json({
+      snapshots: [
+        {
+          id: "s1",
+          snapshotOrder: 1,
+          description: "初期状態",
+          createdAt: "2024-01-15T09:00:00Z",
+        },
+        {
+          id: "s2",
+          snapshotOrder: 2,
+          description: "売上分析完了後",
+          createdAt: "2024-01-15T10:00:00Z",
+        },
+      ],
+    });
+  }),
+];
+```
+
+---
+
+## 10. 関連ドキュメント
 
 - **バックエンド設計**: [01-analysis-design.md](./01-analysis-design.md)
 - **ユースケース一覧**: [../../01-usercases/01-usecases.md](../../01-usercases/01-usecases.md)
@@ -308,13 +792,11 @@ pages/admin/
 
 ---
 
-## 9. ドキュメント管理情報
+## 11. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | AN-FRONTEND-001 |
 | 対象ユースケース | AS-001〜AS-007, AF-001〜AF-006, ASN-001〜ASN-005, AC-001〜AC-003, AST-001〜AST-006 |
 | 最終更新日 | 2026-01-01 |
-| 対象フロントエンド | `pages/projects/[id]/sessions/` |
-|  | `pages/admin/verifications.tsx` |
-|  | `pages/admin/issues/` |
+| 対象フロントエンド | `app/projects/[id]/sessions/` |

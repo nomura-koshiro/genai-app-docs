@@ -261,7 +261,7 @@
 
 非アクティブプロジェクト一覧を取得する。
 
-#### POST /api/v1/admin/projects/bulk-archive
+#### POST /api/v1/admin/bulk/projects/archive
 
 複数プロジェクトを一括アーカイブする。
 

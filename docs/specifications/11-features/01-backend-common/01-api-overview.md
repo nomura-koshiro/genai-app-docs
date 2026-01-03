@@ -196,7 +196,7 @@ Authorization: Bearer mock-access-token-dev-12345
 
 ### 4.3 Exception階層
 
-```
+```text
 AppException（基底クラス）
 ├── BadRequestError (400) - リクエスト形式エラー
 ├── AuthenticationError (401) - 認証失敗

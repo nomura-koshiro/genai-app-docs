@@ -13,50 +13,128 @@
 | tree-data-binding | データ紐付け | /projects/{id}/trees/{treeId}/data-binding | データ紐付け設定 |
 | tree-results | 計算結果 | /projects/{id}/trees/{treeId}/results | 計算結果・シミュレーション |
 
-### 1.2 コンポーネント構成
+### 1.2 共通UIコンポーネント参照
+
+本機能で使用する共通UIコンポーネント（`components/ui/`）:
+
+| コンポーネント | 用途 | 参照元 |
+|--------------|------|-------|
+| `Card` | ツリーカード、施策カード、サマリカード | [02-shared-ui-components.md](../01-frontend-common/02-shared-ui-components.md) |
+| `DataTable` | ノード一覧テーブル、計算結果テーブル | 同上 |
+| `Badge` | ノードタイプバッジ、ステータスバッジ | 同上 |
+| `Button` | 各種操作ボタン | 同上 |
+| `Input` | テキスト入力（ツリー名、ノードラベル等） | 同上 |
+| `Textarea` | 説明入力 | 同上 |
+| `Select` | ノードタイプ選択、データ列選択 | 同上 |
+| `Modal` | 施策追加/編集モーダル、確認ダイアログ | 同上 |
+| `Alert` | 操作完了/エラー通知 | 同上 |
+| `Tabs` | ツリー編集タブナビゲーション | 同上 |
+| `Progress` | 計算進捗表示 | 同上 |
+| `Skeleton` | ローディング表示 | 同上 |
+| `EmptyState` | ツリーなし状態、施策なし状態 | 同上 |
+
+### 1.3 コンポーネント構成
 
 ```text
 features/driver-tree/
-├── components/
-│   ├── TreeList/
-│   │   ├── TreeList.tsx
-│   │   └── TreeListItem.tsx
-│   ├── TreeCanvas/
-│   │   ├── TreeCanvas.tsx
-│   │   ├── TreeNode.tsx
-│   │   ├── TreeConnection.tsx
-│   │   └── TreeToolbar.tsx
-│   ├── NodeEditor/
-│   │   ├── NodeEditor.tsx
-│   │   └── NodeTypeSelector.tsx
-│   ├── PolicyEditor/
-│   │   ├── PolicyList.tsx
-│   │   ├── PolicyCard.tsx
-│   │   └── PolicyModal.tsx
-│   ├── DataBinding/
-│   │   ├── DataSourceSelector.tsx
-│   │   ├── NodeBindingTable.tsx
-│   │   └── ColumnRoleSelector.tsx
-│   ├── Results/
-│   │   ├── ResultsSummary.tsx
-│   │   ├── NodeCalculationTable.tsx
-│   │   └── PolicyEffectChart.tsx
-│   └── TemplateSelector/
-│       ├── TemplateGrid.tsx
-│       ├── TemplateCard.tsx
-│       └── TemplatePreview.tsx
-├── hooks/
-│   ├── useDriverTree.ts
-│   ├── useDriverTreeNodes.ts
-│   ├── useDriverTreePolicies.ts
-│   ├── useDriverTreeFiles.ts
-│   └── useTreeCalculation.ts
 ├── api/
-│   ├── driverTreeApi.ts
-│   ├── driverTreeNodeApi.ts
-│   └── driverTreeFileApi.ts
-└── types/
-    └── driverTree.ts
+│   ├── get-trees.ts              # GET /driver-tree/tree
+│   ├── get-tree.ts               # GET /driver-tree/tree/{id}
+│   ├── create-tree.ts            # POST /driver-tree/tree
+│   ├── update-tree.ts            # PUT /driver-tree/tree/{id}
+│   ├── delete-tree.ts            # DELETE /driver-tree/tree/{id}
+│   ├── create-node.ts            # POST /driver-tree/tree/{id}/node
+│   ├── update-node.ts            # PATCH /driver-tree/node/{id}
+│   ├── delete-node.ts            # DELETE /driver-tree/node/{id}
+│   ├── create-policy.ts          # POST /driver-tree/node/{id}/policy
+│   ├── update-policy.ts          # PATCH /driver-tree/policy/{id}
+│   ├── delete-policy.ts          # DELETE /driver-tree/policy/{id}
+│   ├── get-tree-data.ts          # GET /driver-tree/tree/{id}/data
+│   └── index.ts
+├── components/
+│   ├── tree-table/
+│   │   ├── tree-table.tsx            # ツリー一覧（DataTable使用）
+│   │   └── index.ts
+│   ├── tree-canvas/
+│   │   ├── tree-canvas.tsx           # ツリーキャンバス（React Flow）
+│   │   ├── tree-node.tsx             # ノードコンポーネント（Badge使用）
+│   │   ├── tree-connection.tsx       # 接続線（SVG）
+│   │   ├── tree-toolbar.tsx          # ツールバー（Button使用）
+│   │   └── index.ts
+│   ├── node-editor/
+│   │   ├── node-editor.tsx           # ノード編集パネル（Input, Select使用）
+│   │   ├── node-type-selector.tsx    # ノードタイプ選択（Select使用）
+│   │   └── index.ts
+│   ├── policy-card/
+│   │   ├── policy-card.tsx           # 施策カード（Card, Badge使用）
+│   │   └── index.ts
+│   ├── policy-modal/
+│   │   ├── policy-modal.tsx          # 施策追加/編集（Modal, Input使用）
+│   │   └── index.ts
+│   ├── data-source-selector/
+│   │   ├── data-source-selector.tsx  # データソース選択（Select使用）
+│   │   └── index.ts
+│   ├── node-binding-table/
+│   │   ├── node-binding-table.tsx    # ノード紐付けテーブル（DataTable使用）
+│   │   └── index.ts
+│   ├── results-summary/
+│   │   ├── results-summary.tsx       # サマリカード群（Card使用）
+│   │   └── index.ts
+│   ├── node-calculation-table/
+│   │   ├── node-calculation-table.tsx # 計算結果テーブル（DataTable使用）
+│   │   └── index.ts
+│   ├── policy-effect-chart/
+│   │   ├── policy-effect-chart.tsx   # 施策効果チャート
+│   │   └── index.ts
+│   ├── template-grid/
+│   │   ├── template-grid.tsx         # テンプレートグリッド
+│   │   ├── template-card.tsx         # テンプレートカード（Card, Badge使用）
+│   │   ├── template-preview.tsx      # テンプレートプレビュー
+│   │   └── index.ts
+│   └── index.ts
+├── routes/
+│   ├── tree-list/
+│   │   ├── tree-list.tsx             # ツリー一覧コンテナ
+│   │   ├── tree-list.hook.ts         # ツリー一覧用hook
+│   │   └── index.ts
+│   ├── tree-new/
+│   │   ├── tree-new.tsx              # ツリー作成コンテナ
+│   │   ├── tree-new.hook.ts          # ツリー作成用hook
+│   │   └── index.ts
+│   ├── tree-edit/
+│   │   ├── tree-edit.tsx             # ツリー編集コンテナ
+│   │   ├── tree-edit.hook.ts         # ツリー編集用hook
+│   │   └── index.ts
+│   ├── tree-policies/
+│   │   ├── tree-policies.tsx         # 施策設定コンテナ
+│   │   ├── tree-policies.hook.ts     # 施策設定用hook
+│   │   └── index.ts
+│   ├── tree-data-binding/
+│   │   ├── tree-data-binding.tsx     # データ紐付けコンテナ
+│   │   ├── tree-data-binding.hook.ts # データ紐付け用hook
+│   │   └── index.ts
+│   └── tree-results/
+│       ├── tree-results.tsx          # 計算結果コンテナ
+│       ├── tree-results.hook.ts      # 計算結果用hook
+│       └── index.ts
+├── types/
+│   ├── api.ts                    # API入出力の型
+│   ├── domain.ts                 # ドメインモデル（Tree, Node, Policy等）
+│   └── index.ts
+└── index.ts
+
+app/projects/[id]/trees/
+├── page.tsx               # ツリー一覧ページ → TreeList
+├── new/
+│   └── page.tsx           # ツリー作成ページ → TreeNew
+└── [treeId]/
+    ├── page.tsx           # ツリー編集ページ → TreeEdit
+    ├── policies/
+    │   └── page.tsx       # 施策設定ページ → TreePolicies
+    ├── data-binding/
+    │   └── page.tsx       # データ紐付けページ → TreeDataBinding
+    └── results/
+        └── page.tsx       # 計算結果ページ → TreeResults
 ```
 
 ---
@@ -319,7 +397,411 @@ features/driver-tree/
 
 ---
 
-## 8. 関連ドキュメント
+## 8. Storybook対応
+
+### 8.1 ストーリー一覧
+
+| コンポーネント | ストーリー名 | 説明 | 状態バリエーション |
+|--------------|-------------|------|-------------------|
+| TreeTable | Default | ツリー一覧テーブル表示 | 通常、空、ローディング |
+| TreeCanvas | Default | ツリーキャンバス表示 | 通常、ノードあり、空、編集中 |
+| TreeNode | Driver | ツリーノード表示 | ドライバー、KPI、メトリクス、選択済み |
+| NodeEditor | Default | ノード編集エディタ | 通常、編集中、エラー |
+| PolicyCard | Default | 施策カード表示 | 通常、計画中、進行中、完了 |
+| PolicyModal | Create | 施策モーダル | 作成、編集、送信中 |
+| DataSourceSelector | Default | データソース選択 | 通常、選択済み |
+| NodeBindingTable | Default | ノードバインディングテーブル | 通常、バインド済み、未バインド |
+| ResultsSummary | Default | 結果サマリー表示 | 通常、ローディング、施策あり |
+| TemplateGrid | Default | テンプレートグリッド表示 | 通常、フィルタあり、ローディング |
+
+### 8.2 ストーリー実装例
+
+```tsx
+// features/driver-tree/components/tree-canvas/tree-canvas.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { TreeCanvas } from "./tree-canvas";
+import type { TreeNode, TreeRelationship } from "../../types";
+
+const mockNodes: TreeNode[] = [
+  { id: "1", label: "売上高", nodeType: "root", positionX: 400, positionY: 50 },
+  { id: "2", label: "客数", nodeType: "driver", positionX: 200, positionY: 150 },
+  { id: "3", label: "客単価", nodeType: "driver", positionX: 600, positionY: 150 },
+  { id: "4", label: "新規客数", nodeType: "kpi", positionX: 100, positionY: 250 },
+  { id: "5", label: "リピート客数", nodeType: "kpi", positionX: 300, positionY: 250 },
+];
+
+const mockRelationships: TreeRelationship[] = [
+  { id: "r1", parentNodeId: "1", childNodeId: "2" },
+  { id: "r2", parentNodeId: "1", childNodeId: "3" },
+  { id: "r3", parentNodeId: "2", childNodeId: "4" },
+  { id: "r4", parentNodeId: "2", childNodeId: "5" },
+];
+
+const meta = {
+  title: "features/driver-tree/components/tree-canvas",
+  component: TreeCanvas,
+  parameters: {
+    layout: "fullscreen",
+    docs: {
+      description: {
+        component: "ドライバーツリーキャンバスコンポーネント。ノードとリレーションを描画。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onNodeClick: fn(),
+    onNodeMove: fn(),
+    onNodeAdd: fn(),
+    onRelationshipAdd: fn(),
+  },
+} satisfies Meta<typeof TreeCanvas>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    nodes: mockNodes,
+    relationships: mockRelationships,
+  },
+};
+
+export const WithNodes: Story = {
+  args: {
+    nodes: mockNodes,
+    relationships: mockRelationships,
+    selectedNodeId: "2",
+  },
+};
+
+export const Empty: Story = {
+  args: {
+    nodes: [],
+    relationships: [],
+  },
+};
+
+export const Editing: Story = {
+  args: {
+    nodes: mockNodes,
+    relationships: mockRelationships,
+    isEditing: true,
+  },
+};
+```
+
+```tsx
+// features/driver-tree/components/policy-card/policy-card.stories.tsx
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { fn } from "@storybook/test";
+
+import { PolicyCard } from "./policy-card";
+import type { Policy } from "../../types";
+
+const basePolicy: Policy = {
+  id: "1",
+  name: "新規顧客獲得キャンペーン",
+  nodeLabel: "新規客数",
+  value: 15,
+  cost: 500000,
+  durationMonths: 3,
+  status: "planned",
+};
+
+const meta = {
+  title: "features/driver-tree/components/policy-card",
+  component: PolicyCard,
+  parameters: {
+    layout: "padded",
+    docs: {
+      description: {
+        component: "施策カードコンポーネント。施策の詳細を表示。",
+      },
+    },
+  },
+  tags: ["autodocs"],
+  args: {
+    onEdit: fn(),
+    onDelete: fn(),
+  },
+} satisfies Meta<typeof PolicyCard>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: {
+    policy: basePolicy,
+  },
+};
+
+export const Planned: Story = {
+  args: {
+    policy: { ...basePolicy, status: "planned" },
+  },
+};
+
+export const InProgress: Story = {
+  args: {
+    policy: { ...basePolicy, status: "in_progress" },
+  },
+};
+
+export const Completed: Story = {
+  args: {
+    policy: { ...basePolicy, status: "completed" },
+  },
+};
+```
+
+---
+
+## 9. テスト戦略
+
+### 9.1 テスト対象・カバレッジ目標
+
+| レイヤー | テスト種別 | カバレッジ目標 | 主な検証内容 |
+|---------|----------|---------------|-------------|
+| コンポーネント | ユニットテスト | 80%以上 | ツリー表示、ノード編集、施策カード |
+| ユーティリティ | ユニットテスト | 90%以上 | hooks, utils, 計算ロジック |
+| API連携 | 統合テスト | 70%以上 | API呼び出し、状態管理、エラーハンドリング |
+| E2E | E2Eテスト | 主要フロー100% | ツリー作成、ノード操作、施策管理 |
+
+### 9.2 ユニットテスト例
+
+```typescript
+// features/driver-tree/hooks/__tests__/use-tree-calculation.test.ts
+import { renderHook } from "@testing-library/react";
+import { useTreeCalculation } from "../use-tree-calculation";
+
+describe("useTreeCalculation", () => {
+  it("ノードの値を正しく計算する", () => {
+    const nodes = [
+      { id: "1", label: "売上高", nodeType: "root", value: null },
+      { id: "2", label: "客数", nodeType: "driver", value: 1000 },
+      { id: "3", label: "客単価", nodeType: "driver", value: 500 },
+    ];
+    const relationships = [
+      { parentNodeId: "1", childNodeId: "2", operator: "*" },
+      { parentNodeId: "1", childNodeId: "3", operator: "*" },
+    ];
+
+    const { result } = renderHook(() =>
+      useTreeCalculation({ nodes, relationships })
+    );
+
+    expect(result.current.calculatedValues["1"]).toBe(500000);
+  });
+
+  it("施策の影響を計算に反映する", () => {
+    const nodes = [
+      { id: "1", label: "売上高", nodeType: "root", value: null },
+      { id: "2", label: "客数", nodeType: "driver", value: 1000 },
+    ];
+    const relationships = [{ parentNodeId: "1", childNodeId: "2" }];
+    const policies = [{ nodeId: "2", value: 10 }]; // 10%増加
+
+    const { result } = renderHook(() =>
+      useTreeCalculation({ nodes, relationships, policies })
+    );
+
+    expect(result.current.calculatedValues["2"]).toBe(1100);
+  });
+});
+```
+
+### 9.3 コンポーネントテスト例
+
+```tsx
+// features/driver-tree/components/policy-card/__tests__/policy-card.test.tsx
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { PolicyCard } from "../policy-card";
+import type { Policy } from "../../../types";
+
+const mockPolicy: Policy = {
+  id: "1",
+  name: "テスト施策",
+  nodeLabel: "客数",
+  value: 10,
+  cost: 100000,
+  durationMonths: 3,
+  status: "planned",
+};
+
+describe("PolicyCard", () => {
+  it("施策情報を正しく表示する", () => {
+    render(<PolicyCard policy={mockPolicy} />);
+
+    expect(screen.getByText("テスト施策")).toBeInTheDocument();
+    expect(screen.getByText("客数")).toBeInTheDocument();
+    expect(screen.getByText("+10%")).toBeInTheDocument();
+    expect(screen.getByText("¥100,000")).toBeInTheDocument();
+  });
+
+  it("編集ボタンクリックでonEditが呼ばれる", async () => {
+    const user = userEvent.setup();
+    const onEdit = vi.fn();
+    render(<PolicyCard policy={mockPolicy} onEdit={onEdit} />);
+
+    await user.click(screen.getByRole("button", { name: /編集/i }));
+    expect(onEdit).toHaveBeenCalledWith(mockPolicy.id);
+  });
+
+  it("ステータスに応じたバッジを表示", () => {
+    render(<PolicyCard policy={{ ...mockPolicy, status: "in_progress" }} />);
+
+    expect(screen.getByText("進行中")).toBeInTheDocument();
+  });
+
+  it("負の影響値はマイナス表示", () => {
+    render(<PolicyCard policy={{ ...mockPolicy, value: -5 }} />);
+
+    expect(screen.getByText("-5%")).toBeInTheDocument();
+  });
+});
+```
+
+### 9.4 E2Eテスト例
+
+```typescript
+// e2e/driver-tree.spec.ts
+import { test, expect } from "@playwright/test";
+
+test.describe("ドライバーツリー", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/projects/1/trees");
+  });
+
+  test("ツリー一覧が表示される", async ({ page }) => {
+    await expect(
+      page.getByRole("heading", { name: "ドライバーツリー" })
+    ).toBeVisible();
+    await expect(page.getByTestId("tree-table")).toBeVisible();
+  });
+
+  test("新規ツリーを作成できる", async ({ page }) => {
+    await page.getByRole("button", { name: "新規作成" }).click();
+
+    // テンプレート選択
+    await page.getByTestId("template-card-sales").click();
+
+    // ツリー情報入力
+    await page.getByLabel("ツリー名").fill("E2Eテストツリー");
+    await page.getByRole("button", { name: "作成して編集" }).click();
+
+    await expect(page.getByText("ツリーを作成しました")).toBeVisible();
+    await expect(page.getByTestId("tree-canvas")).toBeVisible();
+  });
+
+  test("ノードを追加・編集できる", async ({ page }) => {
+    await page.getByTestId("tree-row").first().click();
+
+    // ノード追加
+    await page.getByRole("button", { name: "ノード追加" }).click();
+    await page.getByTestId("tree-canvas").click({ position: { x: 300, y: 200 } });
+
+    // ノード編集
+    await page.getByLabel("ラベル").fill("新規ノード");
+    await page.getByLabel("タイプ").selectOption("kpi");
+    await page.getByRole("button", { name: "保存" }).click();
+
+    await expect(page.getByText("新規ノード")).toBeVisible();
+  });
+
+  test("施策を追加できる", async ({ page }) => {
+    await page.getByTestId("tree-row").first().click();
+    await page.getByRole("tab", { name: "施策設定" }).click();
+
+    await page.getByRole("button", { name: "施策追加" }).click();
+    await page.getByLabel("施策名").fill("テスト施策");
+    await page.getByLabel("対象ノード").selectOption("客数");
+    await page.getByLabel("影響値").fill("10");
+    await page.getByRole("button", { name: "追加" }).click();
+
+    await expect(page.getByText("施策を追加しました")).toBeVisible();
+    await expect(page.getByText("テスト施策")).toBeVisible();
+  });
+
+  test("計算結果を表示できる", async ({ page }) => {
+    await page.getByTestId("tree-row").first().click();
+    await page.getByRole("tab", { name: "計算結果" }).click();
+
+    await expect(page.getByTestId("results-summary")).toBeVisible();
+    await expect(page.getByTestId("calculation-table")).toBeVisible();
+  });
+});
+```
+
+### 9.5 モックデータ
+
+```typescript
+// features/driver-tree/__mocks__/handlers.ts
+import { http, HttpResponse } from "msw";
+
+export const driverTreeHandlers = [
+  http.get("/api/v1/driver-tree/tree", () => {
+    return HttpResponse.json({
+      trees: [
+        {
+          id: "1",
+          name: "売上分析ツリー",
+          formulaName: "乗算式",
+          nodeCount: 5,
+          policyCount: 3,
+          updatedAt: "2024-01-15T10:30:00Z",
+        },
+      ],
+      total: 1,
+    });
+  }),
+
+  http.get("/api/v1/driver-tree/tree/:id", ({ params }) => {
+    return HttpResponse.json({
+      id: params.id,
+      name: "売上分析ツリー",
+      nodes: [
+        { id: "n1", label: "売上高", nodeType: "root", positionX: 400, positionY: 50 },
+        { id: "n2", label: "客数", nodeType: "driver", positionX: 200, positionY: 150 },
+        { id: "n3", label: "客単価", nodeType: "driver", positionX: 600, positionY: 150 },
+      ],
+      relationships: [
+        { id: "r1", parentNodeId: "n1", childNodeId: "n2" },
+        { id: "r2", parentNodeId: "n1", childNodeId: "n3" },
+      ],
+    });
+  }),
+
+  http.post("/api/v1/driver-tree/node/:id/policy", async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({
+      id: "new-policy",
+      ...body,
+      status: "planned",
+      createdAt: new Date().toISOString(),
+    });
+  }),
+
+  http.get("/api/v1/driver-tree/tree/:id/data", () => {
+    return HttpResponse.json({
+      calculatedDataList: [
+        { nodeId: "n1", value: 500000, label: "売上高" },
+        { nodeId: "n2", value: 1000, label: "客数" },
+        { nodeId: "n3", value: 500, label: "客単価" },
+      ],
+    });
+  }),
+];
+```
+
+---
+
+## 10. 関連ドキュメント
 
 - **バックエンド設計書**: [01-driver-tree-design.md](./01-driver-tree-design.md)
 - **API共通仕様**: [../01-api-overview/01-api-overview.md](../01-api-overview/01-api-overview.md)
@@ -327,11 +809,11 @@ features/driver-tree/
 
 ---
 
-## 9. ドキュメント管理情報
+## 11. ドキュメント管理情報
 
 | 項目 | 内容 |
 |------|------|
 | ドキュメントID | DT-FRONTEND-001 |
 | 対象ユースケース | DTC-001〜DTC-007, DTN-001〜DTN-008, DTR-001〜DTR-006, DTP-001〜DTP-006 |
 | 最終更新日 | 2026-01-01 |
-| 対象フロントエンド | `pages/projects/[id]/trees/` |
+| 対象フロントエンド | `app/projects/[id]/trees/` |

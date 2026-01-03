@@ -6,6 +6,17 @@
 
 ## 目次
 
+### フロントエンド共通ガイドライン（実装前に必読）
+
+| No | ファイル | 内容 | ステータス |
+|----|---------|------|-----------|
+| 01 | [01-frontend-common/](./01-frontend-common/) | **フロントエンド共通仕様ディレクトリ** | 作成済 |
+|    | [01-design-tokens.md](./01-frontend-common/01-design-tokens.md) | デザイントークン設計 - カラー、タイポグラフィ、スペーシング、Tailwind設定 | 作成済 |
+|    | [02-shared-ui-components.md](./01-frontend-common/02-shared-ui-components.md) | 共通UIコンポーネント設計 - components/ui/ に配置するコンポーネント仕様 | 作成済 |
+|    | [03-frontend-implementation-guide.md](./01-frontend-common/03-frontend-implementation-guide.md) | フロントエンド実装ガイドライン - bulletproof-react、型定義ルール、状態管理、SOLID原則 | 作成済 |
+
+### 機能別設計書
+
 | No | ディレクトリ | 機能名 | 対象ユースケース | ステータス |
 |----|-------------|--------|-----------------|-----------|
 | 01 | [01-api-overview/](./01-api-overview/) | API共通仕様 | - | 作成済 |
